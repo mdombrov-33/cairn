@@ -9,6 +9,7 @@ from alembic import context
 
 from cairn.config import get_settings
 from cairn.db.base import Base
+import cairn.db.models  # noqa: F401  registers ORM models with Base.metadata
 
 config = context.config
 
