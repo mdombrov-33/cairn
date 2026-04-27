@@ -1,5 +1,6 @@
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.campaign import Campaign
@@ -25,10 +26,35 @@ async def create_campaign(
     return campaign
 
 
-async def get_campaign_by_id(session: AsyncSession, campaign_id: uuid.UUID) -> Campaign:
-    campaign = await session.get(Campaign, campaign_id)
+async def get_campaign_owned_by(
+    session: AsyncSession, campaign_id: uuid.UUID, owner_id: str
+) -> Campaign:
+    result = await session.execute(
+        select(Campaign).where(
+            Campaign.id == campaign_id, Campaign.owner_id == owner_id
+        )
+    )
+    campaign = result.scalar_one_or_none()
     if campaign is None:
         raise NotFoundError(
             f"campaign {campaign_id} not found", code="campaign_not_found"
         )
     return campaign
+
+
+async def list_campaigns_by_owner(
+    session: AsyncSession, owner_id: str
+) -> list[Campaign]:
+    result = await session.execute(
+        select(Campaign)
+        .where(Campaign.owner_id == owner_id)
+        .order_by(Campaign.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def delete_campaign_owned_by(
+    session: AsyncSession, campaign_id: uuid.UUID, owner_id: str
+) -> None:
+    campaign = await get_campaign_owned_by(session, campaign_id, owner_id)
+    await session.delete(campaign)
