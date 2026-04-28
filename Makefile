@@ -34,7 +34,7 @@ install:
 
 # Run the API with hot reload.
 dev:
-	cd backend && uv run uvicorn cairn.main:app --reload
+	cd backend && uv run uvicorn cairn.main:app --reload --no-access-log
 
 # Drop into a Python repl with the venv active.
 shell:
