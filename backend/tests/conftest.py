@@ -44,9 +44,7 @@ async def _truncate_tables() -> AsyncIterator[None]:
         )
         tables = [row[0] for row in result]
         if tables:
-            await conn.execute(
-                text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE")
-            )
+            await conn.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
 
 
 @pytest_asyncio.fixture

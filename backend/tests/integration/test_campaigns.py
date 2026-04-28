@@ -5,9 +5,7 @@ CREATE_BODY = {"name": "Tavern", "template_id": "tavern_v1"}
 
 async def _create(client: AsyncClient, user_id: str, **overrides: str) -> dict:
     body = {**CREATE_BODY, **overrides}
-    r = await client.post(
-        "/v1/campaigns", headers={"X-User-Id": user_id}, json=body
-    )
+    r = await client.post("/v1/campaigns", headers={"X-User-Id": user_id}, json=body)
     assert r.status_code == 201, r.text
     return r.json()
 
@@ -42,18 +40,14 @@ async def test_list_returns_only_my_campaigns(client: AsyncClient) -> None:
 
 async def test_get_own_campaign(client: AsyncClient) -> None:
     created = await _create(client, "user_a")
-    r = await client.get(
-        f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"}
-    )
+    r = await client.get(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"})
     assert r.status_code == 200
     assert r.json()["id"] == created["id"]
 
 
 async def test_get_others_campaign_returns_404(client: AsyncClient) -> None:
     created = await _create(client, "user_a")
-    r = await client.get(
-        f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_b"}
-    )
+    r = await client.get(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_b"})
     assert r.status_code == 404
     assert r.json() == {
         "error": {
@@ -65,22 +59,16 @@ async def test_get_others_campaign_returns_404(client: AsyncClient) -> None:
 
 async def test_delete_own_campaign(client: AsyncClient) -> None:
     created = await _create(client, "user_a")
-    r = await client.delete(
-        f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"}
-    )
+    r = await client.delete(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"})
     assert r.status_code == 204
 
-    r = await client.get(
-        f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"}
-    )
+    r = await client.get(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"})
     assert r.status_code == 404
 
 
 async def test_delete_others_campaign_returns_404(client: AsyncClient) -> None:
     created = await _create(client, "user_a")
-    r = await client.delete(
-        f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_b"}
-    )
+    r = await client.delete(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_b"})
     assert r.status_code == 404
 
 
