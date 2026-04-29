@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    llm_env: Literal["local", "frontier"] = "local"
+    llm_prompt_versions: str = "{}"  # JSON map e.g. '{"intent_router": "v2"}'
+
 
 @lru_cache
 def get_settings() -> Settings:
