@@ -23,9 +23,7 @@ async def get_session(session: AsyncSession, session_id: uuid.UUID) -> Session:
     return db_session
 
 
-async def get_active_session(
-    session: AsyncSession, campaign_id: uuid.UUID
-) -> Session | None:
+async def get_active_session(session: AsyncSession, campaign_id: uuid.UUID) -> Session | None:
     result = await session.execute(
         select(Session).where(
             Session.campaign_id == campaign_id,

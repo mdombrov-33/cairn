@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from cairn.domain.exceptions import (
     AgentError,
     CairnError,
+    ConflictError,
     LLMError,
     NotFoundError,
     QueueError,
@@ -13,6 +14,7 @@ from cairn.domain.exceptions import (
 
 _STATUS_BY_EXC: dict[type[CairnError], int] = {
     NotFoundError: 404,
+    ConflictError: 409,
     AgentError: 502,
     RAGError: 502,
     LLMError: 502,

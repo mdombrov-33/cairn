@@ -12,6 +12,10 @@ class NotFoundError(CairnError):
     code = "not_found"
 
 
+class ConflictError(CairnError):
+    code = "conflict"
+
+
 class AgentError(CairnError):
     code = "agent_error"
 
