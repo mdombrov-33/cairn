@@ -5,10 +5,15 @@ defaults:
     primary: openai/gpt-5.4-mini
     fallback: openai/gpt-5.4
 
-# Per-agent overrides - uncomment to use a different model for a specific agent.
-# Useful when an agent doesn't need the frontier model (e.g. classification).
-# agents:
-#   intent_router:
-#     frontier:
-#       primary: openai/gpt-5.4-mini
-#       fallback: openai/gpt-5.4
+agents:
+  intent_router:
+    local:
+      primary: ollama/llama3.1:8b
+    frontier:
+      primary: openai/gpt-5.4-mini
+  scene_narrator:
+    local:
+      primary: ollama/llama3.1:8b
+    frontier:
+      primary: openai/gpt-5.4
+      fallback: openai/gpt-5.4-mini

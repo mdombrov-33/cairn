@@ -1,5 +1,6 @@
 import os
 from collections.abc import AsyncIterator, Iterator
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -13,6 +14,36 @@ from testcontainers.postgres import PostgresContainer
 
 from cairn.config import get_settings
 from cairn.db import client as db_client
+
+_FAKE_STREAM_TOKENS = ["The tavern ", "is quiet ", "tonight."]
+
+
+async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
+    if stream:
+        async def _gen():
+            for text in _FAKE_STREAM_TOKENS:
+                chunk = MagicMock()
+                chunk.choices = [MagicMock()]
+                chunk.choices[0].delta.content = text
+                yield chunk
+        return _gen()
+    else:
+        response = MagicMock()
+        response.choices = [MagicMock()]
+        response.choices[0].message.content = "narrative_action"
+        response.usage = MagicMock()
+        response.usage.prompt_tokens = 10
+        response.usage.completion_tokens = 5
+        return response
+
+
+@pytest.fixture(autouse=True)
+def fake_llm():
+    with (
+        patch("litellm.acompletion", side_effect=_fake_acompletion),
+        patch("cairn.pipelines.turn_graph.run", return_value="narrative_action"),
+    ):
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)
