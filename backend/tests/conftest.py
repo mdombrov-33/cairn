@@ -16,6 +16,7 @@ from cairn.config import get_settings
 from cairn.db import client as db_client
 
 _FAKE_STREAM_TOKENS = ["The tavern ", "is quiet ", "tonight."]
+_FAKE_CHECK_JSON = '{"skill": "persuasion", "dc": 14, "modifier": 4, "roll_type": "d20"}'
 
 
 async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
@@ -28,9 +29,15 @@ async def _fake_acompletion(model: str, messages: list, stream: bool = False, **
                 yield chunk
         return _gen()
     else:
+        # Detect rules_lawyer calls by checking if the prompt asks for JSON check output
+        content = messages[-1].get("content", "") if messages else ""
+        if "skill" in content and "dc" in content.lower() and "modifier" in content:
+            reply = _FAKE_CHECK_JSON
+        else:
+            reply = "narrative_action"
         response = MagicMock()
         response.choices = [MagicMock()]
-        response.choices[0].message.content = "narrative_action"
+        response.choices[0].message.content = reply
         response.usage = MagicMock()
         response.usage.prompt_tokens = 10
         response.usage.completion_tokens = 5

@@ -47,3 +47,15 @@ async def update_turn_response(
     turn.checkpoint_id = checkpoint_id
     await session.flush()
     return turn
+
+
+async def update_turn_check(
+    session: AsyncSession,
+    turn_id: uuid.UUID,
+    *,
+    check_data: dict,
+) -> Turn:
+    turn = await get_turn(session, turn_id)
+    turn.check_data = check_data
+    await session.flush()
+    return turn

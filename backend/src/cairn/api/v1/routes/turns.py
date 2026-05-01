@@ -4,9 +4,9 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from cairn.agents import scene_narrator
+from cairn.agents import rules_lawyer, scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.turns import TurnResponse, SubmitTurnRequest
+from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
 from cairn.db.queries import turns as turn_queries
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
@@ -25,21 +25,93 @@ async def submit(
         db, session_id=session_id, owner_id=user_id, player_input=body.player_input
     )
 
-    async def generate() -> AsyncGenerator[str, None]:
+    async def generate() -> AsyncGenerator[str]:
         yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
-        chunks: list[str] = []
-        if intent == "narrative_action":
+        if intent == "skill_check":
+            check = await rules_lawyer.run(body.player_input)
+
+            setup_chunks: list[str] = []
+            async for chunk in scene_narrator.run(body.player_input):
+                setup_chunks.append(chunk)
+                yield sse("token", {"text": chunk})
+
+            setup_prose = "".join(setup_chunks)
+            check_data = {
+                "skill": check.skill,
+                "dc": check.dc,
+                "modifier": check.modifier,
+                "roll_type": check.roll_type,
+                "status": "pending",
+                "setup_prose": setup_prose,
+            }
+            await turn_queries.update_turn_check(db, turn.id, check_data=check_data)
+            yield sse(
+                "check_required",
+                {
+                    "skill": check.skill,
+                    "dc": check.dc,
+                    "modifier": check.modifier,
+                    "roll_type": check.roll_type,
+                },
+            )
+
+        else:
+            chunks: list[str] = []
             async for chunk in scene_narrator.run(body.player_input):
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})
 
-        dm_response = "".join(chunks)
+            await turn_queries.update_turn_response(db, turn.id, dm_response="".join(chunks))
+            yield sse("turn_end", {"turn_id": str(turn.id)})
+
+    return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
+
+
+@router.post("/{session_id}/turns/{turn_id}/resolve")
+async def resolve(
+    session_id: uuid.UUID,
+    turn_id: uuid.UUID,
+    body: ResolveRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> StreamingResponse:
+    turn, check = await service.prepare_resolve(
+        db, session_id=session_id, turn_id=turn_id, owner_id=user_id
+    )
+
+    async def generate() -> AsyncGenerator[str]:
+        total = body.roll + check["modifier"]
+        success = total >= check["dc"]
+
+        yield sse("roll_result", {"roll": body.roll, "total": total, "success": success})
+
+        outcome_context = (
+            f"[Skill Check] {check['skill'].title()} DC {check['dc']}: "
+            f"rolled {body.roll} + {check['modifier']} = {total} — "
+            f"{'SUCCESS' if success else 'FAILURE'}\n"
+            f"Setup: {check['setup_prose']}"
+        )
+        outcome_chunks: list[str] = []
+        async for chunk in scene_narrator.run(turn.player_input, context=outcome_context):
+            outcome_chunks.append(chunk)
+            yield sse("token", {"text": chunk})
+
+        outcome_prose = "".join(outcome_chunks)
+        dm_response = check["setup_prose"] + "\n\n" + outcome_prose
+        resolved_check = {
+            **check,
+            "status": "resolved",
+            "roll": body.roll,
+            "total": total,
+            "success": success,
+        }
         await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
+        await turn_queries.update_turn_check(db, turn.id, check_data=resolved_check)
 
         yield sse("turn_end", {"turn_id": str(turn.id)})
 
-    return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
+    return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
 
 
 @router.get("/{session_id}/turns", response_model=list[TurnResponse])
