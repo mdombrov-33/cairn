@@ -1,11 +1,15 @@
 import uuid
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.turn import Turn
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
+from cairn.pipelines import turn_graph
+
+log = structlog.get_logger()
 
 
 async def _verify_ownership(db: AsyncSession, session_id: uuid.UUID, owner_id: str) -> None:
@@ -25,9 +29,14 @@ async def submit(
     existing = await turn_queries.list_turns(db, session_id)
     idx = len(existing)
 
-    return await turn_queries.create_turn(
+    turn = await turn_queries.create_turn(
         db, session_id=session_id, idx=idx, player_input=player_input
     )
+
+    intent = await turn_graph.run(player_input, session_id)
+    log.info("turn_submitted", session_id=str(session_id), idx=idx, intent=intent)
+
+    return turn
 
 
 async def transcript(db: AsyncSession, *, session_id: uuid.UUID, owner_id: str) -> list[Turn]:
