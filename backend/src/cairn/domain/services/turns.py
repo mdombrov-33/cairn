@@ -20,7 +20,7 @@ async def prepare(
     owner_id: str,
     player_input: str,
 ) -> tuple[Turn, str, str | None, uuid.UUID, str]:
-    """Create turn row and classify intent. Returns (turn, intent, npc_name, campaign_id, namespace)."""
+    """Create turn row and classify intent. Returns (turn, intent, npc_name, campaign_id, namespace)."""  # noqa: E501
     db_session = await session_queries.get_session(db, session_id)
     campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
 

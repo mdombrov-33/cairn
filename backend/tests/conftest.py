@@ -18,7 +18,7 @@ from cairn.db import client as db_client
 _FAKE_STREAM_TOKENS = ["The tavern ", "is quiet ", "tonight."]
 _FAKE_CHECK_JSON = '{"skill": "persuasion", "dc": 14, "modifier": 4, "roll_type": "d20"}'
 _FAKE_NPC_JSON = '{"dialogue": "Aye, what\'ll it be?", "disposition_change": null}'
-_FAKE_LORE_JSON = '[{"type": "NPC", "key": "old_grim_bartender", "content": "Old Grim is the gruff bartender of the Grimwood Tavern, a retired soldier."}]'
+_FAKE_LORE_JSON = '[{"type": "NPC", "key": "old_grim_bartender", "content": "Old Grim is the gruff bartender of the Grimwood Tavern, a retired soldier."}]'  # noqa: E501
 
 
 async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]

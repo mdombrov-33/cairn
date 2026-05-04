@@ -28,9 +28,7 @@ _IGNORED_TABLES = {
 
 
 def include_object(obj: object, name: str, type_: str, reflected: bool, compare_to: object) -> bool:
-    if type_ == "table" and name in _IGNORED_TABLES:
-        return False
-    return True
+    return not (type_ == "table" and name in _IGNORED_TABLES)
 
 
 def run_migrations_offline() -> None:
