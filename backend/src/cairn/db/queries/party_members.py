@@ -19,9 +19,7 @@ async def add_member(
 async def enroll_campaign_characters(
     session: AsyncSession, *, session_id: uuid.UUID, campaign_id: uuid.UUID
 ) -> list[PartyMember]:
-    result = await session.execute(
-        select(Character).where(Character.campaign_id == campaign_id)
-    )
+    result = await session.execute(select(Character).where(Character.campaign_id == campaign_id))
     characters = list(result.scalars().all())
     enrolled = []
     for char in characters:
@@ -32,9 +30,7 @@ async def enroll_campaign_characters(
     return enrolled
 
 
-async def get_party(
-    session: AsyncSession, session_id: uuid.UUID
-) -> list[Character]:
+async def get_party(session: AsyncSession, session_id: uuid.UUID) -> list[Character]:
     result = await session.execute(
         select(Character)
         .join(PartyMember, PartyMember.character_id == Character.id)

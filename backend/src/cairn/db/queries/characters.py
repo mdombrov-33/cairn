@@ -21,6 +21,14 @@ async def create_character(
     return character
 
 
+async def get_character(session: AsyncSession, character_id: uuid.UUID) -> Character:
+    result = await session.execute(select(Character).where(Character.id == character_id))
+    character = result.scalar_one_or_none()
+    if character is None:
+        raise NotFoundError(f"character {character_id} not found", code="character_not_found")
+    return character
+
+
 async def get_character_by_campaign(
     session: AsyncSession,
     campaign_id: uuid.UUID,

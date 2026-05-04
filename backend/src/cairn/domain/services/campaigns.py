@@ -61,13 +61,10 @@ async def create(
     return campaign
 
 
-async def get_starting_location(
-    db: AsyncSession, campaign_id: uuid.UUID
-) -> Location | None:
+async def get_starting_location(db: AsyncSession, campaign_id: uuid.UUID) -> Location | None:
     from sqlalchemy import select
-    result = await db.execute(
-        select(Location).where(Location.campaign_id == campaign_id).limit(1)
-    )
+
+    result = await db.execute(select(Location).where(Location.campaign_id == campaign_id).limit(1))
     return result.scalar_one_or_none()
 
 

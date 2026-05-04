@@ -38,6 +38,20 @@ async def get_active_session(session: AsyncSession, campaign_id: uuid.UUID) -> S
     return result.scalar_one_or_none()
 
 
+async def update_combat_state(
+    session: AsyncSession,
+    session_id: uuid.UUID,
+    *,
+    combat_state: dict | None,
+    combat_active: bool,
+) -> Session:
+    db_session = await get_session(session, session_id)
+    db_session.combat_active = combat_active
+    db_session.combat_state = combat_state
+    await session.flush()
+    return db_session
+
+
 async def end_session(session: AsyncSession, session_id: uuid.UUID) -> Session:
     db_session = await get_session(session, session_id)
     db_session.ended_at = datetime.now(UTC)

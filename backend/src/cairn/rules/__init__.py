@@ -31,6 +31,28 @@ def get_monster(name: str) -> dict | None:
     return _load_dict("monsters").get(key)
 
 
+def get_race(name: str) -> dict | None:
+    key = name.lower().replace(" ", "-")
+    return _load_dict("races").get(key)
+
+
+def get_class(name: str) -> dict | None:
+    return _load_dict("classes").get(name.lower())
+
+
+def get_class_levels(name: str) -> list[dict]:
+    data = json.loads((_DIR / "class_levels.json").read_text())
+    return data.get(name.lower(), [])
+
+
+def get_weapon(name: str) -> dict | None:
+    key = name.lower().replace(" ", "-")
+    item = _load_dict("equipment").get(key)
+    if item and item.get("equipment_category", {}).get("index") == "weapon":
+        return item
+    return None
+
+
 def get_all_conditions() -> list[dict]:
     return _load_list("conditions")
 
