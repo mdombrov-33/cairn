@@ -1,10 +1,12 @@
 import asyncio
 from logging.config import fileConfig
+from typing import Literal
 
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.sql.schema import SchemaItem
 
 import cairn.db.models  # noqa: F401  registers ORM models with Base.metadata
 from cairn.config import get_settings
@@ -27,7 +29,13 @@ _IGNORED_TABLES = {
 }
 
 
-def include_object(obj: object, name: str, type_: str, reflected: bool, compare_to: object) -> bool:
+def include_object(
+    obj: SchemaItem,
+    name: str | None,
+    type_: Literal["schema", "table", "column", "index", "unique_constraint", "foreign_key_constraint"],
+    reflected: bool,
+    compare_to: SchemaItem | None,
+) -> bool:
     return not (type_ == "table" and name in _IGNORED_TABLES)
 
 
