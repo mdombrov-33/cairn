@@ -1,0 +1,60 @@
+locations:
+  - id_slug: tavern_main_room
+    name: "Grimwood Tavern — Main Room"
+    description: "A dimly lit tavern with rough-hewn timber walls, a long bar along the north wall, and clusters of tables across the floor. A fire crackles in the hearth. The main entrance is to the east."
+    connections: {}
+    zones:
+      - id: center
+        name: "center of the room"
+        cover: none
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [bar, tables_north, tables_south, hearth, entrance]
+
+      - id: bar
+        name: "behind the bar"
+        cover: three_quarters
+        cover_ac_bonus: 5
+        cover_save_bonus: 5
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [center]
+        notes: "Heavy oak bar provides three-quarters cover. Old Grim's home turf."
+
+      - id: tables_north
+        name: "northern tables"
+        cover: half
+        cover_ac_bonus: 2
+        cover_save_bonus: 2
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [center, tables_south, entrance]
+        notes: "Upturned tables provide half cover."
+
+      - id: tables_south
+        name: "southern tables"
+        cover: half
+        cover_ac_bonus: 2
+        cover_save_bonus: 2
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [center, tables_north, hearth]
+        notes: "The Stranger's usual corner. Upturned tables provide half cover."
+
+      - id: hearth
+        name: "by the hearth"
+        cover: none
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [center, tables_south]
+        hazard: "fire"
+        hazard_damage: "1d6 fire per round if pushed into hearth"
+
+      - id: entrance
+        name: "near the entrance"
+        cover: none
+        difficult_terrain: false
+        elevation: 0
+        adjacent: [center, tables_north]
+        escape_route: true
+        notes: "Main door. Fleeing is possible from here."

@@ -8,8 +8,13 @@ from cairn.db.models.session import Session
 from cairn.domain.exceptions import NotFoundError
 
 
-async def create_session(session: AsyncSession, *, campaign_id: uuid.UUID) -> Session:
-    db_session = Session(campaign_id=campaign_id)
+async def create_session(
+    session: AsyncSession,
+    *,
+    campaign_id: uuid.UUID,
+    current_location_id: uuid.UUID | None = None,
+) -> Session:
+    db_session = Session(campaign_id=campaign_id, current_location_id=current_location_id)
     session.add(db_session)
     await session.flush()
     return db_session
