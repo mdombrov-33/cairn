@@ -60,11 +60,11 @@ async def test_npcs_have_stat_block_fields(client: AsyncClient) -> None:
     for npc in npcs:
         assert "ac" in npc
         assert "max_hp" in npc
-        assert "current_hp" in npc
+        assert "hp" in npc
         assert "cr" in npc
         assert "stats" in npc
         assert "conditions" in npc
-        assert npc["current_hp"] == npc["max_hp"]
+        assert npc["hp"] == npc["max_hp"]
 
 
 async def test_get_npc_by_id(client: AsyncClient) -> None:

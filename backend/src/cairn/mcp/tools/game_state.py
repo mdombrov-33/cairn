@@ -50,7 +50,7 @@ def _npc_to_dict(n: NPC) -> dict:
         "race": n.race,
         "class": getattr(n, "class_", None),
         "level": n.level,
-        "hp": n.current_hp,
+        "hp": n.hp,
         "max_hp": n.max_hp,
         "temp_hp": n.temp_hp,
         "ac": n.ac,

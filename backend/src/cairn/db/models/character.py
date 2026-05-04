@@ -35,6 +35,9 @@ class Character(Base):
     death_save_successes: Mapped[int] = mapped_column(default=0)
     death_save_failures: Mapped[int] = mapped_column(default=0)
 
+    cr: Mapped[float] = mapped_column(default=0.0)
+    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+
     # derived stats - stored for fast reads, recalculated on level-up
     proficiency_bonus: Mapped[int] = mapped_column(default=2)
     initiative: Mapped[int] = mapped_column(default=0)

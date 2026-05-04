@@ -36,11 +36,9 @@ class NPC(Base):
     # Combat stats
     ac: Mapped[int] = mapped_column(default=10)
     max_hp: Mapped[int] = mapped_column(default=1)
-    current_hp: Mapped[int] = mapped_column(default=1)
+    hp: Mapped[int] = mapped_column(default=1)
     temp_hp: Mapped[int] = mapped_column(default=0)
     speed: Mapped[int] = mapped_column(default=30)
-    death_save_successes: Mapped[int] = mapped_column(default=0)
-    death_save_failures: Mapped[int] = mapped_column(default=0)
     proficiency_bonus: Mapped[int] = mapped_column(default=2)
     initiative: Mapped[int] = mapped_column(default=0)
     passive_perception: Mapped[int] = mapped_column(default=10)

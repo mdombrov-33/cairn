@@ -100,8 +100,8 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                             "initiative_modifier": npc.initiative,
                             "zone": None,
                             "conditions": list(npc.conditions),
-                            "is_alive": npc.current_hp > 0,
-                            "is_conscious": npc.current_hp > 0,
+                            "is_alive": npc.hp > 0,
+                            "is_conscious": npc.hp > 0,
                         }
                     )
 
@@ -226,10 +226,10 @@ async def apply_damage(
                 npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
                 effective = max(0, amount - npc.temp_hp)
                 npc.temp_hp = max(0, npc.temp_hp - amount)
-                npc.current_hp = max(0, npc.current_hp - effective)
-                is_dead = npc.current_hp == 0
+                npc.hp = max(0, npc.hp - effective)
+                is_dead = npc.hp == 0
                 is_unconscious = is_dead
-                new_hp = npc.current_hp
+                new_hp = npc.hp
                 await db.commit()
                 return {
                     "combatant": npc.name,
@@ -308,9 +308,9 @@ async def apply_healing(
 
             elif combatant_type == "npc":
                 npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
-                npc.current_hp = min(npc.max_hp, npc.current_hp + amount)
+                npc.hp = min(npc.max_hp, npc.hp + amount)
                 await db.commit()
-                return {"combatant": npc.name, "hp": npc.current_hp, "max_hp": npc.max_hp}
+                return {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
 
             elif combatant_type == "monster":
                 session = await session_queries.get_session(db, uuid.UUID(session_id))

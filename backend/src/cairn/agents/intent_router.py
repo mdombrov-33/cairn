@@ -29,12 +29,14 @@ async def run(player_input: str) -> tuple[Intent, str | None]:
         temperature=prompt.temperature,
     )
 
+    cleaned = result.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+
     try:
-        data = json.loads(result.strip())
+        data = json.loads(cleaned)
         intent = str(data["intent"]).lower()
         npc_name: str | None = data.get("npc_name") or None
-    except (json.JSONDecodeError, KeyError):
-        intent = result.strip().lower()
+    except json.JSONDecodeError, KeyError:
+        intent = cleaned.lower()
         npc_name = None
 
     if intent not in _VALID_INTENTS:

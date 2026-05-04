@@ -19,7 +19,7 @@ async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, template_id: str)
     data = yaml.safe_load(path.read_text())
     for npc_data in data.get("npcs", []):
         kwargs = dict(npc_data)
-        kwargs.setdefault("current_hp", kwargs.get("max_hp", 1))
+        kwargs.setdefault("hp", kwargs.get("max_hp", 1))
         if "class" in kwargs:
             kwargs["class_"] = kwargs.pop("class")
         await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)

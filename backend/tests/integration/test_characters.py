@@ -116,7 +116,7 @@ async def test_create_returns_all_identity_fields(client: AsyncClient) -> None:
 
     assert char["name"] == "Ser Aldric"
     assert char["race"] == "Human"
-    assert char["character_class"] == "Fighter"
+    assert char["class"] == "Fighter"
     assert char["background"] == "Soldier"
     assert char["campaign_id"] == camp["id"]
     assert char["owner_id"] == "user_a"
