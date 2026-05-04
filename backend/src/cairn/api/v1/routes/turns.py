@@ -6,7 +6,7 @@ import structlog
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from cairn.agents import lore_keeper, rules_lawyer, scene_narrator
+from cairn.agents import combat_resolver, lore_keeper, rules_lawyer, scene_narrator
 from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
@@ -62,7 +62,19 @@ async def submit(
     async def generate() -> AsyncGenerator[str]:
         yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
-        if intent == "skill_check":
+        chunks: list[str] = []
+
+        if intent == "combat_action":
+            async for chunk in combat_resolver.run(body.player_input, str(session_id)):
+                chunks.append(chunk)
+                yield sse("token", {"text": chunk})
+
+            dm_response = "".join(chunks)
+            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
+            yield sse("turn_end", {"turn_id": str(turn.id)})
+            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+
+        elif intent == "skill_check":
             check = await rules_lawyer.run(body.player_input)
 
             setup_chunks: list[str] = []
@@ -101,7 +113,6 @@ async def submit(
             else:
                 npc_context = ""
 
-            chunks: list[str] = []
             async for chunk in scene_narrator.run(body.player_input, context=npc_context):
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})
@@ -112,7 +123,6 @@ async def submit(
             asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 
         else:  # narrative_action
-            chunks = []
             async for chunk in scene_narrator.run(body.player_input):
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})

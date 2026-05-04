@@ -1,3 +1,4 @@
+import json
 import time
 from collections.abc import AsyncIterator
 from typing import Any, cast
@@ -81,6 +82,111 @@ async def complete(
     if content is None:
         raise LLMError("LLM returned empty content")
     return content
+
+
+def _tool_to_oai(tool: Any) -> dict:
+    """Convert a langchain @tool to OpenAI function-call format."""
+    schema = (
+        tool.args_schema.model_json_schema()
+        if tool.args_schema
+        else {"type": "object", "properties": {}}
+    )
+    # Strip keys that don't belong in parameters (description lives at function level)
+    for key in ("title", "description"):
+        schema.pop(key, None)
+    return {
+        "type": "function",
+        "function": {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": schema,
+        },
+    }
+
+
+async def complete_with_tools(
+    model: str,
+    messages: list[dict],
+    tools: list[Any],
+    agent: str = "unknown",
+    fallbacks: list[str] | None = None,
+    max_iterations: int = 15,
+    **kwargs: Any,
+) -> tuple[str, list[dict]]:
+    """Run a tool-calling loop until the model stops requesting tool calls.
+
+    Returns (final_text_response, full_message_history).
+    Raises LLMError on LLM failure or if max_iterations is exceeded.
+    """
+    oai_tools = [_tool_to_oai(t) for t in tools]
+    tool_map = {t.name: t for t in tools}
+    msgs: list[dict] = list(messages)
+
+    for iteration in range(max_iterations):
+        t0 = time.perf_counter()
+        try:
+            response = await _call(model, msgs, fallbacks or [], tools=oai_tools, **kwargs)
+        except Exception as exc:
+            log.error("llm_error", model=model, agent=agent, error=str(exc))
+            raise LLMError(str(exc)) from exc
+
+        duration_ms = round((time.perf_counter() - t0) * 1000, 2)
+        msg = response.choices[0].message
+        tool_calls = getattr(msg, "tool_calls", None)
+
+        log.info(
+            "llm_tool_loop",
+            model=model,
+            agent=agent,
+            iteration=iteration,
+            has_tool_calls=bool(tool_calls),
+            duration_ms=duration_ms,
+        )
+
+        if not tool_calls:
+            content = msg.content or ""
+            return content, msgs
+
+        # Append assistant message with tool calls
+        msgs.append(
+            {
+                "role": "assistant",
+                "content": msg.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in tool_calls
+                ],
+            }
+        )
+
+        # Execute each tool call and append results
+        for tc in tool_calls:
+            name = tc.function.name
+            args = json.loads(tc.function.arguments)
+            if name in tool_map:
+                try:
+                    result = await tool_map[name].ainvoke(args)
+                except Exception as exc:
+                    result = {"error": str(exc)}
+                    log.warning("tool_call_failed", tool=name, error=str(exc))
+            else:
+                result = {"error": f"Unknown tool: {name}"}
+                log.warning("tool_call_unknown", tool=name)
+
+            log.info("tool_call", tool=name, agent=agent)
+            msgs.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result),
+                }
+            )
+
+    raise LLMError(f"Tool loop exceeded {max_iterations} iterations without finishing.")
 
 
 async def stream(

@@ -31,9 +31,15 @@ async def prepare(
         db, session_id=session_id, idx=idx, player_input=player_input
     )
 
-    intent, npc_name = await turn_graph.run(player_input, session_id)
-    if intent is None:
-        raise AgentError("IntentRouter returned no intent")
+    npc_name: str | None
+    if db_session.combat_active:
+        intent: str = "combat_action"
+        npc_name = None
+    else:
+        raw_intent, npc_name = await turn_graph.run(player_input, session_id)
+        if raw_intent is None:
+            raise AgentError("IntentRouter returned no intent")
+        intent = raw_intent
 
     log.info("turn_prepared", session_id=str(session_id), idx=idx, intent=intent, npc_name=npc_name)
     return turn, intent, npc_name, db_session.campaign_id, campaign.world_bible_namespace
