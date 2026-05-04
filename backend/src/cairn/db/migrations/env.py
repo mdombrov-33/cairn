@@ -32,7 +32,9 @@ _IGNORED_TABLES = {
 def include_object(
     obj: SchemaItem,
     name: str | None,
-    type_: Literal["schema", "table", "column", "index", "unique_constraint", "foreign_key_constraint"],
+    type_: Literal[
+        "schema", "table", "column", "index", "unique_constraint", "foreign_key_constraint"
+    ],
     reflected: bool,
     compare_to: SchemaItem | None,
 ) -> bool:
