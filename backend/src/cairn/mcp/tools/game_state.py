@@ -1,15 +1,20 @@
 import uuid
 
+import structlog
 from langchain_core.tools import tool
 
 from cairn.db import client as db_client
+from cairn.db.models.character import Character
+from cairn.db.models.npc import NPC
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
 
+log = structlog.get_logger()
 
-def _character_to_dict(c) -> dict:
+
+def _character_to_dict(c: Character) -> dict:
     return {
         "id": str(c.id),
         "type": "character",
@@ -37,7 +42,7 @@ def _character_to_dict(c) -> dict:
     }
 
 
-def _npc_to_dict(n) -> dict:
+def _npc_to_dict(n: NPC) -> dict:
     return {
         "id": str(n.id),
         "type": "npc",
@@ -77,8 +82,9 @@ async def get_character(character_id: str) -> dict:
         try:
             char = await character_queries.get_character(db, uuid.UUID(character_id))
             return _character_to_dict(char)
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -94,8 +100,9 @@ async def get_npc(npc_id: str) -> dict:
         try:
             npc = await npc_queries.get_npc(db, uuid.UUID(npc_id))
             return _npc_to_dict(npc)
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -112,8 +119,9 @@ async def get_party(session_id: str) -> dict:
         try:
             characters = await party_queries.get_party(db, uuid.UUID(session_id))
             return {"party": [_character_to_dict(c) for c in characters]}
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -132,5 +140,6 @@ async def get_combat_state(session_id: str) -> dict:
                 "combat_active": True,
                 "combat_state": session.combat_state,
             }
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}

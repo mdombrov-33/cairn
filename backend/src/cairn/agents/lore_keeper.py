@@ -38,5 +38,5 @@ async def run(dm_response: str) -> list[LoreEntry]:
         entries = [LoreEntry.model_validate(e) for e in data if e.get("type") in _VALID_TYPES]
         return entries
     except Exception as exc:
-        log.warning("lore_keeper_bad_output", raw=raw, error=str(exc))
+        log.info("lore_keeper_bad_output", raw=raw, error=str(exc))
         return []

@@ -46,5 +46,5 @@ async def run(player_input: str, character_context: str = "") -> CheckDecision:
         data = json.loads(raw.strip())
         return CheckDecision.model_validate(data)
     except (json.JSONDecodeError, ValidationError) as exc:
-        log.warning("rules_lawyer_bad_output", raw=raw, error=str(exc))
+        log.error("rules_lawyer_bad_output", raw=raw, error=str(exc))
         raise AgentError(f"RulesLawyer returned invalid JSON: {raw!r}") from exc

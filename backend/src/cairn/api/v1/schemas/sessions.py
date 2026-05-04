@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -9,6 +10,9 @@ class SessionResponse(BaseModel):
 
     id: uuid.UUID
     campaign_id: uuid.UUID
+    current_location_id: uuid.UUID | None
     started_at: datetime
     ended_at: datetime | None
     summary: str | None
+    combat_active: bool
+    combat_state: dict[str, Any] | None

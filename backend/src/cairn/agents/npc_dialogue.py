@@ -56,5 +56,5 @@ async def run(
         data = json.loads(raw.strip())
         return NPCDialogueResult.model_validate(data)
     except (json.JSONDecodeError, ValidationError) as exc:
-        log.warning("npc_dialogue_bad_output", raw=raw, error=str(exc))
+        log.error("npc_dialogue_bad_output", raw=raw, error=str(exc))
         raise AgentError(f"NPCDialogue returned invalid JSON: {raw!r}") from exc

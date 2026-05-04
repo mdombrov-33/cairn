@@ -1,16 +1,18 @@
 import asyncio
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 
 import structlog
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.agents import combat_resolver, lore_keeper, rules_lawyer, scene_narrator
 from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
 from cairn.db import client as db_client
+from cairn.db.models.turn import Turn
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
@@ -45,7 +47,26 @@ async def _run_lore_keeper(
                 )
         log.info("lore_keeper_done", count=len(entries), campaign_id=str(campaign_id))
     except Exception as exc:
-        log.warning("lore_keeper_failed", error=str(exc), campaign_id=str(campaign_id))
+        log.error("lore_keeper_failed", error=str(exc), campaign_id=str(campaign_id))
+
+
+async def _narrate(
+    narrator: AsyncIterator[str],
+    turn: Turn,
+    db: AsyncSession,
+    campaign_id: uuid.UUID,
+    namespace: str,
+) -> AsyncGenerator[str]:
+    """Stream tokens from a narrator, save the full response, emit turn_end, fire lore_keeper."""
+    chunks: list[str] = []
+    async for chunk in narrator:
+        chunks.append(chunk)
+        yield sse("token", {"text": chunk})
+
+    dm_response = "".join(chunks)
+    await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
+    yield sse("turn_end", {"turn_id": str(turn.id)})
+    asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 
 
 @router.post("/{session_id}/turns")
@@ -62,36 +83,28 @@ async def submit(
     async def generate() -> AsyncGenerator[str]:
         yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
-        chunks: list[str] = []
-
         if intent == "combat_action":
-            async for chunk in combat_resolver.run(body.player_input, str(session_id)):
-                chunks.append(chunk)
-                yield sse("token", {"text": chunk})
-
-            dm_response = "".join(chunks)
-            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
-            yield sse("turn_end", {"turn_id": str(turn.id)})
-            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+            narrator = combat_resolver.run(body.player_input, str(session_id))
 
         elif intent == "skill_check":
             check = await rules_lawyer.run(body.player_input)
-
             setup_chunks: list[str] = []
             async for chunk in scene_narrator.run(body.player_input):
                 setup_chunks.append(chunk)
                 yield sse("token", {"text": chunk})
-
             setup_prose = "".join(setup_chunks)
-            check_data = {
-                "skill": check.skill,
-                "dc": check.dc,
-                "modifier": check.modifier,
-                "roll_type": check.roll_type,
-                "status": "pending",
-                "setup_prose": setup_prose,
-            }
-            await turn_queries.update_turn_check(db, turn.id, check_data=check_data)
+            await turn_queries.update_turn_check(
+                db,
+                turn.id,
+                check_data={
+                    "skill": check.skill,
+                    "dc": check.dc,
+                    "modifier": check.modifier,
+                    "roll_type": check.roll_type,
+                    "status": "pending",
+                    "setup_prose": setup_prose,
+                },
+            )
             yield sse(
                 "check_required",
                 {
@@ -101,10 +114,10 @@ async def submit(
                     "roll_type": check.roll_type,
                 },
             )
+            return
 
         elif intent == "npc_dialogue":
             npc = await npc_queries.find_by_name(db, campaign_id, npc_name or "")
-
             if npc is not None:
                 result = await npc_dialogue_agent.run(body.player_input, npc)
                 npc_context = f'[{npc.name}]: "{result.dialogue}"'
@@ -112,25 +125,13 @@ async def submit(
                     await npc_queries.update_disposition(db, npc.id, result.disposition_change)
             else:
                 npc_context = ""
-
-            async for chunk in scene_narrator.run(body.player_input, context=npc_context):
-                chunks.append(chunk)
-                yield sse("token", {"text": chunk})
-
-            dm_response = "".join(chunks)
-            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
-            yield sse("turn_end", {"turn_id": str(turn.id)})
-            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+            narrator = scene_narrator.run(body.player_input, context=npc_context)
 
         else:  # narrative_action
-            async for chunk in scene_narrator.run(body.player_input):
-                chunks.append(chunk)
-                yield sse("token", {"text": chunk})
+            narrator = scene_narrator.run(body.player_input)
 
-            dm_response = "".join(chunks)
-            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
-            yield sse("turn_end", {"turn_id": str(turn.id)})
-            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+        async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+            yield event
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
 
@@ -167,16 +168,18 @@ async def resolve(
 
         outcome_prose = "".join(outcome_chunks)
         dm_response = check["setup_prose"] + "\n\n" + outcome_prose
-        resolved_check = {
-            **check,
-            "status": "resolved",
-            "roll": body.roll,
-            "total": total,
-            "success": success,
-        }
         await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
-        await turn_queries.update_turn_check(db, turn.id, check_data=resolved_check)
-
+        await turn_queries.update_turn_check(
+            db,
+            turn.id,
+            check_data={
+                **check,
+                "status": "resolved",
+                "roll": body.roll,
+                "total": total,
+                "success": success,
+            },
+        )
         yield sse("turn_end", {"turn_id": str(turn.id)})
         asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 

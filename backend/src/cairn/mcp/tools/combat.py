@@ -156,9 +156,9 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
             await db.commit()
 
             return {"combat_started": True, "combat_state": combat_state}
-        except Exception as e:
-            log.exception("start_combat_error", session_id=session_id)
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("start_combat_error", session_id=session_id, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -176,8 +176,9 @@ async def end_combat(session_id: str, outcome: str) -> dict:
             )
             await db.commit()
             return {"combat_ended": True, "outcome": outcome}
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -269,9 +270,9 @@ async def apply_damage(
             else:
                 return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
-        except Exception as e:
-            log.exception("apply_damage_error")
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("apply_damage_error", error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -336,8 +337,9 @@ async def apply_healing(
             else:
                 return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -378,8 +380,9 @@ async def apply_condition(
             await db.commit()
             return {"combatant": combatant["name"], "conditions": conditions}
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -415,8 +418,9 @@ async def remove_condition(
             await db.commit()
             return {"combatant": combatant["name"], "conditions": combatant["conditions"]}
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -477,8 +481,9 @@ async def roll_death_save(session_id: str, character_id: str) -> dict:
                 "hp": char.hp,
             }
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
 
 
 @tool
@@ -530,5 +535,6 @@ async def advance_turn(session_id: str) -> dict:
                 "current_combatant_id": current["id"],
             }
 
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception as exc:
+            log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}

@@ -5,7 +5,7 @@ import structlog
 
 from cairn.agents import scene_narrator
 from cairn.config import get_settings
-from cairn.domain.exceptions import AgentError
+from cairn.domain.exceptions import AgentError, ToolError
 from cairn.llm.client import complete_with_tools
 from cairn.llm.router import get_model
 from cairn.mcp.tools import ALL_TOOLS
@@ -69,6 +69,8 @@ async def _resolve_mechanics(
             fallbacks=fallbacks,
             temperature=prompt.temperature,
         )
+    except ToolError:
+        raise
     except Exception as exc:
         log.error("combat_resolver_failed", error=str(exc))
         raise AgentError(f"CombatResolver failed: {exc}") from exc

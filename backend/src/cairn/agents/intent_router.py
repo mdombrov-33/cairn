@@ -33,13 +33,12 @@ async def run(player_input: str) -> tuple[Intent, str | None]:
         data = json.loads(result.strip())
         intent = str(data["intent"]).lower()
         npc_name: str | None = data.get("npc_name") or None
-    except json.JSONDecodeError, KeyError:
-        # Fallback: plain string (backwards compat with non-JSON responses)
+    except (json.JSONDecodeError, KeyError):
         intent = result.strip().lower()
         npc_name = None
 
     if intent not in _VALID_INTENTS:
-        log.warning("intent_router_unexpected", raw=result)
+        log.error("intent_router_unexpected", raw=result)
         raise AgentError(f"IntentRouter returned unexpected intent: {intent!r}")
 
     return cast(Intent, intent), npc_name

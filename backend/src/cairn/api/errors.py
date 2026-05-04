@@ -2,47 +2,21 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from cairn.domain.exceptions import (
-    AgentError,
-    CairnError,
-    ConflictError,
-    LLMError,
-    NotFoundError,
-    QueueError,
-    RAGError,
-)
+from cairn.domain.exceptions import CairnError
 
-_STATUS_BY_EXC: dict[type[CairnError], int] = {
-    NotFoundError: 404,
-    ConflictError: 409,
-    AgentError: 502,
-    RAGError: 502,
-    LLMError: 502,
-    QueueError: 503,
-}
+log = structlog.get_logger("error")
 
 
 async def cairn_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, CairnError)
-    status = _STATUS_BY_EXC.get(type(exc), 500)
-    log = structlog.get_logger("error")
-    if status >= 500:
+    if exc.http_status >= 500:
         log.error(
-            "cairn_error",
-            code=exc.code,
-            message=exc.message,
-            status=status,
-            exc_info=True,
-        )
+            "cairn_error", code=exc.code, message=exc.message, status=exc.http_status, exc_info=True
+        )  # noqa: E501
     else:
-        log.info(
-            "cairn_error",
-            code=exc.code,
-            message=exc.message,
-            status=status,
-        )
+        log.info("cairn_error", code=exc.code, message=exc.message, status=exc.http_status)
     return JSONResponse(
-        status_code=status,
+        status_code=exc.http_status,
         content={"error": {"code": exc.code, "message": exc.message}},
     )
 
