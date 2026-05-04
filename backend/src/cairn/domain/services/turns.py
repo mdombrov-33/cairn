@@ -19,10 +19,10 @@ async def prepare(
     session_id: uuid.UUID,
     owner_id: str,
     player_input: str,
-) -> tuple[Turn, str, str | None, uuid.UUID]:
-    """Create turn row and classify intent. Returns (turn, intent, npc_name, campaign_id)."""
+) -> tuple[Turn, str, str | None, uuid.UUID, str]:
+    """Create turn row and classify intent. Returns (turn, intent, npc_name, campaign_id, namespace)."""
     db_session = await session_queries.get_session(db, session_id)
-    await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
+    campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
 
     existing = await turn_queries.list_turns(db, session_id)
     idx = len(existing)
@@ -36,13 +36,24 @@ async def prepare(
         raise AgentError("IntentRouter returned no intent")
 
     log.info("turn_prepared", session_id=str(session_id), idx=idx, intent=intent, npc_name=npc_name)
-    return turn, intent, npc_name, db_session.campaign_id
+    return turn, intent, npc_name, db_session.campaign_id, campaign.world_bible_namespace
 
 
 async def list_turns(db: AsyncSession, *, session_id: uuid.UUID, owner_id: str) -> list[Turn]:
     db_session = await session_queries.get_session(db, session_id)
     await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
     return await turn_queries.list_turns(db, session_id)
+
+
+async def get_campaign_info(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+) -> tuple[uuid.UUID, str]:
+    """Returns (campaign_id, world_bible_namespace) for the session."""
+    db_session = await session_queries.get_session(db, session_id)
+    campaign = await campaign_queries.get_campaign(db, db_session.campaign_id)
+    return db_session.campaign_id, campaign.world_bible_namespace
 
 
 async def prepare_resolve(

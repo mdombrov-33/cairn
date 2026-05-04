@@ -145,10 +145,12 @@ async def test_npc_dialogue_persists_dm_response(client: AsyncClient) -> None:
     events = _parse_sse(r.text)
     turn_id = events[0]["data"]["turn_id"]
 
-    turns = (await client.get(
-        f"/v1/sessions/{sess['id']}/turns",
-        headers={"X-User-Id": "user_a"},
-    )).json()
+    turns = (
+        await client.get(
+            f"/v1/sessions/{sess['id']}/turns",
+            headers={"X-User-Id": "user_a"},
+        )
+    ).json()
 
     turn = next(t for t in turns if t["id"] == turn_id)
     assert turn["dm_response"] is not None

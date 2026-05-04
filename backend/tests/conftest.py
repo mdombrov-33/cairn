@@ -18,16 +18,19 @@ from cairn.db import client as db_client
 _FAKE_STREAM_TOKENS = ["The tavern ", "is quiet ", "tonight."]
 _FAKE_CHECK_JSON = '{"skill": "persuasion", "dc": 14, "modifier": 4, "roll_type": "d20"}'
 _FAKE_NPC_JSON = '{"dialogue": "Aye, what\'ll it be?", "disposition_change": null}'
+_FAKE_LORE_JSON = '[{"type": "NPC", "key": "old_grim_bartender", "content": "Old Grim is the gruff bartender of the Grimwood Tavern, a retired soldier."}]'
 
 
 async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
     if stream:
+
         async def _gen():
             for text in _FAKE_STREAM_TOKENS:
                 chunk = MagicMock()
                 chunk.choices = [MagicMock()]
                 chunk.choices[0].delta.content = text
                 yield chunk
+
         return _gen()
     else:
         content = messages[-1].get("content", "") if messages else ""
@@ -35,6 +38,8 @@ async def _fake_acompletion(model: str, messages: list, stream: bool = False, **
             reply = _FAKE_NPC_JSON
         elif "skill" in content and "dc" in content.lower() and "modifier" in content:
             reply = _FAKE_CHECK_JSON
+        elif "QUEST" in content and "world bible" in content.lower():
+            reply = _FAKE_LORE_JSON
         else:
             reply = "narrative_action"
         response = MagicMock()

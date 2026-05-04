@@ -81,10 +81,12 @@ async def test_skill_check_phase1_persists_pending_check(client: AsyncClient) ->
     events = await _submit_skill_check(client, sess["id"])
     turn_id = events[0]["data"]["turn_id"]
 
-    turns = (await client.get(
-        f"/v1/sessions/{sess['id']}/turns",
-        headers={"X-User-Id": "user_a"},
-    )).json()
+    turns = (
+        await client.get(
+            f"/v1/sessions/{sess['id']}/turns",
+            headers={"X-User-Id": "user_a"},
+        )
+    ).json()
 
     turn = turns[0]
     assert turn["id"] == turn_id
@@ -208,10 +210,12 @@ async def test_resolve_persists_dm_response_and_check(client: AsyncClient) -> No
         json={"roll": 17},
     )
 
-    turns = (await client.get(
-        f"/v1/sessions/{sess['id']}/turns",
-        headers={"X-User-Id": "user_a"},
-    )).json()
+    turns = (
+        await client.get(
+            f"/v1/sessions/{sess['id']}/turns",
+            headers={"X-User-Id": "user_a"},
+        )
+    ).json()
 
     turn = turns[0]
     assert turn["dm_response"] is not None

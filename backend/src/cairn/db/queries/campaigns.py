@@ -26,6 +26,14 @@ async def create_campaign(
     return campaign
 
 
+async def get_campaign(session: AsyncSession, campaign_id: uuid.UUID) -> Campaign:
+    result = await session.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = result.scalar_one_or_none()
+    if campaign is None:
+        raise NotFoundError(f"campaign {campaign_id} not found", code="campaign_not_found")
+    return campaign
+
+
 async def get_campaign_owned_by(
     session: AsyncSession, campaign_id: uuid.UUID, owner_id: str
 ) -> Campaign:

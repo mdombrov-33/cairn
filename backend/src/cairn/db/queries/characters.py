@@ -25,12 +25,8 @@ async def get_character_by_campaign(
     session: AsyncSession,
     campaign_id: uuid.UUID,
 ) -> Character:
-    result = await session.execute(
-        select(Character).where(Character.campaign_id == campaign_id)
-    )
+    result = await session.execute(select(Character).where(Character.campaign_id == campaign_id))
     character = result.scalar_one_or_none()
     if character is None:
-        raise NotFoundError(
-            f"no character for campaign {campaign_id}", code="character_not_found"
-        )
+        raise NotFoundError(f"no character for campaign {campaign_id}", code="character_not_found")
     return character

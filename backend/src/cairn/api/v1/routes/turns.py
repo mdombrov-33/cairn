@@ -1,19 +1,51 @@
+import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 
+import structlog
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from cairn.agents import lore_keeper, rules_lawyer, scene_narrator
 from cairn.agents import npc_dialogue as npc_dialogue_agent
-from cairn.agents import rules_lawyer, scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import turns as turn_queries
+from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
 
+log = structlog.get_logger()
+
 router = APIRouter(prefix="/v1/sessions", tags=["turns"])
+
+
+async def _run_lore_keeper(
+    dm_response: str,
+    campaign_id: uuid.UUID,
+    namespace: str,
+    source_turn_id: uuid.UUID,
+) -> None:
+    try:
+        entries = await lore_keeper.run(dm_response)
+        if not entries:
+            return
+        async with db_client.get_sessionmaker()() as session, session.begin():
+            for entry in entries:
+                await world_bible_queries.upsert_entry(
+                    session,
+                    campaign_id=campaign_id,
+                    namespace=namespace,
+                    type_=entry.type,
+                    key=entry.key,
+                    content=entry.content,
+                    source_turn_id=source_turn_id,
+                )
+        log.info("lore_keeper_done", count=len(entries), campaign_id=str(campaign_id))
+    except Exception as exc:
+        log.warning("lore_keeper_failed", error=str(exc), campaign_id=str(campaign_id))
 
 
 @router.post("/{session_id}/turns")
@@ -23,7 +55,7 @@ async def submit(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, intent, npc_name, campaign_id = await service.prepare(
+    turn, intent, npc_name, campaign_id, namespace = await service.prepare(
         db, session_id=session_id, owner_id=user_id, player_input=body.player_input
     )
 
@@ -74,8 +106,10 @@ async def submit(
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})
 
-            await turn_queries.update_turn_response(db, turn.id, dm_response="".join(chunks))
+            dm_response = "".join(chunks)
+            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
             yield sse("turn_end", {"turn_id": str(turn.id)})
+            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 
         else:  # narrative_action
             chunks = []
@@ -83,8 +117,10 @@ async def submit(
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})
 
-            await turn_queries.update_turn_response(db, turn.id, dm_response="".join(chunks))
+            dm_response = "".join(chunks)
+            await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
             yield sse("turn_end", {"turn_id": str(turn.id)})
+            asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
 
@@ -100,6 +136,7 @@ async def resolve(
     turn, check = await service.prepare_resolve(
         db, session_id=session_id, turn_id=turn_id, owner_id=user_id
     )
+    campaign_id, namespace = await service.get_campaign_info(db, session_id=session_id)
 
     async def generate() -> AsyncGenerator[str]:
         total = body.roll + check["modifier"]
@@ -131,6 +168,7 @@ async def resolve(
         await turn_queries.update_turn_check(db, turn.id, check_data=resolved_check)
 
         yield sse("turn_end", {"turn_id": str(turn.id)})
+        asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
 

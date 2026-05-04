@@ -30,9 +30,7 @@ async def get_npc(session: AsyncSession, npc_id: uuid.UUID) -> NPC:
     return npc
 
 
-async def find_by_name(
-    session: AsyncSession, campaign_id: uuid.UUID, name_hint: str
-) -> NPC | None:
+async def find_by_name(session: AsyncSession, campaign_id: uuid.UUID, name_hint: str) -> NPC | None:
     """Fuzzy match: finds the first NPC whose name contains the hint or vice versa."""
     npcs = await get_npcs_by_campaign(session, campaign_id)
     hint = name_hint.lower()
@@ -43,9 +41,7 @@ async def find_by_name(
     return None
 
 
-async def update_disposition(
-    session: AsyncSession, npc_id: uuid.UUID, disposition: str
-) -> NPC:
+async def update_disposition(session: AsyncSession, npc_id: uuid.UUID, disposition: str) -> NPC:
     npc = await get_npc(session, npc_id)
     npc.disposition = disposition
     await session.flush()

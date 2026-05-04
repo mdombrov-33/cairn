@@ -54,7 +54,5 @@ async def get(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> CharacterResponse:
-    character = await service.get_for_campaign(
-        db, campaign_id=campaign_id, owner_id=user_id
-    )
+    character = await service.get_for_campaign(db, campaign_id=campaign_id, owner_id=user_id)
     return CharacterResponse.model_validate(character)
