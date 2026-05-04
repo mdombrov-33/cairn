@@ -38,7 +38,7 @@ async def _session(client: AsyncClient, campaign_id: str) -> dict:
 
 
 async def _submit_skill_check(client: AsyncClient, session_id: str) -> list[dict]:
-    with patch("cairn.pipelines.turn_graph.run", return_value="skill_check"):
+    with patch("cairn.pipelines.turn_graph.run", return_value=("skill_check", None)):
         r = await client.post(
             f"/v1/sessions/{session_id}/turns",
             headers={"X-User-Id": "user_a"},

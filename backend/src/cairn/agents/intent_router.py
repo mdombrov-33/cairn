@@ -1,3 +1,4 @@
+import json
 from typing import Literal, cast
 
 import structlog
@@ -14,7 +15,7 @@ Intent = Literal["narrative_action", "skill_check", "npc_dialogue"]
 _VALID_INTENTS = {"narrative_action", "skill_check", "npc_dialogue"}
 
 
-async def run(player_input: str) -> Intent:
+async def run(player_input: str) -> tuple[Intent, str | None]:
     settings = get_settings()
     version = resolve_version("intent_router", settings.llm_prompt_versions)
     prompt = load_prompt("intent_router", version)
@@ -28,9 +29,17 @@ async def run(player_input: str) -> Intent:
         temperature=prompt.temperature,
     )
 
-    intent = result.strip().lower()
+    try:
+        data = json.loads(result.strip())
+        intent = str(data["intent"]).lower()
+        npc_name: str | None = data.get("npc_name") or None
+    except (json.JSONDecodeError, KeyError):
+        # Fallback: plain string (backwards compat with non-JSON responses)
+        intent = result.strip().lower()
+        npc_name = None
+
     if intent not in _VALID_INTENTS:
         log.warning("intent_router_unexpected", raw=result)
-        raise AgentError(f"IntentRouter returned unexpected value: {result!r}")
+        raise AgentError(f"IntentRouter returned unexpected intent: {intent!r}")
 
-    return cast(Intent, intent)
+    return cast(Intent, intent), npc_name

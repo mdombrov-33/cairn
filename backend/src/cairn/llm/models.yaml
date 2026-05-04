@@ -22,3 +22,9 @@ agents:
       primary: ollama/llama3.1:8b
     frontier:
       primary: openai/gpt-5.4-mini
+  npc_dialogue:
+    local:
+      primary: ollama/llama3.1:8b
+    frontier:
+      primary: openai/gpt-5.4-mini
+      fallback: openai/gpt-5.4

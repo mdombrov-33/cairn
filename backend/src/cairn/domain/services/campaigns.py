@@ -1,9 +1,27 @@
 import uuid
+from pathlib import Path
 
+import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.campaign import Campaign
 from cairn.db.queries import campaigns as queries
+from cairn.db.queries import npcs as npc_queries
+
+_SEED_DIR = Path(__file__).parent.parent.parent / "seed" / "templates"
+
+
+async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, template_id: str) -> None:
+    path = _SEED_DIR / template_id / "npcs.yaml"
+    if not path.exists():
+        return
+    data = yaml.safe_load(path.read_text())
+    for npc_data in data.get("npcs", []):
+        kwargs = dict(npc_data)
+        kwargs.setdefault("current_hp", kwargs.get("max_hp", 1))
+        if "class" in kwargs:
+            kwargs["class_"] = kwargs.pop("class")
+        await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)
 
 
 async def create(
@@ -13,13 +31,15 @@ async def create(
     name: str,
     template_id: str,
 ) -> Campaign:
-    return await queries.create_campaign(
+    campaign = await queries.create_campaign(
         db,
         owner_id=owner_id,
         name=name,
         template_id=template_id,
         world_bible_namespace=f"campaign_{uuid.uuid4().hex}",
     )
+    await _seed_npcs(db, campaign.id, template_id)
+    return campaign
 
 
 async def get(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> Campaign:

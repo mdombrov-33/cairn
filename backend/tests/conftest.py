@@ -17,6 +17,7 @@ from cairn.db import client as db_client
 
 _FAKE_STREAM_TOKENS = ["The tavern ", "is quiet ", "tonight."]
 _FAKE_CHECK_JSON = '{"skill": "persuasion", "dc": 14, "modifier": 4, "roll_type": "d20"}'
+_FAKE_NPC_JSON = '{"dialogue": "Aye, what\'ll it be?", "disposition_change": null}'
 
 
 async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
@@ -29,9 +30,10 @@ async def _fake_acompletion(model: str, messages: list, stream: bool = False, **
                 yield chunk
         return _gen()
     else:
-        # Detect rules_lawyer calls by checking if the prompt asks for JSON check output
         content = messages[-1].get("content", "") if messages else ""
-        if "skill" in content and "dc" in content.lower() and "modifier" in content:
+        if "NPC:" in content and "disposition" in content:
+            reply = _FAKE_NPC_JSON
+        elif "skill" in content and "dc" in content.lower() and "modifier" in content:
             reply = _FAKE_CHECK_JSON
         else:
             reply = "narrative_action"
@@ -48,7 +50,7 @@ async def _fake_acompletion(model: str, messages: list, stream: bool = False, **
 def fake_llm():
     with (
         patch("litellm.acompletion", side_effect=_fake_acompletion),
-        patch("cairn.pipelines.turn_graph.run", return_value="narrative_action"),
+        patch("cairn.pipelines.turn_graph.run", return_value=("narrative_action", None)),
     ):
         yield
 

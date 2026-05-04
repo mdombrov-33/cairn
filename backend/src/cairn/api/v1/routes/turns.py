@@ -4,9 +4,11 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.agents import rules_lawyer, scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
@@ -21,7 +23,7 @@ async def submit(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, intent = await service.prepare(
+    turn, intent, npc_name, campaign_id = await service.prepare(
         db, session_id=session_id, owner_id=user_id, player_input=body.player_input
     )
 
@@ -56,8 +58,27 @@ async def submit(
                 },
             )
 
-        else:
+        elif intent == "npc_dialogue":
+            npc = await npc_queries.find_by_name(db, campaign_id, npc_name or "")
+
+            if npc is not None:
+                result = await npc_dialogue_agent.run(body.player_input, npc)
+                npc_context = f'[{npc.name}]: "{result.dialogue}"'
+                if result.disposition_change:
+                    await npc_queries.update_disposition(db, npc.id, result.disposition_change)
+            else:
+                npc_context = ""
+
             chunks: list[str] = []
+            async for chunk in scene_narrator.run(body.player_input, context=npc_context):
+                chunks.append(chunk)
+                yield sse("token", {"text": chunk})
+
+            await turn_queries.update_turn_response(db, turn.id, dm_response="".join(chunks))
+            yield sse("turn_end", {"turn_id": str(turn.id)})
+
+        else:  # narrative_action
+            chunks = []
             async for chunk in scene_narrator.run(body.player_input):
                 chunks.append(chunk)
                 yield sse("token", {"text": chunk})
