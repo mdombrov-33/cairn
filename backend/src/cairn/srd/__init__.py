@@ -57,6 +57,23 @@ def get_all_conditions() -> list[dict]:
     return _load_list("conditions")
 
 
+def get_feature(name: str) -> dict | None:
+    key = (
+        name.lower().replace(" ", "-").replace("(", "").replace(")", "").replace(",", "").strip("-")
+    )  # noqa: E501
+    return _load_dict("features").get(key)
+
+
+def get_trait(name: str) -> dict | None:
+    key = name.lower().replace(" ", "-")
+    return _load_dict("traits").get(key)
+
+
+def get_subclass(name: str) -> dict | None:
+    key = name.lower().replace(" ", "-")
+    return _load_dict("subclasses").get(key)
+
+
 def list_spells_for_character(spells_known: list[str]) -> list[dict]:
     """Return full spell data for each spell a character knows."""
     result = []

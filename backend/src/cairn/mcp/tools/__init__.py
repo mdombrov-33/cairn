@@ -14,9 +14,12 @@ from cairn.mcp.tools.srd import (
     list_spells_for_class,
     lookup_class,
     lookup_condition,
+    lookup_feature,
     lookup_monster,
     lookup_race,
     lookup_spell,
+    lookup_subclass,
+    lookup_trait,
     lookup_weapon,
 )
 
@@ -32,6 +35,9 @@ ALL_TOOLS = [
     lookup_weapon,
     lookup_race,
     lookup_class,
+    lookup_feature,
+    lookup_trait,
+    lookup_subclass,
     list_spells_for_class,
     # Game state reads
     get_character,

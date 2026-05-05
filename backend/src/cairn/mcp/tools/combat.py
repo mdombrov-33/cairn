@@ -7,7 +7,7 @@ import uuid
 import structlog
 from langchain_core.tools import tool
 
-from cairn import rules
+from cairn import srd as rules
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries

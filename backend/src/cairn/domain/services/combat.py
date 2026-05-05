@@ -5,7 +5,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn import rules
+from cairn import srd as rules
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries

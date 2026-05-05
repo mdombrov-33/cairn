@@ -1,7 +1,7 @@
 from langchain_core.tools import tool
 
-from cairn import rules
-from cairn.rules import _load_list
+from cairn import srd as rules
+from cairn.srd import _load_list
 
 
 @tool
@@ -108,6 +108,52 @@ def lookup_class(name: str, level: int = 1) -> dict:
         },
         "at_level": level_data,
     }
+
+
+@tool
+def lookup_feature(name: str) -> dict:
+    """Look up a class feature's full description and mechanics.
+
+    Use this when a character has a feature you need to understand — Action Surge,
+    Sneak Attack, Rage, Wild Shape, Channel Divinity, Bardic Inspiration, etc.
+
+    Args:
+        name: Feature name, e.g. "action-surge-1-use", "sneak-attack", "rage", "second-wind".
+    """
+    feature = rules.get_feature(name)
+    if feature is None:
+        return {
+            "error": f"Feature '{name}' not found. Try the index form e.g. 'action-surge-1-use'."
+        }
+    return feature
+
+
+@tool
+def lookup_trait(name: str) -> dict:
+    """Look up a racial trait's description and mechanics.
+
+    Use for racial abilities like Darkvision, Fey Ancestry, Gnome Cunning, Relentless Endurance.
+
+    Args:
+        name: Trait name, e.g. "darkvision", "fey-ancestry", "relentless-endurance".
+    """
+    trait = rules.get_trait(name)
+    if trait is None:
+        return {"error": f"Trait '{name}' not found."}
+    return trait
+
+
+@tool
+def lookup_subclass(name: str) -> dict:
+    """Look up a subclass's features and description.
+
+    Args:
+        name: Subclass index, e.g. "champion", "thief", "evocation", "life".
+    """
+    subclass = rules.get_subclass(name)
+    if subclass is None:
+        return {"error": f"Subclass '{name}' not found."}
+    return subclass
 
 
 @tool
