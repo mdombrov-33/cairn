@@ -63,8 +63,6 @@ def _npc_to_dict(n: NPC) -> dict:
         "spellcasting_ability": n.spellcasting_ability,
         "spell_slots": n.spell_slots,
         "spells_known": n.spells_known,
-        "death_save_successes": n.death_save_successes,
-        "death_save_failures": n.death_save_failures,
         "conditions": n.conditions,
         "disposition": n.disposition,
         "bio": n.bio,
