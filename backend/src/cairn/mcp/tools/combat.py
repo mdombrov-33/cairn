@@ -76,6 +76,8 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                     {
                         "id": str(char.id),
                         "type": "character",
+                        "team": "players",
+                        "ai_controlled": char.is_companion,
                         "name": char.name,
                         "initiative_roll": roll,
                         "initiative_modifier": char.initiative,
@@ -86,8 +88,9 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                     }
                 )
 
-            # Enroll enemies
+            # Enroll enemies (and optional ally NPCs via team="players")
             for enemy in enemies:
+                team = enemy.get("team", "enemies")
                 if enemy["type"] == "npc":
                     npc = await npc_queries.get_npc(db, uuid.UUID(enemy["id"]))
                     roll = random.randint(1, 20) + npc.initiative
@@ -95,6 +98,7 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                         {
                             "id": str(npc.id),
                             "type": "npc",
+                            "team": team,
                             "name": npc.name,
                             "initiative_roll": roll,
                             "initiative_modifier": npc.initiative,
@@ -122,6 +126,7 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                             {
                                 "id": f"monster-{uuid.uuid4()}",
                                 "type": "monster",
+                                "team": "enemies",
                                 "name": label,
                                 "srd_index": monster["index"],
                                 "initiative_roll": roll,

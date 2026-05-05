@@ -41,6 +41,10 @@ def _character_to_dict(c: Character) -> dict:
         "death_save_failures": c.death_save_failures,
         "features": c.features,
         "inventory": c.inventory,
+        "is_companion": c.is_companion,
+        "bio": c.bio,
+        "personality": c.personality,
+        "voice_traits": c.voice_traits,
     }
 
 

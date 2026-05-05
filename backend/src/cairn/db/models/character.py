@@ -43,6 +43,14 @@ class Character(Base):
     initiative: Mapped[int] = mapped_column(default=0)
     passive_perception: Mapped[int] = mapped_column(default=10)
 
+    # companion flag — False = player's own character, True = AI-controlled party member
+    is_companion: Mapped[bool] = mapped_column(default=False)
+
+    # narrative voice — used by ally_ai to play this character
+    bio: Mapped[str | None]
+    personality: Mapped[str | None]
+    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]
     concentration: Mapped[str | None]  # name of currently concentrated spell, if any

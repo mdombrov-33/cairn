@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 
 import structlog
 
-from cairn.agents import enemy_ai, scene_narrator
+from cairn.agents import ally_ai, enemy_ai, scene_narrator
 from cairn.config import get_settings
 from cairn.db import client as db_client
 from cairn.db.queries import party_members as party_queries
@@ -102,7 +102,7 @@ async def run(
     player_summary = await _resolve_mechanics(player_input, session_id, context)
 
     enemy_summaries: list[str] = []
-    for _ in range(20):  # safety cap — no encounter has 20 monsters
+    for _ in range(20):  # safety cap — no encounter has 20 combatants
         combat_state, _ = await _fetch_combat_context(session_id)
         if not combat_state:
             break  # combat ended (victory/defeat)
@@ -110,11 +110,14 @@ async def run(
         if not combatants:
             break
         current = combatants[combat_state.get("turn_index", 0)]
-        if current.get("type") == "character":
-            break  # player's turn — stop
         if not current.get("is_alive", True):
             break
-        summary = await enemy_ai.run(session_id)
+        if current.get("type") == "character" and not current.get("ai_controlled"):
+            break  # player's own character — stop and wait for input
+        if current.get("team") == "players":
+            summary = await ally_ai.run(session_id)
+        else:
+            summary = await enemy_ai.run(session_id)
         enemy_summaries.append(summary)
 
     narrative_context = f"[PLAYER ACTION]\n{player_summary}"

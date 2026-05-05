@@ -44,6 +44,10 @@ async def create(
         features=body.features,
         inventory=[item.model_dump() for item in body.inventory],
         currency=body.currency,
+        is_companion=body.is_companion,
+        bio=body.bio,
+        personality=body.personality,
+        voice_traits=body.voice_traits,
     )
     return CharacterResponse.model_validate(character)
 

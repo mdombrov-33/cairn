@@ -34,6 +34,10 @@ class CharacterCreate(BaseModel):
     features: list[str] = []
     inventory: list[InventoryItem] = []
     currency: dict[str, int] = Field(default_factory=lambda: {"gp": 0, "sp": 0, "cp": 0})
+    is_companion: bool = False
+    bio: str | None = None
+    personality: str | None = None
+    voice_traits: dict[str, Any] = Field(default_factory=dict)
 
 
 class CharacterResponse(CreatureBase):
@@ -43,3 +47,7 @@ class CharacterResponse(CreatureBase):
     background: str
     death_save_successes: int
     death_save_failures: int
+    is_companion: bool
+    bio: str | None
+    personality: str | None
+    voice_traits: dict[str, Any]

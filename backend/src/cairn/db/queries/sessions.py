@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from cairn.db.models.session import Session
 from cairn.domain.exceptions import NotFoundError
@@ -48,6 +49,7 @@ async def update_combat_state(
     db_session = await get_session(session, session_id)
     db_session.combat_active = combat_active
     db_session.combat_state = combat_state
+    flag_modified(db_session, "combat_state")
     await session.flush()
     return db_session
 

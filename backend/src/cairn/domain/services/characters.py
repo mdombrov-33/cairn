@@ -42,6 +42,10 @@ async def create(
     currency: dict[str, int],
     alignment: str | None = None,
     subclass: str | None = None,
+    is_companion: bool = False,
+    bio: str | None = None,
+    personality: str | None = None,
+    voice_traits: dict[str, Any] | None = None,
 ) -> Character:
     await campaign_queries.get_campaign_owned_by(db, campaign_id, owner_id)
 
@@ -79,6 +83,10 @@ async def create(
         features=features,
         inventory=inventory,
         currency=currency,
+        is_companion=is_companion,
+        bio=bio,
+        personality=personality,
+        voice_traits=voice_traits or {},
     )
 
 
