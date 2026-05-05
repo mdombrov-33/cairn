@@ -42,7 +42,7 @@ async def create(
         spell_slots=body.spell_slots,
         spells_known=body.spells_known,
         features=body.features,
-        inventory=body.inventory,
+        inventory=[item.model_dump() for item in body.inventory],
         currency=body.currency,
     )
     return CharacterResponse.model_validate(character)

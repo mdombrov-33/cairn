@@ -5,6 +5,14 @@ from pydantic import BaseModel, Field
 from cairn.api.v1.schemas.creatures import CreatureBase
 
 
+class InventoryItem(BaseModel):
+    name: str
+    quantity: int = 1
+    weight: float = 0
+    notes: str = ""
+    equipped: bool = False
+
+
 class CharacterCreate(BaseModel):
     name: str
     race: str
@@ -24,7 +32,7 @@ class CharacterCreate(BaseModel):
     spell_slots: dict[str, Any] | None = None
     spells_known: list[str] = []
     features: list[str] = []
-    inventory: list[Any] = []
+    inventory: list[InventoryItem] = []
     currency: dict[str, int] = Field(default_factory=lambda: {"gp": 0, "sp": 0, "cp": 0})
 
 

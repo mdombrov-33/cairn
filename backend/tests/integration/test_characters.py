@@ -25,7 +25,7 @@ FIGHTER: dict = {
     "saving_throw_proficiencies": ["str", "con"],
     "skill_proficiencies": ["athletics", "perception", "intimidation"],
     "features": ["Action Surge", "Second Wind", "Combat Superiority"],
-    "inventory": [{"name": "Longsword", "quantity": 1, "weight": 3, "notes": ""}],
+    "inventory": [{"name": "Longsword", "quantity": 1, "weight": 3, "notes": "", "equipped": True}],
     "currency": {"gp": 30, "sp": 5, "cp": 0},
 }
 
