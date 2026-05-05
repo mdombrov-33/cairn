@@ -45,6 +45,11 @@ class Character(Base):
 
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]
+    concentration: Mapped[str | None]  # name of currently concentrated spell, if any
+
+    # class resources with limited uses (Action Surge, Ki, Rage, Superiority Dice, etc.)
+    # shape: {"action_surge": {"current": 1, "max": 1, "resets_on": "short_rest"}, ...}
+    resources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
     # JSONB - semi-structured data, always read as a unit
     stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)

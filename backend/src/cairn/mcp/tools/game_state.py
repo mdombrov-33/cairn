@@ -35,6 +35,8 @@ def _character_to_dict(c: Character) -> dict:
         "spellcasting_ability": c.spellcasting_ability,
         "spell_slots": c.spell_slots,
         "spells_known": c.spells_known,
+        "concentration": c.concentration,
+        "resources": c.resources,
         "death_save_successes": c.death_save_successes,
         "death_save_failures": c.death_save_failures,
         "features": c.features,

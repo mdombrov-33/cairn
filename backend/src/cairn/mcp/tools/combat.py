@@ -522,6 +522,16 @@ async def advance_turn(session_id: str) -> dict:
                 state["round"] = state.get("round", 1) + 1
 
             current = combatants[state["turn_index"]]
+
+            # Reset action economy for the combatant whose turn is starting
+            economy = state.setdefault("turn_economy", {})
+            economy[current["id"]] = {
+                "action_used": False,
+                "bonus_action_used": False,
+                "reaction_used": False,
+                "movement_remaining": current.get("speed", 30),
+            }
+
             await session_queries.update_combat_state(
                 db, uuid.UUID(session_id), combat_state=state, combat_active=True
             )

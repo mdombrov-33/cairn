@@ -23,27 +23,64 @@ from cairn.mcp.tools.combat import (
 )
 from cairn.mcp.tools.dice import roll_d20, roll_damage
 from cairn.mcp.tools.game_state import _character_to_dict, get_npc
-from cairn.mcp.tools.srd import lookup_condition, lookup_monster, lookup_spell, lookup_weapon
+from cairn.mcp.tools.resources import (
+    consume_spell_slot,
+    drop_concentration,
+    restore_resource,
+    restore_spell_slot,
+    roll_concentration_check,
+    set_concentration,
+    spend_movement,
+    use_action,
+    use_bonus_action,
+    use_reaction,
+    use_resource,
+)
+from cairn.mcp.tools.srd import (
+    lookup_condition,
+    lookup_feature,
+    lookup_monster,
+    lookup_spell,
+    lookup_weapon,
+)
 from cairn.prompts.registry import load_prompt, resolve_version
 
 log = structlog.get_logger()
 
 # get_combat_state / get_character / get_party are excluded — injected into prompt instead
 _COMBAT_TOOLS = [
+    # Dice
     roll_d20,
     roll_damage,
+    # SRD lookups
     lookup_spell,
     lookup_weapon,
     lookup_monster,
     lookup_condition,
+    lookup_feature,
+    # Game state
     get_npc,
+    # HP & conditions
     apply_damage,
     apply_healing,
     apply_condition,
     remove_condition,
     roll_death_save,
+    # Turn flow
     advance_turn,
     end_combat,
+    # Resources & economy
+    consume_spell_slot,
+    restore_spell_slot,
+    use_resource,
+    restore_resource,
+    set_concentration,
+    drop_concentration,
+    roll_concentration_check,
+    use_action,
+    use_bonus_action,
+    use_reaction,
+    spend_movement,
 ]
 
 
