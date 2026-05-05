@@ -39,3 +39,9 @@ agents:
     frontier:
       primary: openai/gpt-5.4-mini
       fallback: openai/gpt-5.4
+  enemy_ai:
+    local:
+      primary: ollama/llama3.1:8b
+    frontier:
+      primary: openai/gpt-5.4-mini
+      fallback: openai/gpt-5.4

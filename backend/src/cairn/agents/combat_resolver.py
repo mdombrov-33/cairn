@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 
 import structlog
 
-from cairn.agents import scene_narrator
+from cairn.agents import enemy_ai, scene_narrator
 from cairn.config import get_settings
 from cairn.db import client as db_client
 from cairn.db.queries import party_members as party_queries
@@ -95,12 +95,31 @@ async def run(
 ) -> AsyncIterator[str]:
     """Resolve a combat action and stream the narrative.
 
-    Phase 1: Tool loop - LLM calls MCP tools to resolve all D&D mechanics.
-    Phase 2: Narration - scene_narrator streams a vivid description.
+    Phase 1: Resolve player action via tool loop.
+    Phase 2: Loop enemy turns until it's a player's turn again.
+    Phase 3: Narrate everything together.
     """
-    resolution_summary = await _resolve_mechanics(player_input, session_id, context)
+    player_summary = await _resolve_mechanics(player_input, session_id, context)
 
-    narrative_context = f"[COMBAT RESOLUTION]\n{resolution_summary}"
+    enemy_summaries: list[str] = []
+    for _ in range(20):  # safety cap — no encounter has 20 monsters
+        combat_state, _ = await _fetch_combat_context(session_id)
+        if not combat_state:
+            break  # combat ended (victory/defeat)
+        combatants = combat_state.get("combatants", [])
+        if not combatants:
+            break
+        current = combatants[combat_state.get("turn_index", 0)]
+        if current.get("type") == "character":
+            break  # player's turn — stop
+        if not current.get("is_alive", True):
+            break
+        summary = await enemy_ai.run(session_id)
+        enemy_summaries.append(summary)
+
+    narrative_context = f"[PLAYER ACTION]\n{player_summary}"
+    for s in enemy_summaries:
+        narrative_context += f"\n\n[ENEMY TURN]\n{s}"
     if context:
         narrative_context += f"\n\n{context}"
 
