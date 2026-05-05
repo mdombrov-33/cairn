@@ -39,11 +39,3 @@ class LLMError(CairnError):
     http_status = 502
 
 
-class RAGError(CairnError):
-    code = "rag_error"
-    http_status = 502
-
-
-class QueueError(CairnError):
-    code = "queue_error"
-    http_status = 503

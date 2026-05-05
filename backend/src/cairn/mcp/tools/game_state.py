@@ -1,6 +1,5 @@
 import uuid
 
-import structlog
 from langchain_core.tools import tool
 
 from cairn.db import client as db_client
@@ -10,8 +9,6 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
-
-log = structlog.get_logger()
 
 
 def _character_to_dict(c: Character) -> dict:
@@ -72,6 +69,8 @@ def _npc_to_dict(n: NPC) -> dict:
         "conditions": n.conditions,
         "disposition": n.disposition,
         "bio": n.bio,
+        "personality": n.personality,
+        "voice_traits": n.voice_traits,
     }
 
 
@@ -83,12 +82,8 @@ async def get_character(character_id: str) -> dict:
         character_id: The character's UUID.
     """  # noqa: E501
     async with db_client.get_session() as db:
-        try:
-            char = await character_queries.get_character(db, uuid.UUID(character_id))
-            return _character_to_dict(char)
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        char = await character_queries.get_character(db, uuid.UUID(character_id))
+        return _character_to_dict(char)
 
 
 @tool
@@ -101,12 +96,8 @@ async def get_npc(npc_id: str) -> dict:
         npc_id: The NPC's UUID.
     """
     async with db_client.get_session() as db:
-        try:
-            npc = await npc_queries.get_npc(db, uuid.UUID(npc_id))
-            return _npc_to_dict(npc)
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        npc = await npc_queries.get_npc(db, uuid.UUID(npc_id))
+        return _npc_to_dict(npc)
 
 
 @tool
@@ -120,12 +111,8 @@ async def get_party(session_id: str) -> dict:
         session_id: The session UUID.
     """
     async with db_client.get_session() as db:
-        try:
-            characters = await party_queries.get_party(db, uuid.UUID(session_id))
-            return {"party": [_character_to_dict(c) for c in characters]}
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        characters = await party_queries.get_party(db, uuid.UUID(session_id))
+        return {"party": [_character_to_dict(c) for c in characters]}
 
 
 @tool
@@ -136,14 +123,10 @@ async def get_combat_state(session_id: str) -> dict:
         session_id: The session UUID.
     """  # noqa: E501
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            if not session.combat_active:
-                return {"combat_active": False}
-            return {
-                "combat_active": True,
-                "combat_state": session.combat_state,
-            }
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        if not session.combat_active:
+            return {"combat_active": False}
+        return {
+            "combat_active": True,
+            "combat_state": session.combat_state,
+        }

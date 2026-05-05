@@ -1,7 +1,6 @@
 import json
 import math
 import random
-import re
 import uuid
 
 import structlog
@@ -13,21 +12,9 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.mcp.tools.dice import _parse_and_roll
 
 log = structlog.get_logger()
-
-
-def _roll_die(sides: int) -> int:
-    return random.randint(1, sides)
-
-
-def _parse_and_roll(expression: str) -> int:
-    match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", expression.strip())
-    if not match:
-        raise ValueError(f"Invalid dice expression: {expression!r}")
-    count, sides = int(match.group(1)), int(match.group(2))
-    modifier = int(match.group(3) or 0)
-    return sum(_roll_die(sides) for _ in range(count)) + modifier
 
 
 def _dex_modifier(monster: dict) -> int:
@@ -119,7 +106,7 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                     count = max(1, enemy.get("count", 1))
 
                     for i in range(count):
-                        max_hp = _parse_and_roll(monster["hit_points_roll"])
+                        _, max_hp = _parse_and_roll(monster["hit_points_roll"])
                         roll = random.randint(1, 20) + dex_mod
                         label = monster["name"] if count == 1 else f"{monster['name']} {i + 1}"
                         combatants.append(
@@ -176,15 +163,11 @@ async def end_combat(session_id: str, outcome: str) -> dict:
         outcome: One of "victory", "defeat", "retreat", or "resolved" (peaceful end).
     """
     async with db_client.get_session() as db:
-        try:
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=None, combat_active=False
-            )
-            await db.commit()
-            return {"combat_ended": True, "outcome": outcome}
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=None, combat_active=False
+        )
+        await db.commit()
+        return {"combat_ended": True, "outcome": outcome}
 
 
 @tool
@@ -209,76 +192,69 @@ async def apply_damage(
         damage_type: Damage type for narrative purposes (e.g. "fire", "slashing", "necrotic").
     """
     async with db_client.get_session() as db:
-        try:
-            if combatant_type == "character":
-                char = await character_queries.get_character(db, uuid.UUID(combatant_id))
-                effective = max(0, amount - char.temp_hp)
-                char.temp_hp = max(0, char.temp_hp - amount)
-                char.hp = max(0, char.hp - effective)
-                is_dead = False
-                is_unconscious = char.hp == 0
-                new_hp = char.hp
-                await db.commit()
-                return {
-                    "combatant": char.name,
-                    "damage_taken": effective,
-                    "temp_hp_absorbed": amount - effective,
-                    "hp": new_hp,
-                    "is_unconscious": is_unconscious,
-                    "is_dead": is_dead,
-                }
+        if combatant_type == "character":
+            char = await character_queries.get_character(db, uuid.UUID(combatant_id))
+            effective = max(0, amount - char.temp_hp)
+            char.temp_hp = max(0, char.temp_hp - amount)
+            char.hp = max(0, char.hp - effective)
+            is_unconscious = char.hp == 0
+            new_hp = char.hp
+            await db.commit()
+            return {
+                "combatant": char.name,
+                "damage_taken": effective,
+                "temp_hp_absorbed": amount - effective,
+                "hp": new_hp,
+                "is_unconscious": is_unconscious,
+                "is_dead": False,
+            }
 
-            elif combatant_type == "npc":
-                npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
-                effective = max(0, amount - npc.temp_hp)
-                npc.temp_hp = max(0, npc.temp_hp - amount)
-                npc.hp = max(0, npc.hp - effective)
-                is_dead = npc.hp == 0
-                is_unconscious = is_dead
-                new_hp = npc.hp
-                await db.commit()
-                return {
-                    "combatant": npc.name,
-                    "damage_taken": effective,
-                    "temp_hp_absorbed": amount - effective,
-                    "hp": new_hp,
-                    "is_unconscious": is_unconscious,
-                    "is_dead": is_dead,
-                }
+        elif combatant_type == "npc":
+            npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
+            effective = max(0, amount - npc.temp_hp)
+            npc.temp_hp = max(0, npc.temp_hp - amount)
+            npc.hp = max(0, npc.hp - effective)
+            is_dead = npc.hp == 0
+            new_hp = npc.hp
+            await db.commit()
+            return {
+                "combatant": npc.name,
+                "damage_taken": effective,
+                "temp_hp_absorbed": amount - effective,
+                "hp": new_hp,
+                "is_unconscious": is_dead,
+                "is_dead": is_dead,
+            }
 
-            elif combatant_type == "monster":
-                session = await session_queries.get_session(db, uuid.UUID(session_id))
-                state = session.combat_state or {}
-                combatant = _find_combatant(state, combatant_id)
-                if combatant is None:
-                    return {"error": f"Monster '{combatant_id}' not found in combat state."}
+        elif combatant_type == "monster":
+            session = await session_queries.get_session(db, uuid.UUID(session_id))
+            state = session.combat_state or {}
+            combatant = _find_combatant(state, combatant_id)
+            if combatant is None:
+                return {"error": f"Monster '{combatant_id}' not found in combat state."}
 
-                effective = max(0, amount - combatant.get("temp_hp", 0))
-                combatant["hp"] = max(0, combatant["hp"] - effective)
-                combatant["is_alive"] = combatant["hp"] > 0
-                combatant["is_conscious"] = combatant["is_alive"]
+            effective = max(0, amount - combatant.get("temp_hp", 0))
+            combatant["hp"] = max(0, combatant["hp"] - effective)
+            combatant["is_alive"] = combatant["hp"] > 0
+            combatant["is_conscious"] = combatant["is_alive"]
 
-                await session_queries.update_combat_state(
-                    db,
-                    uuid.UUID(session_id),
-                    combat_state=state,
-                    combat_active=session.combat_active,
-                )
-                await db.commit()
-                return {
-                    "combatant": combatant["name"],
-                    "damage_taken": effective,
-                    "hp": combatant["hp"],
-                    "is_alive": combatant["is_alive"],
-                    "is_dead": not combatant["is_alive"],
-                }
+            await session_queries.update_combat_state(
+                db,
+                uuid.UUID(session_id),
+                combat_state=state,
+                combat_active=session.combat_active,
+            )
+            await db.commit()
+            return {
+                "combatant": combatant["name"],
+                "damage_taken": effective,
+                "hp": combatant["hp"],
+                "is_alive": combatant["is_alive"],
+                "is_dead": not combatant["is_alive"],
+            }
 
-            else:
-                return {"error": f"Unknown combatant_type '{combatant_type}'."}
-
-        except Exception as exc:
-            log.error("apply_damage_error", error=str(exc))
-            return {"error": str(exc)}
+        else:
+            return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
 
 @tool
@@ -297,55 +273,50 @@ async def apply_healing(
         amount: HP to restore.
     """
     async with db_client.get_session() as db:
-        try:
-            if combatant_type == "character":
-                char = await character_queries.get_character(db, uuid.UUID(combatant_id))
-                char.hp = min(char.max_hp, char.hp + amount)
-                if char.hp > 0:
-                    char.death_save_successes = 0
-                    char.death_save_failures = 0
-                await db.commit()
-                return {
-                    "combatant": char.name,
-                    "hp": char.hp,
-                    "max_hp": char.max_hp,
-                    "is_conscious": char.hp > 0,
-                }
+        if combatant_type == "character":
+            char = await character_queries.get_character(db, uuid.UUID(combatant_id))
+            char.hp = min(char.max_hp, char.hp + amount)
+            if char.hp > 0:
+                char.death_save_successes = 0
+                char.death_save_failures = 0
+            await db.commit()
+            return {
+                "combatant": char.name,
+                "hp": char.hp,
+                "max_hp": char.max_hp,
+                "is_conscious": char.hp > 0,
+            }
 
-            elif combatant_type == "npc":
-                npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
-                npc.hp = min(npc.max_hp, npc.hp + amount)
-                await db.commit()
-                return {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
+        elif combatant_type == "npc":
+            npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
+            npc.hp = min(npc.max_hp, npc.hp + amount)
+            await db.commit()
+            return {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
 
-            elif combatant_type == "monster":
-                session = await session_queries.get_session(db, uuid.UUID(session_id))
-                state = session.combat_state or {}
-                combatant = _find_combatant(state, combatant_id)
-                if combatant is None:
-                    return {"error": f"Monster '{combatant_id}' not found in combat state."}
-                combatant["hp"] = min(combatant["max_hp"], combatant["hp"] + amount)
-                combatant["is_alive"] = True
-                combatant["is_conscious"] = True
-                await session_queries.update_combat_state(
-                    db,
-                    uuid.UUID(session_id),
-                    combat_state=state,
-                    combat_active=session.combat_active,
-                )
-                await db.commit()
-                return {
-                    "combatant": combatant["name"],
-                    "hp": combatant["hp"],
-                    "max_hp": combatant["max_hp"],
-                }
+        elif combatant_type == "monster":
+            session = await session_queries.get_session(db, uuid.UUID(session_id))
+            state = session.combat_state or {}
+            combatant = _find_combatant(state, combatant_id)
+            if combatant is None:
+                return {"error": f"Monster '{combatant_id}' not found in combat state."}
+            combatant["hp"] = min(combatant["max_hp"], combatant["hp"] + amount)
+            combatant["is_alive"] = True
+            combatant["is_conscious"] = True
+            await session_queries.update_combat_state(
+                db,
+                uuid.UUID(session_id),
+                combat_state=state,
+                combat_active=session.combat_active,
+            )
+            await db.commit()
+            return {
+                "combatant": combatant["name"],
+                "hp": combatant["hp"],
+                "max_hp": combatant["max_hp"],
+            }
 
-            else:
-                return {"error": f"Unknown combatant_type '{combatant_type}'."}
-
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        else:
+            return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
 
 @tool
@@ -368,27 +339,22 @@ async def apply_condition(
         condition: The condition name.
     """
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            state = session.combat_state or {}
-            combatant = _find_combatant(state, combatant_id)
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        state = session.combat_state or {}
+        combatant = _find_combatant(state, combatant_id)
 
-            if combatant is None:
-                return {"error": f"Combatant '{combatant_id}' not found in combat state."}
+        if combatant is None:
+            return {"error": f"Combatant '{combatant_id}' not found in combat state."}
 
-            conditions = combatant.setdefault("conditions", [])
-            if condition not in conditions:
-                conditions.append(condition)
+        conditions = combatant.setdefault("conditions", [])
+        if condition not in conditions:
+            conditions.append(condition)
 
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
-            )
-            await db.commit()
-            return {"combatant": combatant["name"], "conditions": conditions}
-
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+        )
+        await db.commit()
+        return {"combatant": combatant["name"], "conditions": conditions}
 
 
 @tool
@@ -407,26 +373,21 @@ async def remove_condition(
         condition: The condition to remove.
     """
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            state = session.combat_state or {}
-            combatant = _find_combatant(state, combatant_id)
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        state = session.combat_state or {}
+        combatant = _find_combatant(state, combatant_id)
 
-            if combatant is None:
-                return {"error": f"Combatant '{combatant_id}' not found in combat state."}
+        if combatant is None:
+            return {"error": f"Combatant '{combatant_id}' not found in combat state."}
 
-            conditions = combatant.get("conditions", [])
-            combatant["conditions"] = [c for c in conditions if c != condition]
+        conditions = combatant.get("conditions", [])
+        combatant["conditions"] = [c for c in conditions if c != condition]
 
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
-            )
-            await db.commit()
-            return {"combatant": combatant["name"], "conditions": combatant["conditions"]}
-
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+        )
+        await db.commit()
+        return {"combatant": combatant["name"], "conditions": combatant["conditions"]}
 
 
 @tool
@@ -446,50 +407,45 @@ async def roll_death_save(session_id: str, character_id: str) -> dict:
         character_id: The character's UUID.
     """
     async with db_client.get_session() as db:
-        try:
-            char = await character_queries.get_character(db, uuid.UUID(character_id))
+        char = await character_queries.get_character(db, uuid.UUID(character_id))
 
-            if char.hp > 0:
-                return {"error": f"{char.name} is not at 0 HP and doesn't need a death save."}
+        if char.hp > 0:
+            return {"error": f"{char.name} is not at 0 HP and doesn't need a death save."}
 
-            roll = random.randint(1, 20)
-            outcome = "ongoing"
+        roll = random.randint(1, 20)
+        outcome = "ongoing"
 
-            if roll == 20:
-                char.hp = 1
-                char.death_save_successes = 0
-                char.death_save_failures = 0
-                outcome = "stabilized_miraculous"
-            elif roll == 1:
-                char.death_save_failures = min(3, char.death_save_failures + 2)
-            elif roll >= 10:
-                char.death_save_successes = min(3, char.death_save_successes + 1)
-            else:
-                char.death_save_failures = min(3, char.death_save_failures + 1)
+        if roll == 20:
+            char.hp = 1
+            char.death_save_successes = 0
+            char.death_save_failures = 0
+            outcome = "stabilized_miraculous"
+        elif roll == 1:
+            char.death_save_failures = min(3, char.death_save_failures + 2)
+        elif roll >= 10:
+            char.death_save_successes = min(3, char.death_save_successes + 1)
+        else:
+            char.death_save_failures = min(3, char.death_save_failures + 1)
 
-            if outcome == "ongoing":
-                if char.death_save_failures >= 3:
-                    outcome = "dead"
-                elif char.death_save_successes >= 3:
-                    outcome = "stable"
+        if outcome == "ongoing":
+            if char.death_save_failures >= 3:
+                outcome = "dead"
+            elif char.death_save_successes >= 3:
+                outcome = "stable"
 
-            await db.commit()
+        await db.commit()
 
-            return {
-                "character": char.name,
-                "roll": roll,
-                "success": roll >= 10,
-                "natural_20": roll == 20,
-                "natural_1": roll == 1,
-                "total_successes": char.death_save_successes,
-                "total_failures": char.death_save_failures,
-                "outcome": outcome,
-                "hp": char.hp,
-            }
-
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        return {
+            "character": char.name,
+            "roll": roll,
+            "success": roll >= 10,
+            "natural_20": roll == 20,
+            "natural_1": roll == 1,
+            "total_successes": char.death_save_successes,
+            "total_failures": char.death_save_failures,
+            "outcome": outcome,
+            "hp": char.hp,
+        }
 
 
 @tool
@@ -506,89 +462,84 @@ async def advance_turn(session_id: str) -> dict:
         session_id: The session UUID.
     """  # noqa: E501
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            if not session.combat_active or not session.combat_state:
-                return {"error": "No active combat."}
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        if not session.combat_active or not session.combat_state:
+            return {"error": "No active combat."}
 
-            state = session.combat_state
-            combatants = state["combatants"]
-            alive = [c for c in combatants if c.get("is_alive", True)]
+        state = session.combat_state
+        combatants = state["combatants"]
+        alive = [c for c in combatants if c.get("is_alive", True)]
 
-            if not alive:
-                return {"error": "No living combatants remain."}
+        if not alive:
+            return {"error": "No living combatants remain."}
 
-            outgoing = combatants[state["turn_index"]]
+        outgoing = combatants[state["turn_index"]]
 
-            # --- End-of-turn effect processing for outgoing combatant ---
-            effects = state.setdefault("effects", [])
-            end_of_turn_ticks = []
-            expired_effects = []
-            surviving = []
-            for effect in effects:
-                if effect["target_id"] == outgoing["id"]:
-                    if effect.get("tick") == "end_of_target_turn":
-                        end_of_turn_ticks.append(effect)
-                    effect["remaining_rounds"] -= 1
-                    if effect["remaining_rounds"] <= 0:
-                        expired_effects.append(effect["name"])
-                        continue
-                surviving.append(effect)
-            state["effects"] = surviving
+        # --- End-of-turn effect processing for outgoing combatant ---
+        effects = state.setdefault("effects", [])
+        end_of_turn_ticks = []
+        expired_effects = []
+        surviving = []
+        for effect in effects:
+            if effect["target_id"] == outgoing["id"]:
+                if effect.get("tick") == "end_of_target_turn":
+                    end_of_turn_ticks.append(effect)
+                effect["remaining_rounds"] -= 1
+                if effect["remaining_rounds"] <= 0:
+                    expired_effects.append(effect["name"])
+                    continue
+            surviving.append(effect)
+        state["effects"] = surviving
 
-            # --- Advance turn ---
+        # --- Advance turn ---
+        state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
+        checked = 0
+        while not combatants[state["turn_index"]].get("is_alive", True):
             state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
-            checked = 0
-            while not combatants[state["turn_index"]].get("is_alive", True):
-                state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
-                checked += 1
-                if checked >= len(combatants):
-                    return {"error": "All combatants are dead."}
+            checked += 1
+            if checked >= len(combatants):
+                return {"error": "All combatants are dead."}
 
-            if state["turn_index"] == 0:
-                state["round"] = state.get("round", 1) + 1
+        if state["turn_index"] == 0:
+            state["round"] = state.get("round", 1) + 1
 
-            current = combatants[state["turn_index"]]
+        current = combatants[state["turn_index"]]
 
-            # --- Start-of-turn effect processing for incoming combatant ---
-            start_of_turn_ticks = [
-                e
-                for e in state["effects"]
-                if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
-            ]
+        # --- Start-of-turn effect processing for incoming combatant ---
+        start_of_turn_ticks = [
+            e
+            for e in state["effects"]
+            if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
+        ]
 
-            # --- Reset action economy ---
-            economy = state.setdefault("turn_economy", {})
-            economy[current["id"]] = {
-                "action_used": False,
-                "bonus_action_used": False,
-                "reaction_used": False,
-                "movement_remaining": current.get("speed", 30),
-            }
+        # --- Reset action economy ---
+        economy = state.setdefault("turn_economy", {})
+        economy[current["id"]] = {
+            "action_used": False,
+            "bonus_action_used": False,
+            "reaction_used": False,
+            "movement_remaining": current.get("speed", 30),
+        }
 
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=state, combat_active=True
-            )
-            await db.commit()
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=True
+        )
+        await db.commit()
 
-            result: dict = {
-                "round": state["round"],
-                "turn_index": state["turn_index"],
-                "current_combatant": current["name"],
-                "current_combatant_type": current["type"],
-                "current_combatant_id": current["id"],
-            }
-            if end_of_turn_ticks:
-                result["end_of_turn_ticks"] = end_of_turn_ticks
-            if expired_effects:
-                result["expired_effects"] = expired_effects
-            if start_of_turn_ticks:
-                result["start_of_turn_ticks"] = start_of_turn_ticks
-            return result
-
-        except Exception as exc:
-            log.error("tool_error", tool=__name__, error=str(exc))
-            return {"error": str(exc)}
+        result: dict = {
+            "round": state["round"],
+            "turn_index": state["turn_index"],
+            "current_combatant": current["name"],
+            "current_combatant_type": current["type"],
+            "current_combatant_id": current["id"],
+        }
+        if end_of_turn_ticks:
+            result["end_of_turn_ticks"] = end_of_turn_ticks
+        if expired_effects:
+            result["expired_effects"] = expired_effects
+        if start_of_turn_ticks:
+            result["start_of_turn_ticks"] = start_of_turn_ticks
+        return result
 
 
 @tool
@@ -631,41 +582,37 @@ async def apply_effect(
         source_id: Combatant ID of the caster or source. Optional.
     """  # noqa: E501
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            state = session.combat_state or {}
-            effects = state.setdefault("effects", [])
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        state = session.combat_state or {}
+        effects = state.setdefault("effects", [])
 
-            effect: dict = {
-                "id": str(uuid.uuid4()),
-                "name": effect_name,
-                "target_id": target_id,
-                "remaining_rounds": duration_rounds,
-            }
-            if tick:
-                effect["tick"] = tick
-            if save_ability:
-                effect["save"] = {"ability": save_ability, "dc": save_dc}
-            if condition:
-                effect["condition"] = condition
-            if damage:
-                effect["damage"] = damage
-                effect["damage_type"] = damage_type
-            if mechanical_notes:
-                effect["mechanical_notes"] = mechanical_notes
-            if source_id:
-                effect["source_id"] = source_id
+        effect: dict = {
+            "id": str(uuid.uuid4()),
+            "name": effect_name,
+            "target_id": target_id,
+            "remaining_rounds": duration_rounds,
+        }
+        if tick:
+            effect["tick"] = tick
+        if save_ability:
+            effect["save"] = {"ability": save_ability, "dc": save_dc}
+        if condition:
+            effect["condition"] = condition
+        if damage:
+            effect["damage"] = damage
+            effect["damage_type"] = damage_type
+        if mechanical_notes:
+            effect["mechanical_notes"] = mechanical_notes
+        if source_id:
+            effect["source_id"] = source_id
 
-            effects.append(effect)
+        effects.append(effect)
 
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
-            )
-            await db.commit()
-            return {"effect_applied": True, "effect": effect}
-        except Exception as exc:
-            log.error("tool_error", tool="apply_effect", error=str(exc))
-            return {"error": str(exc)}
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+        )
+        await db.commit()
+        return {"effect_applied": True, "effect": effect}
 
 
 @tool
@@ -679,19 +626,15 @@ async def remove_effect(session_id: str, effect_id: str) -> dict:
         effect_id: The effect's UUID (from the apply_effect response).
     """  # noqa: E501
     async with db_client.get_session() as db:
-        try:
-            session = await session_queries.get_session(db, uuid.UUID(session_id))
-            state = session.combat_state or {}
-            effects = state.get("effects", [])
-            removed = next((e for e in effects if e["id"] == effect_id), None)
-            if removed is None:
-                return {"error": f"Effect '{effect_id}' not found."}
-            state["effects"] = [e for e in effects if e["id"] != effect_id]
-            await session_queries.update_combat_state(
-                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
-            )
-            await db.commit()
-            return {"effect_removed": True, "effect_name": removed["name"]}
-        except Exception as exc:
-            log.error("tool_error", tool="remove_effect", error=str(exc))
-            return {"error": str(exc)}
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        state = session.combat_state or {}
+        effects = state.get("effects", [])
+        removed = next((e for e in effects if e["id"] == effect_id), None)
+        if removed is None:
+            return {"error": f"Effect '{effect_id}' not found."}
+        state["effects"] = [e for e in effects if e["id"] != effect_id]
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+        )
+        await db.commit()
+        return {"effect_removed": True, "effect_name": removed["name"]}

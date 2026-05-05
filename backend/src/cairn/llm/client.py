@@ -147,7 +147,6 @@ async def complete_with_tools(
             content = msg.content or ""
             return content, msgs
 
-        # Append assistant message with tool calls
         msgs.append(
             {
                 "role": "assistant",
@@ -172,10 +171,12 @@ async def complete_with_tools(
                     result = await tool_map[name].ainvoke(args)
                 except Exception as exc:
                     result = {"error": str(exc)}
-                    log.warning("tool_call_failed", tool=name, error=str(exc))
+                    log.error(
+                        "tool_call_failed", tool=name, agent=agent, error=str(exc), exc_info=True
+                    )  # noqa: E501
             else:
                 result = {"error": f"Unknown tool: {name}"}
-                log.warning("tool_call_unknown", tool=name)
+                log.warning("tool_call_unknown", tool=name, agent=agent)
 
             log.info("tool_call", tool=name, agent=agent)
             msgs.append(
