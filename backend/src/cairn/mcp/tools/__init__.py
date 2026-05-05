@@ -2,9 +2,11 @@ from cairn.mcp.tools.combat import (
     advance_turn,
     apply_condition,
     apply_damage,
+    apply_effect,
     apply_healing,
     end_combat,
     remove_condition,
+    remove_effect,
     roll_death_save,
     start_combat,
 )
@@ -66,6 +68,8 @@ ALL_TOOLS = [
     remove_condition,
     roll_death_save,
     advance_turn,
+    apply_effect,
+    remove_effect,
     # Resource & economy
     consume_spell_slot,
     restore_spell_slot,

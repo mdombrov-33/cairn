@@ -148,6 +148,7 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                 "round": 1,
                 "turn_index": 0,
                 "combatants": combatants,
+                "effects": [],
             }
 
             await session_queries.update_combat_state(
@@ -491,9 +492,14 @@ async def advance_turn(session_id: str) -> dict:
     """Advance to the next combatant's turn in the initiative order, skipping dead combatants.
     Increments the round counter when the initiative order wraps around.
 
+    Also ticks multi-round effects:
+    - end_of_turn_ticks: effects that trigger at end of the OUTGOING combatant's turn (e.g. Hold Person save). Resolve these before the next combatant acts.
+    - start_of_turn_ticks: effects that trigger at start of the INCOMING combatant's turn (e.g. poison damage). Resolve these before the combatant takes their action.
+    - expired_effects: effects whose duration ran out this turn (already removed from state).
+
     Args:
         session_id: The session UUID.
-    """
+    """  # noqa: E501
     async with db_client.get_session() as db:
         try:
             session = await session_queries.get_session(db, uuid.UUID(session_id))
@@ -507,9 +513,26 @@ async def advance_turn(session_id: str) -> dict:
             if not alive:
                 return {"error": "No living combatants remain."}
 
-            state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
+            outgoing = combatants[state["turn_index"]]
 
-            # Skip dead combatants
+            # --- End-of-turn effect processing for outgoing combatant ---
+            effects = state.setdefault("effects", [])
+            end_of_turn_ticks = []
+            expired_effects = []
+            surviving = []
+            for effect in effects:
+                if effect["target_id"] == outgoing["id"]:
+                    if effect.get("tick") == "end_of_target_turn":
+                        end_of_turn_ticks.append(effect)
+                    effect["remaining_rounds"] -= 1
+                    if effect["remaining_rounds"] <= 0:
+                        expired_effects.append(effect["name"])
+                        continue
+                surviving.append(effect)
+            state["effects"] = surviving
+
+            # --- Advance turn ---
+            state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
             checked = 0
             while not combatants[state["turn_index"]].get("is_alive", True):
                 state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
@@ -517,13 +540,19 @@ async def advance_turn(session_id: str) -> dict:
                 if checked >= len(combatants):
                     return {"error": "All combatants are dead."}
 
-            # Increment round when we wrap back to the first combatant
             if state["turn_index"] == 0:
                 state["round"] = state.get("round", 1) + 1
 
             current = combatants[state["turn_index"]]
 
-            # Reset action economy for the combatant whose turn is starting
+            # --- Start-of-turn effect processing for incoming combatant ---
+            start_of_turn_ticks = [
+                e
+                for e in state["effects"]
+                if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
+            ]
+
+            # --- Reset action economy ---
             economy = state.setdefault("turn_economy", {})
             economy[current["id"]] = {
                 "action_used": False,
@@ -537,14 +566,127 @@ async def advance_turn(session_id: str) -> dict:
             )
             await db.commit()
 
-            return {
+            result: dict = {
                 "round": state["round"],
                 "turn_index": state["turn_index"],
                 "current_combatant": current["name"],
                 "current_combatant_type": current["type"],
                 "current_combatant_id": current["id"],
             }
+            if end_of_turn_ticks:
+                result["end_of_turn_ticks"] = end_of_turn_ticks
+            if expired_effects:
+                result["expired_effects"] = expired_effects
+            if start_of_turn_ticks:
+                result["start_of_turn_ticks"] = start_of_turn_ticks
+            return result
 
         except Exception as exc:
             log.error("tool_error", tool=__name__, error=str(exc))
+            return {"error": str(exc)}
+
+
+@tool
+async def apply_effect(
+    session_id: str,
+    target_id: str,
+    effect_name: str,
+    duration_rounds: int,
+    tick: str = "",
+    save_ability: str = "",
+    save_dc: int = 0,
+    condition: str = "",
+    damage: str = "",
+    damage_type: str = "",
+    mechanical_notes: str = "",
+    source_id: str = "",
+) -> dict:
+    """Track a multi-round effect on a combatant (concentration spell, poison, regeneration, etc.).
+
+    tick values:
+      "start_of_target_turn" — triggers at start of target's turn (poison damage, regen)
+      "end_of_target_turn"   — triggers at end of target's turn (Hold Person save, Slow save)
+      ""                     — passive, no tick (Bless, Haste — just needs to be visible in state)
+
+    advance_turn will return end_of_turn_ticks / start_of_turn_ticks so you know when to resolve.
+    Call remove_effect when: concentration breaks, dispel magic succeeds, or a save ends the effect.
+
+    Args:
+        session_id: The session UUID.
+        target_id: Combatant ID the effect applies to.
+        effect_name: Human-readable name, e.g. "Hold Person", "Bless", "Poison".
+        duration_rounds: How many rounds the effect lasts before expiring automatically.
+        tick: When the effect triggers each round. "" for passive effects.
+        save_ability: Ability for the repeating save, e.g. "wis". Empty if no repeating save.
+        save_dc: DC for the repeating save. 0 if no save.
+        condition: Condition applied by this effect, e.g. "paralyzed". Empty if none.
+        damage: Tick damage dice expression, e.g. "1d6". Empty if no tick damage.
+        damage_type: Damage type for tick damage, e.g. "poison".
+        mechanical_notes: Free-text notes for how to resolve ticks, e.g. "On save success, effect ends and condition is removed."
+        source_id: Combatant ID of the caster or source. Optional.
+    """  # noqa: E501
+    async with db_client.get_session() as db:
+        try:
+            session = await session_queries.get_session(db, uuid.UUID(session_id))
+            state = session.combat_state or {}
+            effects = state.setdefault("effects", [])
+
+            effect: dict = {
+                "id": str(uuid.uuid4()),
+                "name": effect_name,
+                "target_id": target_id,
+                "remaining_rounds": duration_rounds,
+            }
+            if tick:
+                effect["tick"] = tick
+            if save_ability:
+                effect["save"] = {"ability": save_ability, "dc": save_dc}
+            if condition:
+                effect["condition"] = condition
+            if damage:
+                effect["damage"] = damage
+                effect["damage_type"] = damage_type
+            if mechanical_notes:
+                effect["mechanical_notes"] = mechanical_notes
+            if source_id:
+                effect["source_id"] = source_id
+
+            effects.append(effect)
+
+            await session_queries.update_combat_state(
+                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+            )
+            await db.commit()
+            return {"effect_applied": True, "effect": effect}
+        except Exception as exc:
+            log.error("tool_error", tool="apply_effect", error=str(exc))
+            return {"error": str(exc)}
+
+
+@tool
+async def remove_effect(session_id: str, effect_id: str) -> dict:
+    """Remove an active effect by its ID.
+
+    Call this when: concentration breaks, dispel magic succeeds, or a repeating save ends the effect.
+
+    Args:
+        session_id: The session UUID.
+        effect_id: The effect's UUID (from the apply_effect response).
+    """  # noqa: E501
+    async with db_client.get_session() as db:
+        try:
+            session = await session_queries.get_session(db, uuid.UUID(session_id))
+            state = session.combat_state or {}
+            effects = state.get("effects", [])
+            removed = next((e for e in effects if e["id"] == effect_id), None)
+            if removed is None:
+                return {"error": f"Effect '{effect_id}' not found."}
+            state["effects"] = [e for e in effects if e["id"] != effect_id]
+            await session_queries.update_combat_state(
+                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+            )
+            await db.commit()
+            return {"effect_removed": True, "effect_name": removed["name"]}
+        except Exception as exc:
+            log.error("tool_error", tool="remove_effect", error=str(exc))
             return {"error": str(exc)}

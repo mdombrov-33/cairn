@@ -16,9 +16,11 @@ from cairn.mcp.tools.combat import (
     advance_turn,
     apply_condition,
     apply_damage,
+    apply_effect,
     apply_healing,
     end_combat,
     remove_condition,
+    remove_effect,
     roll_death_save,
 )
 from cairn.mcp.tools.dice import roll_d20, roll_damage
@@ -69,6 +71,8 @@ _COMBAT_TOOLS = [
     # Turn flow
     advance_turn,
     end_combat,
+    apply_effect,
+    remove_effect,
     # Resources & economy
     consume_spell_slot,
     restore_spell_slot,
