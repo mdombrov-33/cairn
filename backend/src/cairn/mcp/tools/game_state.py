@@ -1,7 +1,5 @@
 import uuid
 
-from langchain_core.tools import tool
-
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
 from cairn.db.models.npc import NPC
@@ -9,6 +7,7 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.mcp.tools.base import prop, tool
 
 
 def _character_to_dict(c: Character) -> dict:
@@ -74,59 +73,47 @@ def _npc_to_dict(n: NPC) -> dict:
     }
 
 
-@tool
+@tool(
+    "Get a player character's full combat sheet: stats, current HP, AC, spell slots, and inventory.",  # noqa: E501
+    {"character_id": prop("string", "The character's UUID.")},
+    required=["character_id"],
+)
 async def get_character(character_id: str) -> dict:
-    """Get a player character's full combat sheet: stats, current HP, AC, spell slots, and inventory.
-
-    Args:
-        character_id: The character's UUID.
-    """  # noqa: E501
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         return _character_to_dict(char)
 
 
-@tool
+@tool(
+    "Get an NPC's full stat block: current HP, AC, conditions, disposition, and spells.",
+    {"npc_id": prop("string", "The NPC's UUID.")},
+    required=["npc_id"],
+)
 async def get_npc(npc_id: str) -> dict:
-    """Get an NPC's full stat block: current HP, AC, conditions, disposition, and spells.
-
-    Use this when an NPC is involved in combat (either as an enemy or an ally being attacked).
-
-    Args:
-        npc_id: The NPC's UUID.
-    """
     async with db_client.get_session() as db:
         npc = await npc_queries.get_npc(db, uuid.UUID(npc_id))
         return _npc_to_dict(npc)
 
 
-@tool
+@tool(
+    "Get all party members' current combat stats for a session: HP, AC, conditions, and spell slots.",  # noqa: E501
+    {"session_id": prop("string", "The session UUID.")},
+    required=["session_id"],
+)
 async def get_party(session_id: str) -> dict:
-    """Get all party members' current combat stats for a session.
-
-    Returns HP, AC, conditions, and spell slots for every character in the party.
-    Use at the start of combat or when assessing party status.
-
-    Args:
-        session_id: The session UUID.
-    """
     async with db_client.get_session() as db:
         characters = await party_queries.get_party(db, uuid.UUID(session_id))
         return {"party": [_character_to_dict(c) for c in characters]}
 
 
-@tool
+@tool(
+    "Get the full active combat state: initiative order, combatant HP, conditions, zones, and current round.",  # noqa: E501
+    {"session_id": prop("string", "The session UUID.")},
+    required=["session_id"],
+)
 async def get_combat_state(session_id: str) -> dict:
-    """Get the full active combat state: initiative order, combatant HP, conditions, zones, and current round.
-
-    Args:
-        session_id: The session UUID.
-    """  # noqa: E501
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         if not session.combat_active:
             return {"combat_active": False}
-        return {
-            "combat_active": True,
-            "combat_state": session.combat_state,
-        }
+        return {"combat_active": True, "combat_state": session.combat_state}

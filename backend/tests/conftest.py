@@ -21,6 +21,18 @@ _FAKE_NPC_JSON = '{"dialogue": "Aye, what\'ll it be?", "disposition_change": nul
 _FAKE_LORE_JSON = '[{"type": "NPC", "key": "old_grim_bartender", "content": "Old Grim is the gruff bartender of the Grimwood Tavern, a retired soldier."}]'  # noqa: E501
 
 
+async def _fake_turn_graph_run(player_input, session_id, campaign_id):
+    return {
+        "session_id": str(session_id),
+        "campaign_id": str(campaign_id),
+        "player_input": player_input,
+        "intent": "narrative_action",
+        "npc_name": None,
+        "check": None,
+        "npc_context": None,
+    }
+
+
 async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
     if stream:
 
@@ -55,7 +67,7 @@ async def _fake_acompletion(model: str, messages: list, stream: bool = False, **
 def fake_llm():
     with (
         patch("litellm.acompletion", side_effect=_fake_acompletion),
-        patch("cairn.pipelines.turn_graph.run", return_value=("narrative_action", None)),
+        patch("cairn.pipelines.turn_graph.run", side_effect=_fake_turn_graph_run),
     ):
         yield
 

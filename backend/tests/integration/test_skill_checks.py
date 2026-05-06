@@ -37,8 +37,26 @@ async def _session(client: AsyncClient, campaign_id: str) -> dict:
     return r.json()
 
 
+async def _skill_check_run(player_input, session_id, campaign_id):
+    return {
+        "session_id": str(session_id),
+        "campaign_id": str(campaign_id),
+        "player_input": player_input,
+        "intent": "skill_check",
+        "npc_name": None,
+        "check": {
+            "skill": "persuasion",
+            "dc": 14,
+            "modifier": 4,
+            "roll_type": "d20",
+            "status": "pending",
+        },  # noqa: E501
+        "npc_context": None,
+    }
+
+
 async def _submit_skill_check(client: AsyncClient, session_id: str) -> list[dict]:
-    with patch("cairn.pipelines.turn_graph.run", return_value=("skill_check", None)):
+    with patch("cairn.pipelines.turn_graph.run", side_effect=_skill_check_run):
         r = await client.post(
             f"/v1/sessions/{session_id}/turns",
             headers={"X-User-Id": "user_a"},

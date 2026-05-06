@@ -4,7 +4,6 @@ import random
 import uuid
 
 import structlog
-from langchain_core.tools import tool
 
 from cairn import srd as rules
 from cairn.db import client as db_client
@@ -12,6 +11,7 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.mcp.tools.base import prop, tool
 from cairn.mcp.tools.dice import _parse_and_roll
 
 log = structlog.get_logger()
@@ -28,20 +28,18 @@ def _find_combatant(state: dict, combatant_id: str) -> dict | None:
     return None
 
 
-@tool
+@tool(
+    'Initialize a combat encounter. Rolls initiative for all combatants. Party members enrolled automatically. enemies_json is a JSON array: [{"type": "monster", "name": "goblin", "count": 2}] or [{"type": "npc", "id": "<uuid>"}].',  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "enemies_json": prop(
+            "string",
+            'JSON array of enemies. Each entry: {"type": "monster", "name": "goblin", "count": 2} or {"type": "npc", "id": "<uuid>"}.',  # noqa: E501
+        ),  # noqa: E501
+    },
+    required=["session_id", "enemies_json"],
+)
 async def start_combat(session_id: str, enemies_json: str) -> dict:
-    """Initialize a combat encounter. Rolls initiative for all combatants and builds the initiative order.
-
-    enemies_json must be a JSON array. Each entry is either:
-    - {"type": "monster", "name": "goblin", "count": 2}  — spawns from SRD stat block
-    - {"type": "npc", "id": "<uuid>"}                    — uses a DB NPC record
-
-    Party members are enrolled automatically from the session.
-
-    Args:
-        session_id: The session UUID.
-        enemies_json: JSON array describing enemies (see format above).
-    """  # noqa: E501
     try:
         enemies = json.loads(enemies_json)
     except json.JSONDecodeError as e:
@@ -55,7 +53,6 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
 
             combatants: list[dict] = []
 
-            # Enroll party members
             characters = await party_queries.get_party(db, uuid.UUID(session_id))
             for char in characters:
                 roll = random.randint(1, 20) + char.initiative
@@ -75,7 +72,6 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                     }
                 )
 
-            # Enroll enemies (and optional ally NPCs via team="players")
             for enemy in enemies:
                 team = enemy.get("team", "enemies")
                 if enemy["type"] == "npc":
@@ -130,7 +126,6 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                             }
                         )
 
-            # Sort by initiative (ties broken by modifier, then random)
             combatants.sort(
                 key=lambda c: (c["initiative_roll"], c["initiative_modifier"], random.random()),
                 reverse=True,
@@ -147,21 +142,21 @@ async def start_combat(session_id: str, enemies_json: str) -> dict:
                 db, uuid.UUID(session_id), combat_state=combat_state, combat_active=True
             )
             await db.commit()
-
             return {"combat_started": True, "combat_state": combat_state}
         except Exception as exc:
             log.error("start_combat_error", session_id=session_id, error=str(exc))
             return {"error": str(exc)}
 
 
-@tool
+@tool(
+    "End the current combat encounter and clear combat state.",
+    {
+        "session_id": prop("string", "The session UUID."),
+        "outcome": prop("string", '"victory", "defeat", "retreat", or "resolved" (peaceful end).'),
+    },
+    required=["session_id", "outcome"],
+)
 async def end_combat(session_id: str, outcome: str) -> dict:
-    """End the current combat encounter and clear combat state.
-
-    Args:
-        session_id: The session UUID.
-        outcome: One of "victory", "defeat", "retreat", or "resolved" (peaceful end).
-    """
     async with db_client.get_session() as db:
         await session_queries.update_combat_state(
             db, uuid.UUID(session_id), combat_state=None, combat_active=False
@@ -170,7 +165,23 @@ async def end_combat(session_id: str, outcome: str) -> dict:
         return {"combat_ended": True, "outcome": outcome}
 
 
-@tool
+@tool(
+    "Apply damage to a combatant, respecting temp HP. Monsters track HP in combat_state; characters and NPCs are persisted to DB.",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop(
+            "string", "The combatant's ID (UUID for character/npc, generated id for monster)."
+        ),
+        "combatant_type": prop("string", '"character", "npc", or "monster".'),
+        "amount": prop("integer", "Raw damage amount before temp HP absorption."),
+        "damage_type": prop(
+            "string",
+            'Damage type for narrative purposes, e.g. "fire", "slashing".',
+            default="untyped",
+        ),
+    },
+    required=["session_id", "combatant_id", "combatant_type", "amount"],
+)
 async def apply_damage(
     session_id: str,
     combatant_id: str,
@@ -178,26 +189,12 @@ async def apply_damage(
     amount: int,
     damage_type: str = "untyped",
 ) -> dict:
-    """Apply damage to a combatant, respecting temp HP and checking for unconscious/death.
-
-    combatant_type must be "character", "npc", or "monster".
-    Monsters (SRD-spawned) have their HP tracked in combat_state.
-    Characters and NPCs have their HP persisted to their DB record.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's ID (UUID for character/npc, or the monster's generated id).
-        combatant_type: "character", "npc", or "monster".
-        amount: Raw damage amount (before temp HP absorption). Must be >= 0.
-        damage_type: Damage type for narrative purposes (e.g. "fire", "slashing", "necrotic").
-    """
     async with db_client.get_session() as db:
         if combatant_type == "character":
             char = await character_queries.get_character(db, uuid.UUID(combatant_id))
             effective = max(0, amount - char.temp_hp)
             char.temp_hp = max(0, char.temp_hp - amount)
             char.hp = max(0, char.hp - effective)
-            is_unconscious = char.hp == 0
             new_hp = char.hp
             await db.commit()
             return {
@@ -205,7 +202,7 @@ async def apply_damage(
                 "damage_taken": effective,
                 "temp_hp_absorbed": amount - effective,
                 "hp": new_hp,
-                "is_unconscious": is_unconscious,
+                "is_unconscious": new_hp == 0,
                 "is_dead": False,
             }
 
@@ -232,17 +229,12 @@ async def apply_damage(
             combatant = _find_combatant(state, combatant_id)
             if combatant is None:
                 return {"error": f"Monster '{combatant_id}' not found in combat state."}
-
             effective = max(0, amount - combatant.get("temp_hp", 0))
             combatant["hp"] = max(0, combatant["hp"] - effective)
             combatant["is_alive"] = combatant["hp"] > 0
             combatant["is_conscious"] = combatant["is_alive"]
-
             await session_queries.update_combat_state(
-                db,
-                uuid.UUID(session_id),
-                combat_state=state,
-                combat_active=session.combat_active,
+                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
             )
             await db.commit()
             return {
@@ -257,21 +249,22 @@ async def apply_damage(
             return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
 
-@tool
+@tool(
+    "Heal a combatant by amount, not exceeding max HP. Clears unconscious/death save status for characters.",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID or monster id."),
+        "combatant_type": prop("string", '"character", "npc", or "monster".'),
+        "amount": prop("integer", "HP to restore."),
+    },
+    required=["session_id", "combatant_id", "combatant_type", "amount"],
+)
 async def apply_healing(
     session_id: str,
     combatant_id: str,
     combatant_type: str,
     amount: int,
 ) -> dict:
-    """Heal a combatant by amount, not exceeding their max HP. Clears unconscious status if HP > 0.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID or monster id.
-        combatant_type: "character", "npc", or "monster".
-        amount: HP to restore.
-    """
     async with db_client.get_session() as db:
         if combatant_type == "character":
             char = await character_queries.get_character(db, uuid.UUID(combatant_id))
@@ -303,10 +296,7 @@ async def apply_healing(
             combatant["is_alive"] = True
             combatant["is_conscious"] = True
             await session_queries.update_combat_state(
-                db,
-                uuid.UUID(session_id),
-                combat_state=state,
-                combat_active=session.combat_active,
+                db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
             )
             await db.commit()
             return {
@@ -319,37 +309,31 @@ async def apply_healing(
             return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
 
-@tool
+@tool(
+    'Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned"). Tracked in combat_state for all types.',  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID or monster id."),
+        "combatant_type": prop("string", '"character", "npc", or "monster".'),
+        "condition": prop("string", "The condition name."),
+    },
+    required=["session_id", "combatant_id", "combatant_type", "condition"],
+)
 async def apply_condition(
     session_id: str,
     combatant_id: str,
     combatant_type: str,
     condition: str,
 ) -> dict:
-    """Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned").
-
-    For characters, conditions are tracked in combat_state (transient).
-    For NPCs, conditions are also tracked in combat_state for the encounter.
-    For monsters, conditions live in combat_state.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID or monster id.
-        combatant_type: "character", "npc", or "monster".
-        condition: The condition name.
-    """
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         state = session.combat_state or {}
         combatant = _find_combatant(state, combatant_id)
-
         if combatant is None:
             return {"error": f"Combatant '{combatant_id}' not found in combat state."}
-
         conditions = combatant.setdefault("conditions", [])
         if condition not in conditions:
             conditions.append(condition)
-
         await session_queries.update_combat_state(
             db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
         )
@@ -357,32 +341,30 @@ async def apply_condition(
         return {"combatant": combatant["name"], "conditions": conditions}
 
 
-@tool
+@tool(
+    "Remove a condition from a combatant.",
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID or monster id."),
+        "combatant_type": prop("string", '"character", "npc", or "monster".'),
+        "condition": prop("string", "The condition to remove."),
+    },
+    required=["session_id", "combatant_id", "combatant_type", "condition"],
+)
 async def remove_condition(
     session_id: str,
     combatant_id: str,
     combatant_type: str,
     condition: str,
 ) -> dict:
-    """Remove a condition from a combatant.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID or monster id.
-        combatant_type: "character", "npc", or "monster".
-        condition: The condition to remove.
-    """
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         state = session.combat_state or {}
         combatant = _find_combatant(state, combatant_id)
-
         if combatant is None:
             return {"error": f"Combatant '{combatant_id}' not found in combat state."}
-
         conditions = combatant.get("conditions", [])
         combatant["conditions"] = [c for c in conditions if c != condition]
-
         await session_queries.update_combat_state(
             db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
         )
@@ -390,31 +372,21 @@ async def remove_condition(
         return {"combatant": combatant["name"], "conditions": combatant["conditions"]}
 
 
-@tool
+@tool(
+    "Roll a death saving throw for an unconscious character at 0 HP. Only valid for player characters — NPCs/monsters die at 0 HP.",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "character_id": prop("string", "The character's UUID."),
+    },
+    required=["session_id", "character_id"],
+)
 async def roll_death_save(session_id: str, character_id: str) -> dict:
-    """Roll a death saving throw for an unconscious character at 0 HP.
-
-    D&D rules: roll d20, DC 10.
-    - Natural 20: regain 1 HP (stabilized).
-    - Natural 1: counts as 2 failures.
-    - 3 successes: stable (no longer making saves).
-    - 3 failures: dead.
-
-    Only valid for player characters — NPCs and monsters die immediately at 0 HP.
-
-    Args:
-        session_id: The session UUID.
-        character_id: The character's UUID.
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
-
         if char.hp > 0:
             return {"error": f"{char.name} is not at 0 HP and doesn't need a death save."}
-
         roll = random.randint(1, 20)
         outcome = "ongoing"
-
         if roll == 20:
             char.hp = 1
             char.death_save_successes = 0
@@ -426,15 +398,12 @@ async def roll_death_save(session_id: str, character_id: str) -> dict:
             char.death_save_successes = min(3, char.death_save_successes + 1)
         else:
             char.death_save_failures = min(3, char.death_save_failures + 1)
-
         if outcome == "ongoing":
             if char.death_save_failures >= 3:
                 outcome = "dead"
             elif char.death_save_successes >= 3:
                 outcome = "stable"
-
         await db.commit()
-
         return {
             "character": char.name,
             "roll": roll,
@@ -448,19 +417,12 @@ async def roll_death_save(session_id: str, character_id: str) -> dict:
         }
 
 
-@tool
+@tool(
+    "Advance to the next combatant's turn, skipping dead combatants. Increments round when order wraps. Returns end_of_turn_ticks, start_of_turn_ticks, and expired_effects.",  # noqa: E501
+    {"session_id": prop("string", "The session UUID.")},
+    required=["session_id"],
+)
 async def advance_turn(session_id: str) -> dict:
-    """Advance to the next combatant's turn in the initiative order, skipping dead combatants.
-    Increments the round counter when the initiative order wraps around.
-
-    Also ticks multi-round effects:
-    - end_of_turn_ticks: effects that trigger at end of the OUTGOING combatant's turn (e.g. Hold Person save). Resolve these before the next combatant acts.
-    - start_of_turn_ticks: effects that trigger at start of the INCOMING combatant's turn (e.g. poison damage). Resolve these before the combatant takes their action.
-    - expired_effects: effects whose duration ran out this turn (already removed from state).
-
-    Args:
-        session_id: The session UUID.
-    """  # noqa: E501
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         if not session.combat_active or not session.combat_state:
@@ -469,13 +431,11 @@ async def advance_turn(session_id: str) -> dict:
         state = session.combat_state
         combatants = state["combatants"]
         alive = [c for c in combatants if c.get("is_alive", True)]
-
         if not alive:
             return {"error": "No living combatants remain."}
 
         outgoing = combatants[state["turn_index"]]
 
-        # --- End-of-turn effect processing for outgoing combatant ---
         effects = state.setdefault("effects", [])
         end_of_turn_ticks = []
         expired_effects = []
@@ -491,7 +451,6 @@ async def advance_turn(session_id: str) -> dict:
             surviving.append(effect)
         state["effects"] = surviving
 
-        # --- Advance turn ---
         state["turn_index"] = (state["turn_index"] + 1) % len(combatants)
         checked = 0
         while not combatants[state["turn_index"]].get("is_alive", True):
@@ -505,14 +464,12 @@ async def advance_turn(session_id: str) -> dict:
 
         current = combatants[state["turn_index"]]
 
-        # --- Start-of-turn effect processing for incoming combatant ---
         start_of_turn_ticks = [
             e
             for e in state["effects"]
             if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
         ]
 
-        # --- Reset action economy ---
         economy = state.setdefault("turn_economy", {})
         economy[current["id"]] = {
             "action_used": False,
@@ -542,7 +499,36 @@ async def advance_turn(session_id: str) -> dict:
         return result
 
 
-@tool
+@tool(
+    'Track a multi-round effect (concentration spell, poison, regen). tick: "start_of_target_turn", "end_of_target_turn", or "" (passive). advance_turn returns tick reminders automatically.',  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "target_id": prop("string", "Combatant ID the effect applies to."),
+        "effect_name": prop(
+            "string", 'Human-readable name, e.g. "Hold Person", "Bless", "Poison".'
+        ),
+        "duration_rounds": prop("integer", "How many rounds the effect lasts."),
+        "tick": prop(
+            "string", '"start_of_target_turn", "end_of_target_turn", or "" for passive.', default=""
+        ),  # noqa: E501
+        "save_ability": prop(
+            "string", 'Ability for repeating save, e.g. "wis". Empty if no save.', default=""
+        ),  # noqa: E501
+        "save_dc": prop("integer", "DC for the repeating save. 0 if no save.", default=0),
+        "condition": prop(
+            "string",
+            'Condition applied by this effect, e.g. "paralyzed". Empty if none.',
+            default="",
+        ),  # noqa: E501
+        "damage": prop(
+            "string", 'Tick damage dice, e.g. "1d6". Empty if no tick damage.', default=""
+        ),  # noqa: E501
+        "damage_type": prop("string", 'Damage type for tick damage, e.g. "poison".', default=""),
+        "mechanical_notes": prop("string", "Free-text notes on how to resolve ticks.", default=""),
+        "source_id": prop("string", "Combatant ID of the caster or source. Optional.", default=""),
+    },
+    required=["session_id", "target_id", "effect_name", "duration_rounds"],
+)
 async def apply_effect(
     session_id: str,
     target_id: str,
@@ -557,35 +543,10 @@ async def apply_effect(
     mechanical_notes: str = "",
     source_id: str = "",
 ) -> dict:
-    """Track a multi-round effect on a combatant (concentration spell, poison, regeneration, etc.).
-
-    tick values:
-      "start_of_target_turn" — triggers at start of target's turn (poison damage, regen)
-      "end_of_target_turn"   — triggers at end of target's turn (Hold Person save, Slow save)
-      ""                     — passive, no tick (Bless, Haste — just needs to be visible in state)
-
-    advance_turn will return end_of_turn_ticks / start_of_turn_ticks so you know when to resolve.
-    Call remove_effect when: concentration breaks, dispel magic succeeds, or a save ends the effect.
-
-    Args:
-        session_id: The session UUID.
-        target_id: Combatant ID the effect applies to.
-        effect_name: Human-readable name, e.g. "Hold Person", "Bless", "Poison".
-        duration_rounds: How many rounds the effect lasts before expiring automatically.
-        tick: When the effect triggers each round. "" for passive effects.
-        save_ability: Ability for the repeating save, e.g. "wis". Empty if no repeating save.
-        save_dc: DC for the repeating save. 0 if no save.
-        condition: Condition applied by this effect, e.g. "paralyzed". Empty if none.
-        damage: Tick damage dice expression, e.g. "1d6". Empty if no tick damage.
-        damage_type: Damage type for tick damage, e.g. "poison".
-        mechanical_notes: Free-text notes for how to resolve ticks, e.g. "On save success, effect ends and condition is removed."
-        source_id: Combatant ID of the caster or source. Optional.
-    """  # noqa: E501
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         state = session.combat_state or {}
         effects = state.setdefault("effects", [])
-
         effect: dict = {
             "id": str(uuid.uuid4()),
             "name": effect_name,
@@ -605,9 +566,7 @@ async def apply_effect(
             effect["mechanical_notes"] = mechanical_notes
         if source_id:
             effect["source_id"] = source_id
-
         effects.append(effect)
-
         await session_queries.update_combat_state(
             db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
         )
@@ -615,16 +574,15 @@ async def apply_effect(
         return {"effect_applied": True, "effect": effect}
 
 
-@tool
+@tool(
+    "Remove an active effect by its ID. Call when concentration breaks, dispel magic succeeds, or a repeating save ends the effect.",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "effect_id": prop("string", "The effect's UUID (from the apply_effect response)."),
+    },
+    required=["session_id", "effect_id"],
+)
 async def remove_effect(session_id: str, effect_id: str) -> dict:
-    """Remove an active effect by its ID.
-
-    Call this when: concentration breaks, dispel magic succeeds, or a repeating save ends the effect.
-
-    Args:
-        session_id: The session UUID.
-        effect_id: The effect's UUID (from the apply_effect response).
-    """  # noqa: E501
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         state = session.combat_state or {}

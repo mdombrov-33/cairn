@@ -111,7 +111,18 @@ async def test_npc_dialogue_turn_emits_tokens(client: AsyncClient) -> None:
     )
     npc_name = npcs_r.json()[0]["name"]
 
-    with patch("cairn.pipelines.turn_graph.run", return_value=("npc_dialogue", npc_name)):
+    async def _npc_run(player_input, session_id, campaign_id):
+        return {
+            "session_id": str(session_id),
+            "campaign_id": str(campaign_id),
+            "player_input": player_input,
+            "intent": "npc_dialogue",
+            "npc_name": npc_name,
+            "check": None,
+            "npc_context": f'[{npc_name}]: "Aye, what\'ll it be?"',
+        }
+
+    with patch("cairn.pipelines.turn_graph.run", side_effect=_npc_run):
         r = await client.post(
             f"/v1/sessions/{sess['id']}/turns",
             headers={"X-User-Id": "user_a"},
@@ -136,7 +147,18 @@ async def test_npc_dialogue_persists_dm_response(client: AsyncClient) -> None:
     )
     npc_name = npcs_r.json()[0]["name"]
 
-    with patch("cairn.pipelines.turn_graph.run", return_value=("npc_dialogue", npc_name)):
+    async def _npc_run(player_input, session_id, campaign_id):
+        return {
+            "session_id": str(session_id),
+            "campaign_id": str(campaign_id),
+            "player_input": player_input,
+            "intent": "npc_dialogue",
+            "npc_name": npc_name,
+            "check": None,
+            "npc_context": f'[{npc_name}]: "Hello there."',
+        }
+
+    with patch("cairn.pipelines.turn_graph.run", side_effect=_npc_run):
         r = await client.post(
             f"/v1/sessions/{sess['id']}/turns",
             headers={"X-User-Id": "user_a"},

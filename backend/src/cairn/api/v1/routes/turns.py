@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 
@@ -7,47 +6,16 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.agents import combat_resolver, lore_keeper, rules_lawyer, scene_narrator
-from cairn.agents import npc_dialogue as npc_dialogue_agent
+from cairn.agents import combat_resolver, scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
-from cairn.db import client as db_client
 from cairn.db.models.turn import Turn
-from cairn.db.queries import npcs as npc_queries
-from cairn.db.queries import turns as turn_queries
-from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
 
 log = structlog.get_logger()
 
 router = APIRouter(prefix="/v1/sessions", tags=["turns"])
-
-
-async def _run_lore_keeper(
-    dm_response: str,
-    campaign_id: uuid.UUID,
-    namespace: str,
-    source_turn_id: uuid.UUID,
-) -> None:
-    try:
-        entries = await lore_keeper.run(dm_response)
-        if not entries:
-            return
-        async with db_client.get_sessionmaker()() as session, session.begin():
-            for entry in entries:
-                await world_bible_queries.upsert_entry(
-                    session,
-                    campaign_id=campaign_id,
-                    namespace=namespace,
-                    type_=entry.type,
-                    key=entry.key,
-                    content=entry.content,
-                    source_turn_id=source_turn_id,
-                )
-        log.info("lore_keeper_done", count=len(entries), campaign_id=str(campaign_id))
-    except Exception as exc:
-        log.error("lore_keeper_failed", error=str(exc), campaign_id=str(campaign_id))
 
 
 async def _narrate(
@@ -57,16 +25,15 @@ async def _narrate(
     campaign_id: uuid.UUID,
     namespace: str,
 ) -> AsyncGenerator[str]:
-    """Stream tokens from a narrator, save the full response, emit turn_end, fire lore_keeper."""
     chunks: list[str] = []
     async for chunk in narrator:
         chunks.append(chunk)
         yield sse("token", {"text": chunk})
 
     dm_response = "".join(chunks)
-    await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
+    await service.save_turn_narrative(db, turn_id=turn.id, dm_response=dm_response)
     yield sse("turn_end", {"turn_id": str(turn.id)})
-    asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+    service.schedule_lore_keeper(dm_response, campaign_id, namespace, turn.id)
 
 
 @router.post("/{session_id}/turns")
@@ -76,62 +43,51 @@ async def submit(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, intent, npc_name, campaign_id, namespace = await service.prepare(
+    turn, state, namespace = await service.prepare(
         db, session_id=session_id, owner_id=user_id, player_input=body.player_input
     )
+    campaign_id = uuid.UUID(state["campaign_id"])
+    intent = state["intent"]
 
     async def generate() -> AsyncGenerator[str]:
         yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
         if intent == "combat_action":
             narrator = combat_resolver.run(body.player_input, str(session_id))
+            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                yield event
 
         elif intent == "skill_check":
-            check = await rules_lawyer.run(body.player_input)
+            check = state["check"]
+            assert check is not None
             setup_chunks: list[str] = []
             async for chunk in scene_narrator.run(body.player_input):
                 setup_chunks.append(chunk)
                 yield sse("token", {"text": chunk})
             setup_prose = "".join(setup_chunks)
-            await turn_queries.update_turn_check(
-                db,
-                turn.id,
-                check_data={
-                    "skill": check.skill,
-                    "dc": check.dc,
-                    "modifier": check.modifier,
-                    "roll_type": check.roll_type,
-                    "status": "pending",
-                    "setup_prose": setup_prose,
-                },
+            await service.save_check_setup(
+                db, turn_id=turn.id, check=check, setup_prose=setup_prose
             )
             yield sse(
                 "check_required",
                 {
-                    "skill": check.skill,
-                    "dc": check.dc,
-                    "modifier": check.modifier,
-                    "roll_type": check.roll_type,
+                    "skill": check["skill"],
+                    "dc": check["dc"],
+                    "modifier": check["modifier"],
+                    "roll_type": check["roll_type"],
                 },
             )
-            return
 
         elif intent == "npc_dialogue":
-            npc = await npc_queries.find_by_name(db, campaign_id, npc_name or "")
-            if npc is not None:
-                result = await npc_dialogue_agent.run(body.player_input, npc)
-                npc_context = f'[{npc.name}]: "{result.dialogue}"'
-                if result.disposition_change:
-                    await npc_queries.update_disposition(db, npc.id, result.disposition_change)
-            else:
-                npc_context = ""
+            npc_context = state["npc_context"] or ""
             narrator = scene_narrator.run(body.player_input, context=npc_context)
+            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                yield event
 
         else:  # narrative_action
             narrator = scene_narrator.run(body.player_input)
-
-        async for event in _narrate(narrator, turn, db, campaign_id, namespace):
-            yield event
+            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                yield event
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
 
@@ -168,20 +124,17 @@ async def resolve(
 
         outcome_prose = "".join(outcome_chunks)
         dm_response = check["setup_prose"] + "\n\n" + outcome_prose
-        await turn_queries.update_turn_response(db, turn.id, dm_response=dm_response)
-        await turn_queries.update_turn_check(
+        await service.save_resolved_check(
             db,
-            turn.id,
-            check_data={
-                **check,
-                "status": "resolved",
-                "roll": body.roll,
-                "total": total,
-                "success": success,
-            },
+            turn_id=turn.id,
+            check=check,
+            roll=body.roll,
+            total=total,
+            success=success,
+            dm_response=dm_response,
         )
         yield sse("turn_end", {"turn_id": str(turn.id)})
-        asyncio.create_task(_run_lore_keeper(dm_response, campaign_id, namespace, turn.id))
+        service.schedule_lore_keeper(dm_response, campaign_id, namespace, turn.id)
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
 

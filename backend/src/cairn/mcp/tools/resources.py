@@ -2,24 +2,46 @@ import math
 import random
 import uuid
 
-from langchain_core.tools import tool
-
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.mcp.tools.base import prop, tool
 
 
-@tool
+async def _spend_economy(session_id: str, combatant_id: str, field: str) -> dict:
+    async with db_client.get_session() as db:
+        session = await session_queries.get_session(db, uuid.UUID(session_id))
+        state = session.combat_state or {}
+        economy = state.setdefault("turn_economy", {})
+        entry = economy.setdefault(
+            combatant_id,
+            {
+                "action_used": False,
+                "bonus_action_used": False,
+                "reaction_used": False,
+                "movement_remaining": 30,
+            },
+        )
+        if entry.get(field):
+            label = field.replace("_used", "").replace("_", " ")
+            return {"error": f"{label} already used this turn."}
+        entry[field] = True
+        await session_queries.update_combat_state(
+            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
+        )
+        await db.commit()
+        return {"combatant_id": combatant_id, field: True}
+
+
+@tool(
+    "Consume one spell slot of the given level. Call whenever a character casts a leveled spell (not cantrips).",  # noqa: E501
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "level": prop("integer", "Spell slot level to consume (1-9)."),
+    },
+    required=["character_id", "level"],
+)
 async def consume_spell_slot(character_id: str, level: int) -> dict:
-    """Consume one spell slot of the given level from a character.
-
-    Call this whenever a character casts a leveled spell (not cantrips).
-    Returns error if no slots remain at that level.
-
-    Args:
-        character_id: The character's UUID.
-        level: Spell slot level to consume (1-9).
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         slots = dict(char.spell_slots or {})
@@ -40,15 +62,16 @@ async def consume_spell_slot(character_id: str, level: int) -> dict:
         }
 
 
-@tool
+@tool(
+    "Restore spell slots of the given level (e.g. Arcane Recovery, short rest for Warlock).",
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "level": prop("integer", "Spell slot level to restore (1-9)."),
+        "count": prop("integer", "Number of slots to restore. Default 1.", default=1),
+    },
+    required=["character_id", "level"],
+)
 async def restore_spell_slot(character_id: str, level: int, count: int = 1) -> dict:
-    """Restore spell slots of the given level (e.g. Arcane Recovery, short rest for Warlock).
-
-    Args:
-        character_id: The character's UUID.
-        level: Spell slot level to restore (1-9).
-        count: Number of slots to restore. Default 1.
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         slots = dict(char.spell_slots or {})
@@ -61,19 +84,18 @@ async def restore_spell_slot(character_id: str, level: int, count: int = 1) -> d
         return {"character": char.name, "level": level, "slots_remaining": slot["current"]}
 
 
-@tool
+@tool(
+    "Spend uses of a class resource (Action Surge, Ki, Rage, Superiority Dice, Second Wind, etc.).",
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "resource": prop(
+            "string", 'Resource key, e.g. "action_surge", "ki", "rage", "bardic_inspiration".'
+        ),
+        "count": prop("integer", "Number of uses to spend. Default 1.", default=1),
+    },
+    required=["character_id", "resource"],
+)
 async def use_resource(character_id: str, resource: str, count: int = 1) -> dict:
-    """Spend uses of a class resource (Action Surge, Ki, Rage, Superiority Dice, Second Wind, etc.).
-
-    Resources are tracked as {"current": N, "max": N, "resets_on": "short_rest"|"long_rest"}.
-    Returns error if insufficient uses remain.
-
-    Args:
-        character_id: The character's UUID.
-        resource: Resource key, e.g. "action_surge", "ki", "rage", "superiority_dice", "second_wind",
-                  "channel_divinity", "bardic_inspiration", "wild_shape", "lay_on_hands".
-        count: Number of uses to spend. Default 1.
-    """  # noqa: E501
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         resources = dict(char.resources or {})
@@ -95,15 +117,16 @@ async def use_resource(character_id: str, resource: str, count: int = 1) -> dict
         }
 
 
-@tool
+@tool(
+    "Restore uses of a class resource (e.g. after a short or long rest, or from a feature).",
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "resource": prop("string", "Resource key to restore."),
+        "count": prop("integer", "Number of uses to restore. Default 1.", default=1),
+    },
+    required=["character_id", "resource"],
+)
 async def restore_resource(character_id: str, resource: str, count: int = 1) -> dict:
-    """Restore uses of a class resource (e.g. after a short or long rest, or from a feature).
-
-    Args:
-        character_id: The character's UUID.
-        resource: Resource key to restore.
-        count: Number of uses to restore. Default 1.
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         resources = dict(char.resources or {})
@@ -117,16 +140,15 @@ async def restore_resource(character_id: str, resource: str, count: int = 1) -> 
         return {"character": char.name, "resource": resource, "uses_remaining": r["current"]}
 
 
-@tool
+@tool(
+    "Begin concentrating on a spell. Automatically drops any previous concentration.",
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "spell_name": prop("string", 'Name of the spell, e.g. "Bless", "Haste", "Hold Person".'),
+    },
+    required=["character_id", "spell_name"],
+)
 async def set_concentration(character_id: str, spell_name: str) -> dict:
-    """Begin concentrating on a spell. Automatically drops any previous concentration.
-
-    Call this after successfully casting a concentration spell.
-
-    Args:
-        character_id: The character's UUID.
-        spell_name: Name of the spell being concentrated on, e.g. "Bless", "Haste", "Hold Person".
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         previous = char.concentration
@@ -138,16 +160,12 @@ async def set_concentration(character_id: str, spell_name: str) -> dict:
         return result
 
 
-@tool
+@tool(
+    "End a character's concentration. Call when they choose to drop it, fail a save, cast another concentration spell, or die.",  # noqa: E501
+    {"character_id": prop("string", "The character's UUID.")},
+    required=["character_id"],
+)
 async def drop_concentration(character_id: str) -> dict:
-    """End a character's concentration, dismissing its active spell.
-
-    Call this when: the character chooses to drop concentration, they fail a
-    concentration saving throw, they cast another concentration spell, or they die.
-
-    Args:
-        character_id: The character's UUID.
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         spell = char.concentration
@@ -158,36 +176,28 @@ async def drop_concentration(character_id: str) -> dict:
         return {"character": char.name, "dropped_concentration": spell}
 
 
-@tool
+@tool(
+    "Roll a Constitution saving throw to maintain concentration after taking damage. DC = max(10, half damage taken).",  # noqa: E501
+    {
+        "character_id": prop("string", "The character's UUID."),
+        "damage_taken": prop("integer", "Total damage taken that triggered the check."),
+    },
+    required=["character_id", "damage_taken"],
+)
 async def roll_concentration_check(character_id: str, damage_taken: int) -> dict:
-    """Roll a Constitution saving throw to maintain concentration after taking damage.
-
-    DC = max(10, half the damage taken). Uses character's CON modifier + proficiency
-    if they have the War Caster or Resilience (CON) feat.
-
-    Call this immediately after a concentrating character takes damage.
-
-    Args:
-        character_id: The character's UUID.
-        damage_taken: Total damage taken that triggered the check.
-    """
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         if not char.concentration:
             return {"character": char.name, "note": "Not concentrating — no check needed."}
-
         dc = max(10, math.floor(damage_taken / 2))
         con = char.stats.get("con", 10)
         con_mod = math.floor((con - 10) / 2)
         roll = random.randint(1, 20)
         total = roll + con_mod
         success = total >= dc
-
         if not success:
             char.concentration = None
-
         await db.commit()
-
         return {
             "character": char.name,
             "spell": char.concentration if success else None,
@@ -201,59 +211,52 @@ async def roll_concentration_check(character_id: str, damage_taken: int) -> dict
         }
 
 
-@tool
+@tool(
+    "Mark a combatant's action as used for this turn (Attack, Cast a Spell, Dash, etc.).",
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID."),
+    },
+    required=["session_id", "combatant_id"],
+)
 async def use_action(session_id: str, combatant_id: str) -> dict:
-    """Mark a combatant's action as used for this turn.
-
-    Call this when a character takes their main action (Attack, Cast a Spell, Dash, etc.).
-    Returns error if action already used this turn.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID.
-    """
     return await _spend_economy(session_id, combatant_id, "action_used")
 
 
-@tool
+@tool(
+    "Mark a combatant's bonus action as used for this turn (Off-hand Attack, Misty Step, Healing Word, etc.).",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID."),
+    },
+    required=["session_id", "combatant_id"],
+)
 async def use_bonus_action(session_id: str, combatant_id: str) -> dict:
-    """Mark a combatant's bonus action as used for this turn.
-
-    Call this when a character uses their bonus action (Off-hand Attack, Misty Step, Healing Word, etc.).
-    Returns error if bonus action already used this turn.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID.
-    """  # noqa: E501
     return await _spend_economy(session_id, combatant_id, "bonus_action_used")
 
 
-@tool
+@tool(
+    "Mark a combatant's reaction as used until the start of their next turn (Opportunity Attack, Shield, Counterspell, etc.).",  # noqa: E501
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID."),
+    },
+    required=["session_id", "combatant_id"],
+)
 async def use_reaction(session_id: str, combatant_id: str) -> dict:
-    """Mark a combatant's reaction as used until the start of their next turn.
-
-    Call this for Opportunity Attacks, Shield, Counterspell, Hellish Rebuke, etc.
-    Returns error if reaction already used this round.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID.
-    """
     return await _spend_economy(session_id, combatant_id, "reaction_used")
 
 
-@tool
+@tool(
+    "Spend movement for a combatant this turn.",
+    {
+        "session_id": prop("string", "The session UUID."),
+        "combatant_id": prop("string", "The combatant's UUID."),
+        "feet": prop("integer", "Amount of movement to spend."),
+    },
+    required=["session_id", "combatant_id", "feet"],
+)
 async def spend_movement(session_id: str, combatant_id: str, feet: int) -> dict:
-    """Spend movement for a combatant this turn.
-
-    Returns error if insufficient movement remains.
-
-    Args:
-        session_id: The session UUID.
-        combatant_id: The combatant's UUID.
-        feet: Amount of movement to spend.
-    """
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         state = session.combat_state or {}
@@ -280,28 +283,3 @@ async def spend_movement(session_id: str, combatant_id: str, feet: int) -> dict:
             "movement_spent": feet,
             "movement_remaining": entry["movement_remaining"],
         }
-
-
-async def _spend_economy(session_id: str, combatant_id: str, field: str) -> dict:
-    async with db_client.get_session() as db:
-        session = await session_queries.get_session(db, uuid.UUID(session_id))
-        state = session.combat_state or {}
-        economy = state.setdefault("turn_economy", {})
-        entry = economy.setdefault(
-            combatant_id,
-            {
-                "action_used": False,
-                "bonus_action_used": False,
-                "reaction_used": False,
-                "movement_remaining": 30,
-            },
-        )
-        if entry.get(field):
-            label = field.replace("_used", "").replace("_", " ")
-            return {"error": f"{label} already used this turn."}
-        entry[field] = True
-        await session_queries.update_combat_state(
-            db, uuid.UUID(session_id), combat_state=state, combat_active=session.combat_active
-        )
-        await db.commit()
-        return {"combatant_id": combatant_id, field: True}

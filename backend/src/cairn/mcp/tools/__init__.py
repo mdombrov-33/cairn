@@ -1,3 +1,4 @@
+from cairn.mcp.tools.base import Tool
 from cairn.mcp.tools.combat import (
     advance_turn,
     apply_condition,
@@ -38,7 +39,7 @@ from cairn.mcp.tools.srd import (
     lookup_weapon,
 )
 
-ALL_TOOLS = [
+ALL_TOOLS: list[Tool] = [
     # Dice
     roll_d20,
     roll_damage,

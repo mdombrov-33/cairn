@@ -37,5 +37,3 @@ class ToolError(CairnError):
 class LLMError(CairnError):
     code = "llm_error"
     http_status = 502
-
-

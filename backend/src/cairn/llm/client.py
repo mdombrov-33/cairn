@@ -16,6 +16,7 @@ from litellm.exceptions import (
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from cairn.domain.exceptions import LLMError
+from cairn.mcp.tools.base import Tool
 
 log = structlog.get_logger()
 
@@ -40,7 +41,6 @@ async def _call(
     fallbacks: list[str],
     **kwargs: Any,
 ) -> Any:
-
     return await litellm.acompletion(
         model=model, messages=messages, fallbacks=fallbacks or None, **kwargs
     )
@@ -84,30 +84,10 @@ async def complete(
     return content
 
 
-def _tool_to_oai(tool: Any) -> dict:
-    """Convert a langchain @tool to OpenAI function-call format."""
-    schema = (
-        tool.args_schema.model_json_schema()
-        if tool.args_schema
-        else {"type": "object", "properties": {}}
-    )
-    # Strip keys that don't belong in parameters (description lives at function level)
-    for key in ("title", "description"):
-        schema.pop(key, None)
-    return {
-        "type": "function",
-        "function": {
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": schema,
-        },
-    }
-
-
 async def complete_with_tools(
     model: str,
     messages: list[dict],
-    tools: list[Any],
+    tools: list[Tool],
     agent: str = "unknown",
     fallbacks: list[str] | None = None,
     max_iterations: int = 15,
@@ -118,8 +98,8 @@ async def complete_with_tools(
     Returns (final_text_response, full_message_history).
     Raises LLMError on LLM failure or if max_iterations is exceeded.
     """
-    oai_tools = [_tool_to_oai(t) for t in tools]
-    tool_map = {t.name: t for t in tools}
+    oai_tools = [t.spec for t in tools]
+    tool_map = {t.name: t.fn for t in tools}
     msgs: list[dict] = list(messages)
 
     for iteration in range(max_iterations):
@@ -162,13 +142,12 @@ async def complete_with_tools(
             }
         )
 
-        # Execute each tool call and append results
         for tc in tool_calls:
             name = tc.function.name
             args = json.loads(tc.function.arguments)
             if name in tool_map:
                 try:
-                    result = await tool_map[name].ainvoke(args)
+                    result = await tool_map[name](**args)
                 except Exception as exc:
                     result = {"error": str(exc)}
                     log.error(

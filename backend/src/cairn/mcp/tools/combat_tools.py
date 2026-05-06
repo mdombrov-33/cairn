@@ -1,11 +1,11 @@
 """Shared tool list and context helpers used by combat agents."""
 
 import uuid
-from typing import Any
 
 from cairn.db import client as db_client
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.mcp.tools.base import Tool
 from cairn.mcp.tools.combat import (
     advance_turn,
     apply_condition,
@@ -40,7 +40,7 @@ from cairn.mcp.tools.srd import (
     lookup_weapon,
 )
 
-COMBAT_TOOLS: list[Any] = [
+COMBAT_TOOLS: list[Tool] = [
     roll_d20,
     roll_damage,
     lookup_spell,

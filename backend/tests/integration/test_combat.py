@@ -119,11 +119,9 @@ async def test_start_combat_initialises_state(client: AsyncClient) -> None:
     await _character(client, camp["id"])
     sess = await _session(client, camp["id"])
 
-    result = await start_combat.ainvoke(
-        {
-            "session_id": sess["id"],
-            "enemies_json": '[{"type": "monster", "name": "goblin", "count": 2}]',
-        }
+    result = await start_combat.fn(
+        session_id=sess["id"],
+        enemies_json='[{"type": "monster", "name": "goblin", "count": 2}]',
     )
 
     assert result.get("combat_started") is True
@@ -152,19 +150,18 @@ async def test_apply_damage_reduces_hp(client: AsyncClient) -> None:
     await _character(client, camp["id"])
     sess = await _session(client, camp["id"])
 
-    started = await start_combat.ainvoke(
-        {"session_id": sess["id"], "enemies_json": '[{"type": "monster", "name": "goblin"}]'}
+    started = await start_combat.fn(
+        session_id=sess["id"],
+        enemies_json='[{"type": "monster", "name": "goblin"}]',
     )
     goblin = next(c for c in started["combat_state"]["combatants"] if c["type"] == "monster")
 
-    result = await apply_damage.ainvoke(
-        {
-            "session_id": sess["id"],
-            "combatant_id": goblin["id"],
-            "combatant_type": "monster",
-            "amount": 5,
-            "damage_type": "slashing",
-        }
+    result = await apply_damage.fn(
+        session_id=sess["id"],
+        combatant_id=goblin["id"],
+        combatant_type="monster",
+        amount=5,
+        damage_type="slashing",
     )
 
     assert result["damage_taken"] == 5
@@ -178,30 +175,27 @@ async def test_advance_turn_ticks_and_expires_effects(client: AsyncClient) -> No
     sess = await _session(client, camp["id"])
     session_id = sess["id"]
 
-    started = await start_combat.ainvoke(
-        {"session_id": session_id, "enemies_json": '[{"type": "monster", "name": "goblin"}]'}
+    started = await start_combat.fn(
+        session_id=session_id,
+        enemies_json='[{"type": "monster", "name": "goblin"}]',
     )
     goblin = next(c for c in started["combat_state"]["combatants"] if c["type"] == "monster")
 
-    await apply_effect.ainvoke(
-        {
-            "session_id": session_id,
-            "target_id": goblin["id"],
-            "effect_name": "Bane",
-            "duration_rounds": 1,
-            "tick": "end_of_target_turn",
-            "save_ability": "cha",
-            "save_dc": 13,
-            "mechanical_notes": "On save, effect ends.",
-        }
+    await apply_effect.fn(
+        session_id=session_id,
+        target_id=goblin["id"],
+        effect_name="Bane",
+        duration_rounds=1,
+        tick="end_of_target_turn",
+        save_ability="cha",
+        save_dc=13,
+        mechanical_notes="On save, effect ends.",
     )
 
-    # Navigate to goblin's turn then advance past it to trigger end-of-turn tick
     state = started["combat_state"]
     result = None
     for _ in range(len(state["combatants"]) + 1):
-        result = await advance_turn.ainvoke({"session_id": session_id})
-        # If the outgoing combatant was the goblin, end_of_turn_ticks fired for it
+        result = await advance_turn.fn(session_id=session_id)
         if result.get("end_of_turn_ticks") or result.get("expired_effects"):
             break
 
@@ -216,8 +210,9 @@ async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
     sess = await _session(client, camp["id"])
     session_id = sess["id"]
 
-    await start_combat.ainvoke(
-        {"session_id": session_id, "enemies_json": '[{"type": "monster", "name": "goblin"}]'}
+    await start_combat.fn(
+        session_id=session_id,
+        enemies_json='[{"type": "monster", "name": "goblin"}]',
     )
 
     call_count = {"n": 0}
@@ -274,16 +269,14 @@ async def test_ally_npc_enrolled_with_players_team(client: AsyncClient) -> None:
         await db.commit()
         npc_id = str(npc.id)
 
-    result = await start_combat.ainvoke(
-        {
-            "session_id": session_id,
-            "enemies_json": json.dumps(
-                [
-                    {"type": "monster", "name": "goblin"},
-                    {"type": "npc", "id": npc_id, "team": "players"},
-                ]
-            ),
-        }
+    result = await start_combat.fn(
+        session_id=session_id,
+        enemies_json=json.dumps(
+            [
+                {"type": "monster", "name": "goblin"},
+                {"type": "npc", "id": npc_id, "team": "players"},
+            ]
+        ),
     )
 
     assert result.get("combat_started") is True
