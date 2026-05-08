@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from cairn.api.errors import register_error_handlers
 from cairn.api.middleware.request_logging import request_logging_middleware
-from cairn.api.v1.routes import campaigns, characters, combat, npcs, sessions, turns
+from cairn.api.v1.routes import campaigns, characters, combat, npcs, sessions, srd, turns
 from cairn.config import get_settings
 from cairn.observability.logging import configure_logging
 from cairn.pipelines.checkpointer import lifespan_checkpointer
@@ -31,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(combat.router)
     app.include_router(npcs.router)
     app.include_router(sessions.router)
+    app.include_router(srd.router)
     app.include_router(turns.router)
 
     @app.get("/healthz")
