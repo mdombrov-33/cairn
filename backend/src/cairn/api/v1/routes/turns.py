@@ -147,13 +147,3 @@ async def list_turns(
 ) -> list[TurnResponse]:
     turns = await service.list_turns(db, session_id=session_id, owner_id=user_id)
     return [TurnResponse.model_validate(t) for t in turns]
-
-
-@router.get("/{session_id}/transcript", response_model=list[TurnResponse])
-async def transcript(
-    session_id: uuid.UUID,
-    user_id: CurrentUserId,
-    db: DBSession,
-) -> list[TurnResponse]:
-    turns = await service.list_turns(db, session_id=session_id, owner_id=user_id)
-    return [TurnResponse.model_validate(t) for t in turns]

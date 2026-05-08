@@ -1,15 +1,16 @@
 import math
 import random
 import re
+from typing import Annotated
 
-from cairn.mcp.tools.base import prop, tool
+from langchain_core.tools import tool
 
 
 def _roll_die(sides: int) -> int:
     return random.randint(1, sides)
 
 
-def _parse_and_roll(expression: str) -> tuple[list[int], int]:
+def parse_and_roll(expression: str) -> tuple[list[int], int]:
     """Parse '8d6', '1d6+2', '2d8-1' and roll."""
     match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", expression.strip())
     if not match:
@@ -21,18 +22,14 @@ def _parse_and_roll(expression: str) -> tuple[list[int], int]:
     return rolls, sum(rolls) + modifier
 
 
-@tool(
-    "Roll a d20 for attack rolls, saving throws, or ability checks.",
-    {
-        "modifier": prop("integer", "Integer modifier to add (can be negative).", default=0),
-        "roll_type": prop(
-            "string",
-            '"normal", "advantage" (higher of two), or "disadvantage" (lower of two).',
-            default="normal",
-        ),  # noqa: E501
-    },
-)
-async def roll_d20(modifier: int = 0, roll_type: str = "normal") -> dict:
+@tool
+async def roll_d20(
+    modifier: Annotated[int, "Integer modifier to add (can be negative)."] = 0,
+    roll_type: Annotated[
+        str, '"normal", "advantage" (higher of two), or "disadvantage" (lower of two).'
+    ] = "normal",
+) -> dict:
+    """Roll a d20 for attack rolls, saving throws, or ability checks."""
     if roll_type == "advantage":
         r1, r2 = _roll_die(20), _roll_die(20)
         result = max(r1, r2)
@@ -54,21 +51,18 @@ async def roll_d20(modifier: int = 0, roll_type: str = "normal") -> dict:
     }
 
 
-@tool(
-    'Roll damage dice using a standard dice expression like "8d6", "1d6+2", "2d8-1".',
-    {"expression": prop("string", 'Dice notation, e.g. "8d6", "1d6+2", "2d8-1", "4d6+4".')},
-    required=["expression"],
-)
-async def roll_damage(expression: str) -> dict:
-    rolls, total = _parse_and_roll(expression)
+@tool
+async def roll_damage(
+    expression: Annotated[str, 'Dice notation, e.g. "8d6", "1d6+2", "2d8-1", "4d6+4".'],
+) -> dict:
+    """Roll damage dice using a standard dice expression like "8d6", "1d6+2", "2d8-1"."""
+    rolls, total = parse_and_roll(expression)
     return {"expression": expression, "rolls": rolls, "total": max(0, total)}
 
 
-@tool(
-    "Roll a full set of ability scores for character creation using 4d6-drop-lowest.",
-    {},
-)
+@tool
 async def roll_ability_scores() -> dict:
+    """Roll a full set of ability scores for character creation using 4d6-drop-lowest."""
     detail = []
     scores = []
     for _ in range(6):

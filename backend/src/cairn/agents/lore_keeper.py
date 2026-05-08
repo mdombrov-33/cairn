@@ -3,10 +3,8 @@ import json
 import structlog
 from pydantic import BaseModel
 
-from cairn.config import get_settings
 from cairn.llm.client import complete
-from cairn.llm.router import get_model
-from cairn.prompts.registry import load_prompt, resolve_version
+from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
 
@@ -20,10 +18,7 @@ class LoreEntry(BaseModel):
 
 
 async def run(dm_response: str) -> list[LoreEntry]:
-    settings = get_settings()
-    version = resolve_version("lore_keeper", settings.llm_prompt_versions)
-    prompt = load_prompt("lore_keeper", version)
-    model, fallbacks = get_model("lore_keeper", settings.llm_env)
+    prompt, model, fallbacks = agent_setup("lore_keeper")
 
     raw = await complete(
         model=model,

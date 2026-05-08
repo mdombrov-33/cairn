@@ -1,20 +1,16 @@
 import json
 from collections.abc import AsyncIterator
+from typing import Literal
 
 import structlog
 
-from cairn.agents import ally_ai, enemy_ai, scene_narrator
-from cairn.config import get_settings
+from cairn.agents import combat_ai, scene_narrator
 from cairn.domain.exceptions import AgentError
 from cairn.llm.client import complete_with_tools
-from cairn.llm.router import get_model
-from cairn.mcp.tools.combat_tools import COMBAT_TOOLS, fetch_combat_context
-from cairn.prompts.registry import load_prompt, resolve_version
+from cairn.llm.router import agent_setup
+from cairn.tools import COMBAT_TOOLS, fetch_combat_context
 
 log = structlog.get_logger()
-
-# get_combat_state / get_character / get_party are excluded — injected into prompt instead
-_COMBAT_TOOLS = COMBAT_TOOLS
 
 
 async def run(
@@ -43,10 +39,8 @@ async def run(
             break
         if current.get("type") == "character" and not current.get("ai_controlled"):
             break  # player's own character — stop and wait for input
-        if current.get("team") == "players":
-            summary = await ally_ai.run(session_id)
-        else:
-            summary = await enemy_ai.run(session_id)
+        role: Literal["ally", "enemy"] = "ally" if current.get("team") == "players" else "enemy"
+        summary = await combat_ai.run(session_id, role=role)
         enemy_summaries.append(summary)
 
     narrative_context = f"[PLAYER ACTION]\n{player_summary}"
@@ -64,10 +58,7 @@ async def _resolve_mechanics(
     session_id: str,
     context: str,
 ) -> str:
-    settings = get_settings()
-    version = resolve_version("combat_resolver", settings.llm_prompt_versions)
-    prompt = load_prompt("combat_resolver", version)
-    model, fallbacks = get_model("combat_resolver", settings.llm_env)
+    prompt, model, fallbacks = agent_setup("combat_resolver")
 
     combat_state, party = await fetch_combat_context(session_id)
 
@@ -84,7 +75,7 @@ async def _resolve_mechanics(
         final_text, _ = await complete_with_tools(
             model=model,
             messages=messages,
-            tools=_COMBAT_TOOLS,
+            tools=COMBAT_TOOLS,
             agent="combat_resolver",
             fallbacks=fallbacks,
             temperature=prompt.temperature,

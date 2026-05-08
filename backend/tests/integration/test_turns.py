@@ -170,7 +170,7 @@ async def test_get_turns_empty_before_any_turns(client: AsyncClient) -> None:
     assert r.json() == []
 
 
-async def test_transcript_returns_turns_in_order(client: AsyncClient) -> None:
+async def test_list_turns_returns_turns_in_order(client: AsyncClient) -> None:
     camp = await _campaign(client)
     sess = await _session(client, camp["id"])
 
@@ -178,7 +178,7 @@ async def test_transcript_returns_turns_in_order(client: AsyncClient) -> None:
     await _submit(client, sess["id"], "Second")
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/transcript",
+        f"/v1/sessions/{sess['id']}/turns",
         headers={"X-User-Id": "user_a"},
     )
     assert r.status_code == 200

@@ -4,12 +4,10 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel, ValidationError
 
-from cairn.config import get_settings
 from cairn.db.models.npc import NPC
 from cairn.domain.exceptions import AgentError
 from cairn.llm.client import complete
-from cairn.llm.router import get_model
-from cairn.prompts.registry import load_prompt, resolve_version
+from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
 
@@ -24,10 +22,7 @@ async def run(
     npc: NPC,
     context: str = "",
 ) -> NPCDialogueResult:
-    settings = get_settings()
-    version = resolve_version("npc_dialogue", settings.llm_prompt_versions)
-    prompt = load_prompt("npc_dialogue", version)
-    model, fallbacks = get_model("npc_dialogue", settings.llm_env)
+    prompt, model, fallbacks = agent_setup("npc_dialogue")
 
     voice_summary = npc.voice_traits.get("speech_pattern", "") if npc.voice_traits else ""
 

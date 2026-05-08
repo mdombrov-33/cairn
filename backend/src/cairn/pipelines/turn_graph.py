@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from functools import lru_cache
 from typing import Any, TypedDict
 
 import structlog
@@ -77,24 +78,19 @@ def _pick_node(state: TurnState) -> str:
     return END
 
 
-_graph: Any = None
-
-
+@lru_cache(maxsize=1)
 def _get_graph() -> Any:
-    global _graph
-    if _graph is None:
-        builder: StateGraph = StateGraph(TurnState)
-        builder.add_node("route_intent", _route_intent)
-        builder.add_node("resolve_skill_check", _resolve_skill_check)
-        builder.add_node("resolve_npc_dialogue", _resolve_npc_dialogue)
+    builder: StateGraph = StateGraph(TurnState)
+    builder.add_node("route_intent", _route_intent)
+    builder.add_node("resolve_skill_check", _resolve_skill_check)
+    builder.add_node("resolve_npc_dialogue", _resolve_npc_dialogue)
 
-        builder.add_edge(START, "route_intent")
-        builder.add_conditional_edges("route_intent", _pick_node)
-        builder.add_edge("resolve_skill_check", END)
-        builder.add_edge("resolve_npc_dialogue", END)
+    builder.add_edge(START, "route_intent")
+    builder.add_conditional_edges("route_intent", _pick_node)
+    builder.add_edge("resolve_skill_check", END)
+    builder.add_edge("resolve_npc_dialogue", END)
 
-        _graph = builder.compile(checkpointer=get_checkpointer())
-    return _graph
+    return builder.compile(checkpointer=get_checkpointer())
 
 
 async def run(

@@ -1,33 +1,28 @@
 import json
+from typing import Literal
 
 import structlog
 
-from cairn.config import get_settings
 from cairn.domain.exceptions import AgentError
 from cairn.llm.client import complete_with_tools
-from cairn.llm.router import get_model
-from cairn.mcp.tools.combat_tools import COMBAT_TOOLS, fetch_combat_context
-from cairn.prompts.registry import load_prompt, resolve_version
+from cairn.llm.router import agent_setup
+from cairn.tools import COMBAT_TOOLS, fetch_combat_context
 
 log = structlog.get_logger()
 
-_ALLY_TOOLS = COMBAT_TOOLS
 
-
-async def run(session_id: str) -> str:
-    """Resolve one ally turn (companion character or friendly NPC). Returns a resolution summary string."""  # noqa: E501
+async def run(session_id: str, role: Literal["ally", "enemy"]) -> str:
+    """Resolve one AI-controlled combatant turn. Returns a resolution summary string."""
     combat_state, party = await fetch_combat_context(session_id)
 
     idx = combat_state.get("turn_index", 0)
     combatants = combat_state.get("combatants", [])
     if not combatants:
-        raise AgentError("ally_ai called with no combatants in combat state")
+        raise AgentError(f"{role}_ai called with no combatants in combat state")
     current = combatants[idx]
 
-    settings = get_settings()
-    version = resolve_version("ally_ai", settings.llm_prompt_versions)
-    prompt = load_prompt("ally_ai", version)
-    model, fallbacks = get_model("ally_ai", settings.llm_env)
+    agent_name = f"{role}_ai"
+    prompt, model, fallbacks = agent_setup(agent_name)
 
     rendered = prompt.render(
         session_id=session_id,
@@ -42,18 +37,18 @@ async def run(session_id: str) -> str:
         final_text, _ = await complete_with_tools(
             model=model,
             messages=[{"role": "user", "content": rendered}],
-            tools=_ALLY_TOOLS,
-            agent="ally_ai",
+            tools=COMBAT_TOOLS,
+            agent=agent_name,
             fallbacks=fallbacks,
             temperature=prompt.temperature,
         )
     except Exception as exc:
-        log.error("ally_ai_failed", error=str(exc))
-        raise AgentError(f"AllyAI failed: {exc}") from exc
+        log.error("combat_ai_failed", role=role, error=str(exc))
+        raise AgentError(f"{role.capitalize()}AI failed: {exc}") from exc
 
     try:
         data = json.loads(final_text.strip())
         return str(data.get("summary", final_text))
     except json.JSONDecodeError:
-        log.warning("ally_ai_non_json_response", raw=final_text[:200])
+        log.warning("combat_ai_non_json_response", role=role, raw=final_text[:200])
         return final_text

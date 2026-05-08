@@ -5,6 +5,8 @@ from typing import Any, cast
 
 import litellm
 import structlog
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from litellm import CustomStreamWrapper
 from litellm.exceptions import (
     APIConnectionError,
@@ -15,8 +17,7 @@ from litellm.exceptions import (
 )
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from cairn.domain.exceptions import LLMError
-from cairn.mcp.tools.base import Tool
+from cairn.domain.exceptions import LLMError, ToolError
 
 log = structlog.get_logger()
 
@@ -44,6 +45,10 @@ async def _call(
     return await litellm.acompletion(
         model=model, messages=messages, fallbacks=fallbacks or None, **kwargs
     )
+
+
+async def _invoke_tool(t: BaseTool, args: dict) -> Any:
+    return await t.ainvoke(args)
 
 
 async def complete(
@@ -87,7 +92,7 @@ async def complete(
 async def complete_with_tools(
     model: str,
     messages: list[dict],
-    tools: list[Tool],
+    tools: list[BaseTool],
     agent: str = "unknown",
     fallbacks: list[str] | None = None,
     max_iterations: int = 15,
@@ -96,10 +101,10 @@ async def complete_with_tools(
     """Run a tool-calling loop until the model stops requesting tool calls.
 
     Returns (final_text_response, full_message_history).
-    Raises LLMError on LLM failure or if max_iterations is exceeded.
+    Raises LLMError on LLM failure or ToolError on tool failure.
     """
-    oai_tools = [t.spec for t in tools]
-    tool_map = {t.name: t.fn for t in tools}
+    oai_tools = [convert_to_openai_tool(t) for t in tools]
+    tool_map = {t.name: t for t in tools}
     msgs: list[dict] = list(messages)
 
     for iteration in range(max_iterations):
@@ -145,17 +150,17 @@ async def complete_with_tools(
         for tc in tool_calls:
             name = tc.function.name
             args = json.loads(tc.function.arguments)
-            if name in tool_map:
+            if name not in tool_map:
+                log.warning("tool_call_unknown", tool=name, agent=agent)
+                result: Any = {"error": f"Unknown tool: {name}"}
+            else:
                 try:
-                    result = await tool_map[name](**args)
+                    result = await _invoke_tool(tool_map[name], args)
                 except Exception as exc:
-                    result = {"error": str(exc)}
                     log.error(
                         "tool_call_failed", tool=name, agent=agent, error=str(exc), exc_info=True
-                    )  # noqa: E501
-            else:
-                result = {"error": f"Unknown tool: {name}"}
-                log.warning("tool_call_unknown", tool=name, agent=agent)
+                    )
+                    raise ToolError(f"Tool '{name}' failed: {exc}") from exc
 
             log.info("tool_call", tool=name, agent=agent)
             msgs.append(

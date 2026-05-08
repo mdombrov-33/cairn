@@ -3,11 +3,9 @@ from typing import Literal, cast
 
 import structlog
 
-from cairn.config import get_settings
 from cairn.domain.exceptions import AgentError
 from cairn.llm.client import complete
-from cairn.llm.router import get_model
-from cairn.prompts.registry import load_prompt, resolve_version
+from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
 
@@ -16,10 +14,7 @@ _VALID_INTENTS = {"narrative_action", "skill_check", "npc_dialogue"}
 
 
 async def run(player_input: str) -> tuple[Intent, str | None]:
-    settings = get_settings()
-    version = resolve_version("intent_router", settings.llm_prompt_versions)
-    prompt = load_prompt("intent_router", version)
-    model, fallbacks = get_model("intent_router", settings.llm_env)
+    prompt, model, fallbacks = agent_setup("intent_router")
 
     result = await complete(
         model=model,
@@ -35,7 +30,7 @@ async def run(player_input: str) -> tuple[Intent, str | None]:
         data = json.loads(cleaned)
         intent = str(data["intent"]).lower()
         npc_name: str | None = data.get("npc_name") or None
-    except json.JSONDecodeError, KeyError:
+    except (json.JSONDecodeError, KeyError):
         intent = cleaned.lower()
         npc_name = None
 

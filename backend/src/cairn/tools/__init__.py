@@ -1,5 +1,6 @@
-from cairn.mcp.tools.base import Tool
-from cairn.mcp.tools.combat import (
+from langchain_core.tools import BaseTool
+
+from cairn.tools.combat import (
     advance_turn,
     apply_condition,
     apply_damage,
@@ -11,9 +12,15 @@ from cairn.mcp.tools.combat import (
     roll_death_save,
     start_combat,
 )
-from cairn.mcp.tools.dice import roll_ability_scores, roll_d20, roll_damage
-from cairn.mcp.tools.game_state import get_character, get_combat_state, get_npc, get_party
-from cairn.mcp.tools.resources import (
+from cairn.tools.dice import roll_ability_scores, roll_d20, roll_damage
+from cairn.tools.game_state import (
+    fetch_combat_context,
+    get_character,
+    get_combat_state,
+    get_npc,
+    get_party,
+)
+from cairn.tools.resources import (
     consume_spell_slot,
     drop_concentration,
     restore_resource,
@@ -26,7 +33,7 @@ from cairn.mcp.tools.resources import (
     use_reaction,
     use_resource,
 )
-from cairn.mcp.tools.srd import (
+from cairn.tools.srd import (
     list_spells_for_class,
     lookup_class,
     lookup_condition,
@@ -39,7 +46,7 @@ from cairn.mcp.tools.srd import (
     lookup_weapon,
 )
 
-ALL_TOOLS: list[Tool] = [
+ALL_TOOLS: list[BaseTool] = [
     # Dice
     roll_d20,
     roll_damage,
@@ -85,4 +92,36 @@ ALL_TOOLS: list[Tool] = [
     spend_movement,
 ]
 
-__all__ = ["ALL_TOOLS"]
+# Subset for combat agents — excludes state reads injected into prompts directly
+COMBAT_TOOLS: list[BaseTool] = [
+    roll_d20,
+    roll_damage,
+    lookup_spell,
+    lookup_weapon,
+    lookup_monster,
+    lookup_condition,
+    lookup_feature,
+    get_npc,
+    apply_damage,
+    apply_healing,
+    apply_condition,
+    remove_condition,
+    roll_death_save,
+    advance_turn,
+    end_combat,
+    apply_effect,
+    remove_effect,
+    consume_spell_slot,
+    restore_spell_slot,
+    use_resource,
+    restore_resource,
+    set_concentration,
+    drop_concentration,
+    roll_concentration_check,
+    use_action,
+    use_bonus_action,
+    use_reaction,
+    spend_movement,
+]
+
+__all__ = ["ALL_TOOLS", "COMBAT_TOOLS", "fetch_combat_context"]
