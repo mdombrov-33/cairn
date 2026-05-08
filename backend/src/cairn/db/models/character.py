@@ -36,7 +36,7 @@ class Character(Base):
     death_save_failures: Mapped[int] = mapped_column(default=0)
 
     cr: Mapped[float] = mapped_column(default=0.0)
-    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # derived stats - stored for fast reads, recalculated on level-up
     proficiency_bonus: Mapped[int] = mapped_column(default=2)
@@ -49,7 +49,7 @@ class Character(Base):
     # narrative voice — used by ally_ai to play this character
     bio: Mapped[str | None]
     personality: Mapped[str | None]
-    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
 
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]
@@ -57,17 +57,17 @@ class Character(Base):
 
     # class resources with limited uses (Action Surge, Ki, Rage, Superiority Dice, etc.)
     # shape: {"action_surge": {"current": 1, "max": 1, "resets_on": "short_rest"}, ...}
-    resources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    resources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
 
     # JSONB - semi-structured data, always read as a unit
-    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    features: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     currency: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}
+        JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}, server_default='{"gp": 0, "sp": 0, "cp": 0}'
     )

@@ -30,7 +30,7 @@ class NPC(Base):
     # Narrative / voice
     bio: Mapped[str]
     personality: Mapped[str]
-    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     disposition: Mapped[str] = mapped_column(default="neutral")
 
     # Combat stats
@@ -46,20 +46,20 @@ class NPC(Base):
     # NPC-specific combat
     cr: Mapped[float] = mapped_column(default=0.0)
     xp_value: Mapped[int] = mapped_column(default=0)
-    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # Spellcasting
     spellcasting_ability: Mapped[str | None]
     spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # JSONB — matches Character field names exactly
-    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
-    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    features: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list)
-    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     currency: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}
+        JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}, server_default='{"gp": 0, "sp": 0, "cp": 0}'
     )
