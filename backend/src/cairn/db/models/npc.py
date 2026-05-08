@@ -55,11 +55,15 @@ class NPC(Base):
 
     # JSONB — matches Character field names exactly
     stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
-    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(
+        JSONB, default=list, server_default="[]"
+    )
     skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     currency: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}, server_default='{"gp": 0, "sp": 0, "cp": 0}'
+        JSONB,
+        default=lambda: {"gp": 0, "sp": 0, "cp": 0},
+        server_default='{"gp": 0, "sp": 0, "cp": 0}',
     )
