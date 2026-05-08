@@ -121,7 +121,7 @@ async def lookup_subclass(
 async def lookup_feat(
     name: Annotated[str, 'Feat name, e.g. "sentinel", "lucky", "war-caster", "sharpshooter".'],
 ) -> dict:
-    """Look up a feat's full description and prerequisites (Sentinel, Lucky, War Caster, Sharpshooter, etc.)."""
+    """Look up a feat's full description and prerequisites (Sentinel, Lucky, War Caster, Sharpshooter, etc.)."""  # noqa: E501
     feat = rules.get_feat(name)
     if feat is None:
         return {"error": f"Feat '{name}' not found. Try the index form e.g. 'great-weapon-master'."}
@@ -130,9 +130,14 @@ async def lookup_feat(
 
 @tool
 async def list_feats() -> list:
-    """List all available feats with their names, types, and prerequisites. Use during character creation or level-up to show feat options."""
+    """List all available feats with their names, types, and prerequisites. Use during character creation or level-up to show feat options."""  # noqa: E501
     return [
-        {"index": f["index"], "name": f["name"], "type": f.get("type", "general"), "prerequisites": f.get("prerequisites", [])}
+        {
+            "index": f["index"],
+            "name": f["name"],
+            "type": f.get("type", "general"),
+            "prerequisites": f.get("prerequisites", []),
+        }
         for f in list_all_feats()
     ]
 
