@@ -57,6 +57,23 @@ def get_all_conditions() -> list[dict]:
     return _load_list("conditions")
 
 
+@lru_cache
+def _all_feats() -> dict[str, dict]:
+    """Merge 2024 SRD feats with PHB supplement, PHB wins on conflict."""
+    srd = {item["index"]: item for item in _load_list("feats")}
+    phb = {item["index"]: item for item in _load_list("feats_phb")}
+    return {**srd, **phb}
+
+
+def get_feat(name: str) -> dict | None:
+    key = name.lower().replace(" ", "-").replace("'", "")
+    return _all_feats().get(key)
+
+
+def list_all_feats() -> list[dict]:
+    return list(_all_feats().values())
+
+
 def get_feature(name: str) -> dict | None:
     key = (
         name.lower().replace(" ", "-").replace("(", "").replace(")", "").replace(",", "").strip("-")

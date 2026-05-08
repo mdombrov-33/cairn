@@ -1,1722 +1,723 @@
 [
   {
-    "index": "artificers-lore",
-    "races": [],
-    "subraces": [
+    "index": "adrenaline-rush",
+    "url": "/api/2024/traits/adrenaline-rush",
+    "name": "Adrenaline Rush",
+    "description": "You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus.\nYou can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.",
+    "species": [
       {
-        "index": "rock-gnome",
-        "name": "Rock Gnome",
-        "url": "/api/2014/subraces/rock-gnome"
+        "index": "orc",
+        "url": "/api/2024/species/orc",
+        "name": "Orc"
       }
     ],
-    "name": "Artificer's Lore",
-    "desc": [
-      "Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/artificers-lore",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "brave",
-    "races": [
+    "url": "/api/2024/traits/brave",
+    "name": "Brave",
+    "description": "You have Advantage on saving throws you make to avoid or end the Frightened condition.",
+    "species": [
       {
         "index": "halfling",
-        "name": "Halfling",
-        "url": "/api/2014/races/halfling"
+        "url": "/api/2024/species/halfling",
+        "name": "Halfling"
       }
     ],
-    "subraces": [],
-    "name": "Brave",
-    "desc": [
-      "You have advantage on saving throw against being frightened."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/brave",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "breath-weapon",
-    "races": [
-      {
-        "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
-      }
-    ],
-    "subraces": [],
-    "name": "Breath Weapon",
-    "desc": [
-      "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation.",
-      "When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level.",
-      "After you use your breath weapon, you cannot use it again until you complete a short or long rest."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/breath-weapon",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "damage-resistance",
-    "races": [
-      {
-        "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
-      }
-    ],
-    "subraces": [],
-    "name": "Damage Resistance",
-    "desc": [
-      "You have resistance to the damage type associated with your draconic ancestry."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/damage-resistance",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "darkvision",
-    "races": [
+    "index": "darkvision-120",
+    "url": "/api/2024/traits/darkvision-120",
+    "name": "Darkvision (120 ft.)",
+    "description": "You have Darkvision with a range of 120 feet.",
+    "species": [
       {
         "index": "dwarf",
-        "name": "Dwarf",
-        "url": "/api/2014/races/dwarf"
+        "url": "/api/2024/species/dwarf",
+        "name": "Dwarf"
+      },
+      {
+        "index": "orc",
+        "url": "/api/2024/species/orc",
+        "name": "Orc"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-drow",
+        "url": "/api/2024/subspecies/elven-lineage-drow",
+        "name": "Elven Lineage: Drow"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "darkvision-60",
+    "url": "/api/2024/traits/darkvision-60",
+    "name": "Darkvision (60 ft.)",
+    "description": "You have Darkvision with a range of 60 feet.",
+    "species": [
+      {
+        "index": "dragonborn",
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       },
       {
         "index": "elf",
-        "name": "Elf",
-        "url": "/api/2014/races/elf"
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
       },
       {
         "index": "gnome",
-        "name": "Gnome",
-        "url": "/api/2014/races/gnome"
-      },
-      {
-        "index": "half-elf",
-        "name": "Half-Elf",
-        "url": "/api/2014/races/half-elf"
-      },
-      {
-        "index": "half-orc",
-        "name": "Half-Orc",
-        "url": "/api/2014/races/half-orc"
+        "url": "/api/2024/species/gnome",
+        "name": "Gnome"
       },
       {
         "index": "tiefling",
-        "name": "Tiefling",
-        "url": "/api/2014/races/tiefling"
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
       }
     ],
-    "subraces": [],
-    "name": "Darkvision",
-    "desc": [
-      "You have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You cannot discern color in darkness, only shades of gray."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/darkvision",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "draconic-ancestry",
-    "races": [
-      {
-        "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
-      }
-    ],
-    "subraces": [],
+    "url": "/api/2024/traits/draconic-ancestry",
     "name": "Draconic Ancestry",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "proficiencies": [],
-    "trait_specific": {
-      "subtrait_options": {
-        "choose": 1,
-        "from": {
-          "option_set_type": "options_array",
-          "options": [
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-black",
-                "name": "Draconic Ancestry (Black)",
-                "url": "/api/2014/traits/draconic-ancestry-black"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-blue",
-                "name": "Draconic Ancestry (Blue)",
-                "url": "/api/2014/traits/draconic-ancestry-blue"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-brass",
-                "name": "Draconic Ancestry (Brass)",
-                "url": "/api/2014/traits/draconic-ancestry-brass"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-bronze",
-                "name": "Draconic Ancestry (Bronze)",
-                "url": "/api/2014/traits/draconic-ancestry-bronze"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-copper",
-                "name": "Draconic Ancestry (Copper)",
-                "url": "/api/2014/traits/draconic-ancestry-copper"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-gold",
-                "name": "Draconic Ancestry (Gold)",
-                "url": "/api/2014/traits/draconic-ancestry-gold"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-green",
-                "name": "Draconic Ancestry (Green)",
-                "url": "/api/2014/traits/draconic-ancestry-green"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-red",
-                "name": "Draconic Ancestry (Red)",
-                "url": "/api/2014/traits/draconic-ancestry-red"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-silver",
-                "name": "Draconic Ancestry (Silver)",
-                "url": "/api/2014/traits/draconic-ancestry-silver"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "draconic-ancestry-white",
-                "name": "Draconic Ancestry (White)",
-                "url": "/api/2014/traits/draconic-ancestry-white"
-              }
-            }
-          ]
-        },
-        "type": "trait"
-      }
-    },
-    "url": "/api/2014/traits/draconic-ancestry",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "draconic-ancestry-black",
-    "races": [
+    "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.\nDraconic Ancestors\nDragon / Damage Type\nBlack / Acid\nBlue / Lightning\nBrass / Fire\nBronze / Lightning\nCopper / Acid\nGreen / Poison\nGold / Fire\nRed / Fire\nSilver / Cold\nWhite / Cold",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Black)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "acid",
-        "name": "Acid",
-        "url": "/api/2014/damage-types/acid"
-      },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 30,
-          "type": "line"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "acid",
-              "name": "Acid",
-              "url": "/api/2014/damage-types/acid"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
-      }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-black",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "draconic-ancestry-blue",
-    "races": [
+    "index": "draconic-breath-weapon-acid",
+    "url": "/api/2024/traits/draconic-breath-weapon-acid",
+    "name": "Breath Weapon: Acid",
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 acid damage. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Blue)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "lightning",
-        "name": "Lightning",
-        "url": "/api/2014/damage-types/lightning"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-black",
+        "url": "/api/2024/subspecies/draconic-ancestor-black",
+        "name": "Draconic Ancestor: Black"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 30,
-          "type": "line"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "lightning",
-              "name": "Lightning",
-              "url": "/api/2014/damage-types/lightning"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-copper",
+        "url": "/api/2024/subspecies/draconic-ancestor-copper",
+        "name": "Draconic Ancestor: Copper"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-blue",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-brass",
-    "races": [
+    "index": "draconic-breath-weapon-cold",
+    "url": "/api/2024/traits/draconic-breath-weapon-cold",
+    "name": "Breath Weapon: Cold",
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 cold damage. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Brass)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "fire",
-        "name": "Fire",
-        "url": "/api/2014/damage-types/fire"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-silver",
+        "url": "/api/2024/subspecies/draconic-ancestor-silver",
+        "name": "Draconic Ancestor: Silver"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 30,
-          "type": "line"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "fire",
-              "name": "Fire",
-              "url": "/api/2014/damage-types/fire"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-white",
+        "url": "/api/2024/subspecies/draconic-ancestor-white",
+        "name": "Draconic Ancestor: White"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-brass",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-bronze",
-    "races": [
+    "index": "draconic-breath-weapon-fire",
+    "url": "/api/2024/traits/draconic-breath-weapon-fire",
+    "name": "Breath Weapon: Fire",
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 fire damage. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Bronze)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "lightning",
-        "name": "Lightning",
-        "url": "/api/2014/damage-types/lightning"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-brass",
+        "url": "/api/2024/subspecies/draconic-ancestor-brass",
+        "name": "Draconic Ancestor: Brass"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 30,
-          "type": "line"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "lightning",
-              "name": "Lightning",
-              "url": "/api/2014/damage-types/lightning"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-gold",
+        "url": "/api/2024/subspecies/draconic-ancestor-gold",
+        "name": "Draconic Ancestor: Gold"
+      },
+      {
+        "index": "draconic-ancestor-red",
+        "url": "/api/2024/subspecies/draconic-ancestor-red",
+        "name": "Draconic Ancestor: Red"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-bronze",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-copper",
-    "races": [
+    "index": "draconic-breath-weapon-lightning",
+    "url": "/api/2024/traits/draconic-breath-weapon-lightning",
+    "name": "Breath Weapon: Lightning",
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 lightning damage. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Copper)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "acid",
-        "name": "Acid",
-        "url": "/api/2014/damage-types/acid"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-blue",
+        "url": "/api/2024/subspecies/draconic-ancestor-blue",
+        "name": "Draconic Ancestor: Blue"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 30,
-          "type": "line"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "acid",
-              "name": "Acid",
-              "url": "/api/2014/damage-types/acid"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-bronze",
+        "url": "/api/2024/subspecies/draconic-ancestor-bronze",
+        "name": "Draconic Ancestor: Bronze"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-copper",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-gold",
-    "races": [
+    "index": "draconic-breath-weapon-poison",
+    "url": "/api/2024/traits/draconic-breath-weapon-poison",
+    "name": "Breath Weapon: Poison",
+    "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 poison damage. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Gold)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "fire",
-        "name": "Fire",
-        "url": "/api/2014/damage-types/fire"
-      },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 15,
-          "type": "cone"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "fire",
-              "name": "Fire",
-              "url": "/api/2014/damage-types/fire"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-green",
+        "url": "/api/2024/subspecies/draconic-ancestor-green",
+        "name": "Draconic Ancestor: Green"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-gold",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-green",
-    "races": [
+    "index": "draconic-damage-resistance-acid",
+    "url": "/api/2024/traits/draconic-damage-resistance-acid",
+    "name": "Damage Resistance: Acid",
+    "description": "You have Resistance to acid damage, as determined by your Draconic Ancestry trait.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Green)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "poison",
-        "name": "Poison",
-        "url": "/api/2014/damage-types/poison"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-black",
+        "url": "/api/2024/subspecies/draconic-ancestor-black",
+        "name": "Draconic Ancestor: Black"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 15,
-          "type": "cone"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "con",
-            "name": "CON",
-            "url": "/api/2014/ability-scores/con"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "poison",
-              "name": "Poison",
-              "url": "/api/2014/damage-types/poison"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-copper",
+        "url": "/api/2024/subspecies/draconic-ancestor-copper",
+        "name": "Draconic Ancestor: Copper"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-green",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-red",
-    "races": [
+    "index": "draconic-damage-resistance-cold",
+    "url": "/api/2024/traits/draconic-damage-resistance-cold",
+    "name": "Damage Resistance: Cold",
+    "description": "You have Resistance to cold damage, as determined by your Draconic Ancestry trait.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Red)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "fire",
-        "name": "Fire",
-        "url": "/api/2014/damage-types/fire"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-silver",
+        "url": "/api/2024/subspecies/draconic-ancestor-silver",
+        "name": "Draconic Ancestor: Silver"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 15,
-          "type": "cone"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "dex",
-            "name": "DEX",
-            "url": "/api/2014/ability-scores/dex"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "fire",
-              "name": "Fire",
-              "url": "/api/2014/damage-types/fire"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-white",
+        "url": "/api/2024/subspecies/draconic-ancestor-white",
+        "name": "Draconic Ancestor: White"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-red",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-silver",
-    "races": [
+    "index": "draconic-damage-resistance-fire",
+    "url": "/api/2024/traits/draconic-damage-resistance-fire",
+    "name": "Damage Resistance: Fire",
+    "description": "You have Resistance to fire damage, as determined by your Draconic Ancestry trait.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (Silver)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "cold",
-        "name": "Cold",
-        "url": "/api/2014/damage-types/cold"
+    "subspecies": [
+      {
+        "index": "draconic-ancestor-brass",
+        "url": "/api/2024/subspecies/draconic-ancestor-brass",
+        "name": "Draconic Ancestor: Brass"
       },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 15,
-          "type": "cone"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "con",
-            "name": "CON",
-            "url": "/api/2014/ability-scores/con"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "cold",
-              "name": "Cold",
-              "url": "/api/2014/damage-types/cold"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
+      {
+        "index": "draconic-ancestor-gold",
+        "url": "/api/2024/subspecies/draconic-ancestor-gold",
+        "name": "Draconic Ancestor: Gold"
+      },
+      {
+        "index": "draconic-ancestor-red",
+        "url": "/api/2024/subspecies/draconic-ancestor-red",
+        "name": "Draconic Ancestor: Red"
       }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-silver",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
-    "index": "draconic-ancestry-white",
-    "races": [
+    "index": "draconic-damage-resistance-lightning",
+    "url": "/api/2024/traits/draconic-damage-resistance-lightning",
+    "name": "Damage Resistance: Lightning",
+    "description": "You have Resistance to lightning damage, as determined by your Draconic Ancestry trait.",
+    "species": [
       {
         "index": "dragonborn",
-        "name": "Dragonborn",
-        "url": "/api/2014/races/dragonborn"
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Draconic Ancestry (White)",
-    "desc": [
-      "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table."
-    ],
-    "parent": {
-      "index": "draconic-ancestry",
-      "name": "Draconic Ancestry",
-      "url": "/api/2014/traits/draconic-ancestry"
-    },
-    "proficiencies": [],
-    "trait_specific": {
-      "damage_type": {
-        "index": "cold",
-        "name": "Cold",
-        "url": "/api/2014/damage-types/cold"
-      },
-      "breath_weapon": {
-        "name": "Breath Weapon",
-        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can't use it again until you complete a short or long rest.",
-        "area_of_effect": {
-          "size": 15,
-          "type": "cone"
-        },
-        "usage": {
-          "type": "per rest",
-          "times": 1
-        },
-        "dc": {
-          "dc_type": {
-            "index": "con",
-            "name": "CON",
-            "url": "/api/2014/ability-scores/con"
-          },
-          "success_type": "half"
-        },
-        "damage": [
-          {
-            "damage_type": {
-              "index": "cold",
-              "name": "Cold",
-              "url": "/api/2014/damage-types/cold"
-            },
-            "damage_at_character_level": {
-              "1": "2d6",
-              "6": "3d6",
-              "11": "4d6",
-              "16": "5d6"
-            }
-          }
-        ]
-      }
-    },
-    "url": "/api/2014/traits/draconic-ancestry-white",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "dwarven-combat-training",
-    "races": [
+    "index": "draconic-damage-resistance-poison",
+    "url": "/api/2024/traits/draconic-damage-resistance-poison",
+    "name": "Damage Resistance: Poison",
+    "description": "You have Resistance to poison damage, as determined by your Draconic Ancestry trait.",
+    "species": [
       {
-        "index": "dwarf",
-        "name": "Dwarf",
-        "url": "/api/2014/races/dwarf"
+        "index": "dragonborn",
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "subraces": [],
-    "name": "Dwarven Combat Training",
-    "desc": [
-      "You have proficiency with the battleaxe, handaxe, light hammer, and warhammer."
-    ],
-    "proficiencies": [
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "draconic-flight",
+    "url": "/api/2024/traits/draconic-flight",
+    "name": "Draconic Flight",
+    "description": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can't use it again until you finish a Long Rest.",
+    "species": [
       {
-        "index": "battleaxes",
-        "name": "Battleaxes",
-        "url": "/api/2014/proficiencies/battleaxes"
-      },
-      {
-        "index": "handaxes",
-        "name": "Handaxes",
-        "url": "/api/2014/proficiencies/handaxes"
-      },
-      {
-        "index": "light-hammers",
-        "name": "Light hammers",
-        "url": "/api/2014/proficiencies/light-hammers"
-      },
-      {
-        "index": "warhammers",
-        "name": "Warhammers",
-        "url": "/api/2014/proficiencies/warhammers"
+        "index": "dragonborn",
+        "url": "/api/2024/species/dragonborn",
+        "name": "Dragonborn"
       }
     ],
-    "url": "/api/2014/traits/dwarven-combat-training",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "dwarven-resilience",
-    "races": [
+    "url": "/api/2024/traits/dwarven-resilience",
+    "name": "Dwarven Resilience",
+    "description": "You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.",
+    "species": [
       {
         "index": "dwarf",
-        "name": "Dwarf",
-        "url": "/api/2014/races/dwarf"
+        "url": "/api/2024/species/dwarf",
+        "name": "Dwarf"
       }
     ],
-    "subraces": [],
-    "name": "Dwarven Resilience",
-    "desc": [
-      "You have advantage on saving throws against poison, and you have resistance against poison damage."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/dwarven-resilience",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "dwarven-toughness",
-    "races": [],
-    "subraces": [
-      {
-        "index": "hill-dwarf",
-        "name": "Hill Dwarf",
-        "url": "/api/2014/subraces/hill-dwarf"
-      }
-    ],
+    "url": "/api/2024/traits/dwarven-toughness",
     "name": "Dwarven Toughness",
-    "desc": [
-      "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level."
+    "description": "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.",
+    "species": [
+      {
+        "index": "dwarf",
+        "url": "/api/2024/species/dwarf",
+        "name": "Dwarf"
+      }
     ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/dwarven-toughness",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "elf-weapon-training",
-    "races": [],
-    "subraces": [
+    "index": "elven-lineage",
+    "url": "/api/2024/traits/elven-lineage",
+    "name": "Elven Lineage",
+    "description": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage.\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table.\nYou always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\nElven Lineages\nDrow\nLevel 1. The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.\nLevel 3. Faerie Fire\nLevel 5. Darkness\nHigh Elf\nLevel 1. You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.\nLevel 3. Detect Magic\nLevel 5. Misty Step\nWood Elf\nLevel 1. Your Speed increases to 35 feet. You also know the Druidcraft cantrip.\nLevel 3. Longstrider\nLevel 5. Pass without Trace\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).",
+    "species": [
       {
-        "index": "high-elf",
-        "name": "High Elf",
-        "url": "/api/2014/subraces/high-elf"
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
       }
     ],
-    "name": "Elf Weapon Training",
-    "desc": [
-      "You have proficiency with the longsword, shortsword, shortbow, and longbow."
-    ],
-    "proficiencies": [
-      {
-        "index": "longswords",
-        "name": "Longswords",
-        "url": "/api/2014/proficiencies/longswords"
-      },
-      {
-        "index": "shortswords",
-        "name": "Shortswords",
-        "url": "/api/2014/proficiencies/shortswords"
-      },
-      {
-        "index": "shortbows",
-        "name": "Shortbows",
-        "url": "/api/2014/proficiencies/shortbows"
-      },
-      {
-        "index": "longbows",
-        "name": "Longbows",
-        "url": "/api/2014/proficiencies/longbows"
-      }
-    ],
-    "url": "/api/2014/traits/elf-weapon-training",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "extra-language",
-    "races": [],
-    "subraces": [
-      {
-        "index": "high-elf",
-        "name": "High Elf",
-        "url": "/api/2014/subraces/high-elf"
-      }
-    ],
-    "name": "Extra Language",
-    "desc": [
-      "You can speak, read, and write one extra language of your choice."
-    ],
-    "proficiencies": [],
-    "language_options": {
-      "choose": 1,
-      "type": "languages",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "dwarvish",
-              "name": "Dwarvish",
-              "url": "/api/2014/languages/dwarvish"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "giant",
-              "name": "Giant",
-              "url": "/api/2014/languages/giant"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "gnomish",
-              "name": "Gnomish",
-              "url": "/api/2014/languages/gnomish"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "goblin",
-              "name": "Goblin",
-              "url": "/api/2014/languages/goblin"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "halfling",
-              "name": "Halfling",
-              "url": "/api/2014/languages/halfling"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "orc",
-              "name": "Orc",
-              "url": "/api/2014/languages/orc"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "abyssal",
-              "name": "Abyssal",
-              "url": "/api/2014/languages/abyssal"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "celestial",
-              "name": "Celestial",
-              "url": "/api/2014/languages/celestial"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "draconic",
-              "name": "Draconic",
-              "url": "/api/2014/languages/draconic"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "deep-speech",
-              "name": "Deep Speech",
-              "url": "/api/2014/languages/deep-speech"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "infernal",
-              "name": "Infernal",
-              "url": "/api/2014/languages/infernal"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "primordial",
-              "name": "Primordial",
-              "url": "/api/2014/languages/primordial"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "sylvan",
-              "name": "Sylvan",
-              "url": "/api/2014/languages/sylvan"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "undercommon",
-              "name": "Undercommon",
-              "url": "/api/2014/languages/undercommon"
-            }
-          }
-        ]
-      }
-    },
-    "url": "/api/2014/traits/extra-language",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "fey-ancestry",
-    "races": [
+    "url": "/api/2024/traits/fey-ancestry",
+    "name": "Fey Ancestry",
+    "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition.",
+    "species": [
       {
         "index": "elf",
-        "name": "Elf",
-        "url": "/api/2014/races/elf"
-      },
-      {
-        "index": "half-elf",
-        "name": "Half-Elf",
-        "url": "/api/2014/races/half-elf"
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
       }
     ],
-    "subraces": [],
-    "name": "Fey Ancestry",
-    "desc": [
-      "You have advantage on saving throws against being charmed, and magic cannot put you to sleep."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/fey-ancestry",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "gnome-cunning",
-    "races": [
+    "index": "fiendish-legacy",
+    "url": "/api/2024/traits/fiendish-legacy",
+    "name": "Fiendish Legacy",
+    "description": "You are the recipient of a legacy that grants you supernatural abilities. Choose a legacy from the Fiendish Legacies table. You gain the level 1 benefit of the chosen legacy.\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table.\nYou always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\nIntelligence, Wisdom, or Charisma is your spell-casting ability for the spells you cast with this trait (choose the ability when you select the legacy).\nFiendish Legacies\nAbyssal.\nLevel 1. You have Resistance to Poison damage. You also know the Poison Spray cantrip.\nLevel 3. Ray of Sickness\nLevel 5. Hold Person\nChthonic.\nLevel 1. You have Resistance to Necrotic damage. You also know the Chill Touch cantrip.\nLevel 3. False Life\nLevel 5. Ray of Enfeeblement\nInfernal.\nLevel 1. You have Resistance to Fire damage. You also know the Fire Bolt cantrip.\nLevel 3. Hellish Rebuke\nLevel 5. Darkness",
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "giant-ancestry",
+    "url": "/api/2024/traits/giant-ancestry",
+    "name": "Giant Ancestry",
+    "description": "You are descended from Giants. Choose one of the following benefits-a supernatural boon from your ancestry; you can use the chosen benefit a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest:\nCloud's Jaunt (Cloud Giant). As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.\nFire's Burn (Fire Giant). When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.\nFrost's Chill (Frost Giant). When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.\nHill's Tumble (Hill Giant). When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.\nStone's Endurance (Stone Giant). When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.\n- Storm's Thunder (Storm Giant). When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.",
+    "species": [
+      {
+        "index": "goliath",
+        "url": "/api/2024/species/goliath",
+        "name": "Goliath"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "giant-ancestry-clouds-jaunt",
+    "url": "/api/2024/traits/giant-ancestry-clouds-jaunt",
+    "name": "Giant Ancestry: Cloud's Jaunt",
+    "description": "As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-clouds-jaunt",
+        "url": "/api/2024/subspecies/giant-ancestry-clouds-jaunt",
+        "name": "Giant Ancestry: Cloud's Jaunt"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "giant-ancestry-fires-burn",
+    "url": "/api/2024/traits/giant-ancestry-fires-burn",
+    "name": "Giant Ancestry: Fire's Burn",
+    "description": "When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-fires-burn",
+        "url": "/api/2024/subspecies/giant-ancestry-fires-burn",
+        "name": "Giant Ancestry: Fire's Burn"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "giant-ancestry-frosts-chill",
+    "url": "/api/2024/traits/giant-ancestry-frosts-chill",
+    "name": "Giant Ancestry: Frost's Chill",
+    "description": "When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-frosts-chill",
+        "url": "/api/2024/subspecies/giant-ancestry-frosts-chill",
+        "name": "Giant Ancestry: Frost's Chill"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "giant-ancestry-hills-tumble",
+    "url": "/api/2024/traits/giant-ancestry-hills-tumble",
+    "name": "Giant Ancestry: Hill's Tumble",
+    "description": "When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-hills-tumble",
+        "url": "/api/2024/subspecies/giant-ancestry-hills-tumble",
+        "name": "Giant Ancestry: Hill's Tumble"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "giant-ancestry-stones-endurance",
+    "url": "/api/2024/traits/giant-ancestry-stones-endurance",
+    "name": "Giant Ancestry: Stone's Endurance",
+    "description": "When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-stones-endurance",
+        "url": "/api/2024/subspecies/giant-ancestry-stones-endurance",
+        "name": "Giant Ancestry: Stone's Endurance"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "giant-ancestry-storms-thunder",
+    "url": "/api/2024/traits/giant-ancestry-storms-thunder",
+    "name": "Giant Ancestry: Storm's Thunder",
+    "description": "When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.",
+    "species": [
+      {
+        "index": "goliath",
+        "name": "Goliath",
+        "url": "/api/2024/species/goliath"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "giant-ancestry-storms-thunder",
+        "url": "/api/2024/subspecies/giant-ancestry-storms-thunder",
+        "name": "Giant Ancestry: Storm's Thunder"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "gnomish-cunning",
+    "url": "/api/2024/traits/gnomish-cunning",
+    "name": "Gnomish Cunning",
+    "description": "You have Advantage on Intelligence, Wisdom, and Charisma saving throws.",
+    "species": [
+      {
+        "index": "gnome",
+        "url": "/api/2024/species/gnome",
+        "name": "Gnome"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "gnomish-lineage",
+    "url": "/api/2024/traits/gnomish-lineage",
+    "name": "Gnomish Lineage",
+    "description": "You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage):\nForest Gnome. You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\nRock Gnome. You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it.\nFor example, if you choose the spell's ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn't do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+    "species": [
+      {
+        "index": "gnome",
+        "url": "/api/2024/species/gnome",
+        "name": "Gnome"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "gnomish-lineage-forest-gnome",
+    "url": "/api/2024/traits/gnomish-lineage-forest-gnome",
+    "name": "Gnomish Lineage: Forest Gnome",
+    "description": "You always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.",
+    "spells": [
+      {
+        "spell": {
+          "index": "speak-with-animals",
+          "name": "Speak with Animals",
+          "url": "/api/2024/spells/speak-with-animals-nyi"
+        },
+        "uses": "Proficiency Bonus",
+        "recovery": "Long Rest"
+      }
+    ],
+    "species": [
       {
         "index": "gnome",
         "name": "Gnome",
-        "url": "/api/2014/races/gnome"
+        "url": "/api/2024/species/gnome"
       }
     ],
-    "subraces": [],
-    "name": "Gnome Cunning",
-    "desc": [
-      "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic."
+    "subspecies": [
+      {
+        "index": "gnomish-lineage-forest-gnome",
+        "url": "/api/2024/subspecies/gnomish-lineage-forest-gnome",
+        "name": "Gnomish Lineage: Forest Gnome"
+      }
     ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/gnome-cunning",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "gnomish-lineage-rock-gnome",
+    "url": "/api/2024/traits/gnomish-lineage-rock-gnome",
+    "name": "Gnomish Lineage: Rock Gnome",
+    "description": "You know the Prestidigitation cantrip. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell\u2019s ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn\u2019t do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+    "spells": [
+      {
+        "spell": {
+          "index": "prestidigitation",
+          "name": "Prestidigitation",
+          "url": "/api/2024/spells/prestidigitation-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "gnome",
+        "name": "Gnome",
+        "url": "/api/2024/species/gnome"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "gnomish-lineage-rock-gnome",
+        "url": "/api/2024/subspecies/gnomish-lineage-rock-gnome",
+        "name": "Gnomish Lineage: Rock Gnome"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
     "index": "halfling-nimbleness",
-    "races": [
+    "url": "/api/2024/traits/halfling-nimbleness",
+    "name": "Halfling Nimbleness",
+    "description": "You can move through the space of any creature that is a size larger than you, but you can't stop in the same space.",
+    "species": [
       {
         "index": "halfling",
-        "name": "Halfling",
-        "url": "/api/2014/races/halfling"
+        "url": "/api/2024/species/halfling",
+        "name": "Halfling"
       }
     ],
-    "subraces": [],
-    "name": "Halfling Nimbleness",
-    "desc": [
-      "You can move through the space of any creature that is of a size larger than yours."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/halfling-nimbleness",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
-    "index": "hellish-resistance",
-    "races": [
+    "index": "high-elf-cantrip-versatility",
+    "url": "/api/2024/traits/high-elf-cantrip-versatility",
+    "name": "High Elf: Cantrip Versatility",
+    "description": "You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
+    "spells": [
       {
-        "index": "tiefling",
-        "name": "Tiefling",
-        "url": "/api/2014/races/tiefling"
+        "spell": {
+          "index": "prestidigitation",
+          "name": "Prestidigitation",
+          "url": "/api/2024/spells/prestidigitation-nyi"
+        }
       }
     ],
-    "subraces": [],
-    "name": "Hellish Resistance",
-    "desc": [
-      "You have resistance to fire damage."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/hellish-resistance",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "high-elf-cantrip",
-    "races": [],
-    "subraces": [
+    "species": [
       {
-        "index": "high-elf",
-        "name": "High Elf",
-        "url": "/api/2014/subraces/high-elf"
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
       }
     ],
-    "name": "High Elf Cantrip",
-    "desc": [
-      "You know one cantrip of your choice form the wizard spell list. Intelligence is your spellcasting ability for it."
-    ],
-    "proficiencies": [],
-    "trait_specific": {
-      "spell_options": {
-        "choose": 1,
-        "from": {
-          "option_set_type": "options_array",
-          "options": [
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "light",
-                "name": "Light",
-                "url": "/api/2014/spells/light"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "mage-hand",
-                "name": "Mage Hand",
-                "url": "/api/2014/spells/mage-hand"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "mending",
-                "name": "Mending",
-                "url": "/api/2014/spells/mending"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "message",
-                "name": "Message",
-                "url": "/api/2014/spells/message"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "minor-illusion",
-                "name": "Minor Illusion",
-                "url": "/api/2014/spells/minor-illusion"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "acid-splash",
-                "name": "Acid Splash",
-                "url": "/api/2014/spells/acid-splash"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "prestidigitation",
-                "name": "Prestidigitation",
-                "url": "/api/2014/spells/prestidigitation"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "ray-of-frost",
-                "name": "Ray of Frost",
-                "url": "/api/2014/spells/ray-of-frost"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "shocking-grasp",
-                "name": "Shocking Grasp",
-                "url": "/api/2014/spells/shocking-grasp"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "true-strike",
-                "name": "True Strike",
-                "url": "/api/2014/spells/true-strike"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "chill-touch",
-                "name": "Chill Touch",
-                "url": "/api/2014/spells/chill-touch"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "dancing-lights",
-                "name": "Dancing Lights",
-                "url": "/api/2014/spells/dancing-lights"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "fire-bolt",
-                "name": "Fire Bolt",
-                "url": "/api/2014/spells/fire-bolt"
-              }
-            },
-            {
-              "option_type": "reference",
-              "item": {
-                "index": "poison-spray",
-                "name": "Poison Spray",
-                "url": "/api/2014/spells/poison-spray"
-              }
-            }
-          ]
-        },
-        "type": "spell"
-      }
-    },
-    "url": "/api/2014/traits/high-elf-cantrip",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "infernal-legacy",
-    "races": [
+    "subspecies": [
       {
-        "index": "tiefling",
-        "name": "Tiefling",
-        "url": "/api/2014/races/tiefling"
+        "index": "elven-lineage-high-elf",
+        "url": "/api/2024/subspecies/elven-lineage-high-elf",
+        "name": "Elven Lineage: High Elf"
       }
     ],
-    "subraces": [],
-    "name": "Infernal Legacy",
-    "desc": [
-      "You know the thaumaturgy cantrip. When you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the darkness spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/infernal-legacy",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z"
   },
   {
     "index": "keen-senses",
-    "races": [
-      {
-        "index": "elf",
-        "name": "Elf",
-        "url": "/api/2014/races/elf"
-      }
-    ],
-    "subraces": [],
+    "url": "/api/2024/traits/keen-senses",
     "name": "Keen Senses",
-    "desc": [
-      "You have proficiency in the Perception skill."
-    ],
-    "proficiencies": [
-      {
-        "index": "skill-perception",
-        "name": "Skill: Perception",
-        "url": "/api/2014/proficiencies/skill-perception"
-      }
-    ],
-    "url": "/api/2014/traits/keen-senses",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "lucky",
-    "races": [
-      {
-        "index": "halfling",
-        "name": "Halfling",
-        "url": "/api/2014/races/halfling"
-      }
-    ],
-    "subraces": [],
-    "name": "Lucky",
-    "desc": [
-      "When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/lucky",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "menacing",
-    "races": [
-      {
-        "index": "half-orc",
-        "name": "Half-Orc",
-        "url": "/api/2014/races/half-orc"
-      }
-    ],
-    "subraces": [],
-    "name": "Menacing",
-    "desc": [
-      "You gain proficiency in the Intimidation skill."
-    ],
-    "proficiencies": [
-      {
-        "index": "skill-intimidation",
-        "name": "Skill: Intimidation",
-        "url": "/api/2014/proficiencies/skill-intimidation"
-      }
-    ],
-    "url": "/api/2014/traits/menacing",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "naturally-stealthy",
-    "races": [],
-    "subraces": [
-      {
-        "index": "lightfoot-halfling",
-        "name": "Lightfoot Halfling",
-        "url": "/api/2014/subraces/lightfoot-halfling"
-      }
-    ],
-    "name": "Naturally Stealthy",
-    "desc": [
-      "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/naturally-stealthy",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "relentless-endurance",
-    "races": [
-      {
-        "index": "half-orc",
-        "name": "Half-Orc",
-        "url": "/api/2014/races/half-orc"
-      }
-    ],
-    "subraces": [],
-    "name": "Relentless Endurance",
-    "desc": [
-      "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. you cannot use this feature again until you finish a long rest."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/relentless-endurance",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "savage-attacks",
-    "races": [
-      {
-        "index": "half-orc",
-        "name": "Half-Orc",
-        "url": "/api/2014/races/half-orc"
-      }
-    ],
-    "subraces": [],
-    "name": "Savage Attacks",
-    "desc": [
-      "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/savage-attacks",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "skill-versatility",
-    "races": [
-      {
-        "index": "half-elf",
-        "name": "Half-Elf",
-        "url": "/api/2014/races/half-elf"
-      }
-    ],
-    "subraces": [],
-    "name": "Skill Versatility",
-    "desc": [
-      "You gain proficiency in two skills of your choice."
-    ],
-    "proficiencies": [],
+    "description": "You have proficiency in the Insight, Perception, or Survival skill.",
     "proficiency_choices": {
-      "choose": 2,
-      "type": "proficiencies",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-acrobatics",
-              "name": "Skill: Acrobatics",
-              "url": "/api/2014/proficiencies/skill-acrobatics"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-animal-handling",
-              "name": "Skill: Animal Handling",
-              "url": "/api/2014/proficiencies/skill-animal-handling"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-arcana",
-              "name": "Skill: Arcana",
-              "url": "/api/2014/proficiencies/skill-arcana"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-athletics",
-              "name": "Skill: Athletics",
-              "url": "/api/2014/proficiencies/skill-athletics"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-deception",
-              "name": "Skill: Deception",
-              "url": "/api/2014/proficiencies/skill-deception"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-history",
-              "name": "Skill: History",
-              "url": "/api/2014/proficiencies/skill-history"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-insight",
-              "name": "Skill: Insight",
-              "url": "/api/2014/proficiencies/skill-insight"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-intimidation",
-              "name": "Skill: Intimidation",
-              "url": "/api/2014/proficiencies/skill-intimidation"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-investigation",
-              "name": "Skill: Investigation",
-              "url": "/api/2014/proficiencies/skill-investigation"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-medicine",
-              "name": "Skill: Medicine",
-              "url": "/api/2014/proficiencies/skill-medicine"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-nature",
-              "name": "Skill: Nature",
-              "url": "/api/2014/proficiencies/skill-nature"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-perception",
-              "name": "Skill: Perception",
-              "url": "/api/2014/proficiencies/skill-perception"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-performance",
-              "name": "Skill: Performance",
-              "url": "/api/2014/proficiencies/skill-performance"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-persuasion",
-              "name": "Skill: Persuasion",
-              "url": "/api/2014/proficiencies/skill-persuasion"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-religion",
-              "name": "Skill: Religion",
-              "url": "/api/2014/proficiencies/skill-religion"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-sleight-of-hand",
-              "name": "Skill: Sleight of Hand",
-              "url": "/api/2014/proficiencies/skill-sleight-of-hand"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-stealth",
-              "name": "Skill: Stealth",
-              "url": "/api/2014/proficiencies/skill-stealth"
-            }
-          },
-          {
-            "option_type": "reference",
-            "item": {
-              "index": "skill-survival",
-              "name": "Skill: Survival",
-              "url": "/api/2014/proficiencies/skill-survival"
-            }
-          }
-        ]
-      }
-    },
-    "url": "/api/2014/traits/skill-versatility",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "stonecunning",
-    "races": [
-      {
-        "index": "dwarf",
-        "name": "Dwarf",
-        "url": "/api/2014/races/dwarf"
-      }
-    ],
-    "subraces": [],
-    "name": "Stonecunning",
-    "desc": [
-      "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus."
-    ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/stonecunning",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "tinker",
-    "races": [],
-    "subraces": [
-      {
-        "index": "rock-gnome",
-        "name": "Rock Gnome",
-        "url": "/api/2014/subraces/rock-gnome"
-      }
-    ],
-    "name": "Tinker",
-    "desc": [
-      "You have proficiency with artisan's tools (tinker's tools). Using those tools, you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you spend 1 hour repairing it to keep the device functioning), or when you use your action to dismantle it; at that time, you can reclaim the materials used to create it. You can have up to three such devices active at a time.",
-      "When you create a device, choose one of the following options:",
-      "Clockwork Toy: This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.",
-      "Fire Starter: The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.",
-      "Music Box: When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song's end or when it is closed."
-    ],
-    "proficiencies": [
-      {
-        "index": "tinkers-tools",
-        "name": "Tinker's Tools",
-        "url": "/api/2014/proficiencies/tinkers-tools"
-      }
-    ],
-    "url": "/api/2014/traits/tinker",
-    "updated_at": "2026-04-01T20:35:39.695Z"
-  },
-  {
-    "index": "tool-proficiency",
-    "races": [
-      {
-        "index": "dwarf",
-        "name": "Dwarf",
-        "url": "/api/2014/races/dwarf"
-      }
-    ],
-    "subraces": [],
-    "name": "Tool Proficiency",
-    "desc": [
-      "You gain proficiency with the artisan's tools of your choice: smith's tools, brewer's supplies, or mason's tools."
-    ],
-    "proficiencies": [],
-    "proficiency_choices": {
+      "desc": "Choose one of the following skills: Insight, Perception, or Survival.",
       "choose": 1,
       "type": "proficiencies",
       "from": {
@@ -1725,49 +726,962 @@
           {
             "option_type": "reference",
             "item": {
-              "index": "smiths-tools",
-              "name": "Smith's Tools",
-              "url": "/api/2014/proficiencies/smiths-tools"
+              "index": "insight",
+              "name": "Insight",
+              "url": "/api/2024/skills/insight"
             }
           },
           {
             "option_type": "reference",
             "item": {
-              "index": "brewers-supplies",
-              "name": "Brewer's Supplies",
-              "url": "/api/2014/proficiencies/brewers-supplies"
+              "index": "perception",
+              "name": "Perception",
+              "url": "/api/2024/skills/perception"
             }
           },
           {
             "option_type": "reference",
             "item": {
-              "index": "masons-tools",
-              "name": "Mason's Tools",
-              "url": "/api/2014/proficiencies/masons-tools"
+              "index": "survival",
+              "name": "Survival",
+              "url": "/api/2024/skills/survival"
             }
           }
         ]
       }
     },
-    "url": "/api/2014/traits/tool-proficiency",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "large-form",
+    "url": "/api/2024/traits/large-form",
+    "name": "Large Form",
+    "description": "Starting at character level 5, you can change your size to Large as a Bonus Action if you're in a big enough space. This transformation lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can't use it again until you finish a Long Rest.",
+    "species": [
+      {
+        "index": "goliath",
+        "url": "/api/2024/species/goliath",
+        "name": "Goliath"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "lineage-resistance-fire",
+    "url": "/api/2024/traits/lineage-resistance-fire",
+    "name": "Damage Resistance: Fire",
+    "description": "You have Resistance to Fire damage.",
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-infernal",
+        "url": "/api/2024/subspecies/fiendish-legacy-infernal",
+        "name": "Fiendish Legacy: Infernal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-resistance-necrotic",
+    "url": "/api/2024/traits/lineage-resistance-necrotic",
+    "name": "Damage Resistance: Necrotic",
+    "description": "You have Resistance to Necrotic damage.",
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-chthonic",
+        "url": "/api/2024/subspecies/fiendish-legacy-chthonic",
+        "name": "Fiendish Legacy: Chthonic"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-resistance-poison",
+    "url": "/api/2024/traits/lineage-resistance-poison",
+    "name": "Damage Resistance: Poison",
+    "description": "You have Resistance to Poison damage.",
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-abyssal",
+        "url": "/api/2024/subspecies/fiendish-legacy-abyssal",
+        "name": "Fiendish Legacy: Abyssal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-chill-touch",
+    "url": "/api/2024/traits/lineage-spell-chill-touch",
+    "name": "Chill Touch",
+    "description": "You know the spell Chill Touch.",
+    "spells": [
+      {
+        "spell": {
+          "index": "chill-touch",
+          "name": "Chill Touch",
+          "url": "/api/2024/spells/chill-touch-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-chthonic",
+        "url": "/api/2024/subspecies/fiendish-legacy-chthonic",
+        "name": "Fiendish Legacy: Chthonic"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-dancing-lights",
+    "url": "/api/2024/traits/lineage-spell-dancing-lights",
+    "name": "Dancing Lights",
+    "description": "You know the spell Dancing Lights.",
+    "spells": [
+      {
+        "spell": {
+          "index": "dancing-lights",
+          "name": "Dancing Lights",
+          "url": "/api/2024/spells/dancing-lights-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-drow",
+        "url": "/api/2024/subspecies/elven-lineage-drow",
+        "name": "Elven Lineage: Drow"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-darkness",
+    "url": "/api/2024/traits/lineage-spell-darkness",
+    "name": "Darkness",
+    "description": "You know the spell Darkness.",
+    "spells": [
+      {
+        "spell": {
+          "index": "darkness",
+          "name": "Darkness",
+          "url": "/api/2024/spells/darkness-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      },
+      {
+        "index": "tiefling",
+        "name": "Tiefling",
+        "url": "/api/2024/species/tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-drow",
+        "url": "/api/2024/subspecies/elven-lineage-drow",
+        "name": "Elven Lineage: Drow"
+      },
+      {
+        "index": "fiendish-legacy-infernal",
+        "url": "/api/2024/subspecies/fiendish-legacy-infernal",
+        "name": "Fiendish Legacy: Infernal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-detect-magic",
+    "url": "/api/2024/traits/lineage-spell-detect-magic",
+    "name": "Detect Magic",
+    "description": "You know the spell Detect Magic.",
+    "spells": [
+      {
+        "spell": {
+          "index": "detect-magic",
+          "name": "Detect Magic",
+          "url": "/api/2024/spells/detect-magic-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-high-elf",
+        "url": "/api/2024/subspecies/elven-lineage-high-elf",
+        "name": "Elven Lineage: High Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-faerie-fire",
+    "url": "/api/2024/traits/lineage-spell-faerie-fire",
+    "name": "Faerie Fire",
+    "description": "You know the spell Faerie Fire.",
+    "spells": [
+      {
+        "spell": {
+          "index": "faerie-fire",
+          "name": "Faerie Fire",
+          "url": "/api/2024/spells/faerie-fire-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-drow",
+        "url": "/api/2024/subspecies/elven-lineage-drow",
+        "name": "Elven Lineage: Drow"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-false-life",
+    "url": "/api/2024/traits/lineage-spell-false-life",
+    "name": "False Life",
+    "description": "You know the spell False Life.",
+    "spells": [
+      {
+        "spell": {
+          "index": "false-life",
+          "name": "False Life",
+          "url": "/api/2024/spells/false-life-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-chthonic",
+        "url": "/api/2024/subspecies/fiendish-legacy-chthonic",
+        "name": "Fiendish Legacy: Chthonic"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-fire-bolt",
+    "url": "/api/2024/traits/lineage-spell-fire-bolt",
+    "name": "Fire Bolt",
+    "description": "You know the spell Fire Bolt.",
+    "spells": [
+      {
+        "spell": {
+          "index": "fire-bolt",
+          "name": "Fire Bolt",
+          "url": "/api/2024/spells/fire-bolt-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-infernal",
+        "url": "/api/2024/subspecies/fiendish-legacy-infernal",
+        "name": "Fiendish Legacy: Infernal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-hellish-rebuke",
+    "url": "/api/2024/traits/lineage-spell-hellish-rebuke",
+    "name": "Hellish Rebuke",
+    "description": "You know the spell Hellish Rebuke.",
+    "spells": [
+      {
+        "spell": {
+          "index": "hellish-rebuke",
+          "name": "Hellish Rebuke",
+          "url": "/api/2024/spells/hellish-rebuke-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-infernal",
+        "url": "/api/2024/subspecies/fiendish-legacy-infernal",
+        "name": "Fiendish Legacy: Infernal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-hold-person",
+    "url": "/api/2024/traits/lineage-spell-hold-person",
+    "name": "Hold Person",
+    "description": "You know the spell Hold Person.",
+    "spells": [
+      {
+        "spell": {
+          "index": "hold-person",
+          "name": "Hold Person",
+          "url": "/api/2024/spells/hold-person-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-abyssal",
+        "url": "/api/2024/subspecies/fiendish-legacy-abyssal",
+        "name": "Fiendish Legacy: Abyssal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-longstrider",
+    "url": "/api/2024/traits/lineage-spell-longstrider",
+    "name": "Longstrider",
+    "description": "You learn the spell Longstrider.",
+    "spells": [
+      {
+        "spell": {
+          "index": "longstrider",
+          "name": "Longstrider",
+          "url": "/api/2024/spells/longstrider-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-wood-elf",
+        "url": "/api/2024/subspecies/elven-lineage-wood-elf",
+        "name": "Elven Lineage: Wood Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-mending",
+    "url": "/api/2024/traits/lineage-spell-mending",
+    "name": "Mending",
+    "description": "You know the cantrip Mending.",
+    "spells": [
+      {
+        "spell": {
+          "index": "mending",
+          "name": "Mending",
+          "url": "/api/2024/spells/mending-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "gnome",
+        "url": "/api/2024/species/gnome",
+        "name": "Gnome"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "gnomish-lineage-rock-gnome",
+        "url": "/api/2024/subspecies/gnomish-lineage-rock-gnome",
+        "name": "Gnomish Lineage: Rock Gnome"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-minor-illusion",
+    "url": "/api/2024/traits/lineage-spell-minor-illusion",
+    "name": "Minor Illusion",
+    "description": "You know the spell Minor Illusion.",
+    "spells": [
+      {
+        "spell": {
+          "index": "minor-illusion",
+          "name": "Minor Illusion",
+          "url": "/api/2024/spells/minor-illusion-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "gnome",
+        "url": "/api/2024/species/gnome",
+        "name": "Gnome"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "gnomish-lineage-forest-gnome",
+        "url": "/api/2024/subspecies/gnomish-lineage-forest-gnome",
+        "name": "Gnomish Lineage: Forest Gnome"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-misty-step",
+    "url": "/api/2024/traits/lineage-spell-misty-step",
+    "name": "Misty Step",
+    "description": "You know the spell Misty Step.",
+    "spells": [
+      {
+        "spell": {
+          "index": "misty-step",
+          "name": "Misty Step",
+          "url": "/api/2024/spells/misty-step-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-high-elf",
+        "url": "/api/2024/subspecies/elven-lineage-high-elf",
+        "name": "Elven Lineage: High Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-pass-without-trace",
+    "url": "/api/2024/traits/lineage-spell-pass-without-trace",
+    "name": "Pass without Trace",
+    "description": "You learn the spell Pass without Trace.",
+    "spells": [
+      {
+        "spell": {
+          "index": "pass-without-trace",
+          "name": "Pass without Trace",
+          "url": "/api/2024/spells/pass-without-trace-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-wood-elf",
+        "url": "/api/2024/subspecies/elven-lineage-wood-elf",
+        "name": "Elven Lineage: Wood Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-poison-spray",
+    "url": "/api/2024/traits/lineage-spell-poison-spray",
+    "name": "Poison Spray",
+    "description": "You know the spell Poison Spray.",
+    "spells": [
+      {
+        "spell": {
+          "index": "poison-spray",
+          "name": "Poison Spray",
+          "url": "/api/2024/spells/poison-spray-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-abyssal",
+        "url": "/api/2024/subspecies/fiendish-legacy-abyssal",
+        "name": "Fiendish Legacy: Abyssal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-ray-of-enfeeblement",
+    "url": "/api/2024/traits/lineage-spell-ray-of-enfeeblement",
+    "name": "Ray of Enfeeblement",
+    "description": "You know the spell Ray of Enfeeblement.",
+    "spells": [
+      {
+        "spell": {
+          "index": "ray-of-enfeeblement",
+          "name": "Ray of Enfeeblement",
+          "url": "/api/2024/spells/ray-of-enfeeblement-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-chthonic",
+        "url": "/api/2024/subspecies/fiendish-legacy-chthonic",
+        "name": "Fiendish Legacy: Chthonic"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "lineage-spell-ray-of-sickness",
+    "url": "/api/2024/traits/lineage-spell-ray-of-sickness",
+    "name": "Ray of Sickness",
+    "description": "You know the spell Ray of Sickness.",
+    "spells": [
+      {
+        "spell": {
+          "index": "ray-of-sickness",
+          "name": "Ray of Sickness",
+          "url": "/api/2024/spells/ray-of-sickness-nyi"
+        }
+      }
+    ],
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "fiendish-legacy-abyssal",
+        "url": "/api/2024/subspecies/fiendish-legacy-abyssal",
+        "name": "Fiendish Legacy: Abyssal"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
+  },
+  {
+    "index": "luck",
+    "url": "/api/2024/traits/luck",
+    "name": "Luck",
+    "description": "When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll.",
+    "species": [
+      {
+        "index": "halfling",
+        "url": "/api/2024/species/halfling",
+        "name": "Halfling"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "naturally-stealthy",
+    "url": "/api/2024/traits/naturally-stealthy",
+    "name": "Naturally Stealthy",
+    "description": "You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.",
+    "species": [
+      {
+        "index": "halfling",
+        "url": "/api/2024/species/halfling",
+        "name": "Halfling"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "otherworldly-presence",
+    "url": "/api/2024/traits/otherworldly-presence",
+    "name": "Otherworldly Presence",
+    "description": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait.",
+    "species": [
+      {
+        "index": "tiefling",
+        "url": "/api/2024/species/tiefling",
+        "name": "Tiefling"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "powerful-build",
+    "url": "/api/2024/traits/powerful-build",
+    "name": "Powerful Build",
+    "description": "You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity.",
+    "species": [
+      {
+        "index": "goliath",
+        "url": "/api/2024/species/goliath",
+        "name": "Goliath"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "relentless-endurance",
+    "url": "/api/2024/traits/relentless-endurance",
+    "name": "Relentless Endurance",
+    "description": "When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can't do so again until you finish a Long Rest.",
+    "species": [
+      {
+        "index": "orc",
+        "url": "/api/2024/species/orc",
+        "name": "Orc"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "resourceful",
+    "url": "/api/2024/traits/resourceful",
+    "name": "Resourceful",
+    "description": "You gain Heroic Inspiration whenever you finish a Long Rest.",
+    "species": [
+      {
+        "index": "human",
+        "url": "/api/2024/species/human",
+        "name": "Human"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "skillful",
+    "url": "/api/2024/traits/skillful",
+    "name": "Skillful",
+    "description": "You gain proficiency in one skill of your choice.",
+    "proficiency_choices": {
+      "desc": "Choose any skill.",
+      "choose": 1,
+      "type": "proficiencies",
+      "from": {
+        "option_set_type": "options_array",
+        "options": [
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "acrobatics",
+              "name": "Acrobatics",
+              "url": "/api/2024/skills/acrobatics"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "animal-handling",
+              "name": "Animal Handling",
+              "url": "/api/2024/skills/animal-handling"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "arcana",
+              "name": "Arcana",
+              "url": "/api/2024/skills/arcana"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "athletics",
+              "name": "Athletics",
+              "url": "/api/2024/skills/athletics"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "deception",
+              "name": "Deception",
+              "url": "/api/2024/skills/deception"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "history",
+              "name": "History",
+              "url": "/api/2024/skills/history"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "insight",
+              "name": "Insight",
+              "url": "/api/2024/skills/insight"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "intimidation",
+              "name": "Intimidation",
+              "url": "/api/2024/skills/intimidation"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "investigation",
+              "name": "Investigation",
+              "url": "/api/2024/skills/investigation"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "medicine",
+              "name": "Medicine",
+              "url": "/api/2024/skills/medicine"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "nature",
+              "name": "Nature",
+              "url": "/api/2024/skills/nature"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "perception",
+              "name": "Perception",
+              "url": "/api/2024/skills/perception"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "performance",
+              "name": "Performance",
+              "url": "/api/2024/skills/performance"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "persuasion",
+              "name": "Persuasion",
+              "url": "/api/2024/skills/persuasion"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "religion",
+              "name": "Religion",
+              "url": "/api/2024/skills/religion"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "sleight-of-hand",
+              "name": "Sleight of Hand",
+              "url": "/api/2024/skills/sleight-of-hand"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "stealth",
+              "name": "Stealth",
+              "url": "/api/2024/skills/stealth"
+            }
+          },
+          {
+            "option_type": "reference",
+            "item": {
+              "index": "survival",
+              "name": "Survival",
+              "url": "/api/2024/skills/survival"
+            }
+          }
+        ]
+      }
+    },
+    "species": [
+      {
+        "index": "human",
+        "url": "/api/2024/species/human",
+        "name": "Human"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "stonecunning",
+    "url": "/api/2024/traits/stonecunning",
+    "name": "Stonecunning",
+    "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked.\nYou can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+    "species": [
+      {
+        "index": "dwarf",
+        "url": "/api/2024/species/dwarf",
+        "name": "Dwarf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
   },
   {
     "index": "trance",
-    "races": [
+    "url": "/api/2024/traits/trance",
+    "name": "Trance",
+    "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
+    "species": [
       {
         "index": "elf",
-        "name": "Elf",
-        "url": "/api/2014/races/elf"
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
       }
     ],
-    "subraces": [],
-    "name": "Trance",
-    "desc": [
-      "Elves do not need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day. (The Common word for such meditation is \"trance.\") While meditating, you can dream after a fashion; such dreams are actually mental exercises that have become reflexive through years of practice. After resting this way, you gain the same benefit that a human does from 8 hours of sleep."
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "versatile",
+    "url": "/api/2024/traits/versatile",
+    "name": "Versatile",
+    "description": "You gain an Origin feat of your choice (see \"Feats\"). Skilled is recommended.",
+    "species": [
+      {
+        "index": "human",
+        "url": "/api/2024/species/human",
+        "name": "Human"
+      }
     ],
-    "proficiencies": [],
-    "url": "/api/2014/traits/trance",
-    "updated_at": "2026-04-01T20:35:39.695Z"
+    "updated_at": "2026-04-23T07:06:29.006Z",
+    "subspecies": []
+  },
+  {
+    "index": "wood-elf-speed-increase",
+    "url": "/api/2024/traits/wood-elf-speed-increase",
+    "name": "Wood Elf: Movement Speed Increase",
+    "description": "Your Movement Speed increases to 35 feet.",
+    "speed": 35,
+    "species": [
+      {
+        "index": "elf",
+        "url": "/api/2024/species/elf",
+        "name": "Elf"
+      }
+    ],
+    "subspecies": [
+      {
+        "index": "elven-lineage-wood-elf",
+        "url": "/api/2024/subspecies/elven-lineage-wood-elf",
+        "name": "Elven Lineage: Wood Elf"
+      }
+    ],
+    "updated_at": "2026-04-23T07:06:29.006Z"
   }
 ]

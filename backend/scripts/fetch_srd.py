@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = "https://www.dnd5eapi.co"
 BASE = f"{ROOT}/api"
-OUT = Path(__file__).parent.parent / "src" / "cairn" / "rules"
+OUT = Path(__file__).parent.parent / "src" / "cairn" / "srd"
 OUT.mkdir(exist_ok=True)
 
 

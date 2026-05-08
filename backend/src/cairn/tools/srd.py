@@ -3,7 +3,7 @@ from typing import Annotated
 from langchain_core.tools import tool
 
 from cairn import srd as rules
-from cairn.srd import _load_list
+from cairn.srd import _load_list, list_all_feats
 
 
 @tool
@@ -115,6 +115,26 @@ async def lookup_subclass(
     if subclass is None:
         return {"error": f"Subclass '{name}' not found."}
     return subclass
+
+
+@tool
+async def lookup_feat(
+    name: Annotated[str, 'Feat name, e.g. "sentinel", "lucky", "war-caster", "sharpshooter".'],
+) -> dict:
+    """Look up a feat's full description and prerequisites (Sentinel, Lucky, War Caster, Sharpshooter, etc.)."""
+    feat = rules.get_feat(name)
+    if feat is None:
+        return {"error": f"Feat '{name}' not found. Try the index form e.g. 'great-weapon-master'."}
+    return feat
+
+
+@tool
+async def list_feats() -> list:
+    """List all available feats with their names, types, and prerequisites. Use during character creation or level-up to show feat options."""
+    return [
+        {"index": f["index"], "name": f["name"], "type": f.get("type", "general"), "prerequisites": f.get("prerequisites", [])}
+        for f in list_all_feats()
+    ]
 
 
 @tool

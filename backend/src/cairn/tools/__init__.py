@@ -34,9 +34,11 @@ from cairn.tools.resources import (
     use_resource,
 )
 from cairn.tools.srd import (
+    list_feats,
     list_spells_for_class,
     lookup_class,
     lookup_condition,
+    lookup_feat,
     lookup_feature,
     lookup_monster,
     lookup_race,
@@ -59,6 +61,8 @@ ALL_TOOLS: list[BaseTool] = [
     lookup_race,
     lookup_class,
     lookup_feature,
+    lookup_feat,
+    list_feats,
     lookup_trait,
     lookup_subclass,
     list_spells_for_class,

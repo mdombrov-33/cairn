@@ -171,7 +171,7 @@ async def test_apply_damage_reduces_hp(client: AsyncClient) -> None:
     )
 
     assert result["damage_taken"] == 5
-    assert result["hp"] == goblin["hp"] - 5
+    assert result["hp"] == max(0, goblin["hp"] - 5)
 
 
 async def test_advance_turn_ticks_and_expires_effects(client: AsyncClient) -> None:
