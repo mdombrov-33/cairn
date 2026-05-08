@@ -1,3 +1,67 @@
+## Project
+
+### What this is
+FastAPI backend for an AI Dungeon Master platform. Players submit text turns; agents classify intent, route through a LangGraph pipeline, and stream DM responses as SSE. Postgres for state, LangGraph for orchestration, LiteLLM as the universal LLM gateway.
+
+Working directory for all backend work: `backend/`. Run everything from the repo root via `make`.
+
+### Key commands
+```
+make dev          # start API with hot reload
+make test         # run all tests (uv run pytest)
+make check        # full CI gate: format + lint + typecheck + tests
+make migrate      # apply pending migrations
+make revision m="add x table"  # autogenerate migration
+make up / down    # docker-compose infra (postgres + redis)
+```
+**Package management: always `uv add <package>`. Never edit `pyproject.toml` by hand** — uv owns the lockfile.
+
+### Layers — don't mix them
+```
+api/v1/routes/     HTTP only. Parse → call service → format. No ORM, no LLM calls.
+domain/services/   Business logic. Zero FastAPI or SQLAlchemy imports (unit-testable in isolation).
+db/queries/        Single source of all DB access. Services, agents, tools — all go through here.
+agents/            One file per agent. Each uses agent_setup() and complete()/complete_with_tools().
+tools/             LangChain @tool functions. Registered in tools/__init__.py.
+pipelines/         LangGraph graphs. Orchestration only — no business logic.
+llm/client.py      All LLM calls. Never import litellm directly anywhere else.
+prompts/           Versioned markdown + Jinja2. Loaded via load_prompt(name, version).
+```
+
+### How a turn flows
+```
+POST /sessions/{id}/turns
+  → turns.service.prepare()
+      if session.combat_active → intent = "combat_action" (bypasses graph)
+      else → turn_graph.run() → IntentRouter classifies:
+          narrative_action  → SceneNarrator streams tokens
+          skill_check       → RulesLawyer → check_required SSE → [player rolls] → SceneNarrator
+          npc_dialogue      → NPCDialogue → SceneNarrator
+          combat_action     → CombatResolver (tool loop) → enemy turns via combat_ai → SceneNarrator
+  → turn_end SSE event
+  → LoreKeeper fires async (fire-and-forget via asyncio.create_task)
+```
+
+### Adding an agent
+1. `agents/<name>.py` — use `agent_setup(name)` from `llm/router.py` to get `(prompt, model, fallbacks)`
+2. `prompts/<name>/v1.md` — frontmatter: `temperature`, `version`. Body is a Jinja2 template.
+3. `llm/models.yaml` — add entry under `agents:` (primary + fallback per env tier)
+4. Wire into `pipelines/turn_graph.py` as a node, or call directly from another agent/resolver
+
+### Adding a tool
+1. `tools/<module>.py` — `@tool` decorator from `langchain_core.tools`, `Annotated[type, "description"]` per param
+2. `tools/__init__.py` — import and add to `ALL_TOOLS`. If combat-relevant, also add to `COMBAT_TOOLS`.
+3. Invoke via `await tool.ainvoke({"arg": val})` — never `.coroutine()`
+
+### Hard rules
+- All LLM calls through `llm/client.py` only
+- All DB access through `db/queries/` only
+- `domain/` has zero FastAPI / SQLAlchemy imports
+- Migrations are always Alembic-generated (`make revision`) — no hand-written SQL
+- `tools/` is the tool home — there is no `mcp/` directory
+
+---
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
