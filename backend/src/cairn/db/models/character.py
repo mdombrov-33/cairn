@@ -46,7 +46,8 @@ class Character(Base):
     passive_perception: Mapped[int] = mapped_column(default=10)
 
     # companion flag — False = player's own character, True = AI-controlled party member
-    is_companion: Mapped[bool] = mapped_column(default=False)
+    is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")
+    is_dead: Mapped[bool] = mapped_column(default=False, server_default="false")
 
     # narrative voice — used by ally_ai to play this character
     bio: Mapped[str | None]
