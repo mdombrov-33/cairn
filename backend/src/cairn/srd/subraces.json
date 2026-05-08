@@ -129,5 +129,180 @@
     ],
     "url": "/api/2014/subraces/rock-gnome",
     "updated_at": "2026-04-01T20:35:39.541Z"
+  },
+  {
+    "index": "wood-elf",
+    "name": "Wood Elf",
+    "race": {
+      "index": "elf",
+      "name": "Elf",
+      "url": "/api/2014/races/elf"
+    },
+    "desc": "As a wood elf, you have keen senses and intuition, and your fleet feet carry you quickly and stealthily through your native forests. Wood elves tend to be reclusive and distrusting of non-elves.",
+    "ability_bonuses": [
+      {
+        "ability_score": {
+          "index": "wis",
+          "name": "WIS",
+          "url": "/api/2014/ability-scores/wis"
+        },
+        "bonus": 1
+      }
+    ],
+    "racial_traits": [
+      {
+        "index": "elf-weapon-training",
+        "name": "Elf Weapon Training",
+        "url": "/api/2014/traits/elf-weapon-training"
+      },
+      {
+        "index": "fleet-of-foot",
+        "name": "Fleet of Foot",
+        "url": "/api/2014/traits/fleet-of-foot"
+      },
+      {
+        "index": "mask-of-the-wild",
+        "name": "Mask of the Wild",
+        "url": "/api/2014/traits/mask-of-the-wild"
+      }
+    ],
+    "url": "/api/2014/subraces/wood-elf",
+    "updated_at": "2026-04-01T20:35:39.541Z"
+  },
+  {
+    "index": "drow",
+    "name": "Dark Elf (Drow)",
+    "race": {
+      "index": "elf",
+      "name": "Elf",
+      "url": "/api/2014/races/elf"
+    },
+    "desc": "Descended from an earlier subrace of dark-skinned elves, the drow were banished from the surface world for following the goddess Lolth down the path to evil and corruption. Now they have built their own civilization in the depths of the Underdark.",
+    "ability_bonuses": [
+      {
+        "ability_score": {
+          "index": "cha",
+          "name": "CHA",
+          "url": "/api/2014/ability-scores/cha"
+        },
+        "bonus": 1
+      }
+    ],
+    "racial_traits": [
+      {
+        "index": "superior-darkvision",
+        "name": "Superior Darkvision",
+        "url": "/api/2014/traits/superior-darkvision"
+      },
+      {
+        "index": "sunlight-sensitivity",
+        "name": "Sunlight Sensitivity",
+        "url": "/api/2014/traits/sunlight-sensitivity"
+      },
+      {
+        "index": "drow-magic",
+        "name": "Drow Magic",
+        "url": "/api/2014/traits/drow-magic"
+      },
+      {
+        "index": "drow-weapon-training",
+        "name": "Drow Weapon Training",
+        "url": "/api/2014/traits/drow-weapon-training"
+      }
+    ],
+    "url": "/api/2014/subraces/drow",
+    "updated_at": "2026-04-01T20:35:39.541Z"
+  },
+  {
+    "index": "mountain-dwarf",
+    "name": "Mountain Dwarf",
+    "race": {
+      "index": "dwarf",
+      "name": "Dwarf",
+      "url": "/api/2014/races/dwarf"
+    },
+    "desc": "As a mountain dwarf, you're strong and hardy, accustomed to a difficult life in rugged terrain. You're probably on the tall side for a dwarf, and tend toward lighter coloration.",
+    "ability_bonuses": [
+      {
+        "ability_score": {
+          "index": "str",
+          "name": "STR",
+          "url": "/api/2014/ability-scores/str"
+        },
+        "bonus": 2
+      }
+    ],
+    "racial_traits": [
+      {
+        "index": "dwarf-armor-training",
+        "name": "Dwarven Armor Training",
+        "url": "/api/2014/traits/dwarf-armor-training"
+      }
+    ],
+    "url": "/api/2014/subraces/mountain-dwarf",
+    "updated_at": "2026-04-01T20:35:39.541Z"
+  },
+  {
+    "index": "stout-halfling",
+    "name": "Stout Halfling",
+    "race": {
+      "index": "halfling",
+      "name": "Halfling",
+      "url": "/api/2014/races/halfling"
+    },
+    "desc": "As a stout halfling, you're hardier than average and have some resistance to poison. Some say that stouts have a touch of dwarvish blood.",
+    "ability_bonuses": [
+      {
+        "ability_score": {
+          "index": "con",
+          "name": "CON",
+          "url": "/api/2014/ability-scores/con"
+        },
+        "bonus": 1
+      }
+    ],
+    "racial_traits": [
+      {
+        "index": "stout-resilience",
+        "name": "Stout Resilience",
+        "url": "/api/2014/traits/stout-resilience"
+      }
+    ],
+    "url": "/api/2014/subraces/stout-halfling",
+    "updated_at": "2026-04-01T20:35:39.541Z"
+  },
+  {
+    "index": "forest-gnome",
+    "name": "Forest Gnome",
+    "race": {
+      "index": "gnome",
+      "name": "Gnome",
+      "url": "/api/2014/races/gnome"
+    },
+    "desc": "As a forest gnome, you have a natural knack for illusion and inherent quickness and stealth. Forest gnomes are rare and secretive, gathering in hidden communities in sylvan forests.",
+    "ability_bonuses": [
+      {
+        "ability_score": {
+          "index": "dex",
+          "name": "DEX",
+          "url": "/api/2014/ability-scores/dex"
+        },
+        "bonus": 1
+      }
+    ],
+    "racial_traits": [
+      {
+        "index": "natural-illusionist",
+        "name": "Natural Illusionist",
+        "url": "/api/2014/traits/natural-illusionist"
+      },
+      {
+        "index": "speak-with-small-beasts",
+        "name": "Speak with Small Beasts",
+        "url": "/api/2014/traits/speak-with-small-beasts"
+      }
+    ],
+    "url": "/api/2014/subraces/forest-gnome",
+    "updated_at": "2026-04-01T20:35:39.541Z"
   }
 ]

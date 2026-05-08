@@ -2,338 +2,183 @@
   {
     "index": "acolyte",
     "name": "Acolyte",
-    "starting_proficiencies": [
-      {
-        "index": "skill-insight",
-        "name": "Skill: Insight",
-        "url": "/api/2014/proficiencies/skill-insight"
-      },
-      {
-        "index": "skill-religion",
-        "name": "Skill: Religion",
-        "url": "/api/2014/proficiencies/skill-religion"
-      }
-    ],
-    "language_options": {
-      "choose": 2,
-      "type": "languages",
-      "from": {
-        "option_set_type": "resource_list",
-        "resource_list_url": "/api/2014/languages"
-      }
-    },
-    "starting_equipment": [
-      {
-        "equipment": {
-          "index": "clothes-common",
-          "name": "Clothes, common",
-          "url": "/api/2014/equipment/clothes-common"
-        },
-        "quantity": 1
-      },
-      {
-        "equipment": {
-          "index": "pouch",
-          "name": "Pouch",
-          "url": "/api/2014/equipment/pouch"
-        },
-        "quantity": 1
-      }
-    ],
-    "starting_equipment_options": [
-      {
-        "choose": 1,
-        "type": "equipment",
-        "from": {
-          "option_set_type": "equipment_category",
-          "equipment_category": {
-            "index": "holy-symbols",
-            "name": "Holy Symbols",
-            "url": "/api/2014/equipment-categories/holy-symbols"
-          }
-        }
-      }
-    ],
+    "desc": "You have spent your life in service to a temple, learning its rites and rituals.",
+    "skill_proficiencies": ["Insight", "Religion"],
+    "tool_proficiencies": [],
+    "languages": 2,
+    "starting_equipment": ["Holy symbol", "Prayer book", "5 sticks of incense", "Vestments", "Common clothes", "Pouch with 15gp"],
+    "typical_alignments": ["Lawful Good", "Lawful Neutral", "Neutral Good"],
     "feature": {
       "name": "Shelter of the Faithful",
-      "desc": [
-        "As an acolyte, you command the respect of those who share your faith, and you can perform the religious ceremonies of your deity. You and your adventuring companions can expect to receive free healing and care at a temple, shrine, or other established presence of your faith, though you must provide any material components needed for spells. Those who share your religion will support you (but only you) at a modest lifestyle.",
-        "You might also have ties to a specific temple dedicated to your chosen deity or pantheon, and you have a residence there. This could be the temple where you used to serve, if you remain on good terms with it, or a temple where you have found a new home. While near your temple, you can call upon the priests for assistance, provided the assistance you ask for is not hazardous and you remain in good standing with your temple."
-      ]
-    },
-    "personality_traits": {
-      "choose": 2,
-      "type": "personality_traits",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "string",
-            "string": "I idolize a particular hero of my faith, and constantly refer to that person's deeds and example."
-          },
-          {
-            "option_type": "string",
-            "string": "I can find common ground between the fiercest enemies, empathizing with them and always working toward peace."
-          },
-          {
-            "option_type": "string",
-            "string": "I see omens in every event and action. The gods try to speak to us, we just need to listen."
-          },
-          {
-            "option_type": "string",
-            "string": "Nothing can shake my optimistic attitude."
-          },
-          {
-            "option_type": "string",
-            "string": "I quote (or misquote) sacred texts and proverbs in almost every situation."
-          },
-          {
-            "option_type": "string",
-            "string": "I am tolerant (or intolerant) of other faiths and respect (or condemn) the worship of other gods."
-          },
-          {
-            "option_type": "string",
-            "string": "I've enjoyed fine food, drink, and high society among my temple's elite. Rough living grates on me."
-          },
-          {
-            "option_type": "string",
-            "string": "I've spent so long in the temple that I have little practical experience dealing with people in the outside world."
-          }
-        ]
-      }
-    },
-    "ideals": {
-      "choose": 1,
-      "type": "ideals",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "ideal",
-            "desc": "Tradition. The ancient traditions of worship and sacrifice must be preserved and upheld.",
-            "alignments": [
-              {
-                "index": "lawful-good",
-                "name": "Lawful Good",
-                "url": "/api/2014/alignments/lawful-good"
-              },
-              {
-                "index": "lawful-neutral",
-                "name": "Lawful Neutral",
-                "url": "/api/2014/alignments/lawful-neutral"
-              },
-              {
-                "index": "lawful-evil",
-                "name": "Lawful Evil",
-                "url": "/api/2014/alignments/lawful-evil"
-              }
-            ]
-          },
-          {
-            "option_type": "ideal",
-            "desc": "Charity. I always try to help those in need, no matter what the personal cost.",
-            "alignments": [
-              {
-                "index": "lawful-good",
-                "name": "Lawful Good",
-                "url": "/api/2014/alignments/lawful-good"
-              },
-              {
-                "index": "neutral-good",
-                "name": "Neutral Good",
-                "url": "/api/2014/alignments/neutral-good"
-              },
-              {
-                "index": "chaotic-good",
-                "name": "Chaotic Good",
-                "url": "/api/2014/alignments/chaotic-good"
-              }
-            ]
-          },
-          {
-            "option_type": "ideal",
-            "desc": "Change. We must help bring about the changes the gods are constantly working in the world.",
-            "alignments": [
-              {
-                "index": "chaotic-good",
-                "name": "Chaotic Good",
-                "url": "/api/2014/alignments/chaotic-good"
-              },
-              {
-                "index": "chaotic-neutral",
-                "name": "Chaotic Neutral",
-                "url": "/api/2014/alignments/chaotic-neutral"
-              },
-              {
-                "index": "chaotic-evil",
-                "name": "Chaotic Evil",
-                "url": "/api/2014/alignments/chaotic-evil"
-              }
-            ]
-          },
-          {
-            "option_type": "ideal",
-            "desc": "Power. I hope to one day rise to the top of my faith's religious hierarchy.",
-            "alignments": [
-              {
-                "index": "lawful-good",
-                "name": "Lawful Good",
-                "url": "/api/2014/alignments/lawful-good"
-              },
-              {
-                "index": "lawful-neutral",
-                "name": "Lawful Neutral",
-                "url": "/api/2014/alignments/lawful-neutral"
-              },
-              {
-                "index": "lawful-evil",
-                "name": "Lawful Evil",
-                "url": "/api/2014/alignments/lawful-evil"
-              }
-            ]
-          },
-          {
-            "option_type": "ideal",
-            "desc": "Faith. I trust that my deity will guide my actions. I have faith that if I work hard, things will go well.",
-            "alignments": [
-              {
-                "index": "lawful-good",
-                "name": "Lawful Good",
-                "url": "/api/2014/alignments/lawful-good"
-              },
-              {
-                "index": "lawful-neutral",
-                "name": "Lawful Neutral",
-                "url": "/api/2014/alignments/lawful-neutral"
-              },
-              {
-                "index": "lawful-evil",
-                "name": "Lawful Evil",
-                "url": "/api/2014/alignments/lawful-evil"
-              }
-            ]
-          },
-          {
-            "option_type": "ideal",
-            "desc": "Aspiration. I seek to prove myself worthy of my god's favor by matching my actions against his or her teachings.",
-            "alignments": [
-              {
-                "index": "lawful-good",
-                "name": "Lawful Good",
-                "url": "/api/2014/alignments/lawful-good"
-              },
-              {
-                "index": "neutral-good",
-                "name": "Neutral Good",
-                "url": "/api/2014/alignments/neutral-good"
-              },
-              {
-                "index": "chaotic-good",
-                "name": "Chaotic Good",
-                "url": "/api/2014/alignments/chaotic-good"
-              },
-              {
-                "index": "lawful-neutral",
-                "name": "Lawful Neutral",
-                "url": "/api/2014/alignments/lawful-neutral"
-              },
-              {
-                "index": "neutral",
-                "name": "Neutral",
-                "url": "/api/2014/alignments/neutral"
-              },
-              {
-                "index": "chaotic-neutral",
-                "name": "Chaotic Neutral",
-                "url": "/api/2014/alignments/chaotic-neutral"
-              },
-              {
-                "index": "lawful-evil",
-                "name": "Lawful Evil",
-                "url": "/api/2014/alignments/lawful-evil"
-              },
-              {
-                "index": "neutral-evil",
-                "name": "Neutral Evil",
-                "url": "/api/2014/alignments/neutral-evil"
-              },
-              {
-                "index": "chaotic-evil",
-                "name": "Chaotic Evil",
-                "url": "/api/2014/alignments/chaotic-evil"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "bonds": {
-      "choose": 1,
-      "type": "bonds",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "string",
-            "string": "I would die to recover an ancient relic of my faith that was lost long ago."
-          },
-          {
-            "option_type": "string",
-            "string": "I will someday get revenge on the corrupt temple hierarchy who branded me a heretic."
-          },
-          {
-            "option_type": "string",
-            "string": "I owe my life to the priest who took me in when my parents died."
-          },
-          {
-            "option_type": "string",
-            "string": "Everything I do is for the common people."
-          },
-          {
-            "option_type": "string",
-            "string": "I will do anything to protect the temple where I served."
-          },
-          {
-            "option_type": "string",
-            "string": "I seek to preserve a sacred text that my enemies consider heretical and seek to destroy."
-          }
-        ]
-      }
-    },
-    "flaws": {
-      "choose": 1,
-      "type": "flaws",
-      "from": {
-        "option_set_type": "options_array",
-        "options": [
-          {
-            "option_type": "string",
-            "string": "I judge others harshly, and myself even more severely."
-          },
-          {
-            "option_type": "string",
-            "string": "I put too much trust in those who wield power within my temple's hierarchy."
-          },
-          {
-            "option_type": "string",
-            "string": "My piety sometimes leads me to blindly trust those that profess faith in my god."
-          },
-          {
-            "option_type": "string",
-            "string": "I am inflexible in my thinking."
-          },
-          {
-            "option_type": "string",
-            "string": "I am suspicious of strangers and expect the worst of them."
-          },
-          {
-            "option_type": "string",
-            "string": "Once I pick a goal, I become obsessed with it to the detriment of everything else in my life."
-          }
-        ]
-      }
-    },
-    "url": "/api/2014/backgrounds/acolyte",
-    "updated_at": "2026-04-01T20:35:36.313Z"
+      "desc": "You and your companions can receive free healing and care at temples of your faith. You have a place to stay at such temples and can call on priests for non-hazardous assistance."
+    }
+  },
+  {
+    "index": "charlatan",
+    "name": "Charlatan",
+    "desc": "You have always had a talent for making people believe what you want them to believe.",
+    "skill_proficiencies": ["Deception", "Sleight of Hand"],
+    "tool_proficiencies": ["Disguise kit", "Forgery kit"],
+    "languages": 0,
+    "starting_equipment": ["Fine clothes", "Disguise kit", "Con tools (stoppered bottles, weighted dice, marked cards)", "Pouch with 15gp"],
+    "typical_alignments": ["Chaotic Neutral", "Neutral Evil", "Chaotic Evil"],
+    "feature": {
+      "name": "False Identity",
+      "desc": "You have a second identity, including documentation, established contacts, and disguises. You can also forge documents, though not official seals of powerful entities."
+    }
+  },
+  {
+    "index": "criminal",
+    "name": "Criminal",
+    "desc": "You are an experienced criminal with a history of breaking the law.",
+    "skill_proficiencies": ["Deception", "Stealth"],
+    "tool_proficiencies": ["Thieves' tools", "One gaming set"],
+    "languages": 0,
+    "starting_equipment": ["Crowbar", "Dark common clothes with hood", "Pouch with 15gp"],
+    "typical_alignments": ["Chaotic Neutral", "Neutral Evil", "Chaotic Evil"],
+    "feature": {
+      "name": "Criminal Contact",
+      "desc": "You have a reliable contact who acts as your liaison to a network of criminals. You can get messages to and from your contact over any distance."
+    }
+  },
+  {
+    "index": "entertainer",
+    "name": "Entertainer",
+    "desc": "You thrive in front of an audience, knowing how to entrance, entertain, and inspire.",
+    "skill_proficiencies": ["Acrobatics", "Performance"],
+    "tool_proficiencies": ["Disguise kit", "One musical instrument"],
+    "languages": 0,
+    "starting_equipment": ["One musical instrument", "Favor of an admirer", "Costume", "Pouch with 15gp"],
+    "typical_alignments": ["Chaotic Good", "Chaotic Neutral", "Neutral Good"],
+    "feature": {
+      "name": "By Popular Demand",
+      "desc": "You can always find a place to perform in exchange for free lodging and food. Your performance makes you something of a local figure wherever you go."
+    }
+  },
+  {
+    "index": "folk-hero",
+    "name": "Folk Hero",
+    "desc": "You come from a humble background but are destined for greater things, already seen as a hero by common folk.",
+    "skill_proficiencies": ["Animal Handling", "Survival"],
+    "tool_proficiencies": ["One artisan's tool", "Vehicles (land)"],
+    "languages": 0,
+    "starting_equipment": ["One artisan's tool", "Shovel", "Iron pot", "Common clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Neutral Good", "Lawful Good", "Chaotic Good"],
+    "feature": {
+      "name": "Rustic Hospitality",
+      "desc": "Common folk will shelter you from those who hunt you, though not at risk to themselves. They will give you a place to hide, rest, and recover."
+    }
+  },
+  {
+    "index": "guild-artisan",
+    "name": "Guild Artisan",
+    "desc": "You are a member of an artisan's guild, skilled in a particular trade and linked to a network of fellow craftspeople.",
+    "skill_proficiencies": ["Insight", "Persuasion"],
+    "tool_proficiencies": ["One artisan's tool"],
+    "languages": 1,
+    "starting_equipment": ["One artisan's tool", "Letter of introduction from your guild", "Traveler's clothes", "Pouch with 15gp"],
+    "typical_alignments": ["Lawful Good", "Lawful Neutral", "Neutral Good"],
+    "feature": {
+      "name": "Guild Membership",
+      "desc": "Your guild provides lodging and food, legal aid, and access to powerful guild members. In return, you pay dues of 5gp per month."
+    }
+  },
+  {
+    "index": "hermit",
+    "name": "Hermit",
+    "desc": "You lived in seclusion for a formative part of your life, sheltered from society in search of solitude and contemplation.",
+    "skill_proficiencies": ["Medicine", "Religion"],
+    "tool_proficiencies": ["Herbalism kit"],
+    "languages": 1,
+    "starting_equipment": ["Scroll case with notes", "Winter blanket", "Common clothes", "Herbalism kit", "5gp"],
+    "typical_alignments": ["Lawful Good", "Neutral Good", "Lawful Neutral"],
+    "feature": {
+      "name": "Discovery",
+      "desc": "Your seclusion gave you access to a unique discovery — a great truth, a secret of the world, a location, or a power. Work with your DM to determine the nature of your discovery."
+    }
+  },
+  {
+    "index": "noble",
+    "name": "Noble",
+    "desc": "You understand wealth, power, and privilege, having been born into a family of high social standing.",
+    "skill_proficiencies": ["History", "Persuasion"],
+    "tool_proficiencies": ["One gaming set"],
+    "languages": 1,
+    "starting_equipment": ["Fine clothes", "Signet ring", "Scroll of pedigree", "Purse with 25gp"],
+    "typical_alignments": ["Lawful Good", "Lawful Neutral", "Lawful Evil"],
+    "feature": {
+      "name": "Position of Privilege",
+      "desc": "People assume you have the right to be wherever you are. Common folk make way for you; other nobles treat you as a peer. You can get an audience with local nobles and officials."
+    }
+  },
+  {
+    "index": "outlander",
+    "name": "Outlander",
+    "desc": "You grew up in the wilds, far from civilization, and have learned to survive with few resources.",
+    "skill_proficiencies": ["Athletics", "Survival"],
+    "tool_proficiencies": ["One musical instrument"],
+    "languages": 1,
+    "starting_equipment": ["Staff", "Hunting trap", "Trophy from an animal you killed", "Traveler's clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Chaotic Good", "Chaotic Neutral", "Neutral"],
+    "feature": {
+      "name": "Wanderer",
+      "desc": "You have an excellent memory for maps and geography. You can always find food and fresh water for yourself and up to 5 others when in natural terrain."
+    }
+  },
+  {
+    "index": "sage",
+    "name": "Sage",
+    "desc": "You spent years learning the lore of the multiverse, poring over manuscripts and memorizing what you learned.",
+    "skill_proficiencies": ["Arcana", "History"],
+    "tool_proficiencies": [],
+    "languages": 2,
+    "starting_equipment": ["Bottle of black ink", "Quill", "Small knife", "Letter with an unanswered question", "Common clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Lawful Neutral", "Neutral Good", "Neutral"],
+    "feature": {
+      "name": "Researcher",
+      "desc": "When you don't know a piece of lore, you know where to find it — a library, a university, a sage. If the information exists and isn't secret, you can track it down."
+    }
+  },
+  {
+    "index": "sailor",
+    "name": "Sailor",
+    "desc": "You sailed on a seagoing vessel for years, picking up the skills of the trade along the way.",
+    "skill_proficiencies": ["Athletics", "Perception"],
+    "tool_proficiencies": ["Navigator's tools", "Vehicles (water)"],
+    "languages": 0,
+    "starting_equipment": ["Belaying pin (club)", "50 feet of silk rope", "Lucky charm", "Common clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Chaotic Good", "Chaotic Neutral", "Neutral"],
+    "feature": {
+      "name": "Ship's Passage",
+      "desc": "You can secure free passage on sailing ships for yourself and companions. You might have to work during the voyage, and passage isn't guaranteed in times of war."
+    }
+  },
+  {
+    "index": "soldier",
+    "name": "Soldier",
+    "desc": "War has been your life for as long as you can remember, and you've fought for a lord, a nation, or a mercenary company.",
+    "skill_proficiencies": ["Athletics", "Intimidation"],
+    "tool_proficiencies": ["One gaming set", "Vehicles (land)"],
+    "languages": 0,
+    "starting_equipment": ["Insignia of rank", "Trophy from a fallen enemy", "Deck of cards or dice set", "Common clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Lawful Good", "Lawful Neutral", "Lawful Evil"],
+    "feature": {
+      "name": "Military Rank",
+      "desc": "Soldiers loyal to your former military organization recognize your rank and defer to you. You can invoke your rank to commandeer horses, equipment, and hospitality from them."
+    }
+  },
+  {
+    "index": "urchin",
+    "name": "Urchin",
+    "desc": "You grew up on the streets, surviving by your wits and learning the ways of the city's underbelly.",
+    "skill_proficiencies": ["Sleight of Hand", "Stealth"],
+    "tool_proficiencies": ["Disguise kit", "Thieves' tools"],
+    "languages": 0,
+    "starting_equipment": ["Small knife", "Map of your home city", "Pet mouse", "Token from your parents", "Common clothes", "Pouch with 10gp"],
+    "typical_alignments": ["Chaotic Neutral", "Neutral", "Chaotic Good"],
+    "feature": {
+      "name": "City Secrets",
+      "desc": "You know the secret patterns and flow of cities. You can find passages through urban areas that others would miss, moving twice the normal speed when not in combat."
+    }
   }
 ]

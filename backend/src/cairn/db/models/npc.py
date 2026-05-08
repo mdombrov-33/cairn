@@ -59,6 +59,7 @@ class NPC(Base):
         JSONB, default=list, server_default="[]"
     )
     skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    tool_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
