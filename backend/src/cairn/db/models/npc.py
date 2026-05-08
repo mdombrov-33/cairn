@@ -58,6 +58,7 @@ class NPC(Base):
     saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     features: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     currency: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default=lambda: {"gp": 0, "sp": 0, "cp": 0}
