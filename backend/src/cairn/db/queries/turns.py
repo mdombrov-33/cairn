@@ -49,6 +49,11 @@ async def update_turn_response(
     return turn
 
 
+async def append_event(session: AsyncSession, turn_id: uuid.UUID, event: dict) -> None:
+    turn = await get_turn(session, turn_id)
+    turn.events = [*turn.events, event]
+
+
 async def update_turn_check(
     session: AsyncSession,
     turn_id: uuid.UUID,

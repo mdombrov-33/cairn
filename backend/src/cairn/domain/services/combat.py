@@ -3,15 +3,30 @@ import random
 import re
 import uuid
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
+from cairn.context import current_turn_id
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.db.queries import turns as turn_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
+
+log = structlog.get_logger()
+
+
+async def _emit(db: AsyncSession, event: dict) -> None:
+    turn_id = current_turn_id.get()
+    if turn_id is None:
+        return
+    try:
+        await turn_queries.append_event(db, turn_id, event)
+    except Exception as exc:
+        log.warning("turn_event_emit_failed", error=str(exc), event_type=event.get("type"))
 
 
 def _roll_die(sides: int) -> int:
@@ -137,6 +152,7 @@ async def _init_state(
     await session_queries.update_combat_state(
         db, session_id, combat_state=combat_state, combat_active=True
     )
+    await _emit(db, {"type": "combat_started", "combatant_count": len(combatants)})
     await db.commit()
     return combat_state
 
@@ -203,8 +219,7 @@ async def apply_damage(
         effective = max(0, amount - char.temp_hp)
         char.temp_hp = max(0, char.temp_hp - amount)
         char.hp = max(0, char.hp - effective)
-        await db.commit()
-        return {
+        result = {
             "combatant": char.name,
             "damage_taken": effective,
             "temp_hp_absorbed": amount - effective,
@@ -212,6 +227,9 @@ async def apply_damage(
             "is_unconscious": char.hp == 0,
             "is_dead": False,
         }
+        await _emit(db, {"type": "damage_applied", "combatant_type": "character", **result})
+        await db.commit()
+        return result
 
     if combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
@@ -219,8 +237,7 @@ async def apply_damage(
         npc.temp_hp = max(0, npc.temp_hp - amount)
         npc.hp = max(0, npc.hp - effective)
         is_dead = npc.hp == 0
-        await db.commit()
-        return {
+        result = {
             "combatant": npc.name,
             "damage_taken": effective,
             "temp_hp_absorbed": amount - effective,
@@ -228,6 +245,9 @@ async def apply_damage(
             "is_unconscious": is_dead,
             "is_dead": is_dead,
         }
+        await _emit(db, {"type": "damage_applied", "combatant_type": "npc", **result})
+        await db.commit()
+        return result
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
@@ -242,14 +262,16 @@ async def apply_damage(
         await session_queries.update_combat_state(
             db, session_id, combat_state=state, combat_active=session.combat_active
         )
-        await db.commit()
-        return {
+        result = {
             "combatant": combatant["name"],
             "damage_taken": effective,
             "hp": combatant["hp"],
             "is_alive": combatant["is_alive"],
             "is_dead": not combatant["is_alive"],
         }
+        await _emit(db, {"type": "damage_applied", "combatant_type": "monster", **result})
+        await db.commit()
+        return result
 
     return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
@@ -268,19 +290,23 @@ async def apply_healing(
         if char.hp > 0:
             char.death_save_successes = 0
             char.death_save_failures = 0
-        await db.commit()
-        return {
+        result = {
             "combatant": char.name,
             "hp": char.hp,
             "max_hp": char.max_hp,
             "is_conscious": char.hp > 0,
         }
+        await _emit(db, {"type": "healing_applied", "combatant_type": "character", **result})
+        await db.commit()
+        return result
 
     if combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
         npc.hp = min(npc.max_hp, npc.hp + amount)
+        result = {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
+        await _emit(db, {"type": "healing_applied", "combatant_type": "npc", **result})
         await db.commit()
-        return {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
+        return result
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
@@ -294,12 +320,14 @@ async def apply_healing(
         await session_queries.update_combat_state(
             db, session_id, combat_state=state, combat_active=session.combat_active
         )
-        await db.commit()
-        return {
+        result = {
             "combatant": combatant["name"],
             "hp": combatant["hp"],
             "max_hp": combatant["max_hp"],
         }
+        await _emit(db, {"type": "healing_applied", "combatant_type": "monster", **result})
+        await db.commit()
+        return result
 
     return {"error": f"Unknown combatant_type '{combatant_type}'."}
 
@@ -322,8 +350,10 @@ async def apply_condition(
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=session.combat_active
     )
+    result = {"combatant": combatant["name"], "conditions": conditions}
+    await _emit(db, {"type": "condition_applied", "condition": condition, **result})
     await db.commit()
-    return {"combatant": combatant["name"], "conditions": conditions}
+    return result
 
 
 async def remove_condition(
@@ -342,8 +372,10 @@ async def remove_condition(
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=session.combat_active
     )
+    result = {"combatant": combatant["name"], "conditions": combatant["conditions"]}
+    await _emit(db, {"type": "condition_removed", "condition": condition, **result})
     await db.commit()
-    return {"combatant": combatant["name"], "conditions": combatant["conditions"]}
+    return result
 
 
 async def roll_death_save(
@@ -377,8 +409,7 @@ async def roll_death_save(
         elif char.death_save_successes >= 3:
             outcome = "stable"
 
-    await db.commit()
-    return {
+    result = {
         "character": char.name,
         "roll": roll,
         "success": roll >= 10,
@@ -389,6 +420,9 @@ async def roll_death_save(
         "outcome": outcome,
         "hp": char.hp,
     }
+    await _emit(db, {"type": "death_save_rolled", **result})
+    await db.commit()
+    return result
 
 
 async def advance_turn(
@@ -452,7 +486,6 @@ async def advance_turn(
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=True
     )
-    await db.commit()
 
     result: dict = {
         "round": state["round"],
@@ -467,6 +500,17 @@ async def advance_turn(
         result["expired_effects"] = expired_effects
     if start_of_turn_ticks:
         result["start_of_turn_ticks"] = start_of_turn_ticks
+
+    await _emit(
+        db,
+        {
+            "type": "turn_advanced",
+            "round": state["round"],
+            "current_combatant": current["name"],
+            "expired_effects": expired_effects,
+        },
+    )
+    await db.commit()
     return result
 
 
@@ -512,6 +556,15 @@ async def apply_effect(
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=session.combat_active
     )
+    await _emit(
+        db,
+        {
+            "type": "effect_applied",
+            "effect_name": effect_name,
+            "target_id": target_id,
+            "duration_rounds": duration_rounds,
+        },
+    )
     await db.commit()
     return {"effect_applied": True, "effect": effect}
 
@@ -532,5 +585,6 @@ async def remove_effect(
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=session.combat_active
     )
+    await _emit(db, {"type": "effect_removed", "effect_name": removed["name"]})
     await db.commit()
     return {"effect_removed": True, "effect_name": removed["name"]}

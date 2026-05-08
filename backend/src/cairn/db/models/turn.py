@@ -19,5 +19,6 @@ class Turn(Base):
     dm_response: Mapped[str | None]
     check_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     dice_rolls: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    events: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     checkpoint_id: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.agents import combat_resolver, scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.context import current_turn_id
 from cairn.db.models.turn import Turn
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
@@ -50,44 +51,48 @@ async def submit(
     intent = state["intent"]
 
     async def generate() -> AsyncGenerator[str]:
-        yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
+        token = current_turn_id.set(turn.id)
+        try:
+            yield sse("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
-        if intent == "combat_action":
-            narrator = combat_resolver.run(body.player_input, str(session_id))
-            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
-                yield event
+            if intent == "combat_action":
+                narrator = combat_resolver.run(body.player_input, str(session_id))
+                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                    yield event
 
-        elif intent == "skill_check":
-            check = state["check"]
-            assert check is not None
-            setup_chunks: list[str] = []
-            async for chunk in scene_narrator.run(body.player_input):
-                setup_chunks.append(chunk)
-                yield sse("token", {"text": chunk})
-            setup_prose = "".join(setup_chunks)
-            await service.save_check_setup(
-                db, turn_id=turn.id, check=check, setup_prose=setup_prose
-            )
-            yield sse(
-                "check_required",
-                {
-                    "skill": check["skill"],
-                    "dc": check["dc"],
-                    "modifier": check["modifier"],
-                    "roll_type": check["roll_type"],
-                },
-            )
+            elif intent == "skill_check":
+                check = state["check"]
+                assert check is not None
+                setup_chunks: list[str] = []
+                async for chunk in scene_narrator.run(body.player_input):
+                    setup_chunks.append(chunk)
+                    yield sse("token", {"text": chunk})
+                setup_prose = "".join(setup_chunks)
+                await service.save_check_setup(
+                    db, turn_id=turn.id, check=check, setup_prose=setup_prose
+                )
+                yield sse(
+                    "check_required",
+                    {
+                        "skill": check["skill"],
+                        "dc": check["dc"],
+                        "modifier": check["modifier"],
+                        "roll_type": check["roll_type"],
+                    },
+                )
 
-        elif intent == "npc_dialogue":
-            npc_context = state["npc_context"] or ""
-            narrator = scene_narrator.run(body.player_input, context=npc_context)
-            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
-                yield event
+            elif intent == "npc_dialogue":
+                npc_context = state["npc_context"] or ""
+                narrator = scene_narrator.run(body.player_input, context=npc_context)
+                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                    yield event
 
-        else:  # narrative_action
-            narrator = scene_narrator.run(body.player_input)
-            async for event in _narrate(narrator, turn, db, campaign_id, namespace):
-                yield event
+            else:  # narrative_action
+                narrator = scene_narrator.run(body.player_input)
+                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                    yield event
+        finally:
+            current_turn_id.reset(token)
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
 
