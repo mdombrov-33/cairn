@@ -30,7 +30,7 @@ async def run(player_input: str) -> tuple[Intent, str | None]:
         data = json.loads(cleaned)
         intent = str(data["intent"]).lower()
         npc_name: str | None = data.get("npc_name") or None
-    except (json.JSONDecodeError, KeyError):
+    except json.JSONDecodeError, KeyError:
         intent = cleaned.lower()
         npc_name = None
 
