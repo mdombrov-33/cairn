@@ -1,20 +1,25 @@
 import uuid
 
 from fastapi import APIRouter, status
-from pydantic import BaseModel
 
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.characters import CharacterCreate, CharacterResponse
-from cairn.domain.exceptions import AuthError, NotFoundError
+from cairn.api.v1.schemas.characters import (
+    CharacterCreate,
+    CharacterPatch,
+    CharacterResponse,
+    EquipRequest,
+    GrantXpRequest,
+    LevelUpRequest,
+)
 from cairn.domain.services import characters as service
-
-
-class CharacterPatch(BaseModel):
-    name: str | None = None
-    bio: str | None = None
-
+from cairn.domain.services import equipment as equipment_service
+from cairn.domain.services import leveling
+from cairn.domain.services.leveling import LevelUpChoices
 
 router = APIRouter(prefix="/v1/campaigns", tags=["characters"])
+
+
+# Characters
 
 
 @router.post(
@@ -38,7 +43,6 @@ async def create(
         background=body.background,
         ability_scores=body.ability_scores,
         skill_choices=body.skill_choices,
-        ac=body.ac,
         alignment=body.alignment,
         bio=body.bio,
         personality=body.personality,
@@ -69,18 +73,14 @@ async def patch(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> CharacterResponse:
-    characters = await service.list_for_campaign(db, campaign_id=campaign_id, owner_id=user_id)
-    character = next((c for c in characters if c.id == character_id), None)
-    if character is None:
-        raise NotFoundError(f"character {character_id} not found", code="character_not_found")
-    if character.is_companion:
-        raise AuthError("cannot modify companion characters", code="forbidden")
-
-    if body.name is not None:
-        character.name = body.name
-    if body.bio is not None:
-        character.bio = body.bio
-    await db.flush()
+    character = await service.patch(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        name=body.name,
+        bio=body.bio,
+    )
     return CharacterResponse.model_validate(character)
 
 
@@ -95,3 +95,115 @@ async def delete(
     db: DBSession,
 ) -> None:
     await service.delete(db, campaign_id=campaign_id, character_id=character_id, owner_id=user_id)
+
+
+# Equipment
+
+
+@router.post(
+    "/{campaign_id}/characters/{character_id}/equip",
+    response_model=CharacterResponse,
+)
+async def equip(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    body: EquipRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CharacterResponse:
+    character = await equipment_service.equip(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        item_name=body.item_name,
+    )
+    return CharacterResponse.model_validate(character)
+
+
+@router.post(
+    "/{campaign_id}/characters/{character_id}/unequip",
+    response_model=CharacterResponse,
+)
+async def unequip(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    body: EquipRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CharacterResponse:
+    character = await equipment_service.unequip(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        item_name=body.item_name,
+    )
+    return CharacterResponse.model_validate(character)
+
+
+# Leveling
+
+
+@router.get(
+    "/{campaign_id}/characters/{character_id}/level-up",
+    response_model=dict,
+)
+async def level_up_preview(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> dict:
+    return await leveling.get_level_up_preview(
+        db, character_id=character_id, campaign_id=campaign_id, owner_id=user_id
+    )
+
+
+@router.post(
+    "/{campaign_id}/characters/{character_id}/level-up",
+    response_model=CharacterResponse,
+)
+async def level_up_apply(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    body: LevelUpRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CharacterResponse:
+    char = await leveling.apply_level_up(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        choices=LevelUpChoices(
+            hp_method=body.hp_method,
+            hp_roll=body.hp_roll,
+            asi=body.asi,
+            feat=body.feat,
+            feat_options=body.feat_options,
+            new_spells=body.new_spells,
+            subclass=body.subclass,
+        ),
+    )
+    return CharacterResponse.model_validate(char)
+
+
+@router.post(
+    "/{campaign_id}/characters/{character_id}/grant-xp",
+    response_model=dict,
+)
+async def grant_xp(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    body: GrantXpRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> dict:
+    return await leveling.award_xp(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        amount=body.amount,
+    )

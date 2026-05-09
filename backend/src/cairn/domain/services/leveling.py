@@ -10,6 +10,7 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, ValidationError
 from cairn.domain.services import feat_effects
+from cairn.domain.services.ac import derive_ac
 from cairn.srd import (
     get_class_levels,
     get_feat,
@@ -158,7 +159,7 @@ def expected_spell_picks(class_index: str, target_level: int) -> int:
 
 
 def recompute_derived_stats(char: Character) -> None:
-    """Re-derive initiative and passive_perception from current ability scores + feats."""
+    """Re-derive initiative, passive_perception, and AC from current state + feats."""
     feat_indices = {f["index"] for f in (char.feats or [])}
 
     dex_mod = _ability_modifier(char.ability_scores.get("dex", 10))
@@ -169,6 +170,8 @@ def recompute_derived_stats(char: Character) -> None:
     char.passive_perception = (
         10 + wis_mod + (2 if has_perception else 0) + (5 if "observant" in feat_indices else 0)
     )
+
+    char.ac = derive_ac(char)
 
 
 # Preview
@@ -239,16 +242,36 @@ class LevelUpChoices:
 # Service entrypoints
 
 
+async def get_level_up_preview(
+    db: AsyncSession,
+    *,
+    character_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    owner_id: str,
+) -> dict:
+    char = await character_queries.get_character_for_campaign_owned_by(
+        db, character_id, campaign_id, owner_id
+    )
+    preview = build_level_up_preview(char)
+    if preview is None:
+        return {"pending": False}
+    return {"pending": True, **preview}
+
+
 async def award_xp(
     db: AsyncSession,
     *,
     character_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    owner_id: str,
     amount: int,
 ) -> dict:
     """Add XP to a character. Returns whether they're now ready to level up."""
     if amount < 0:
         raise ValidationError(f"xp amount must be non-negative, got {amount}")
-    char = await character_queries.get_character(db, character_id)
+    char = await character_queries.get_character_for_campaign_owned_by(
+        db, character_id, campaign_id, owner_id
+    )
     char.xp = (char.xp or 0) + amount
     ready = has_pending_level_up(char)
     log.info(
@@ -258,7 +281,6 @@ async def award_xp(
         total_xp=char.xp,
         ready_to_level_up=ready,
     )
-    await db.commit()
     return {"xp": char.xp, "level": char.level, "ready_to_level_up": ready}
 
 
@@ -266,9 +288,13 @@ async def apply_level_up(
     db: AsyncSession,
     *,
     character_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    owner_id: str,
     choices: LevelUpChoices,
 ) -> Character:
-    char = await character_queries.get_character(db, character_id)
+    char = await character_queries.get_character_for_campaign_owned_by(
+        db, character_id, campaign_id, owner_id
+    )
 
     if not has_pending_level_up(char):
         raise ValidationError(
@@ -294,17 +320,24 @@ async def apply_level_up(
     char.max_hp = char.max_hp + hp_gain + con_mod
     char.hp = char.hp + hp_gain + con_mod
 
+    # Tough feat: +2 max HP for every level gained after taking it
+    if any(f["index"] == "tough" for f in (char.feats or [])):
+        char.max_hp = char.max_hp + 2
+        char.hp = char.hp + 2
+
     # 2. ASI / feat (if applicable)
     if _is_asi_level(cls, target_level):
         if choices.asi is not None:
             _apply_asi(char, choices.asi)
-        else:
-            assert choices.feat is not None  # validated above
+        elif choices.feat is not None:
             feat_effects.apply_feat(char, choices.feat, choices.feat_options)
+        else:
+            raise ValidationError("must choose asi or feat at this level")
 
     # 3. Subclass (if applicable)
     if SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass:
-        assert choices.subclass is not None  # validated above
+        if choices.subclass is None:
+            raise ValidationError("subclass choice required at this level")
         char.subclass = choices.subclass
 
     # 4. Spell slots — re-derive from class table for the new level
@@ -339,7 +372,6 @@ async def apply_level_up(
         new_level=target_level,
         class_=cls,
     )
-    await db.commit()
     return char
 
 
@@ -387,8 +419,7 @@ def _validate_choices_against_preview(
         feat_set = choices.feat is not None
         if asi_set == feat_set:
             raise ValidationError("must choose exactly one of asi or feat at this level")
-        if feat_set:
-            assert choices.feat is not None  # mypy
+        if feat_set and choices.feat is not None:
             feat_data = get_feat(choices.feat)
             if feat_data is None:
                 raise ValidationError(f"unknown feat: {choices.feat}")

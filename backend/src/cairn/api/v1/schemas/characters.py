@@ -15,7 +15,6 @@ class CharacterCreate(BaseModel):
     background: str
     ability_scores: dict[str, int]
     skill_choices: list[str]
-    ac: int
     alignment: str
     bio: str
     personality: str
@@ -39,6 +38,29 @@ class CharacterCreate(BaseModel):
         if self.is_companion and not self.voice_traits:
             raise ValueError("voice_traits required for companions")
         return self
+
+
+class EquipRequest(BaseModel):
+    item_name: str
+
+
+class LevelUpRequest(BaseModel):
+    hp_method: Literal["roll", "average"]
+    hp_roll: int | None = None
+    asi: dict[str, int] | None = None
+    feat: str | None = None
+    feat_options: dict[str, Any] | None = None
+    new_spells: list[str] = Field(default_factory=list)
+    subclass: str | None = None
+
+
+class GrantXpRequest(BaseModel):
+    amount: int
+
+
+class CharacterPatch(BaseModel):
+    name: str | None = None
+    bio: str | None = None
 
 
 class CharacterResponse(CreatureBase):

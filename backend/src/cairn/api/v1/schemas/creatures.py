@@ -45,3 +45,5 @@ class CreatureBase(BaseModel):
     features: list[Any]
     inventory: list[Any]
     currency: dict[str, Any]
+    armor_proficiencies: list[Any] = Field(default_factory=list)
+    weapon_proficiencies: list[Any] = Field(default_factory=list)

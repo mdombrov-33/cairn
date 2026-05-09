@@ -25,7 +25,6 @@ FIGHTER: dict = {
     "background": "soldier",
     "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
     "skill_choices": ["Perception", "History"],
-    "ac": 16,
     "alignment": "Lawful Good",
     "bio": "A seasoned warrior.",
     "personality": "Stoic and direct.",
@@ -38,7 +37,6 @@ WIZARD: dict = {
     "background": "sage",
     "ability_scores": {"str": 8, "dex": 14, "con": 12, "int": 15, "wis": 13, "cha": 10},
     "skill_choices": ["Insight", "Investigation"],
-    "ac": 12,
     "alignment": "Neutral Good",
     "bio": "A scholar.",
     "personality": "Curious.",
@@ -122,6 +120,7 @@ BARBARIAN: dict = {
     **FIGHTER,
     "name": "Krug",
     "character_class": "barbarian",
+    "background": "soldier",
     "skill_choices": ["Athletics", "Survival"],
 }
 
@@ -145,7 +144,13 @@ async def test_award_xp_below_threshold(client: AsyncClient) -> None:
     camp = await _campaign(client)
     char = await _character(client, camp["id"])
     async with db_client.get_session() as db:
-        result = await leveling.award_xp(db, character_id=uuid.UUID(char["id"]), amount=100)
+        result = await leveling.award_xp(
+            db,
+            character_id=uuid.UUID(char["id"]),
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            amount=100,
+        )
     assert result == {"xp": 100, "level": 1, "ready_to_level_up": False}
 
 
@@ -153,7 +158,13 @@ async def test_award_xp_crosses_threshold(client: AsyncClient) -> None:
     camp = await _campaign(client)
     char = await _character(client, camp["id"])
     async with db_client.get_session() as db:
-        result = await leveling.award_xp(db, character_id=uuid.UUID(char["id"]), amount=300)
+        result = await leveling.award_xp(
+            db,
+            character_id=uuid.UUID(char["id"]),
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            amount=300,
+        )
     assert result == {"xp": 300, "level": 1, "ready_to_level_up": True}
 
 
@@ -162,7 +173,13 @@ async def test_award_xp_negative_raises(client: AsyncClient) -> None:
     char = await _character(client, camp["id"])
     async with db_client.get_session() as db:
         with pytest.raises(ValidationError):
-            await leveling.award_xp(db, character_id=uuid.UUID(char["id"]), amount=-5)
+            await leveling.award_xp(
+                db,
+                character_id=uuid.UUID(char["id"]),
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
+                amount=-5,
+            )
 
 
 # Preview
@@ -233,6 +250,8 @@ async def test_apply_level_up_no_pending_raises(client: AsyncClient) -> None:
             await leveling.apply_level_up(
                 db,
                 character_id=uuid.UUID(char_resp["id"]),
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(hp_method="average"),
             )
 
@@ -248,7 +267,11 @@ async def test_apply_level_up_fighter_1_to_2_average_hp(client: AsyncClient) -> 
 
     async with db_client.get_session() as db:
         char = await leveling.apply_level_up(
-            db, character_id=cid, choices=LevelUpChoices(hp_method="average")
+            db,
+            character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            choices=LevelUpChoices(hp_method="average"),
         )
     # Creation: 10 (d10) + CON 14 mod=+2 → max_hp 12. Level-up: avg 6 + CON mod 2 = +8.
     assert char.level == 2
@@ -273,6 +296,8 @@ async def test_apply_level_up_with_roll_validates_die_size(client: AsyncClient) 
             await leveling.apply_level_up(
                 db,
                 character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(hp_method="roll", hp_roll=11),  # d10 max is 10
             )
 
@@ -292,6 +317,8 @@ async def test_apply_level_up_asi_increases_ability(client: AsyncClient) -> None
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(hp_method="average", asi={"str": 1, "con": 1}),
         )
     # Base 15+human+1 = 16 stored; +1 ASI = 17. CON: 13+human+1=14; +1 ASI = 15.
@@ -316,6 +343,8 @@ async def test_apply_level_up_asi_must_total_two(client: AsyncClient) -> None:
             await leveling.apply_level_up(
                 db,
                 character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(hp_method="average", asi={"str": 1}),
             )
 
@@ -337,6 +366,8 @@ async def test_apply_level_up_with_general_feat_mobile(client: AsyncClient) -> N
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(hp_method="average", feat="mobile"),
         )
     assert char.speed == original_speed + 10
@@ -357,7 +388,11 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
     async with db_client.get_session() as db:
         with pytest.raises(ValidationError, match="subclass choice required"):
             await leveling.apply_level_up(
-                db, character_id=cid, choices=LevelUpChoices(hp_method="average")
+                db,
+                character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
+                choices=LevelUpChoices(hp_method="average"),
             )
 
     # Invalid subclass for class
@@ -366,6 +401,8 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
             await leveling.apply_level_up(
                 db,
                 character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(hp_method="average", subclass="berserker"),
             )
 
@@ -374,6 +411,8 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(hp_method="average", subclass="champion"),
         )
     assert char.subclass == "champion"
@@ -396,7 +435,11 @@ async def test_apply_level_up_blocks_during_combat(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         with pytest.raises(ConflictError, match="combat"):
             await leveling.apply_level_up(
-                db, character_id=cid, choices=LevelUpChoices(hp_method="average")
+                db,
+                character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
+                choices=LevelUpChoices(hp_method="average"),
             )
 
 
@@ -415,6 +458,8 @@ async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(
                 hp_method="average",
                 new_spells=["Misty Step", "Detect Thoughts"],  # wizard +2 per level
@@ -442,6 +487,8 @@ async def test_apply_level_up_rejects_wrong_spell_count(client: AsyncClient) -> 
             await leveling.apply_level_up(
                 db,
                 character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(
                     hp_method="average", new_spells=["Misty Step"], subclass="evocation"
                 ),
@@ -465,6 +512,8 @@ async def test_apply_level_up_rejects_origin_feat_at_asi(client: AsyncClient) ->
             await leveling.apply_level_up(
                 db,
                 character_id=cid,
+                campaign_id=uuid.UUID(camp["id"]),
+                owner_id="user_a",
                 choices=LevelUpChoices(hp_method="average", feat="alert"),
             )
 
@@ -486,6 +535,8 @@ async def test_apply_level_up_recomputes_initiative_after_dex_asi(
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(hp_method="average", asi={"dex": 2}),
         )
     # DEX 14+human=15, +2 ASI = 17 → mod +3
@@ -525,6 +576,8 @@ async def test_apply_level_up_observant_recomputes_passive_perception(
         char = await leveling.apply_level_up(
             db,
             character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
             choices=LevelUpChoices(
                 hp_method="average", feat="observant", feat_options={"ability": "wis"}
             ),
@@ -553,7 +606,30 @@ async def test_feat_skilled_requires_three_picks(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="skilled feat requires"):
-            feat_effects.apply_feat(char, "skilled", {"skills": ["Stealth"]})
+            feat_effects.apply_feat(
+                char, "skilled", {"picks": [{"type": "skill", "name": "Stealth"}]}
+            )
+
+
+async def test_feat_skilled_routes_skills_and_tools(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(
+            char,
+            "skilled",
+            {
+                "picks": [
+                    {"type": "skill", "name": "Stealth"},
+                    {"type": "tool", "name": "Thieves' Tools"},
+                    {"type": "skill", "name": "Acrobatics"},
+                ]
+            },
+        )
+    assert "Stealth" in char.skill_proficiencies
+    assert "Acrobatics" in char.skill_proficiencies
+    assert "Thieves' Tools" in char.tool_proficiencies
 
 
 async def test_feat_behavioral_just_appends(client: AsyncClient) -> None:
@@ -680,3 +756,114 @@ async def test_feat_ability_caps_at_20(client: AsyncClient) -> None:
         char.ability_scores = scores
         feat_effects.apply_feat(char, "durable")
     assert char.ability_scores["con"] == 20
+
+
+async def test_tough_scaling_on_level_up(client: AsyncClient) -> None:
+    """Taking Tough at L4, then leveling to L5, adds +2 more HP."""
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    cid = uuid.UUID(char_resp["id"])
+
+    # Apply Tough at level 4
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, cid)
+        char.level = 4
+        char.subclass = "champion"
+        char.xp = 6500  # qualify for L5
+        feat_effects.apply_feat(char, "tough")
+        after_tough = char.max_hp
+        await db.commit()
+
+    # Level up from 4 → 5
+    async with db_client.get_session() as db:
+        char = await leveling.apply_level_up(
+            db,
+            character_id=cid,
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            choices=LevelUpChoices(hp_method="average"),
+        )
+    # Expect: avg HP gain (5+1=6) + CON mod (2) + tough bonus (+2) = +10
+    con_mod = (char.ability_scores.get("con", 10) - 10) // 2
+    hp_avg = (char.hit_die_size // 2) + 1
+    assert char.max_hp == after_tough + hp_avg + con_mod + 2
+
+
+async def test_feat_heavily_armored_grants_armor_prof(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(char, "heavily-armored", {"ability": "str"})
+    assert "heavy" in char.armor_proficiencies
+
+
+async def test_feat_moderately_armored_grants_medium_and_shield(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(char, "moderately-armored", {"ability": "dex"})
+    assert "medium" in char.armor_proficiencies
+    assert "shield" in char.armor_proficiencies
+
+
+async def test_feat_weapon_master_requires_four_weapons(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        with pytest.raises(ValidationError, match="4 weapon names"):
+            feat_effects.apply_feat(
+                char, "weapon-master", {"ability": "str", "weapons": ["longsword"]}
+            )
+
+
+async def test_feat_weapon_master_adds_weapon_proficiencies(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(
+            char,
+            "weapon-master",
+            {"ability": "str", "weapons": ["longsword", "rapier", "handaxe", "shortsword"]},
+        )
+    assert "longsword" in char.weapon_proficiencies
+    assert "rapier" in char.weapon_proficiencies
+
+
+async def test_feat_martial_adept_requires_two_maneuvers(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        with pytest.raises(ValidationError, match="2 maneuver names"):
+            feat_effects.apply_feat(char, "martial-adept", {"maneuvers": ["Riposte"]})
+
+
+async def test_feat_martial_adept_stores_maneuvers_in_feat_options(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(char, "martial-adept", {"maneuvers": ["Riposte", "Trip Attack"]})
+    feat = next(f for f in char.feats if f["index"] == "martial-adept")
+    assert feat["options"]["maneuvers"] == ["Riposte", "Trip Attack"]
+    assert "superiority_die" in char.resources
+
+
+async def test_feat_magic_initiate_grants_resource(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char_resp = await _character(client, camp["id"])
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
+        feat_effects.apply_feat(
+            char,
+            "magic-initiate",
+            {"spells": ["Fire Bolt", "Ray of Frost", "Magic Missile"]},
+        )
+    assert "magic_initiate_free_cast" in char.resources
+    assert char.resources["magic_initiate_free_cast"]["max"] == 1
+    assert char.resources["magic_initiate_free_cast"]["resets_on"] == "long_rest"
+    assert "Magic Missile" in char.spells_known

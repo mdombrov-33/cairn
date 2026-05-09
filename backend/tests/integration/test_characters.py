@@ -19,7 +19,6 @@ FIGHTER: dict = {
     "background": "soldier",
     "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
     "skill_choices": ["Perception", "History"],
-    "ac": 16,
     "alignment": "Lawful Good",
     "bio": "A seasoned warrior.",
     "personality": "Stoic and direct.",
@@ -32,7 +31,6 @@ WIZARD: dict = {
     "background": "sage",
     "ability_scores": {"str": 8, "dex": 14, "con": 12, "int": 15, "wis": 13, "cha": 10},
     "skill_choices": ["Insight", "Investigation"],
-    "ac": 12,
     "alignment": "Neutral Good",
     "bio": "A dedicated scholar.",
     "personality": "Methodical and curious.",
@@ -53,6 +51,30 @@ COMPANION: dict = {
     "voice_traits": {"tone": "gruff", "manner": "blunt"},
 }
 
+BARBARIAN: dict = {
+    "name": "Grok",
+    "race": "human",
+    "character_class": "barbarian",
+    "background": "soldier",
+    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 8, "wis": 10, "cha": 12},
+    "skill_choices": ["Athletics", "Survival"],
+    "alignment": "Chaotic Good",
+    "bio": "A savage warrior from the north.",
+    "personality": "Loud and fearless.",
+}
+
+MONK: dict = {
+    "name": "Liang",
+    "race": "human",
+    "character_class": "monk",
+    "background": "hermit",
+    "ability_scores": {"str": 8, "dex": 15, "con": 13, "int": 10, "wis": 14, "cha": 12},
+    "skill_choices": ["Insight", "Athletics"],
+    "alignment": "Lawful Neutral",
+    "bio": "A disciplined warrior of wind.",
+    "personality": "Calm and focused.",
+}
+
 
 async def _character(
     client: AsyncClient,
@@ -69,7 +91,7 @@ async def _character(
     return r.json()
 
 
-# --- Auth / ownership ---
+# Auth / ownership
 
 
 async def test_create_requires_auth(client: AsyncClient) -> None:
@@ -104,7 +126,7 @@ async def test_get_on_others_campaign_returns_404(client: AsyncClient) -> None:
     assert r.status_code == 404
 
 
-# --- Creation: identity fields ---
+# Creation: identity fields
 
 
 async def test_create_returns_identity_fields(client: AsyncClient) -> None:
@@ -123,7 +145,7 @@ async def test_create_returns_identity_fields(client: AsyncClient) -> None:
     assert char["status"] == "active"
 
 
-# --- Creation: derived stats ---
+# Creation: derived stats
 
 
 async def test_create_derives_hp_from_hit_die_and_con(client: AsyncClient) -> None:
@@ -220,7 +242,7 @@ async def test_initiative_tracks_dex_modifier(client: AsyncClient) -> None:
     assert high_dex["initiative"] == 3
 
 
-# --- Creation: spellcasting ---
+# Creation: spellcasting
 
 
 async def test_spellcaster_derives_spell_fields(client: AsyncClient) -> None:
@@ -322,7 +344,7 @@ async def test_non_spellcaster_has_null_spell_fields(client: AsyncClient) -> Non
     assert char["spells_known"] == []
 
 
-# --- Creation: ability_scores validation ---
+# Creation: ability_scores validation
 
 
 async def test_ability_scores_must_use_standard_array(client: AsyncClient) -> None:
@@ -348,7 +370,7 @@ async def test_ability_scores_must_have_all_six_keys(client: AsyncClient) -> Non
     assert r.status_code == 422
 
 
-# --- GET: list ---
+# GET: list
 
 
 async def test_get_returns_empty_list_before_create(client: AsyncClient) -> None:
@@ -392,7 +414,7 @@ async def test_get_returns_player_and_companion(client: AsyncClient) -> None:
     assert names == {"Ser Aldric", "Bramble"}
 
 
-# --- Companion creation ---
+# Companion creation
 
 
 async def test_companion_requires_voice_traits(client: AsyncClient) -> None:
@@ -405,7 +427,7 @@ async def test_companion_requires_voice_traits(client: AsyncClient) -> None:
     assert r.status_code == 422
 
 
-# --- PATCH ---
+# PATCH
 
 
 async def test_patch_name_and_bio(client: AsyncClient) -> None:
@@ -434,7 +456,7 @@ async def test_patch_companion_returns_401(client: AsyncClient) -> None:
     assert r.status_code == 401
 
 
-# --- DELETE ---
+# DELETE
 
 
 async def test_delete_removes_character(client: AsyncClient) -> None:
@@ -452,3 +474,158 @@ async def test_delete_removes_character(client: AsyncClient) -> None:
         headers={"X-User-Id": "user_a"},
     )
     assert remaining.json() == []
+
+
+# AC derivation
+
+
+async def test_fighter_ac_derived_unarmored(client: AsyncClient) -> None:
+    # Fighter starting_equipment is empty in SRD (all armor is in options).
+    # No armor equipped → unarmored: 10 + DEX_mod.
+    # DEX 14 + human +1 = 15 → mod +2 → AC 12.
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    assert char["ac"] == 12
+
+
+async def test_barbarian_ac_uses_unarmored_defense(client: AsyncClient) -> None:
+    # Barbarian unarmored defense: 10 + DEX + CON.
+    # DEX 14 + human +1 = 15 → +2. CON 13 + human +1 = 14 → +2. AC = 14.
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"], body=BARBARIAN)
+    dex_mod = (char["ability_scores"]["dex"] - 10) // 2
+    con_mod = (char["ability_scores"]["con"] - 10) // 2
+    assert char["ac"] == 10 + dex_mod + con_mod
+
+
+async def test_monk_ac_uses_unarmored_defense(client: AsyncClient) -> None:
+    # Monk unarmored defense: 10 + DEX + WIS.
+    # DEX 15 + human +1 = 16 → +3. WIS 14 + human +1 = 15 → +2. AC = 15.
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"], body=MONK)
+    dex_mod = (char["ability_scores"]["dex"] - 10) // 2
+    wis_mod = (char["ability_scores"]["wis"] - 10) // 2
+    assert char["ac"] == 10 + dex_mod + wis_mod
+
+
+async def test_cleric_ac_includes_starting_shield(client: AsyncClient) -> None:
+    # Cleric starting_equipment contains a shield (auto-equipped).
+    # Shield base AC = 2; unarmored = 10 + DEX_mod + 2.
+    camp = await _campaign(client)
+    cleric_body = {
+        **WIZARD,
+        "name": "Sister Mira",
+        "character_class": "cleric",
+        "skill_choices": ["Insight", "Religion"],
+        "subclass": "life",
+        "spell_choices": None,
+    }
+    char = await _character(client, camp["id"], body=cleric_body)
+    # Cleric starting_equipment = [shield]. Shield auto-equipped → AC includes +2.
+    shield_item = next(
+        (i for i in char["inventory"] if i.get("srd_index") == "shield"),
+        None,
+    )
+    assert shield_item is not None
+    assert shield_item["equipped"] is True
+    dex_mod = (char["ability_scores"]["dex"] - 10) // 2
+    assert char["ac"] == 10 + dex_mod + 2
+
+
+async def test_fighter_proficiencies_from_class(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    # Fighter: all-armor → light/medium/heavy; shields → shield
+    assert set(char["armor_proficiencies"]) == {"light", "medium", "heavy", "shield"}
+    # Fighter: simple-weapons + martial-weapons
+    assert set(char["weapon_proficiencies"]) == {"simple", "martial"}
+
+
+async def test_barbarian_proficiencies_from_class(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"], body=BARBARIAN)
+    assert set(char["armor_proficiencies"]) == {"light", "medium", "shield"}
+    assert set(char["weapon_proficiencies"]) == {"simple", "martial"}
+
+
+async def test_monk_proficiencies_from_class(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"], body=MONK)
+    # Monk: simple-weapons + shortswords (specific weapon)
+    assert set(char["armor_proficiencies"]) == set()
+    assert "simple" in char["weapon_proficiencies"]
+    assert "shortswords" in char["weapon_proficiencies"]
+
+
+async def test_dwarf_race_weapon_proficiencies(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(
+        client,
+        camp["id"],
+        body={
+            **FIGHTER,
+            "race": "dwarf",
+            "subrace": "hill-dwarf",
+        },
+    )
+    # Dwarf adds: battleaxes, handaxes, light-hammers, warhammers
+    for prof in ["battleaxes", "handaxes", "light-hammers", "warhammers"]:
+        assert prof in char["weapon_proficiencies"], f"missing {prof}"
+
+
+# Equip / unequip
+
+
+async def test_equip_adds_item_to_equipped_and_derives_ac(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    original_ac = char["ac"]  # noqa: F841
+
+    # Manually inject chain mail into inventory via direct DB manipulation is brittle;
+    # instead verify equip endpoint against the shield the cleric already has.
+    # Fighter: add chain mail to inventory via a known item, equip it, check AC.
+    # Since we can't mutate inventory via API yet, just test the equip route
+    # against an item that already exists (cleric with shield can unequip/re-equip).
+    cleric_body = {
+        **WIZARD,
+        "name": "Sister Mira",
+        "character_class": "cleric",
+        "skill_choices": ["Insight", "Religion"],
+        "subclass": "life",
+        "spell_choices": None,
+    }
+    camp2 = await _campaign(client)
+    cleric = await _character(client, camp2["id"], body=cleric_body)
+    assert cleric["ac"] > 10  # shield equipped at creation
+
+    # Unequip shield
+    r = await client.post(
+        f"/v1/campaigns/{camp2['id']}/characters/{cleric['id']}/unequip",
+        headers={"X-User-Id": "user_a"},
+        json={"item_name": "Shield"},
+    )
+    assert r.status_code == 200
+    unequipped = r.json()
+    dex_mod = (unequipped["ability_scores"]["dex"] - 10) // 2
+    assert unequipped["ac"] == 10 + dex_mod  # no shield, no armor
+
+    # Re-equip shield
+    r = await client.post(
+        f"/v1/campaigns/{camp2['id']}/characters/{cleric['id']}/equip",
+        headers={"X-User-Id": "user_a"},
+        json={"item_name": "Shield"},
+    )
+    assert r.status_code == 200
+    reequipped = r.json()
+    assert reequipped["ac"] == unequipped["ac"] + 2  # shield +2 from SRD data
+
+
+async def test_equip_unknown_item_returns_404(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters/{char['id']}/equip",
+        headers={"X-User-Id": "user_a"},
+        json={"item_name": "Vorpal Sword of Doom"},
+    )
+    assert r.status_code == 404

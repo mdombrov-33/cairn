@@ -1,6 +1,4 @@
 """
-Feat effect dispatcher.
-
 Handlers here apply persistent, deterministic state changes (numeric bumps to
 ability scores / AC / speed / max_hp, new proficiencies, new resources, new
 spells). Feats whose effect is conditional or per-action — Sentinel, Sharpshooter,
@@ -59,6 +57,14 @@ def _grant_resource(char: Character, name: str, count: int, resets_on: str) -> N
     char.resources = resources
 
 
+def _grant_armor_prof(char: Character, categories: list[str]) -> None:
+    profs = list(char.armor_proficiencies or [])
+    for cat in categories:
+        if cat not in profs:
+            profs.append(cat)
+    char.armor_proficiencies = profs
+
+
 # Numeric bumps (no options)
 
 
@@ -72,8 +78,10 @@ def _alert(char: Character, options: dict) -> None:
 
 @_register("defense")
 def _defense(char: Character, options: dict) -> None:
-    """Fighting style: +1 AC while wearing armor."""
-    char.ac = char.ac + 1
+    """Fighting style: +1 AC while wearing armor.
+    The bonus is computed by ac.feat_ac_bonus() at derive_ac time, so it
+    correctly appears/disappears as armor is equipped or removed. No mutation here."""
+    return
 
 
 @_register("mobile")
@@ -101,7 +109,12 @@ def _lucky(char: Character, options: dict) -> None:
 
 @_register("martial-adept")
 def _martial_adept(char: Character, options: dict) -> None:
-    """One superiority die per short rest. Maneuvers known are tracked behaviorally via SRD."""
+    """One superiority die per short rest. Maneuvers are stored in feat options."""
+    maneuvers = options.get("maneuvers") or []
+    if not isinstance(maneuvers, list) or len(maneuvers) != 2:
+        raise ValidationError(
+            "martial-adept requires options.maneuvers as a list of 2 maneuver names"
+        )
     _grant_resource(char, "superiority_die", count=1, resets_on="short_rest")
 
 
@@ -123,18 +136,55 @@ def _actor(char: Character, options: dict) -> None:
     _bump_ability(char, "cha")
 
 
-@_register("heavily-armored", "heavy-armor-master")
-def _heavy_armor(char: Character, options: dict) -> None:
+@_register("heavily-armored")
+def _heavily_armored(char: Character, options: dict) -> None:
     _bump_ability(char, "str")
+    _grant_armor_prof(char, ["heavy"])
+
+
+@_register("heavy-armor-master")
+def _heavy_armor_master(char: Character, options: dict) -> None:
+    _bump_ability(char, "str")
+    _grant_armor_prof(char, ["heavy"])
+    # Damage tool checks this flag to reduce non-magical B/P/S damage by 3
+    options["damage_reduction"] = 3
 
 
 # Half-feats: choose one ability from a set
 
 
-@_register("athlete", "lightly-armored", "moderately-armored", "weapon-master")
-def _str_or_dex(char: Character, options: dict) -> None:
+@_register("athlete")
+def _athlete(char: Character, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "dex"})
     _bump_ability(char, ability)
+
+
+@_register("lightly-armored")
+def _lightly_armored(char: Character, options: dict) -> None:
+    ability = _require_ability_choice(options, {"str", "dex"})
+    _bump_ability(char, ability)
+    _grant_armor_prof(char, ["light"])
+
+
+@_register("moderately-armored")
+def _moderately_armored(char: Character, options: dict) -> None:
+    ability = _require_ability_choice(options, {"str", "dex"})
+    _bump_ability(char, ability)
+    _grant_armor_prof(char, ["medium", "shield"])
+
+
+@_register("weapon-master")
+def _weapon_master(char: Character, options: dict) -> None:
+    ability = _require_ability_choice(options, {"str", "dex"})
+    _bump_ability(char, ability)
+    weapons = options.get("weapons") or []
+    if not isinstance(weapons, list) or len(weapons) != 4:
+        raise ValidationError("weapon-master requires options.weapons as a list of 4 weapon names")
+    profs = list(char.weapon_proficiencies or [])
+    for w in weapons:
+        if w not in profs:
+            profs.append(w)
+    char.weapon_proficiencies = profs
 
 
 @_register("tavern-brawler")
@@ -166,22 +216,40 @@ def _resilient(char: Character, options: dict) -> None:
 
 @_register("skilled")
 def _skilled(char: Character, options: dict) -> None:
-    """3 skill or tool proficiency picks."""
-    skills = options.get("skills") or []
-    if not isinstance(skills, list) or len(skills) != 3:
-        raise ValidationError("skilled feat requires options.skills as a list of 3 entries")
-    char.skill_proficiencies = list(dict.fromkeys(list(char.skill_proficiencies) + list(skills)))
+    """3 picks — each pick is a skill or a tool. Skills → skill_proficiencies, tools → tool_proficiencies."""  # noqa: E501
+    picks = options.get("picks") or []
+    if not isinstance(picks, list) or len(picks) != 3:
+        raise ValidationError(
+            "skilled feat requires options.picks as a list of 3 {type, name} objects"
+        )
+    skill_profs = list(char.skill_proficiencies or [])
+    tool_profs = list(char.tool_proficiencies or [])
+    for pick in picks:
+        if not isinstance(pick, dict) or pick.get("type") not in {"skill", "tool"}:
+            raise ValidationError("each skilled pick must be {type: 'skill'|'tool', name: str}")
+        name = pick.get("name")
+        if not name:
+            raise ValidationError("each skilled pick must have a non-empty name")
+        if pick["type"] == "skill":
+            if name not in skill_profs:
+                skill_profs.append(name)
+        else:
+            if name not in tool_profs:
+                tool_profs.append(name)
+    char.skill_proficiencies = skill_profs
+    char.tool_proficiencies = tool_profs
 
 
 @_register("magic-initiate")
 def _magic_initiate(char: Character, options: dict) -> None:
-    """2 cantrips + 1 first-level spell from a chosen class's list."""
+    """2 cantrips + 1 first-level spell. Grants one free 1st-level cast per long rest."""
     spells = options.get("spells") or []
     if not isinstance(spells, list) or len(spells) != 3:
         raise ValidationError(
             "magic-initiate requires options.spells: 2 cantrips + 1 first-level spell"
         )
     char.spells_known = list(char.spells_known) + list(spells)
+    _grant_resource(char, "magic_initiate_free_cast", count=1, resets_on="long_rest")
 
 
 @_register("spell-sniper")

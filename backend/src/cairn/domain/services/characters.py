@@ -1,25 +1,138 @@
 import math
 import uuid
+from dataclasses import dataclass, field
+from typing import Any
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
-from cairn.domain.exceptions import ValidationError
+from cairn.domain.exceptions import AuthError, ValidationError
+from cairn.domain.services.ac import derive_ac
 from cairn.domain.services.leveling import SUBCLASS_LEVEL, initialize_resources
 from cairn.srd import (
+    get_armor,
     get_background,
     get_class,
     get_class_levels,
+    get_proficiencies_for_race,
     get_race,
     get_subclass,
     get_subrace,
 )
 
+log = structlog.get_logger()
+
+
+@dataclass
+class _AcInput:
+    id: str
+    ability_scores: dict[str, Any]
+    class_: str | None
+    inventory: list[Any]
+    feats: list[Any] = field(default_factory=list)
+
 
 def _modifier(score: int) -> int:
     return math.floor((score - 10) / 2)
+
+
+# Maps proficiency index prefixes → armor categories stored on the character.
+_ARMOR_PROF_MAP: dict[str, list[str]] = {
+    "all-armor": ["light", "medium", "heavy"],
+    "light-armor": ["light"],
+    "medium-armor": ["medium"],
+    "heavy-armor": ["heavy"],
+    "shields": ["shield"],
+}
+
+# Weapon proficiency categories — stored as-is (e.g. "simple", "martial").
+# Specific weapon indices (e.g. "shortswords") are stored directly.
+_WEAPON_CATEGORY_MAP: dict[str, str] = {
+    "simple-weapons": "simple",
+    "martial-weapons": "martial",
+}
+
+
+def _extract_proficiencies(
+    cls_data: dict,
+    race_index: str,
+    subrace_index: str | None,
+) -> tuple[list[str], list[str]]:
+    """
+    Return (armor_proficiencies, weapon_proficiencies) derived from class and race.
+
+    Class proficiencies come from cls_data["proficiencies"].
+    Race weapon proficiencies come from proficiencies.json (keyed by race/subrace).
+    """
+    armor_profs: list[str] = []
+    weapon_profs: list[str] = []
+
+    for p in cls_data.get("proficiencies", []):
+        idx = p.get("index", "")
+        if idx in _ARMOR_PROF_MAP:
+            for cat in _ARMOR_PROF_MAP[idx]:
+                if cat not in armor_profs:
+                    armor_profs.append(cat)
+        elif idx in _WEAPON_CATEGORY_MAP:
+            cat = _WEAPON_CATEGORY_MAP[idx]
+            if cat not in weapon_profs:
+                weapon_profs.append(cat)
+        elif idx.startswith("saving-throw-") or idx.startswith("skill-"):
+            pass  # saves and skills handled separately
+        elif idx and idx not in weapon_profs:
+            # Specific weapon (e.g. "shortswords" for monk)
+            weapon_profs.append(idx)
+
+    # Race / subrace weapon proficiencies from proficiencies.json
+    for p in get_proficiencies_for_race(race_index, subrace_index):
+        if p.get("type") == "Weapons":
+            idx = p.get("index", "")
+            if idx and idx not in weapon_profs:
+                weapon_profs.append(idx)
+
+    return armor_profs, weapon_profs
+
+
+def _build_inventory(cls_data: dict) -> list[dict]:
+    """
+    Build the starting inventory list. Items from starting_equipment get an
+    srd_index field so the equip service can do reliable SRD lookups.
+    Armor and shields are auto-equipped (first one found of each type).
+    """
+    inventory: list[dict] = []
+    equipped_armor = False
+    equipped_shield = False
+
+    for entry in cls_data.get("starting_equipment", []):
+        eq = entry.get("equipment", {})
+        srd_index = eq.get("index", "")
+        name = eq.get("name", srd_index)
+
+        armor_data = get_armor(srd_index) if srd_index else None
+        auto_equip = False
+        if armor_data is not None:
+            if armor_data.get("armor_category") == "Shield" and not equipped_shield:
+                auto_equip = True
+                equipped_shield = True
+            elif armor_data.get("armor_category") != "Shield" and not equipped_armor:
+                auto_equip = True
+                equipped_armor = True
+
+        inventory.append(
+            {
+                "name": name,
+                "srd_index": srd_index,
+                "quantity": entry.get("quantity", 1),
+                "weight": 0,
+                "notes": "",
+                "equipped": auto_equip,
+            }
+        )
+
+    return inventory
 
 
 def _extract_skill_choices(cls_data: dict) -> tuple[int, list[str]]:
@@ -71,7 +184,6 @@ async def create(
     background: str,
     ability_scores: dict[str, int],
     skill_choices: list[str],
-    ac: int,
     alignment: str,
     bio: str,
     personality: str,
@@ -115,6 +227,8 @@ async def create(
         raise ValidationError(
             f"{character_class} requires {num_required} skill choice(s), got {len(skill_choices)}"
         )
+    if len(set(skill_choices)) != len(skill_choices):
+        raise ValidationError("duplicate skill choices are not allowed")
     invalid = [s for s in skill_choices if s not in allowed]
     if invalid:
         raise ValidationError(f"invalid skill choice(s) for {character_class}: {invalid}")
@@ -150,16 +264,23 @@ async def create(
     has_perception = any(s.lower() == "perception" for s in skill_proficiencies)
     passive_perception = 10 + wis_mod + (2 if has_perception else 0)
 
-    inventory = [
-        {
-            "name": item["equipment"]["name"],
-            "quantity": item.get("quantity", 1),
-            "weight": 0,
-            "notes": "",
-            "equipped": False,
-        }
-        for item in cls_data.get("starting_equipment", [])
-    ]
+    armor_proficiencies, weapon_proficiencies = _extract_proficiencies(cls_data, race, subrace)
+
+    inventory = _build_inventory(cls_data)
+
+    initial_ac = derive_ac(
+        _AcInput(id="new", ability_scores=final_scores, class_=character_class, inventory=inventory)
+    )
+
+    log.info(
+        "character_created",
+        name=name,
+        character_class=character_class,
+        race=race,
+        initial_ac=initial_ac,
+        armor_proficiencies=armor_proficiencies,
+        weapon_proficiencies=weapon_proficiencies,
+    )
 
     return await character_queries.create_character(
         db,
@@ -175,7 +296,7 @@ async def create(
         xp=0,
         hp=max_hp,
         max_hp=max_hp,
-        ac=ac,
+        ac=initial_ac,
         speed=speed,
         hit_die_size=hit_die_size,
         hit_dice_remaining=1,
@@ -187,6 +308,8 @@ async def create(
         saving_throw_proficiencies=saving_throw_proficiencies,
         skill_proficiencies=skill_proficiencies,
         tool_proficiencies=tool_proficiencies,
+        armor_proficiencies=armor_proficiencies,
+        weapon_proficiencies=weapon_proficiencies,
         spellcasting_ability=spellcasting_ability,
         spell_slots=spell_slots,
         spells_known=spell_choices or [],
@@ -199,6 +322,28 @@ async def create(
         personality=personality,
         voice_traits=voice_traits,
     )
+
+
+async def patch(
+    db: AsyncSession,
+    *,
+    character_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    owner_id: str,
+    name: str | None,
+    bio: str | None,
+) -> Character:
+    char = await character_queries.get_character_for_campaign_owned_by(
+        db, character_id, campaign_id, owner_id
+    )
+    if char.is_companion:
+        raise AuthError("cannot modify companion characters", code="forbidden")
+    if name is not None:
+        char.name = name
+    if bio is not None:
+        char.bio = bio
+    await db.flush()
+    return char
 
 
 async def list_for_campaign(

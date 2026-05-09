@@ -45,12 +45,35 @@ def get_class_levels(name: str) -> list[dict]:
     return data.get(name.lower(), [])
 
 
+def get_equipment(index: str) -> dict | None:
+    return _load_dict("equipment").get(index)
+
+
 def get_weapon(name: str) -> dict | None:
     key = name.lower().replace(" ", "-")
     item = _load_dict("equipment").get(key)
     if item and item.get("equipment_category", {}).get("index") == "weapon":
         return item
     return None
+
+
+def get_armor(index: str) -> dict | None:
+    """Return equipment if it is armor or a shield, else None."""
+    item = _load_dict("equipment").get(index)
+    if item and item.get("equipment_category", {}).get("index") == "armor":
+        return item
+    return None
+
+
+def get_proficiencies_for_race(race_index: str, subrace_index: str | None = None) -> list[dict]:
+    """Return all proficiency entries that apply to a race (or subrace)."""
+    profs = _load_list("proficiencies")
+    result = []
+    for p in profs:
+        race_indices = {r.get("index") for r in p.get("races", [])}
+        if race_index in race_indices or (subrace_index and subrace_index in race_indices):
+            result.append(p)
+    return result
 
 
 def get_all_conditions() -> list[dict]:
