@@ -91,6 +91,10 @@ def get_subclass(name: str) -> dict | None:
     return _load_dict("subclasses").get(key)
 
 
+def list_subclasses_for_class(class_index: str) -> list[dict]:
+    return [s for s in _load_list("subclasses") if s.get("class", {}).get("index") == class_index]
+
+
 def list_spells_for_character(spells_known: list[str]) -> list[dict]:
     """Return full spell data for each spell a character knows."""
     result = []

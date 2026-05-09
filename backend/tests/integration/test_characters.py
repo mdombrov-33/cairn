@@ -239,6 +239,53 @@ async def test_spellcaster_derives_spell_fields(client: AsyncClient) -> None:
     }
 
 
+async def test_cleric_requires_subclass_at_creation(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={
+            **WIZARD,
+            "name": "Sister Mira",
+            "character_class": "cleric",
+            "skill_choices": ["Insight", "Religion"],
+            "spell_choices": None,
+        },
+    )
+    # 422 ValidationError → subclass required
+    assert r.status_code == 422, r.text
+    assert "subclass" in r.text.lower()
+
+
+async def test_cleric_with_valid_subclass_creates(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={
+            **WIZARD,
+            "name": "Sister Mira",
+            "character_class": "cleric",
+            "skill_choices": ["Insight", "Religion"],
+            "subclass": "life",
+            "spell_choices": None,
+        },
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["subclass"] == "life"
+
+
+async def test_invalid_subclass_for_class_rejected(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={**FIGHTER, "subclass": "berserker"},  # barbarian's subclass
+    )
+    assert r.status_code == 422, r.text
+    assert "invalid subclass" in r.text.lower()
+
+
 async def test_racial_bonuses_applied_to_ability_scores(client: AsyncClient) -> None:
     # Elf gets +2 DEX; Hill Dwarf gets +2 CON (dwarf) + +1 WIS (hill-dwarf)
     camp_elf = await _campaign(client)

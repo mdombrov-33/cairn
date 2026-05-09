@@ -7,7 +7,15 @@ from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import ValidationError
-from cairn.srd import get_background, get_class, get_class_levels, get_race, get_subrace
+from cairn.domain.services.leveling import SUBCLASS_LEVEL, initialize_resources
+from cairn.srd import (
+    get_background,
+    get_class,
+    get_class_levels,
+    get_race,
+    get_subclass,
+    get_subrace,
+)
 
 
 def _modifier(score: int) -> int:
@@ -90,6 +98,16 @@ async def create(
         subrace_data = get_subrace(subrace.lower().replace(" ", "-"))
         if subrace_data is None:
             raise ValidationError(f"unknown subrace: {subrace}")
+
+    # Subclass: validate if provided, require for classes that pick at level 1
+    if subclass is not None:
+        sub_data = get_subclass(subclass.lower().replace(" ", "-"))
+        if sub_data is None or sub_data.get("class", {}).get("index") != character_class:
+            raise ValidationError(f"invalid subclass for {character_class}: {subclass!r}")
+    if SUBCLASS_LEVEL.get(character_class) == 1 and not subclass:
+        raise ValidationError(
+            f"{character_class} requires subclass selection at character creation"
+        )
 
     # Validate skill choices against class options
     num_required, allowed = _extract_skill_choices(cls_data)
@@ -175,6 +193,7 @@ async def create(
         features=features,
         inventory=inventory,
         currency={"gp": 0, "sp": 0, "cp": 0},
+        resources=initialize_resources(character_class, 1),
         is_companion=is_companion,
         bio=bio,
         personality=personality,
