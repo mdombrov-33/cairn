@@ -24,4 +24,5 @@ class TurnResponse(BaseModel):
     check_data: dict[str, Any] | None
     dice_rolls: dict[str, Any]
     checkpoint_id: str | None
+    events: list[Any]
     created_at: datetime

@@ -10,20 +10,15 @@ from cairn.tools.combat import advance_turn, apply_damage, apply_effect, start_c
 
 FIGHTER: dict = {
     "name": "Ser Aldric",
-    "race": "Human",
-    "character_class": "Fighter",
-    "background": "Soldier",
-    "level": 3,
-    "stats": {"str": 16, "dex": 12, "con": 14, "int": 8, "wis": 10, "cha": 13},
-    "hp": 28,
-    "max_hp": 28,
+    "race": "human",
+    "character_class": "fighter",
+    "background": "soldier",
+    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
+    "skill_choices": ["Perception", "History"],
     "ac": 16,
-    "speed": 30,
-    "saving_throw_proficiencies": ["str", "con"],
-    "skill_proficiencies": ["athletics", "perception"],
-    "features": ["Action Surge", "Second Wind"],
-    "inventory": [{"name": "Longsword", "quantity": 1, "weight": 3, "notes": "", "equipped": True}],
-    "currency": {"gp": 10, "sp": 0, "cp": 0},
+    "alignment": "Lawful Good",
+    "bio": "A seasoned warrior.",
+    "personality": "Stoic and direct.",
 }
 
 

@@ -37,3 +37,8 @@ class ToolError(CairnError):
 class LLMError(CairnError):
     code = "llm_error"
     http_status = 502
+
+
+class ValidationError(CairnError):
+    code = "validation_error"
+    http_status = 422

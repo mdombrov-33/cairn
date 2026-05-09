@@ -18,6 +18,7 @@ class Character(Base):
     # identity
     name: Mapped[str]
     race: Mapped[str]
+    subrace: Mapped[str | None]
     class_: Mapped[str] = mapped_column("class")
     subclass: Mapped[str | None]
     background: Mapped[str]
@@ -47,7 +48,7 @@ class Character(Base):
 
     # companion flag — False = player's own character, True = AI-controlled party member
     is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")
-    is_dead: Mapped[bool] = mapped_column(default=False, server_default="false")
+    status: Mapped[str] = mapped_column(default="active", server_default="active")
 
     # narrative voice — used by ally_ai to play this character
     bio: Mapped[str | None]
@@ -63,7 +64,7 @@ class Character(Base):
     resources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
 
     # JSONB - semi-structured data, always read as a unit
-    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    ability_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
     saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(

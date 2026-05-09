@@ -34,11 +34,14 @@ class CreatureBase(BaseModel):
     spellcasting_ability: str | None
     spell_slots: dict[str, Any] | None
     spells_known: list[Any]
+    concentration: str | None
 
     # JSONB
-    stats: dict[str, Any]
+    ability_scores: dict[str, Any]
     saving_throw_proficiencies: list[Any]
     skill_proficiencies: list[Any]
+    tool_proficiencies: list[Any]
+    feats: list[Any]
     features: list[Any]
     inventory: list[Any]
     currency: dict[str, Any]

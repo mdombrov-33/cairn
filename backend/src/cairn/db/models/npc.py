@@ -52,9 +52,10 @@ class NPC(Base):
     spellcasting_ability: Mapped[str | None]
     spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    concentration: Mapped[str | None]
 
     # JSONB — matches Character field names exactly
-    stats: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    ability_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(
         JSONB, default=list, server_default="[]"
     )

@@ -29,17 +29,15 @@ async def get_character(session: AsyncSession, character_id: uuid.UUID) -> Chara
     return character
 
 
-async def get_character_by_campaign(
+async def list_characters_by_campaign(
     session: AsyncSession,
     campaign_id: uuid.UUID,
-) -> Character:
-    result = await session.execute(
-        select(Character).where(
-            Character.campaign_id == campaign_id,
-            Character.is_companion == False,  # noqa: E712
-        )
-    )
-    character = result.scalar_one_or_none()
-    if character is None:
-        raise NotFoundError(f"no character for campaign {campaign_id}", code="character_not_found")
-    return character
+) -> list[Character]:
+    result = await session.execute(select(Character).where(Character.campaign_id == campaign_id))
+    return list(result.scalars().all())
+
+
+async def delete_character(session: AsyncSession, character_id: uuid.UUID) -> None:
+    character = await get_character(session, character_id)
+    await session.delete(character)
+    await session.flush()

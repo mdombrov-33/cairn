@@ -11,43 +11,46 @@ async def _campaign(client: AsyncClient, user_id: str = "user_a") -> dict:
     return r.json()
 
 
+# Standard array: [15, 14, 13, 12, 10, 8]
 FIGHTER: dict = {
     "name": "Ser Aldric",
-    "race": "Human",
-    "character_class": "Fighter",
-    "background": "Soldier",
-    "level": 3,
-    "stats": {"str": 16, "dex": 12, "con": 14, "int": 8, "wis": 10, "cha": 13},
-    "hp": 24,
-    "max_hp": 32,
+    "race": "human",
+    "character_class": "fighter",
+    "background": "soldier",
+    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
+    "skill_choices": ["Perception", "History"],
     "ac": 16,
-    "speed": 30,
-    "saving_throw_proficiencies": ["str", "con"],
-    "skill_proficiencies": ["athletics", "perception", "intimidation"],
-    "features": ["Action Surge", "Second Wind", "Combat Superiority"],
-    "inventory": [{"name": "Longsword", "quantity": 1, "weight": 3, "notes": "", "equipped": True}],
-    "currency": {"gp": 30, "sp": 5, "cp": 0},
+    "alignment": "Lawful Good",
+    "bio": "A seasoned warrior.",
+    "personality": "Stoic and direct.",
 }
 
 WIZARD: dict = {
     "name": "Mira the Grey",
-    "race": "Elf",
-    "character_class": "Wizard",
-    "background": "Sage",
-    "level": 3,
-    "stats": {"str": 8, "dex": 14, "con": 12, "int": 17, "wis": 13, "cha": 10},
-    "hp": 14,
-    "max_hp": 14,
+    "race": "elf",
+    "character_class": "wizard",
+    "background": "sage",
+    "ability_scores": {"str": 8, "dex": 14, "con": 12, "int": 15, "wis": 13, "cha": 10},
+    "skill_choices": ["Insight", "Investigation"],
     "ac": 12,
-    "speed": 30,
-    "saving_throw_proficiencies": ["int", "wis"],
-    "skill_proficiencies": ["arcana", "history"],
-    "spellcasting_ability": "int",
-    "spell_slots": {"1": {"current": 4, "max": 4}, "2": {"current": 2, "max": 2}},
-    "spells_known": ["Fireball", "Mage Armor", "Magic Missile", "Fire Bolt"],
-    "features": ["Arcane Recovery"],
-    "inventory": [],
-    "currency": {"gp": 5, "sp": 0, "cp": 0},
+    "alignment": "Neutral Good",
+    "bio": "A dedicated scholar.",
+    "personality": "Methodical and curious.",
+    "spell_choices": [
+        "Magic Missile",
+        "Shield",
+        "Fire Bolt",
+        "Ray of Frost",
+        "Mage Hand",
+        "Prestidigitation",
+    ],
+}
+
+COMPANION: dict = {
+    **FIGHTER,
+    "name": "Bramble",
+    "is_companion": True,
+    "voice_traits": {"tone": "gruff", "manner": "blunt"},
 }
 
 
@@ -64,6 +67,9 @@ async def _character(
     )
     assert r.status_code == 201, r.text
     return r.json()
+
+
+# --- Auth / ownership ---
 
 
 async def test_create_requires_auth(client: AsyncClient) -> None:
@@ -91,8 +97,6 @@ async def test_create_on_others_campaign_returns_404(client: AsyncClient) -> Non
 
 async def test_get_on_others_campaign_returns_404(client: AsyncClient) -> None:
     camp = await _campaign(client, "user_a")
-    await _character(client, camp["id"])
-
     r = await client.get(
         f"/v1/campaigns/{camp['id']}/characters",
         headers={"X-User-Id": "user_b"},
@@ -100,104 +104,166 @@ async def test_get_on_others_campaign_returns_404(client: AsyncClient) -> None:
     assert r.status_code == 404
 
 
-async def test_get_before_create_returns_404(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    r = await client.get(
-        f"/v1/campaigns/{camp['id']}/characters",
-        headers={"X-User-Id": "user_a"},
-    )
-    assert r.status_code == 404
-    assert r.json()["error"]["code"] == "character_not_found"
+# --- Creation: identity fields ---
 
 
-async def test_create_returns_all_identity_fields(client: AsyncClient) -> None:
+async def test_create_returns_identity_fields(client: AsyncClient) -> None:
     camp = await _campaign(client)
     char = await _character(client, camp["id"])
 
     assert char["name"] == "Ser Aldric"
-    assert char["race"] == "Human"
-    assert char["class"] == "Fighter"
-    assert char["background"] == "Soldier"
+    assert char["race"] == "human"
+    assert char["class"] == "fighter"
+    assert char["background"] == "soldier"
     assert char["campaign_id"] == camp["id"]
     assert char["owner_id"] == "user_a"
-    assert char["level"] == 3
+    assert char["level"] == 1
     assert char["xp"] == 0
-    assert char["alignment"] is None
-    assert char["portrait_url"] is None
+    assert char["alignment"] == "Lawful Good"
+    assert char["status"] == "active"
 
 
-async def test_create_returns_correct_combat_defaults(client: AsyncClient) -> None:
+# --- Creation: derived stats ---
+
+
+async def test_create_derives_hp_from_hit_die_and_con(client: AsyncClient) -> None:
+    # Fighter hit_die=10, CON=13 + human +1 = 14 → mod=+2 → max_hp=12
     camp = await _campaign(client)
     char = await _character(client, camp["id"])
 
-    assert char["hp"] == 24
-    assert char["max_hp"] == 32
+    assert char["hit_die_size"] == 10
+    assert char["max_hp"] == 12
+    assert char["hp"] == 12
     assert char["temp_hp"] == 0
-    assert char["ac"] == 16
-    assert char["speed"] == 30
     assert char["death_save_successes"] == 0
     assert char["death_save_failures"] == 0
 
 
-async def test_derived_fields_fighter_level_3(client: AsyncClient) -> None:
-    """
-    level 3  → proficiency_bonus = 2
-    DEX 12   → initiative = +1
-    WIS 10, perception proficient → passive_perception = 10 + 0 + 2 = 12
-    """
+async def test_create_derives_speed_from_race(client: AsyncClient) -> None:
     camp = await _campaign(client)
     char = await _character(client, camp["id"])
+    assert char["speed"] == 30  # human
 
-    assert char["proficiency_bonus"] == 2
-    assert char["initiative"] == 1
+
+async def test_create_derives_saving_throws_from_class(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    assert set(char["saving_throw_proficiencies"]) == {"str", "con"}
+
+
+async def test_create_combines_background_and_class_skills(client: AsyncClient) -> None:
+    # soldier bg: Athletics, Intimidation; fighter choices: Perception, History
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    assert set(char["skill_proficiencies"]) == {
+        "Perception",
+        "History",
+        "Athletics",
+        "Intimidation",
+    }
+
+
+async def test_create_derives_initiative_from_dex(client: AsyncClient) -> None:
+    # DEX 14 → mod +2
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    assert char["initiative"] == 2
+
+
+async def test_passive_perception_with_perception_proficiency(client: AsyncClient) -> None:
+    # WIS 10 → mod 0, Perception proficient → 10 + 0 + 2 = 12
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
     assert char["passive_perception"] == 12
 
 
 async def test_passive_perception_without_perception_proficiency(client: AsyncClient) -> None:
-    """Without perception in skill_proficiencies, passive perception = 10 + WIS mod only."""
+    # Fighter with no Perception in choices, soldier bg doesn't give it either
     camp = await _campaign(client)
-    body = {**FIGHTER, "skill_proficiencies": ["athletics", "intimidation"]}
-    char = await _character(client, camp["id"], body=body)
-
-    # WIS 10 → mod 0, no perception prof → 10
+    char = await _character(
+        client, camp["id"], body={**FIGHTER, "skill_choices": ["History", "Insight"]}
+    )
+    # WIS 10 → mod 0, no Perception → 10
     assert char["passive_perception"] == 10
 
 
-async def test_proficiency_bonus_jumps_at_level_5(client: AsyncClient) -> None:
-    """Proficiency bonus is +2 at levels 1–4 and +3 at levels 5–8."""
-    camp_a = await _campaign(client)
-    camp_b = await _campaign(client)
-
-    char_4 = await _character(client, camp_a["id"], body={**FIGHTER, "level": 4})
-    char_5 = await _character(client, camp_b["id"], body={**FIGHTER, "level": 5})
-
-    assert char_4["proficiency_bonus"] == 2
-    assert char_5["proficiency_bonus"] == 3
+async def test_proficiency_bonus_is_two_at_level_1(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+    assert char["proficiency_bonus"] == 2
 
 
 async def test_initiative_tracks_dex_modifier(client: AsyncClient) -> None:
-    """DEX 8 → mod -1, DEX 18 → mod +4."""
     camp_a = await _campaign(client)
     camp_b = await _campaign(client)
 
+    # DEX 8 + human +1 = 9 → mod -1
     low_dex = await _character(
-        client, camp_a["id"], body={**FIGHTER, "stats": {**FIGHTER["stats"], "dex": 8}}
+        client,
+        camp_a["id"],
+        body={
+            **FIGHTER,
+            "ability_scores": {"str": 15, "dex": 8, "con": 14, "int": 12, "wis": 10, "cha": 13},
+        },
     )
+    # DEX 15 + human +1 = 16 → mod +3
     high_dex = await _character(
-        client, camp_b["id"], body={**FIGHTER, "stats": {**FIGHTER["stats"], "dex": 18}}
+        client,
+        camp_b["id"],
+        body={
+            **FIGHTER,
+            "ability_scores": {"str": 14, "dex": 15, "con": 13, "int": 12, "wis": 10, "cha": 8},
+        },
     )
 
     assert low_dex["initiative"] == -1
-    assert high_dex["initiative"] == 4
+    assert high_dex["initiative"] == 3
 
 
-async def test_spellcaster_fields_round_trip(client: AsyncClient) -> None:
+# --- Creation: spellcasting ---
+
+
+async def test_spellcaster_derives_spell_fields(client: AsyncClient) -> None:
     camp = await _campaign(client)
     char = await _character(client, camp["id"], body=WIZARD)
 
     assert char["spellcasting_ability"] == "int"
-    assert char["spell_slots"] == {"1": {"current": 4, "max": 4}, "2": {"current": 2, "max": 2}}
-    assert set(char["spells_known"]) == {"Fireball", "Mage Armor", "Magic Missile", "Fire Bolt"}
+    assert char["spell_slots"] == {"1": 2}
+    assert set(char["spells_known"]) == {
+        "Magic Missile",
+        "Shield",
+        "Fire Bolt",
+        "Ray of Frost",
+        "Mage Hand",
+        "Prestidigitation",
+    }
+
+
+async def test_racial_bonuses_applied_to_ability_scores(client: AsyncClient) -> None:
+    # Elf gets +2 DEX; Hill Dwarf gets +2 CON (dwarf) + +1 WIS (hill-dwarf)
+    camp_elf = await _campaign(client)
+    camp_dwarf = await _campaign(client)
+
+    elf = await _character(
+        client,
+        camp_elf["id"],
+        body={**WIZARD, "race": "elf", "subrace": "high-elf"},
+    )
+    dwarf = await _character(
+        client,
+        camp_dwarf["id"],
+        body={**FIGHTER, "race": "dwarf", "subrace": "hill-dwarf"},
+    )
+
+    # Wizard base: DEX 14 + elf +2 = 16, INT 15 + high-elf +1 = 16
+    assert elf["ability_scores"]["dex"] == 16
+    assert elf["ability_scores"]["int"] == 16
+    assert elf["subrace"] == "high-elf"
+
+    # Fighter base: CON 13 + dwarf +2 = 15, WIS 10 + hill-dwarf +1 = 11
+    assert dwarf["ability_scores"]["con"] == 15
+    assert dwarf["ability_scores"]["wis"] == 11
+    assert dwarf["subrace"] == "hill-dwarf"
 
 
 async def test_non_spellcaster_has_null_spell_fields(client: AsyncClient) -> None:
@@ -209,6 +275,45 @@ async def test_non_spellcaster_has_null_spell_fields(client: AsyncClient) -> Non
     assert char["spells_known"] == []
 
 
+# --- Creation: ability_scores validation ---
+
+
+async def test_ability_scores_must_use_standard_array(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={
+            **FIGHTER,
+            "ability_scores": {"str": 18, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
+        },
+    )
+    assert r.status_code == 422
+
+
+async def test_ability_scores_must_have_all_six_keys(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={**FIGHTER, "ability_scores": {"str": 15, "dex": 14, "con": 13}},
+    )
+    assert r.status_code == 422
+
+
+# --- GET: list ---
+
+
+async def test_get_returns_empty_list_before_create(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.get(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+    )
+    assert r.status_code == 200
+    assert r.json() == []
+
+
 async def test_get_returns_created_character(client: AsyncClient) -> None:
     camp = await _campaign(client)
     created = await _character(client, camp["id"])
@@ -218,9 +323,85 @@ async def test_get_returns_created_character(client: AsyncClient) -> None:
         headers={"X-User-Id": "user_a"},
     )
     assert r.status_code == 200
-    got = r.json()
-    assert got["id"] == created["id"]
-    assert got["stats"] == created["stats"]
-    assert got["inventory"] == created["inventory"]
-    assert got["currency"] == created["currency"]
-    assert got["features"] == created["features"]
+    chars = r.json()
+    assert len(chars) == 1
+    assert chars[0]["id"] == created["id"]
+    assert chars[0]["ability_scores"] == created["ability_scores"]
+
+
+async def test_get_returns_player_and_companion(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    await _character(client, camp["id"])
+    await _character(client, camp["id"], body=COMPANION)
+
+    r = await client.get(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+    )
+    assert r.status_code == 200
+    chars = r.json()
+    assert len(chars) == 2
+    names = {c["name"] for c in chars}
+    assert names == {"Ser Aldric", "Bramble"}
+
+
+# --- Companion creation ---
+
+
+async def test_companion_requires_voice_traits(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+        json={**FIGHTER, "is_companion": True, "voice_traits": {}},
+    )
+    assert r.status_code == 422
+
+
+# --- PATCH ---
+
+
+async def test_patch_name_and_bio(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+
+    r = await client.patch(
+        f"/v1/campaigns/{camp['id']}/characters/{char['id']}",
+        headers={"X-User-Id": "user_a"},
+        json={"name": "Sir Aldric the Bold", "bio": "Reborn from battle."},
+    )
+    assert r.status_code == 200
+    assert r.json()["name"] == "Sir Aldric the Bold"
+    assert r.json()["bio"] == "Reborn from battle."
+
+
+async def test_patch_companion_returns_401(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    companion = await _character(client, camp["id"], body=COMPANION)
+
+    r = await client.patch(
+        f"/v1/campaigns/{camp['id']}/characters/{companion['id']}",
+        headers={"X-User-Id": "user_a"},
+        json={"name": "Different Name"},
+    )
+    assert r.status_code == 401
+
+
+# --- DELETE ---
+
+
+async def test_delete_removes_character(client: AsyncClient) -> None:
+    camp = await _campaign(client)
+    char = await _character(client, camp["id"])
+
+    r = await client.delete(
+        f"/v1/campaigns/{camp['id']}/characters/{char['id']}",
+        headers={"X-User-Id": "user_a"},
+    )
+    assert r.status_code == 204
+
+    remaining = await client.get(
+        f"/v1/campaigns/{camp['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+    )
+    assert remaining.json() == []

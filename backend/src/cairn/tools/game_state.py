@@ -3,6 +3,8 @@ from typing import Annotated
 
 from langchain_core.tools import tool
 
+from cairn.api.v1.schemas.characters import CharacterResponse
+from cairn.api.v1.schemas.npcs import NPCResponse
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
 from cairn.db.models.npc import NPC
@@ -13,66 +15,15 @@ from cairn.db.queries import sessions as session_queries
 
 
 def character_to_dict(c: Character) -> dict:
-    return {
-        "id": str(c.id),
-        "type": "character",
-        "name": c.name,
-        "race": c.race,
-        "class": getattr(c, "class_", None),
-        "level": c.level,
-        "hp": c.hp,
-        "max_hp": c.max_hp,
-        "temp_hp": c.temp_hp,
-        "ac": c.ac,
-        "speed": c.speed,
-        "initiative_modifier": c.initiative,
-        "proficiency_bonus": c.proficiency_bonus,
-        "stats": c.stats,
-        "saving_throw_proficiencies": c.saving_throw_proficiencies,
-        "skill_proficiencies": c.skill_proficiencies,
-        "spellcasting_ability": c.spellcasting_ability,
-        "spell_slots": c.spell_slots,
-        "spells_known": c.spells_known,
-        "concentration": c.concentration,
-        "resources": c.resources,
-        "death_save_successes": c.death_save_successes,
-        "death_save_failures": c.death_save_failures,
-        "features": c.features,
-        "inventory": c.inventory,
-        "is_companion": c.is_companion,
-        "bio": c.bio,
-        "personality": c.personality,
-        "voice_traits": c.voice_traits,
-    }
+    data = CharacterResponse.model_validate(c).model_dump(by_alias=True, mode="json")
+    data["type"] = "character"
+    return data
 
 
 def npc_to_dict(n: NPC) -> dict:
-    return {
-        "id": str(n.id),
-        "type": "npc",
-        "name": n.name,
-        "race": n.race,
-        "class": getattr(n, "class_", None),
-        "level": n.level,
-        "hp": n.hp,
-        "max_hp": n.max_hp,
-        "temp_hp": n.temp_hp,
-        "ac": n.ac,
-        "speed": n.speed,
-        "initiative_modifier": n.initiative,
-        "proficiency_bonus": n.proficiency_bonus,
-        "cr": n.cr,
-        "stats": n.stats,
-        "saving_throw_proficiencies": n.saving_throw_proficiencies,
-        "spellcasting_ability": n.spellcasting_ability,
-        "spell_slots": n.spell_slots,
-        "spells_known": n.spells_known,
-        "conditions": n.conditions,
-        "disposition": n.disposition,
-        "bio": n.bio,
-        "personality": n.personality,
-        "voice_traits": n.voice_traits,
-    }
+    data = NPCResponse.model_validate(n).model_dump(by_alias=True, mode="json")
+    data["type"] = "npc"
+    return data
 
 
 @tool

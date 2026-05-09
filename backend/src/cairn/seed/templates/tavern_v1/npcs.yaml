@@ -25,7 +25,7 @@ npcs:
     passive_perception: 11
     cr: 0.25
     xp_value: 50
-    stats: {str: 14, dex: 10, con: 13, int: 11, wis: 12, cha: 10}
+    ability_scores: {str: 14, dex: 10, con: 13, int: 11, wis: 12, cha: 10}
     saving_throw_proficiencies: ["str", "con"]
     skill_proficiencies: ["intimidation", "history"]
     spellcasting_ability: null
@@ -65,7 +65,7 @@ npcs:
     passive_perception: 14
     cr: 0.125
     xp_value: 25
-    stats: {str: 10, dex: 16, con: 11, int: 15, wis: 14, cha: 12}
+    ability_scores: {str: 10, dex: 16, con: 11, int: 15, wis: 14, cha: 12}
     saving_throw_proficiencies: ["dex", "int"]
     skill_proficiencies: ["deception", "insight", "perception", "stealth"]
     spellcasting_ability: "int"
@@ -109,7 +109,7 @@ npcs:
     passive_perception: 11
     cr: 0.25
     xp_value: 50
-    stats: {str: 13, dex: 12, con: 12, int: 10, wis: 11, cha: 10}
+    ability_scores: {str: 13, dex: 12, con: 12, int: 10, wis: 11, cha: 10}
     saving_throw_proficiencies: ["str", "con"]
     skill_proficiencies: ["perception", "athletics"]
     spellcasting_ability: null

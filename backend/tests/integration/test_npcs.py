@@ -62,7 +62,7 @@ async def test_npcs_have_stat_block_fields(client: AsyncClient) -> None:
         assert "max_hp" in npc
         assert "hp" in npc
         assert "cr" in npc
-        assert "stats" in npc
+        assert "ability_scores" in npc
         assert "conditions" in npc
         assert npc["hp"] == npc["max_hp"]
 
