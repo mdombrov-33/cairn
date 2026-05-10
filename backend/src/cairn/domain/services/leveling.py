@@ -258,6 +258,28 @@ async def get_level_up_preview(
     return {"pending": True, **preview}
 
 
+async def _award_xp(
+    db: AsyncSession,
+    *,
+    character_id: uuid.UUID,
+    amount: int,
+) -> dict:
+    """Award XP without an ownership check — for tool-facing use inside a trusted session."""
+    if amount < 0:
+        raise ValidationError(f"xp amount must be non-negative, got {amount}")
+    char = await character_queries.get_character(db, character_id)
+    char.xp = (char.xp or 0) + amount
+    ready = has_pending_level_up(char)
+    log.info(
+        "xp_awarded",
+        character_id=str(char.id),
+        amount=amount,
+        total_xp=char.xp,
+        ready_to_level_up=ready,
+    )
+    return {"character": char.name, "xp": char.xp, "level": char.level, "ready_to_level_up": ready}
+
+
 async def award_xp(
     db: AsyncSession,
     *,
