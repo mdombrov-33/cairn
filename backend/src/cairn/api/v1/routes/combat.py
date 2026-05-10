@@ -19,7 +19,9 @@ async def start(
     db: DBSession,
 ) -> CombatResponse:
     enemies = [e.model_dump() for e in body.enemies]
-    combat_state = await service.start(db, session_id=session_id, owner_id=user_id, enemies=enemies)
+    combat_state = await service.state.start(
+        db, session_id=session_id, owner_id=user_id, enemies=enemies
+    )
     return CombatResponse(combat_active=True, combat_state=combat_state)
 
 
@@ -30,7 +32,7 @@ async def end(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> CombatResponse:
-    await service.end(db, session_id=session_id, owner_id=user_id, outcome=body.outcome)
+    await service.state.end(db, session_id=session_id, owner_id=user_id, outcome=body.outcome)
     return CombatResponse(combat_active=False, combat_state=None)
 
 
@@ -40,5 +42,5 @@ async def get_state(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> CombatResponse:
-    state = await service.get_state(db, session_id=session_id, owner_id=user_id)
+    state = await service.state.get_state(db, session_id=session_id, owner_id=user_id)
     return CombatResponse(**state)
