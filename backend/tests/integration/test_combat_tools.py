@@ -190,8 +190,8 @@ async def test_resolve_contest_tie_goes_to_defender(client: AsyncClient) -> None
     )
 
     # Using the same combatant for both sides guarantees equal modifiers.
-    # Patching _roll_d20 to return the same value ensures totals tie.
-    with patch("cairn.domain.services.combat._roll_d20", return_value=([10], 10)):
+    # Patching roll_d20 to return the same value ensures totals tie.
+    with patch("cairn.domain.services.combat.rolls.roll_d20", return_value=([10], 10)):
         result = await resolve_contest.ainvoke(
             {
                 "session_id": sess["id"],
@@ -262,7 +262,7 @@ async def test_apply_aoe_damage_all_save_take_half(client: AsyncClient) -> None:
     targets_json = json.dumps([{"id": g["id"], "type": "monster"} for g in goblins])
 
     # Fix damage roll to an even number so half is exact.
-    with patch("cairn.domain.services.combat._parse_and_roll", return_value=8):
+    with patch("cairn.domain.services.combat.mutations.parse_and_roll", return_value=8):
         result = await apply_aoe_damage.ainvoke(
             {
                 "session_id": sess["id"],
@@ -281,7 +281,6 @@ async def test_apply_aoe_damage_all_save_take_half(client: AsyncClient) -> None:
         assert r["damage"] == 4
 
 
-#
 # add_combatant / remove_combatant (turn_index correctness)
 
 

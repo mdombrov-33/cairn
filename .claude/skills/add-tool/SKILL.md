@@ -37,8 +37,8 @@ The one exception is `dice.py` — pure computation with no DB stays in the tool
 If you need a new service function:
 
 - HTTP-facing (requires auth): add to the relevant service, take `owner_id`, call `get_campaign_owned_by` or similar
-- Tool-facing (no auth): prefix with `_` to signal it's internal (e.g. `_init_state`, `_end_state`, `_award_xp`)
-- Domain helpers (`_mod`, `_roll_d20`, `_find_combatant`, etc.) belong in the service file — never in the tool file
+- Tool-facing (no auth): prefix with `_` to signal it's internal (e.g. `init_state`, `end_state`, `_award_xp`)
+- Domain helpers (`mod`, `roll_d20`, `find_combatant`, etc.) belong in the service file — never in the tool file
 
 A tool can import from **any** service, not just the one matching its module. For example, `award_xp` lives in `combat.py` (the tool file) but calls `leveling_service._award_xp`. Put the tool in whichever module it will most often be called from, then import the right service.
 

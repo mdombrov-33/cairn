@@ -14,7 +14,7 @@ from cairn.srd import get_armor
 log = structlog.get_logger()
 
 
-def _mod(score: int) -> int:
+def mod(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
@@ -40,9 +40,9 @@ def _equipped_armor_and_shield(char: Any) -> tuple[dict | None, dict | None]:
 def _unarmored_base(char: Any, dex_mod: int) -> int:
     cls = (char.class_ or "").lower()
     if cls == "barbarian":
-        return 10 + dex_mod + _mod(char.ability_scores.get("con", 10))
+        return 10 + dex_mod + mod(char.ability_scores.get("con", 10))
     if cls == "monk":
-        return 10 + dex_mod + _mod(char.ability_scores.get("wis", 10))
+        return 10 + dex_mod + mod(char.ability_scores.get("wis", 10))
     return 10 + dex_mod
 
 
@@ -55,7 +55,7 @@ def _feat_ac_bonus(char: Any, equipped_armor: dict | None) -> int:
 
 def derive_ac(char: Any) -> int:
     """Compute and return AC from equipped items + ability scores + feats."""
-    dex_mod = _mod(char.ability_scores.get("dex", 10))
+    dex_mod = mod(char.ability_scores.get("dex", 10))
     equipped_armor, equipped_shield = _equipped_armor_and_shield(char)
 
     if equipped_armor is None:

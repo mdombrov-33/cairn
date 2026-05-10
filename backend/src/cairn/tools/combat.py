@@ -24,7 +24,7 @@ async def start_combat(
         return {"error": f"Invalid enemies_json: {e}"}
 
     async with db_client.get_session() as db:
-        combat_state = await combat_service._init_state(db, uuid.UUID(session_id), enemies)
+        combat_state = await combat_service.state.init_state(db, uuid.UUID(session_id), enemies)
     return {"combat_started": True, "combat_state": combat_state}
 
 
@@ -35,7 +35,7 @@ async def end_combat(
 ) -> dict:
     """End the current combat encounter and clear combat state."""
     async with db_client.get_session() as db:
-        await combat_service._end_state(db, session_id=uuid.UUID(session_id))
+        await combat_service.state.end_state(db, session_id=uuid.UUID(session_id))
     return {"combat_ended": True, "outcome": outcome}
 
 
@@ -53,7 +53,7 @@ async def apply_damage(
 ) -> dict:
     """Apply damage to a combatant, respecting temp HP. Monsters track HP in combat_state; characters and NPCs are persisted to DB."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.apply_damage(
+        return await combat_service.mutations.apply_damage(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -72,7 +72,7 @@ async def apply_healing(
 ) -> dict:
     """Heal a combatant by amount, not exceeding max HP. Clears unconscious/death save status for characters."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.apply_healing(
+        return await combat_service.mutations.apply_healing(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -85,12 +85,11 @@ async def apply_healing(
 async def apply_condition(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID or monster id."],
-    combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     condition: Annotated[str, "The condition name."],
 ) -> dict:
     """Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned"). Tracked in combat_state for all types."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.apply_condition(
+        return await combat_service.mutations.apply_condition(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -102,12 +101,11 @@ async def apply_condition(
 async def remove_condition(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID or monster id."],
-    combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     condition: Annotated[str, "The condition to remove."],
 ) -> dict:
     """Remove a condition from a combatant."""
     async with db_client.get_session() as db:
-        return await combat_service.remove_condition(
+        return await combat_service.mutations.remove_condition(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -122,7 +120,7 @@ async def roll_death_save(
 ) -> dict:
     """Roll a death saving throw for an unconscious character at 0 HP. Only valid for player characters — NPCs/monsters die at 0 HP."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.roll_death_save(
+        return await combat_service.rolls.roll_death_save(
             db,
             session_id=uuid.UUID(session_id),
             character_id=character_id,
@@ -135,7 +133,7 @@ async def advance_turn(
 ) -> dict:
     """Advance to the next combatant's turn, skipping dead combatants. Increments round when order wraps. Returns end_of_turn_ticks, start_of_turn_ticks, and expired_effects."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.advance_turn(db, session_id=uuid.UUID(session_id))
+        return await combat_service.state.advance_turn(db, session_id=uuid.UUID(session_id))
 
 
 @tool
@@ -157,7 +155,7 @@ async def apply_effect(
 ) -> dict:
     """Track a multi-round effect (concentration spell, poison, regen). tick controls when advance_turn returns reminders."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.apply_effect(
+        return await combat_service.mutations.apply_effect(
             db,
             session_id=uuid.UUID(session_id),
             target_id=target_id,
@@ -181,7 +179,7 @@ async def remove_effect(
 ) -> dict:
     """Remove an active effect by its ID. Call when concentration breaks, dispel magic succeeds, or a repeating save ends the effect."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.remove_effect(
+        return await combat_service.mutations.remove_effect(
             db,
             session_id=uuid.UUID(session_id),
             effect_id=effect_id,
@@ -199,7 +197,7 @@ async def roll_saving_throw(
 ) -> dict:
     """Roll a saving throw for a combatant against a DC. Returns roll, modifier, total, and pass/fail."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.roll_saving_throw(
+        return await combat_service.rolls.roll_saving_throw(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -225,7 +223,7 @@ async def add_combatant(
 ) -> dict:
     """Add a late-joining combatant to an active combat at the correct initiative position. Call roll_initiative first to get the initiative_roll value."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.add_combatant(
+        return await combat_service.state.add_combatant(
             db,
             session_id=uuid.UUID(session_id),
             combatant_type=combatant_type,
@@ -242,7 +240,7 @@ async def remove_combatant(
 ) -> dict:
     """Remove a combatant from the active initiative order (e.g. flees, is banished, or surrenders). Does not kill them — use apply_damage for death."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.remove_combatant(
+        return await combat_service.state.remove_combatant(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -268,7 +266,9 @@ async def add_exhaustion(
 ) -> dict:
     """Add exhaustion levels to a character (stored as 'exhaustion-N' in conditions). Level 6 kills the character."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.add_exhaustion(db, character_id=character_id, levels=levels)
+        return await combat_service.mutations.add_exhaustion(
+            db, character_id=character_id, levels=levels
+        )
 
 
 @tool
@@ -278,7 +278,9 @@ async def remove_exhaustion(
 ) -> dict:
     """Remove exhaustion levels from a character (e.g. after a long rest or Greater Restoration)."""
     async with db_client.get_session() as db:
-        return await combat_service.remove_exhaustion(db, character_id=character_id, levels=levels)
+        return await combat_service.mutations.remove_exhaustion(
+            db, character_id=character_id, levels=levels
+        )
 
 
 @tool
@@ -287,7 +289,7 @@ async def stabilize_character(
 ) -> dict:
     """Stabilize an unconscious character at 0 HP (Spare the Dying, healer's kit). Clears death save counters so no further saves are needed until they take damage again."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.stabilize_character(db, character_id=character_id)
+        return await combat_service.mutations.stabilize_character(db, character_id=character_id)
 
 
 @tool
@@ -303,7 +305,7 @@ async def apply_temp_hp(
 ) -> dict:
     """Grant temporary HP to a combatant. Temp HP never stack — the new amount replaces the old only if it's higher (PHB p. 198)."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.apply_temp_hp(
+        return await combat_service.mutations.apply_temp_hp(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -334,7 +336,7 @@ async def apply_aoe_damage(
         return {"error": f"Invalid targets_json: {e}"}
 
     async with db_client.get_session() as db:
-        return await combat_service.apply_aoe_damage(
+        return await combat_service.mutations.apply_aoe_damage(
             db,
             session_id=uuid.UUID(session_id),
             targets=targets,
@@ -358,7 +360,7 @@ async def resolve_contest(
 ) -> dict:
     """Resolve an opposed skill contest (e.g. grapple, shove, stealth vs. perception). Both sides roll; ties go to the defender per PHB rules."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.resolve_contest(
+        return await combat_service.rolls.resolve_contest(
             db,
             session_id=uuid.UUID(session_id),
             attacker_id=attacker_id,
@@ -382,7 +384,7 @@ async def roll_initiative(
 ) -> dict:
     """Roll initiative (d20 + DEX modifier) for a combatant. Returns the initiative total to pass to add_combatant or use when re-inserting into the initiative order."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.roll_initiative(
+        return await combat_service.rolls.roll_initiative(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -405,7 +407,7 @@ async def roll_skill_check(
 ) -> dict:
     """Roll a skill check for a combatant against a DC. Applies proficiency bonus if the combatant is proficient. Returns roll, modifier, total, and pass/fail."""  # noqa: E501
     async with db_client.get_session() as db:
-        return await combat_service.roll_skill_check(
+        return await combat_service.rolls.roll_skill_check(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,

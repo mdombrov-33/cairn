@@ -215,7 +215,7 @@ async def test_proficiency_bonus_is_two_at_level_1(client: AsyncClient) -> None:
     assert char["proficiency_bonus"] == 2
 
 
-async def test_initiative_tracks_dex_modifier(client: AsyncClient) -> None:
+async def test_initiative_tracksdex_modifier(client: AsyncClient) -> None:
     camp_a = await _campaign(client)
     camp_b = await _campaign(client)
 
