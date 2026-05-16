@@ -1,44 +1,12 @@
-import json
 from unittest.mock import patch
 
 from httpx import AsyncClient
 
-
-def _parse_sse(text: str) -> list[dict]:
-    events = []
-    current: dict = {}
-    for line in text.splitlines():
-        if line.startswith("event: "):
-            current["type"] = line[7:]
-        elif line.startswith("data: "):
-            current["data"] = json.loads(line[6:])
-        elif not line and current:
-            events.append(current)
-            current = {}
-    return events
-
-
-async def _campaign(client: AsyncClient) -> dict:
-    r = await client.post(
-        "/v1/campaigns",
-        headers={"X-User-Id": "user_a"},
-        json={"name": "Tavern", "template_id": "tavern_v1"},
-    )
-    assert r.status_code == 201
-    return r.json()
-
-
-async def _session(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/sessions",
-        headers={"X-User-Id": "user_a"},
-    )
-    assert r.status_code == 201
-    return r.json()
+from tests._factories import make_campaign, make_session, parse_sse
 
 
 async def test_campaign_creation_seeds_npcs(client: AsyncClient) -> None:
-    camp = await _campaign(client)
+    camp = await make_campaign(client)
 
     r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -50,7 +18,7 @@ async def test_campaign_creation_seeds_npcs(client: AsyncClient) -> None:
 
 
 async def test_npcs_have_stat_block_fields(client: AsyncClient) -> None:
-    camp = await _campaign(client)
+    camp = await make_campaign(client)
 
     r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -68,7 +36,7 @@ async def test_npcs_have_stat_block_fields(client: AsyncClient) -> None:
 
 
 async def test_get_npc_by_id(client: AsyncClient) -> None:
-    camp = await _campaign(client)
+    camp = await make_campaign(client)
 
     npcs_r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -85,14 +53,14 @@ async def test_get_npc_by_id(client: AsyncClient) -> None:
 
 
 async def test_npcs_requires_auth(client: AsyncClient) -> None:
-    camp = await _campaign(client)
+    camp = await make_campaign(client)
 
     r = await client.get(f"/v1/campaigns/{camp['id']}/npcs")
     assert r.status_code == 401
 
 
 async def test_npcs_wrong_owner_returns_404(client: AsyncClient) -> None:
-    camp = await _campaign(client)
+    camp = await make_campaign(client)
 
     r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -102,8 +70,8 @@ async def test_npcs_wrong_owner_returns_404(client: AsyncClient) -> None:
 
 
 async def test_npc_dialogue_turn_emits_tokens(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     npcs_r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -129,7 +97,7 @@ async def test_npc_dialogue_turn_emits_tokens(client: AsyncClient) -> None:
             json={"player_input": f"I talk to {npc_name}"},
         )
     assert r.status_code == 201
-    events = _parse_sse(r.text)
+    events = parse_sse(r.text)
     types = [e["type"] for e in events]
 
     assert "turn_start" in types
@@ -138,8 +106,8 @@ async def test_npc_dialogue_turn_emits_tokens(client: AsyncClient) -> None:
 
 
 async def test_npc_dialogue_persists_dm_response(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     npcs_r = await client.get(
         f"/v1/campaigns/{camp['id']}/npcs",
@@ -164,7 +132,7 @@ async def test_npc_dialogue_persists_dm_response(client: AsyncClient) -> None:
             headers={"X-User-Id": "user_a"},
             json={"player_input": f"I greet {npc_name}"},
         )
-    events = _parse_sse(r.text)
+    events = parse_sse(r.text)
     turn_id = events[0]["data"]["turn_id"]
 
     turns = (

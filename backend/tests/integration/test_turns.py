@@ -1,57 +1,23 @@
-import json
-
 from httpx import AsyncClient
 
-
-def _parse_sse(text: str) -> list[dict]:
-    """Parse SSE response body into a list of {type, data} dicts."""
-    events = []
-    current: dict = {}
-    for line in text.splitlines():
-        if line.startswith("event: "):
-            current["type"] = line[7:]
-        elif line.startswith("data: "):
-            current["data"] = json.loads(line[6:])
-        elif not line and current:
-            events.append(current)
-            current = {}
-    return events
-
-
-async def _campaign(client: AsyncClient, user_id: str = "user_a") -> dict:
-    r = await client.post(
-        "/v1/campaigns",
-        headers={"X-User-Id": user_id},
-        json={"name": "Tavern", "template_id": "tavern_v1"},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _session(client: AsyncClient, campaign_id: str, user_id: str = "user_a") -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/sessions",
-        headers={"X-User-Id": user_id},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
+from tests._factories import make_campaign, make_session, parse_sse
 
 
 async def _submit(
-    client: AsyncClient, session_id: str, player_input: str, user_id: str = "user_a"
+    client: AsyncClient, session_id: str, player_input: str, owner: str = "user_a"
 ) -> list[dict]:
     r = await client.post(
         f"/v1/sessions/{session_id}/turns",
-        headers={"X-User-Id": user_id},
+        headers={"X-User-Id": owner},
         json={"player_input": player_input},
     )
     assert r.status_code == 201, r.text
-    return _parse_sse(r.text)
+    return parse_sse(r.text)
 
 
 async def test_submit_requires_auth(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
     r = await client.post(
         f"/v1/sessions/{sess['id']}/turns",
         json={"player_input": "I look around"},
@@ -60,8 +26,8 @@ async def test_submit_requires_auth(client: AsyncClient) -> None:
 
 
 async def test_submit_wrong_owner_returns_404(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
     r = await client.post(
         f"/v1/sessions/{sess['id']}/turns",
         headers={"X-User-Id": "user_b"},
@@ -71,8 +37,8 @@ async def test_submit_wrong_owner_returns_404(client: AsyncClient) -> None:
 
 
 async def test_submit_streams_sse_events(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     events = await _submit(client, sess["id"], "I look around the tavern")
 
@@ -83,8 +49,8 @@ async def test_submit_streams_sse_events(client: AsyncClient) -> None:
 
 
 async def test_submit_turn_start_has_intent(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     events = await _submit(client, sess["id"], "I look around the tavern")
 
@@ -95,8 +61,8 @@ async def test_submit_turn_start_has_intent(client: AsyncClient) -> None:
 
 
 async def test_submit_tokens_assemble_dm_response(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     events = await _submit(client, sess["id"], "I look around")
     tokens = [e["data"]["text"] for e in events if e["type"] == "token"]
@@ -104,8 +70,8 @@ async def test_submit_tokens_assemble_dm_response(client: AsyncClient) -> None:
 
 
 async def test_submit_dm_response_persisted(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     events = await _submit(client, sess["id"], "I look around")
     turn_id = events[0]["data"]["turn_id"]
@@ -123,8 +89,8 @@ async def test_submit_dm_response_persisted(client: AsyncClient) -> None:
 
 
 async def test_submit_idx_increments(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     await _submit(client, sess["id"], "First")
     await _submit(client, sess["id"], "Second")
@@ -140,15 +106,15 @@ async def test_submit_idx_increments(client: AsyncClient) -> None:
 
 
 async def test_get_turns_requires_auth(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
     r = await client.get(f"/v1/sessions/{sess['id']}/turns")
     assert r.status_code == 401
 
 
 async def test_get_turns_wrong_owner_returns_404(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
     await _submit(client, sess["id"], "Hello")
 
     r = await client.get(
@@ -159,8 +125,8 @@ async def test_get_turns_wrong_owner_returns_404(client: AsyncClient) -> None:
 
 
 async def test_get_turns_empty_before_any_turns(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     r = await client.get(
         f"/v1/sessions/{sess['id']}/turns",
@@ -171,8 +137,8 @@ async def test_get_turns_empty_before_any_turns(client: AsyncClient) -> None:
 
 
 async def test_list_turns_returns_turns_in_order(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
 
     await _submit(client, sess["id"], "First")
     await _submit(client, sess["id"], "Second")

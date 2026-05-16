@@ -14,22 +14,9 @@ from cairn.domain.services.leveling import (
     initialize_resources,
     level_for_xp,
 )
+from tests._factories import make_campaign, make_character, make_session
 
-#  Standard fighter & wizard payloads (mirror test_characters.py)
-
-
-FIGHTER: dict = {
-    "name": "Ser Aldric",
-    "race": "human",
-    "character_class": "fighter",
-    "background": "soldier",
-    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
-    "skill_choices": ["Perception", "History"],
-    "alignment": "Lawful Good",
-    "bio": "A seasoned warrior.",
-    "personality": "Stoic and direct.",
-}
-
+# Class presets — pass as `**WIZARD` to override the default fighter
 WIZARD: dict = {
     "name": "Mira",
     "race": "elf",
@@ -42,33 +29,6 @@ WIZARD: dict = {
     "personality": "Curious.",
     "spell_choices": ["Magic Missile", "Shield"],
 }
-
-
-async def _campaign(client: AsyncClient, user_id: str = "user_a") -> dict:
-    r = await client.post(
-        "/v1/campaigns",
-        headers={"X-User-Id": user_id},
-        json={"name": "Camp", "template_id": "tavern_v1"},
-    )
-    return r.json()
-
-
-async def _character(client: AsyncClient, campaign_id: str, body: dict | None = None) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/characters",
-        headers={"X-User-Id": "user_a"},
-        json=body or FIGHTER,
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _make_session(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/sessions",
-        headers={"X-User-Id": "user_a"},
-    )
-    return r.json()
 
 
 # Pure helpers
@@ -117,23 +77,21 @@ def test_initialize_resources_unknown_class_returns_empty() -> None:
 
 
 BARBARIAN: dict = {
-    **FIGHTER,
     "name": "Krug",
     "character_class": "barbarian",
-    "background": "soldier",
     "skill_choices": ["Athletics", "Survival"],
 }
 
 
 async def test_creating_barbarian_initializes_rage(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"], body=BARBARIAN)
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"], **BARBARIAN)
     assert char["resources"] == {"rage": {"current": 2, "max": 2, "resets_on": "long_rest"}}
 
 
 async def test_creating_fighter_has_empty_resources(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
     assert char["resources"] == {}
 
 
@@ -141,8 +99,8 @@ async def test_creating_fighter_has_empty_resources(client: AsyncClient) -> None
 
 
 async def test_award_xp_below_threshold(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         result = await leveling.award_xp(
             db,
@@ -155,8 +113,8 @@ async def test_award_xp_below_threshold(client: AsyncClient) -> None:
 
 
 async def test_award_xp_crosses_threshold(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         result = await leveling.award_xp(
             db,
@@ -169,8 +127,8 @@ async def test_award_xp_crosses_threshold(client: AsyncClient) -> None:
 
 
 async def test_award_xp_negative_raises(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         with pytest.raises(ValidationError):
             await leveling.award_xp(
@@ -186,16 +144,16 @@ async def test_award_xp_negative_raises(client: AsyncClient) -> None:
 
 
 async def test_preview_none_when_no_pending(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         assert build_level_up_preview(char) is None
 
 
 async def test_preview_fighter_l1_to_l2(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         char.xp = 300
@@ -210,8 +168,8 @@ async def test_preview_fighter_l1_to_l2(client: AsyncClient) -> None:
 
 
 async def test_preview_fighter_l3_to_l4_offers_asi_and_feats(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         char.level = 3
@@ -227,8 +185,8 @@ async def test_preview_fighter_l3_to_l4_offers_asi_and_feats(client: AsyncClient
 
 
 async def test_preview_fighter_l2_to_l3_requires_subclass(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         char.level = 2
@@ -243,8 +201,8 @@ async def test_preview_fighter_l2_to_l3_requires_subclass(client: AsyncClient) -
 
 
 async def test_apply_level_up_no_pending_raises(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         with pytest.raises(ValidationError):
             await leveling.apply_level_up(
@@ -257,8 +215,8 @@ async def test_apply_level_up_no_pending_raises(client: AsyncClient) -> None:
 
 
 async def test_apply_level_up_fighter_1_to_2_average_hp(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -283,8 +241,8 @@ async def test_apply_level_up_fighter_1_to_2_average_hp(client: AsyncClient) -> 
 
 
 async def test_apply_level_up_with_roll_validates_die_size(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -303,8 +261,8 @@ async def test_apply_level_up_with_roll_validates_die_size(client: AsyncClient) 
 
 
 async def test_apply_level_up_asi_increases_ability(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -328,8 +286,8 @@ async def test_apply_level_up_asi_increases_ability(client: AsyncClient) -> None
 
 
 async def test_apply_level_up_asi_must_total_two(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -351,8 +309,8 @@ async def test_apply_level_up_asi_must_total_two(client: AsyncClient) -> None:
 
 async def test_apply_level_up_with_general_feat_mobile(client: AsyncClient) -> None:
     """Mobile is a 'general' type feat — legal at ASI levels. Adds +10 speed."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -375,8 +333,8 @@ async def test_apply_level_up_with_general_feat_mobile(client: AsyncClient) -> N
 
 
 async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -419,10 +377,10 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
 
 
 async def test_apply_level_up_blocks_during_combat(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
-    sess = await _make_session(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -446,8 +404,8 @@ async def test_apply_level_up_blocks_during_combat(client: AsyncClient) -> None:
 async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
     client: AsyncClient,
 ) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"], body=WIZARD)
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"], **WIZARD)
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -474,8 +432,8 @@ async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
 
 
 async def test_apply_level_up_rejects_wrong_spell_count(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"], body=WIZARD)
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"], **WIZARD)
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -497,8 +455,8 @@ async def test_apply_level_up_rejects_wrong_spell_count(client: AsyncClient) -> 
 
 async def test_apply_level_up_rejects_origin_feat_at_asi(client: AsyncClient) -> None:
     """alert is an 'origin' feat, not selectable at ASI."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -521,8 +479,8 @@ async def test_apply_level_up_rejects_origin_feat_at_asi(client: AsyncClient) ->
 async def test_apply_level_up_recomputes_initiative_after_dex_asi(
     client: AsyncClient,
 ) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -547,8 +505,8 @@ async def test_apply_level_up_recomputes_initiative_after_dex_asi(
 async def test_apply_level_up_alert_feat_adds_pb_to_initiative(client: AsyncClient) -> None:
     """Alert is origin-only, so route via leveling rejects it. We verify the
     recompute path by directly applying the feat then recomputing."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         original = char.initiative
@@ -561,8 +519,8 @@ async def test_apply_level_up_observant_recomputes_passive_perception(
     client: AsyncClient,
 ) -> None:
     """Observant is general — taken at ASI. Verify PP gets +5 + WIS mod increase."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -592,8 +550,8 @@ async def test_apply_level_up_observant_recomputes_passive_perception(
 
 
 async def test_feat_unknown_raises(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="unknown feat"):
@@ -601,8 +559,8 @@ async def test_feat_unknown_raises(client: AsyncClient) -> None:
 
 
 async def test_feat_skilled_requires_three_picks(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="skilled feat requires"):
@@ -612,8 +570,8 @@ async def test_feat_skilled_requires_three_picks(client: AsyncClient) -> None:
 
 
 async def test_feat_skilled_routes_skills_and_tools(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(
@@ -634,8 +592,8 @@ async def test_feat_skilled_routes_skills_and_tools(client: AsyncClient) -> None
 
 async def test_feat_behavioral_just_appends(client: AsyncClient) -> None:
     """Feats with no mechanical handler still get added to char.feats for the LLM to read."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "savage-attacker")
@@ -644,8 +602,8 @@ async def test_feat_behavioral_just_appends(client: AsyncClient) -> None:
 
 async def test_feat_alert_appended_recompute_adds_pb(client: AsyncClient) -> None:
     """Alert handler doesn't mutate initiative directly; recompute_derived_stats does."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "alert")
@@ -655,8 +613,8 @@ async def test_feat_alert_appended_recompute_adds_pb(client: AsyncClient) -> Non
 
 
 async def test_feat_mobile_adds_speed(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "mobile")
@@ -664,8 +622,8 @@ async def test_feat_mobile_adds_speed(client: AsyncClient) -> None:
 
 
 async def test_feat_tough_adds_two_per_level(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         char.level = 4
@@ -675,8 +633,8 @@ async def test_feat_tough_adds_two_per_level(client: AsyncClient) -> None:
 
 
 async def test_feat_lucky_grants_resource(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "lucky")
@@ -684,8 +642,8 @@ async def test_feat_lucky_grants_resource(client: AsyncClient) -> None:
 
 
 async def test_feat_resilient_bumps_ability_and_adds_save(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         original_con = char.ability_scores["con"]
@@ -697,8 +655,8 @@ async def test_feat_resilient_bumps_ability_and_adds_save(client: AsyncClient) -
 
 
 async def test_feat_resilient_requires_ability(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="options.ability"):
@@ -707,8 +665,8 @@ async def test_feat_resilient_requires_ability(client: AsyncClient) -> None:
 
 async def test_feat_observant_bumps_ability(client: AsyncClient) -> None:
     """Observant handler bumps ability; PP delta is applied by recompute_derived_stats."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         before = char.ability_scores["wis"]
@@ -718,8 +676,8 @@ async def test_feat_observant_bumps_ability(client: AsyncClient) -> None:
 
 
 async def test_feat_observant_rejects_invalid_ability(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError):
@@ -727,8 +685,8 @@ async def test_feat_observant_rejects_invalid_ability(client: AsyncClient) -> No
 
 
 async def test_feat_durable_bumps_con(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         before = char.ability_scores["con"]
@@ -737,8 +695,8 @@ async def test_feat_durable_bumps_con(client: AsyncClient) -> None:
 
 
 async def test_feat_athlete_requires_str_or_dex(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "athlete", {"ability": "dex"})
@@ -746,8 +704,8 @@ async def test_feat_athlete_requires_str_or_dex(client: AsyncClient) -> None:
 
 
 async def test_feat_ability_caps_at_20(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         # Force CON to 20 first
@@ -760,8 +718,8 @@ async def test_feat_ability_caps_at_20(client: AsyncClient) -> None:
 
 async def test_tough_scaling_on_level_up(client: AsyncClient) -> None:
     """Taking Tough at L4, then leveling to L5, adds +2 more HP."""
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     cid = uuid.UUID(char_resp["id"])
 
     # Apply Tough at level 4
@@ -790,8 +748,8 @@ async def test_tough_scaling_on_level_up(client: AsyncClient) -> None:
 
 
 async def test_feat_heavily_armored_grants_armor_prof(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "heavily-armored", {"ability": "str"})
@@ -799,8 +757,8 @@ async def test_feat_heavily_armored_grants_armor_prof(client: AsyncClient) -> No
 
 
 async def test_feat_moderately_armored_grants_medium_and_shield(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "moderately-armored", {"ability": "dex"})
@@ -809,8 +767,8 @@ async def test_feat_moderately_armored_grants_medium_and_shield(client: AsyncCli
 
 
 async def test_feat_weapon_master_requires_four_weapons(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="4 weapon names"):
@@ -820,8 +778,8 @@ async def test_feat_weapon_master_requires_four_weapons(client: AsyncClient) -> 
 
 
 async def test_feat_weapon_master_adds_weapon_proficiencies(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(
@@ -834,8 +792,8 @@ async def test_feat_weapon_master_adds_weapon_proficiencies(client: AsyncClient)
 
 
 async def test_feat_martial_adept_requires_two_maneuvers(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="2 maneuver names"):
@@ -843,8 +801,8 @@ async def test_feat_martial_adept_requires_two_maneuvers(client: AsyncClient) ->
 
 
 async def test_feat_martial_adept_stores_maneuvers_in_feat_options(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "martial-adept", {"maneuvers": ["Riposte", "Trip Attack"]})
@@ -854,8 +812,8 @@ async def test_feat_martial_adept_stores_maneuvers_in_feat_options(client: Async
 
 
 async def test_feat_magic_initiate_grants_resource(client: AsyncClient) -> None:
-    camp = await _campaign(client)
-    char_resp = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(

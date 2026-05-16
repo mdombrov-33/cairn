@@ -24,58 +24,16 @@ from cairn.tools.combat import (
     stabilize_character,
     start_combat,
 )
-
-FIGHTER: dict = {
-    "name": "Ser Aldric",
-    "race": "human",
-    "character_class": "fighter",
-    "background": "soldier",
-    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
-    "skill_choices": ["Perception", "History"],
-    "ac": 16,
-    "alignment": "Lawful Good",
-    "bio": "A seasoned warrior.",
-    "personality": "Stoic and direct.",
-}
-
-
-async def _campaign(client: AsyncClient) -> dict:
-    r = await client.post(
-        "/v1/campaigns",
-        headers={"X-User-Id": "user_a"},
-        json={"name": "Test", "template_id": "tavern_v1"},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _character(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/characters",
-        headers={"X-User-Id": "user_a"},
-        json=FIGHTER,
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _session(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/sessions",
-        headers={"X-User-Id": "user_a"},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
+from tests._factories import make_campaign, make_character, make_session
 
 # roll_saving_throw
 
 
 async def test_roll_saving_throw_character_returns_expected_fields(client: AsyncClient) -> None:
     """roll_saving_throw for a character returns roll, modifier, total, dc, and success."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     result = await roll_saving_throw.ainvoke(
         {
@@ -98,9 +56,9 @@ async def test_roll_saving_throw_character_returns_expected_fields(client: Async
 
 async def test_roll_saving_throw_monster_reads_srd_data(client: AsyncClient) -> None:
     """roll_saving_throw for a monster uses SRD ability scores and returns correct fields."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     started = await start_combat.ainvoke(
         {
@@ -132,9 +90,9 @@ async def test_roll_saving_throw_monster_reads_srd_data(client: AsyncClient) -> 
 
 async def test_roll_skill_check_proficient_character_applies_bonus(client: AsyncClient) -> None:
     """Fighter with Perception proficiency gets wis_mod(0) + prof_bonus(2) = modifier 2."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     result = await roll_skill_check.ainvoke(
         {
@@ -156,9 +114,9 @@ async def test_roll_skill_check_proficient_character_applies_bonus(client: Async
 
 async def test_roll_skill_check_unknown_skill_returns_error(client: AsyncClient) -> None:
     """roll_skill_check with an unrecognized skill name returns an error dict."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     result = await roll_skill_check.ainvoke(
         {
@@ -178,9 +136,9 @@ async def test_roll_skill_check_unknown_skill_returns_error(client: AsyncClient)
 
 async def test_resolve_contest_tie_goes_to_defender(client: AsyncClient) -> None:
     """When both totals are equal, the defender wins (PHB p. 174)."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     await start_combat.ainvoke(
         {
@@ -214,9 +172,9 @@ async def test_resolve_contest_tie_goes_to_defender(client: AsyncClient) -> None
 
 async def test_apply_aoe_damage_all_fail_take_full_damage(client: AsyncClient) -> None:
     """With DC 30, all targets fail saves and each takes the full shared damage roll."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     started = await start_combat.ainvoke(
         {
@@ -248,9 +206,9 @@ async def test_apply_aoe_damage_all_fail_take_full_damage(client: AsyncClient) -
 
 async def test_apply_aoe_damage_all_save_take_half(client: AsyncClient) -> None:
     """With DC 0, all targets save and take half damage (half_on_save=True)."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     started = await start_combat.ainvoke(
         {
@@ -286,9 +244,9 @@ async def test_apply_aoe_damage_all_save_take_half(client: AsyncClient) -> None:
 
 async def test_add_combatant_before_active_increments_turn_index(client: AsyncClient) -> None:
     """Inserting a combatant before the current turn position increments turn_index."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     await start_combat.ainvoke(
@@ -323,9 +281,9 @@ async def test_add_combatant_before_active_increments_turn_index(client: AsyncCl
 
 async def test_remove_combatant_before_active_decrements_turn_index(client: AsyncClient) -> None:
     """Removing a combatant before the current turn position decrements turn_index."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     started = await start_combat.ainvoke(
@@ -358,8 +316,8 @@ async def test_remove_combatant_before_active_decrements_turn_index(client: Asyn
 
 async def test_add_exhaustion_tracks_level_in_conditions(client: AsyncClient) -> None:
     """add_exhaustion stores exhaustion-N in conditions and reports the level."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
 
     result = await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 2})
 
@@ -370,8 +328,8 @@ async def test_add_exhaustion_tracks_level_in_conditions(client: AsyncClient) ->
 
 async def test_add_exhaustion_level_6_kills_character(client: AsyncClient) -> None:
     """Reaching exhaustion 6 sets hp=0 and status=dead on the character."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
 
     await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 5})
     result = await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 1})
@@ -387,8 +345,8 @@ async def test_add_exhaustion_level_6_kills_character(client: AsyncClient) -> No
 
 async def test_remove_exhaustion_reduces_level(client: AsyncClient) -> None:
     """remove_exhaustion decrements the exhaustion-N condition by the given amount."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
 
     await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 3})
     result = await remove_exhaustion.ainvoke({"character_id": char["id"], "levels": 2})
@@ -402,9 +360,9 @@ async def test_remove_exhaustion_reduces_level(client: AsyncClient) -> None:
 
 async def test_stabilize_character_clears_death_save_counters(client: AsyncClient) -> None:
     """stabilize_character resets death_save counters for a character at 0 HP."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     await start_combat.ainvoke(
@@ -440,9 +398,9 @@ async def test_stabilize_character_clears_death_save_counters(client: AsyncClien
 
 async def test_apply_temp_hp_lower_amount_does_not_replace(client: AsyncClient) -> None:
     """Granting temp HP lower than current temp HP leaves temp HP unchanged."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     await start_combat.ainvoke(
@@ -477,9 +435,9 @@ async def test_apply_temp_hp_lower_amount_does_not_replace(client: AsyncClient) 
 
 async def test_apply_temp_hp_higher_amount_replaces(client: AsyncClient) -> None:
     """Granting temp HP higher than current temp HP replaces it."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     await start_combat.ainvoke(
@@ -514,8 +472,8 @@ async def test_apply_temp_hp_higher_amount_replaces(client: AsyncClient) -> None
 
 async def test_award_xp_accumulates_correctly(client: AsyncClient) -> None:
     """award_xp accumulates across calls and returns updated xp and level."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
 
     r1 = await award_xp.ainvoke({"character_id": char["id"], "amount": 100})
     assert r1["xp"] == 100
@@ -530,9 +488,9 @@ async def test_award_xp_accumulates_correctly(client: AsyncClient) -> None:
 
 async def test_roll_initiative_character_returns_expected_fields(client: AsyncClient) -> None:
     """roll_initiative for a character returns rolls, modifier, and initiative total."""
-    camp = await _campaign(client)
-    char = await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    char = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     result = await roll_initiative.ainvoke(
         {

@@ -1,5 +1,6 @@
 import json
 import math
+from collections.abc import Sequence
 from typing import Any, Literal, Protocol
 
 import structlog
@@ -110,7 +111,7 @@ def build_character_context(char: CharacterLike) -> str:
     return "\n".join(lines)
 
 
-def build_party_manifest(party: list[CharacterLike], active_id: object) -> str:
+def build_party_manifest(party: Sequence[CharacterLike], active_id: object) -> str:
     """Build a thin manifest of party members other than the active character."""
     others = [c for c in party if str(c.id) != str(active_id)]
     if not others:

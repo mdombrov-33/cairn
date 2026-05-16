@@ -7,67 +7,7 @@ from httpx import AsyncClient
 from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
 from cairn.tools.combat import advance_turn, apply_damage, apply_effect, start_combat
-
-FIGHTER: dict = {
-    "name": "Ser Aldric",
-    "race": "human",
-    "character_class": "fighter",
-    "background": "soldier",
-    "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
-    "skill_choices": ["Perception", "History"],
-    "ac": 16,
-    "alignment": "Lawful Good",
-    "bio": "A seasoned warrior.",
-    "personality": "Stoic and direct.",
-}
-
-
-async def _campaign(client: AsyncClient) -> dict:
-    r = await client.post(
-        "/v1/campaigns",
-        headers={"X-User-Id": "user_a"},
-        json={"name": "Test", "template_id": "tavern_v1"},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _character(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/characters",
-        headers={"X-User-Id": "user_a"},
-        json=FIGHTER,
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-async def _session(client: AsyncClient, campaign_id: str) -> dict:
-    r = await client.post(
-        f"/v1/campaigns/{campaign_id}/sessions",
-        headers={"X-User-Id": "user_a"},
-    )
-    assert r.status_code == 201, r.text
-    return r.json()
-
-
-def _parse_sse(text: str) -> list[dict]:
-    events = []
-    for block in text.strip().split("\n\n"):
-        lines = block.strip().splitlines()
-        event, data = None, None
-        for line in lines:
-            if line.startswith("event:"):
-                event = line[len("event:") :].strip()
-            elif line.startswith("data:"):
-                raw = line[len("data:") :].strip()
-                try:
-                    data = json.loads(raw)
-                except json.JSONDecodeError:
-                    data = raw
-        if event:
-            events.append({"event": event, "data": data})
-    return events
+from tests._factories import make_campaign, make_character, make_session, parse_sse
 
 
 def _content_response(content: str) -> MagicMock:
@@ -110,9 +50,9 @@ async def _fake_stream():
 
 async def test_start_combat_initialises_state(client: AsyncClient) -> None:
     """start_combat tool creates expected state: effects list, team fields, sorted initiative."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     result = await start_combat.ainvoke(
         {
@@ -143,9 +83,9 @@ async def test_start_combat_initialises_state(client: AsyncClient) -> None:
 
 async def test_apply_damage_reduces_hp(client: AsyncClient) -> None:
     """apply_damage reduces monster HP tracked in combat_state."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
 
     started = await start_combat.ainvoke(
         {
@@ -171,9 +111,9 @@ async def test_apply_damage_reduces_hp(client: AsyncClient) -> None:
 
 async def test_advance_turn_ticks_and_expires_effects(client: AsyncClient) -> None:
     """advance_turn at end of goblin's turn triggers and expires a 1-round effect."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     started = await start_combat.ainvoke(
@@ -210,9 +150,9 @@ async def test_advance_turn_ticks_and_expires_effects(client: AsyncClient) -> No
 
 async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
     """Submit a combat turn: verify SSE turn_start, token, and turn_end are emitted."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     await start_combat.ainvoke(
@@ -242,22 +182,22 @@ async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
         )
 
     assert r.status_code == 201
-    events = _parse_sse(r.text)
-    event_types = [e["event"] for e in events]
+    events = parse_sse(r.text)
+    event_types = [e["type"] for e in events]
 
     assert "turn_start" in event_types
     assert "turn_end" in event_types
-    assert any(e["event"] == "token" for e in events)
+    assert any(e["type"] == "token" for e in events)
 
-    turn_start = next(e for e in events if e["event"] == "turn_start")
+    turn_start = next(e for e in events if e["type"] == "turn_start")
     assert turn_start["data"]["intent"] == "combat_action"
 
 
 async def test_ally_npc_enrolled_with_players_team(client: AsyncClient) -> None:
     """An NPC enrolled with team='players' gets the correct team in combat state."""
-    camp = await _campaign(client)
-    await _character(client, camp["id"])
-    sess = await _session(client, camp["id"])
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
     session_id = sess["id"]
 
     async with db_client.get_session() as db:
