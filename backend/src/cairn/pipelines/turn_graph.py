@@ -14,6 +14,7 @@ from cairn.agents import (
 from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
+from cairn.db.queries import party_members as party_queries
 from cairn.pipelines.checkpointer import get_checkpointer
 
 log = structlog.get_logger()
@@ -36,17 +37,45 @@ async def _route_intent(state: TurnState) -> dict[str, Any]:
 
 
 async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
+    session_id = uuid.UUID(state["session_id"])
 
-    check = await rules_lawyer.run(state["player_input"])
-    return {
-        "check": {
-            "skill": check.skill,
-            "dc": check.dc,
-            "modifier": check.modifier,
-            "roll_type": check.roll_type,
-            "status": "pending",
-        }
+    async with db_client.get_session() as db:
+        party = await party_queries.get_party(db, session_id)
+
+    # Active character: prefer the PC (non-companion); fall back to first available.
+    active = next((c for c in party if not c.is_companion), party[0] if party else None)
+
+    character_context = rules_lawyer.build_character_context(active) if active else ""
+    party_manifest = rules_lawyer.build_party_manifest(party, active.id) if active else ""
+
+    check = await rules_lawyer.run(
+        state["player_input"],
+        character_context=character_context,
+        party_manifest=party_manifest,
+    )
+
+    check_dict: dict[str, Any] = {
+        "skill": check.skill,
+        "dc": check.dc,
+        "modifier": check.modifier,
+        "roll_type": check.roll_type,
+        "status": "pending",
     }
+    if check.helper:
+        party_ids = {str(c.id) for c in party}
+        if check.helper.character_id in party_ids:
+            check_dict["helper"] = {
+                "character_id": check.helper.character_id,
+                "name": check.helper.name,
+            }
+        else:
+            log.warning(
+                "rules_lawyer_invalid_helper",
+                helper_id=check.helper.character_id,
+                party_ids=list(party_ids),
+            )
+
+    return {"check": check_dict}
 
 
 async def _resolve_npc_dialogue(state: TurnState) -> dict[str, Any]:

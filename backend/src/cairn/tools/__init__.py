@@ -31,6 +31,7 @@ from cairn.tools.game_state import (
     get_combat_state,
     get_npc,
     get_party,
+    loot_item,
 )
 from cairn.tools.resources import (
     consume_spell_slot,
@@ -83,6 +84,7 @@ ALL_TOOLS: list[BaseTool] = [
     get_npc,
     get_party,
     get_combat_state,
+    loot_item,
     # Combat mutations
     start_combat,
     end_combat,
@@ -148,6 +150,7 @@ COMBAT_TOOLS: list[BaseTool] = [
     add_exhaustion,
     remove_exhaustion,
     end_combat,
+    loot_item,
     apply_effect,
     remove_effect,
     consume_spell_slot,
@@ -163,4 +166,4 @@ COMBAT_TOOLS: list[BaseTool] = [
     spend_movement,
 ]
 
-__all__ = ["ALL_TOOLS", "COMBAT_TOOLS", "fetch_combat_context"]
+__all__ = ["ALL_TOOLS", "COMBAT_TOOLS", "fetch_combat_context", "loot_item"]

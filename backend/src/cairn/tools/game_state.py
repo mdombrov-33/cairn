@@ -12,6 +12,7 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.services import loot as loot_service
 
 
 def character_to_dict(c: Character) -> dict:
@@ -66,6 +67,25 @@ async def get_combat_state(
         if not session.combat_active:
             return {"combat_active": False}
         return {"combat_active": True, "combat_state": session.combat_state}
+
+
+@tool
+async def loot_item(
+    session_id: Annotated[str, "The session UUID."],
+    npc_id: Annotated[str, "The NPC's UUID to loot from."],
+    item_name: Annotated[str, "Name of the item to transfer."],
+    character_id: Annotated[str, "The character UUID who receives the item."],
+) -> dict:
+    """Move an item from an NPC's inventory into a character's inventory. Item is not auto-equipped."""  # noqa: E501
+    async with db_client.get_session() as db:
+        result = await loot_service.loot_item(
+            db,
+            session_id=uuid.UUID(session_id),
+            npc_id=uuid.UUID(npc_id),
+            item_name=item_name,
+            character_id=uuid.UUID(character_id),
+        )
+    return result
 
 
 async def fetch_combat_context(session_id: str) -> tuple[dict, list[dict]]:

@@ -71,15 +71,15 @@ async def submit(
                 await service.save_check_setup(
                     db, turn_id=turn.id, check=check, setup_prose=setup_prose
                 )
-                yield sse(
-                    "check_required",
-                    {
-                        "skill": check["skill"],
-                        "dc": check["dc"],
-                        "modifier": check["modifier"],
-                        "roll_type": check["roll_type"],
-                    },
-                )
+                check_payload: dict = {
+                    "skill": check["skill"],
+                    "dc": check["dc"],
+                    "modifier": check["modifier"],
+                    "roll_type": check["roll_type"],
+                }
+                if check.get("helper"):
+                    check_payload["helper"] = check["helper"]
+                yield sse("check_required", check_payload)
 
             elif intent == "npc_dialogue":
                 npc_context = state["npc_context"] or ""
@@ -114,7 +114,10 @@ async def resolve(
         total = body.roll + check["modifier"]
         success = total >= check["dc"]
 
-        yield sse("roll_result", {"roll": body.roll, "total": total, "success": success})
+        roll_payload: dict = {"roll": body.roll, "total": total, "success": success}
+        if check.get("helper"):
+            roll_payload["helper"] = check["helper"]
+        yield sse("roll_result", roll_payload)
 
         outcome_context = (
             f"[Skill Check] {check['skill'].title()} DC {check['dc']}: "

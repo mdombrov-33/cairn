@@ -5,7 +5,7 @@ char.ac so reads are cheap.
 """
 
 import math
-from typing import Any
+from typing import Any, Protocol
 
 import structlog
 
@@ -14,11 +14,29 @@ from cairn.srd import get_armor
 log = structlog.get_logger()
 
 
+class HasAC(Protocol):
+    """Structural type for `derive_ac`. Satisfied by Character, NPC, and the transient
+    _AcInput dataclass used during character creation. Properties (read-only) are used
+    so covariance lets Character's stricter `class_: str` satisfy `str | None` — a
+    plain `class_: str | None` attribute would be invariant and reject it."""
+
+    @property
+    def id(self) -> Any: ...
+    @property
+    def class_(self) -> str | None: ...
+    @property
+    def ability_scores(self) -> dict[str, Any]: ...
+    @property
+    def feats(self) -> list[Any]: ...
+    @property
+    def inventory(self) -> list[Any]: ...
+
+
 def mod(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
-def _equipped_armor_and_shield(char: Any) -> tuple[dict | None, dict | None]:
+def _equipped_armor_and_shield(char: HasAC) -> tuple[dict | None, dict | None]:
     equipped_armor: dict | None = None
     equipped_shield: dict | None = None
     for item in char.inventory or []:
@@ -37,7 +55,7 @@ def _equipped_armor_and_shield(char: Any) -> tuple[dict | None, dict | None]:
     return equipped_armor, equipped_shield
 
 
-def _unarmored_base(char: Any, dex_mod: int) -> int:
+def _unarmored_base(char: HasAC, dex_mod: int) -> int:
     cls = (char.class_ or "").lower()
     if cls == "barbarian":
         return 10 + dex_mod + mod(char.ability_scores.get("con", 10))
@@ -46,14 +64,14 @@ def _unarmored_base(char: Any, dex_mod: int) -> int:
     return 10 + dex_mod
 
 
-def _feat_ac_bonus(char: Any, equipped_armor: dict | None) -> int:
+def _feat_ac_bonus(char: HasAC, equipped_armor: dict | None) -> int:
     feat_indices = {f["index"] for f in (char.feats or [])}
     if "defense" in feat_indices and equipped_armor is not None:
         return 1
     return 0
 
 
-def derive_ac(char: Any) -> int:
+def derive_ac(char: HasAC) -> int:
     """Compute and return AC from equipped items + ability scores + feats."""
     dex_mod = mod(char.ability_scores.get("dex", 10))
     equipped_armor, equipped_shield = _equipped_armor_and_shield(char)
