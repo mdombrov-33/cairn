@@ -11,7 +11,7 @@ router = APIRouter(prefix="/v1/sessions", tags=["combat"])
 
 @router.post(
     "/{session_id}/combat/start", response_model=CombatResponse, status_code=status.HTTP_201_CREATED
-)  # noqa: E501
+)
 async def start(
     session_id: uuid.UUID,
     body: CombatStartRequest,
@@ -22,7 +22,7 @@ async def start(
     combat_state = await service.state.start(
         db, session_id=session_id, owner_id=user_id, enemies=enemies
     )
-    return CombatResponse(combat_active=True, combat_state=combat_state)
+    return CombatResponse(combat_active=True, combat_state=dict(combat_state))
 
 
 @router.post("/{session_id}/combat/end", response_model=CombatResponse)

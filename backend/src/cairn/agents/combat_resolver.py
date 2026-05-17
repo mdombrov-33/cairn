@@ -37,7 +37,7 @@ async def run(
         current = combatants[combat_state.get("turn_index", 0)]
         if not current.get("is_alive", True):
             break
-        if current.get("type") == "character" and not current.get("ai_controlled"):
+        if current["type"] == "character" and not current.get("ai_controlled"):
             break  # player's own character — stop and wait for input
         role: Literal["ally", "enemy"] = "ally" if current.get("team") == "players" else "enemy"
         summary = await combat_ai.run(session_id, role=role)

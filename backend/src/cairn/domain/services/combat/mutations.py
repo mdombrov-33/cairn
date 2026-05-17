@@ -1,4 +1,5 @@
 import uuid
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,12 +7,18 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.services.combat.emitter import emit
-from cairn.domain.services.combat.helpers import exhaustion_level, find_combatant
+from cairn.domain.services.combat.helpers import (
+    empty_combat_state,
+    exhaustion_level,
+    find_combatant,
+    find_monster,
+)
 from cairn.domain.services.combat.rolls import (
     parse_and_roll,
     roll_d20,
     save_modifier,
 )
+from cairn.types import CombatEffect
 
 
 async def apply_damage(
@@ -60,8 +67,8 @@ async def apply_damage(
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
-        combatant = find_combatant(state, combatant_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, combatant_id)
         if combatant is None:
             return {"error": f"Monster '{combatant_id}' not found in combat state."}
         effective = max(0, amount - combatant.get("temp_hp", 0))
@@ -119,8 +126,8 @@ async def apply_healing(
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
-        combatant = find_combatant(state, combatant_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, combatant_id)
         if combatant is None:
             return {"error": f"Monster '{combatant_id}' not found in combat state."}
         combatant["hp"] = min(combatant["max_hp"], combatant["hp"] + amount)
@@ -149,7 +156,7 @@ async def apply_condition(
     condition: str,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     combatant = find_combatant(state, combatant_id)
     if combatant is None:
         return {"error": f"Combatant '{combatant_id}' not found in combat state."}
@@ -173,7 +180,7 @@ async def remove_condition(
     condition: str,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     combatant = find_combatant(state, combatant_id)
     if combatant is None:
         return {"error": f"Combatant '{combatant_id}' not found in combat state."}
@@ -204,7 +211,7 @@ async def apply_effect(
     source_id: str = "",
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     effects = state.setdefault("effects", [])
     effect: dict = {
         "id": str(uuid.uuid4()),
@@ -225,7 +232,7 @@ async def apply_effect(
         effect["mechanical_notes"] = mechanical_notes
     if source_id:
         effect["source_id"] = source_id
-    effects.append(effect)
+    effects.append(cast(CombatEffect, effect))
     await session_queries.update_combat_state(
         db, session_id, combat_state=state, combat_active=session.combat_active
     )
@@ -249,7 +256,7 @@ async def remove_effect(
     effect_id: str,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     effects = state.get("effects", [])
     removed = next((e for e in effects if e["id"] == effect_id), None)
     if removed is None:
@@ -431,8 +438,8 @@ async def apply_temp_hp(
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
-        combatant = find_combatant(state, combatant_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, combatant_id)
         if combatant is None:
             return {"error": f"Monster '{combatant_id}' not found in combat state."}
         if amount > combatant.get("temp_hp", 0):

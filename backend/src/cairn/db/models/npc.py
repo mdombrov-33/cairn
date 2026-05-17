@@ -6,6 +6,14 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
+from cairn.types import (
+    AbilityScores,
+    Currency,
+    FeatEntry,
+    FeatureEntry,
+    InventoryItem,
+    SpellSlots,
+)
 
 
 class NPC(Base):
@@ -27,7 +35,7 @@ class NPC(Base):
     level: Mapped[int] = mapped_column(default=1)
     portrait_url: Mapped[str | None]
 
-    # Narrative / voice
+    # Narrative / voice — replaced by NarrativeProfile in Slice 7.
     bio: Mapped[str]
     personality: Mapped[str]
     voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
@@ -46,29 +54,29 @@ class NPC(Base):
     # NPC-specific combat
     cr: Mapped[float] = mapped_column(default=0.0)
     xp_value: Mapped[int] = mapped_column(default=0)
-    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    conditions: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # Spellcasting
     spellcasting_ability: Mapped[str | None]
-    spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    spell_slots: Mapped[SpellSlots | None] = mapped_column(JSONB)
+    spells_known: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     concentration: Mapped[str | None]
 
-    # JSONB — matches Character field names exactly
-    ability_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
-    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(
+    # JSONB — typed shapes live in cairn/types.py
+    ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
+    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(
         JSONB, default=list, server_default="[]"
     )
-    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    tool_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    armor_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    weapon_proficiencies: Mapped[list[Any]] = mapped_column(
+    skill_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    tool_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    armor_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    weapon_proficiencies: Mapped[list[str]] = mapped_column(
         JSONB, default=list, server_default="[]"
-    )  # noqa: E501
-    features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    currency: Mapped[dict[str, Any]] = mapped_column(
+    )
+    features: Mapped[list[FeatureEntry]] = mapped_column(JSONB, default=list, server_default="[]")
+    feats: Mapped[list[FeatEntry]] = mapped_column(JSONB, default=list, server_default="[]")
+    inventory: Mapped[list[InventoryItem]] = mapped_column(JSONB, default=list, server_default="[]")
+    currency: Mapped[Currency] = mapped_column(
         JSONB,
         default=lambda: {"gp": 0, "sp": 0, "cp": 0},
         server_default='{"gp": 0, "sp": 0, "cp": 0}',

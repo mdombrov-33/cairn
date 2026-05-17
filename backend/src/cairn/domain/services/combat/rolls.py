@@ -10,7 +10,14 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.services.combat.emitter import emit
-from cairn.domain.services.combat.helpers import ABILITY_LONG, SKILL_ABILITY, find_combatant
+from cairn.domain.services.combat.helpers import (
+    ABILITY_LONG,
+    SKILL_ABILITY,
+    empty_combat_state,
+    find_combatant,
+    find_monster,
+    get_ability_score,
+)
 
 
 def _roll_die(sides: int) -> int:
@@ -138,22 +145,22 @@ async def save_modifier(
     """Return (name, save_modifier) for a combatant. Shared by roll_saving_throw and apply_aoe_damage."""  # noqa: E501
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(combatant_id))
-        modifier = mod(char.ability_scores.get(ability, 10))
+        modifier = mod(get_ability_score(char.ability_scores, ability))
         if f"saving-throw-{ability}" in (char.saving_throw_proficiencies or []):
             modifier += char.proficiency_bonus
         return char.name, modifier
 
     if combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
-        modifier = mod(npc.ability_scores.get(ability, 10))
+        modifier = mod(get_ability_score(npc.ability_scores, ability))
         if f"saving-throw-{ability}" in (npc.saving_throw_proficiencies or []):
             modifier += npc.proficiency_bonus
         return npc.name, modifier
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
-        combatant = find_combatant(state, combatant_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, combatant_id)
         if combatant is None:
             raise ValueError(f"Monster '{combatant_id}' not found in combat state.")
         monster_data = rules.get_monster(combatant["srd_index"])
@@ -191,24 +198,22 @@ async def skill_modifier(
 
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(combatant_id))
-        score = char.ability_scores.get(ability, 10)
-        modifier = mod(score)
+        modifier = mod(get_ability_score(char.ability_scores, ability))
         if any(s.lower() == skill_key for s in (char.skill_proficiencies or [])):
             modifier += char.proficiency_bonus
         return char.name, modifier
 
     if combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
-        score = npc.ability_scores.get(ability, 10)
-        modifier = mod(score)
+        modifier = mod(get_ability_score(npc.ability_scores, ability))
         if any(s.lower() == skill_key for s in (npc.skill_proficiencies or [])):
             modifier += npc.proficiency_bonus
         return npc.name, modifier
 
     if combatant_type == "monster":
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
-        combatant = find_combatant(state, combatant_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, combatant_id)
         if combatant is None:
             raise ValueError(f"Monster '{combatant_id}' not found in combat state.")
         monster_data = rules.get_monster(combatant["srd_index"])
@@ -292,7 +297,7 @@ async def roll_initiative(
     elif combatant_type == "monster":
         # Try existing combatant in state first, then fall back to SRD lookup by name.
         session = await session_queries.get_session(db, session_id)
-        state = session.combat_state or {}
+        state = session.combat_state or empty_combat_state()
         combatant = find_combatant(state, combatant_id)
         if combatant is not None:
             modifier = combatant["initiative_modifier"]

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.turn import Turn
 from cairn.domain.exceptions import NotFoundError
+from cairn.types import CheckData, TurnEvent
 
 
 async def create_turn(
@@ -49,7 +50,7 @@ async def update_turn_response(
     return turn
 
 
-async def append_event(session: AsyncSession, turn_id: uuid.UUID, event: dict) -> None:
+async def append_event(session: AsyncSession, turn_id: uuid.UUID, event: TurnEvent) -> None:
     turn = await get_turn(session, turn_id)
     turn.events = [*turn.events, event]
 
@@ -58,7 +59,7 @@ async def update_turn_check(
     session: AsyncSession,
     turn_id: uuid.UUID,
     *,
-    check_data: dict,
+    check_data: CheckData,
 ) -> Turn:
     turn = await get_turn(session, turn_id)
     turn.check_data = check_data

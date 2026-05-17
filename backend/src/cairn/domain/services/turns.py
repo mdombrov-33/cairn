@@ -14,6 +14,7 @@ from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
+from cairn.types import CheckData
 
 log = structlog.get_logger()
 
@@ -131,36 +132,32 @@ async def save_check_setup(
     db: AsyncSession,
     *,
     turn_id: uuid.UUID,
-    check: dict,
+    check: CheckData,
     setup_prose: str,
 ) -> None:
-    await turn_queries.update_turn_check(
-        db, turn_id, check_data={**check, "setup_prose": setup_prose}
-    )  # noqa: E501
+    updated: CheckData = {**check, "setup_prose": setup_prose}
+    await turn_queries.update_turn_check(db, turn_id, check_data=updated)
 
 
 async def save_resolved_check(
     db: AsyncSession,
     *,
     turn_id: uuid.UUID,
-    check: dict,
+    check: CheckData,
     roll: int,
     total: int,
     success: bool,
     dm_response: str,
 ) -> None:
     await turn_queries.update_turn_response(db, turn_id, dm_response=dm_response)
-    await turn_queries.update_turn_check(
-        db,
-        turn_id,
-        check_data={
-            **check,
-            "status": "resolved",
-            "roll": roll,
-            "total": total,
-            "success": success,
-        },
-    )
+    updated: CheckData = {
+        **check,
+        "status": "resolved",
+        "roll": roll,
+        "total": total,
+        "success": success,
+    }
+    await turn_queries.update_turn_check(db, turn_id, check_data=updated)
 
 
 async def prepare_resolve(
@@ -169,7 +166,7 @@ async def prepare_resolve(
     session_id: uuid.UUID,
     turn_id: uuid.UUID,
     owner_id: str,
-) -> tuple[Turn, dict]:
+) -> tuple[Turn, CheckData]:
     """Verify ownership and that the turn has a pending check. Returns (turn, check_data)."""
     db_session = await session_queries.get_session(db, session_id)
     await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)

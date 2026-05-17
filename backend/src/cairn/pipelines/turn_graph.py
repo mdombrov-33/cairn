@@ -16,6 +16,7 @@ from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import party_members as party_queries
 from cairn.pipelines.checkpointer import get_checkpointer
+from cairn.types import CheckData, HelperRef
 
 log = structlog.get_logger()
 
@@ -26,7 +27,7 @@ class TurnState(TypedDict):
     player_input: str
     intent: str | None
     npc_name: str | None
-    check: dict | None  # set by resolve_skill_check; consumed by route layer
+    check: CheckData | None  # set by resolve_skill_check; consumed by route layer
     npc_context: str | None  # set by resolve_npc_dialogue; consumed by route layer
 
 
@@ -45,8 +46,11 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
     # Active character: prefer the PC (non-companion); fall back to first available.
     active = next((c for c in party if not c.is_companion), party[0] if party else None)
 
-    character_context = rules_lawyer.build_character_context(active) if active else ""
-    party_manifest = rules_lawyer.build_party_manifest(party, active.id) if active else ""
+    party_views = [rules_lawyer.CharacterView.from_character(c) for c in party]
+    active_view = rules_lawyer.CharacterView.from_character(active) if active else None
+
+    character_context = rules_lawyer.build_character_context(active_view) if active_view else ""
+    party_manifest = rules_lawyer.build_party_manifest(party_views, active.id) if active else ""
 
     check = await rules_lawyer.run(
         state["player_input"],
@@ -54,7 +58,7 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
         party_manifest=party_manifest,
     )
 
-    check_dict: dict[str, Any] = {
+    check_dict: CheckData = {
         "skill": check.skill,
         "dc": check.dc,
         "modifier": check.modifier,
@@ -64,10 +68,11 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
     if check.helper:
         party_ids = {str(c.id) for c in party}
         if check.helper.character_id in party_ids:
-            check_dict["helper"] = {
+            helper: HelperRef = {
                 "character_id": check.helper.character_id,
                 "name": check.helper.name,
             }
+            check_dict["helper"] = helper
         else:
             log.warning(
                 "rules_lawyer_invalid_helper",

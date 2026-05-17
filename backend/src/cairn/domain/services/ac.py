@@ -4,39 +4,56 @@ any of those change (equip/unequip, ASI, feat grant). The result is written to
 char.ac so reads are cheap.
 """
 
+from __future__ import annotations
+
 import math
-from typing import Any, Protocol
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import structlog
 
 from cairn.srd import get_armor
+from cairn.types import AbilityScores, FeatEntry, InventoryItem
+
+if TYPE_CHECKING:
+    from cairn.db.models.character import Character
+    from cairn.db.models.npc import NPC
 
 log = structlog.get_logger()
 
 
-class HasAC(Protocol):
-    """Structural type for `derive_ac`. Satisfied by Character, NPC, and the transient
-    _AcInput dataclass used during character creation. Properties (read-only) are used
-    so covariance lets Character's stricter `class_: str` satisfy `str | None` — a
-    plain `class_: str | None` attribute would be invariant and reject it."""
+@dataclass(frozen=True)
+class AcInput:
+    """The fields `derive_ac` reads, as a plain projection of an ORM row.
 
-    @property
-    def id(self) -> Any: ...
-    @property
-    def class_(self) -> str | None: ...
-    @property
-    def ability_scores(self) -> dict[str, Any]: ...
-    @property
-    def feats(self) -> list[Any]: ...
-    @property
-    def inventory(self) -> list[Any]: ...
+    SQLAlchemy `Mapped[...]` attributes don't structurally satisfy a Protocol
+    under Pyright (it compares the raw `Mapped[T]`, not the descriptor result),
+    so callers project the row into this rather than passing it directly. The
+    `TYPE_CHECKING`-only import keeps `ac.py` free of any runtime ORM import.
+    """
+
+    id: object
+    class_: str | None
+    ability_scores: AbilityScores
+    inventory: list[InventoryItem]
+    feats: list[FeatEntry] = field(default_factory=list)
+
+    @classmethod
+    def from_row(cls, row: Character | NPC) -> AcInput:
+        return cls(
+            id=row.id,
+            class_=row.class_,
+            ability_scores=row.ability_scores,
+            inventory=row.inventory,
+            feats=row.feats,
+        )
 
 
 def mod(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
-def _equipped_armor_and_shield(char: HasAC) -> tuple[dict | None, dict | None]:
+def _equipped_armor_and_shield(char: AcInput) -> tuple[dict | None, dict | None]:
     equipped_armor: dict | None = None
     equipped_shield: dict | None = None
     for item in char.inventory or []:
@@ -55,7 +72,7 @@ def _equipped_armor_and_shield(char: HasAC) -> tuple[dict | None, dict | None]:
     return equipped_armor, equipped_shield
 
 
-def _unarmored_base(char: HasAC, dex_mod: int) -> int:
+def _unarmored_base(char: AcInput, dex_mod: int) -> int:
     cls = (char.class_ or "").lower()
     if cls == "barbarian":
         return 10 + dex_mod + mod(char.ability_scores.get("con", 10))
@@ -64,14 +81,14 @@ def _unarmored_base(char: HasAC, dex_mod: int) -> int:
     return 10 + dex_mod
 
 
-def _feat_ac_bonus(char: HasAC, equipped_armor: dict | None) -> int:
+def _feat_ac_bonus(char: AcInput, equipped_armor: dict | None) -> int:
     feat_indices = {f["index"] for f in (char.feats or [])}
     if "defense" in feat_indices and equipped_armor is not None:
         return 1
     return 0
 
 
-def derive_ac(char: HasAC) -> int:
+def derive_ac(char: AcInput) -> int:
     """Compute and return AC from equipped items + ability scores + feats."""
     dex_mod = mod(char.ability_scores.get("dex", 10))
     equipped_armor, equipped_shield = _equipped_armor_and_shield(char)

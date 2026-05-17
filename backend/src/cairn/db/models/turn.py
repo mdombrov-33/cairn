@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
+from cairn.types import CheckData, TurnEvent
 
 
 class Turn(Base):
@@ -17,8 +18,9 @@ class Turn(Base):
     idx: Mapped[int]
     player_input: Mapped[str]
     dm_response: Mapped[str | None]
-    check_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    check_data: Mapped[CheckData | None] = mapped_column(JSONB, nullable=True)
+    # dice_rolls is reserved but currently unwritten by any service — leave loose.
     dice_rolls: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
-    events: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+    events: Mapped[list[TurnEvent]] = mapped_column(JSONB, default=list)
     checkpoint_id: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

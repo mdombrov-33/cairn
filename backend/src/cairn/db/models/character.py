@@ -6,6 +6,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
+from cairn.types import (
+    AbilityScores,
+    Currency,
+    FeatEntry,
+    FeatureEntry,
+    InventoryItem,
+    Resource,
+    SpellSlots,
+)
 
 
 class Character(Base):
@@ -39,7 +48,7 @@ class Character(Base):
     death_save_failures: Mapped[int] = mapped_column(default=0)
 
     cr: Mapped[float] = mapped_column(default=0.0)
-    conditions: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
+    conditions: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # derived stats - stored for fast reads, recalculated on level-up
     proficiency_bonus: Mapped[int] = mapped_column(default=2)
@@ -50,7 +59,7 @@ class Character(Base):
     is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")
     status: Mapped[str] = mapped_column(default="active", server_default="active")
 
-    # narrative voice — used by ally_ai to play this character
+    # narrative voice — replaced by NarrativeProfile in Slice 7; stays loose for now.
     bio: Mapped[str | None]
     personality: Mapped[str | None]
     voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
@@ -60,26 +69,26 @@ class Character(Base):
     concentration: Mapped[str | None]  # name of currently concentrated spell, if any
 
     # class resources with limited uses (Action Surge, Ki, Rage, Superiority Dice, etc.)
-    # shape: {"action_surge": {"current": 1, "max": 1, "resets_on": "short_rest"}, ...}
-    resources: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    # Keyed by resource name → Resource shape.
+    resources: Mapped[dict[str, Resource]] = mapped_column(JSONB, default=dict, server_default="{}")
 
-    # JSONB - semi-structured data, always read as a unit
-    ability_scores: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
-    spell_slots: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    spells_known: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    saving_throw_proficiencies: Mapped[list[Any]] = mapped_column(
+    # JSONB — typed shapes live in cairn/types.py
+    ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
+    spell_slots: Mapped[SpellSlots | None] = mapped_column(JSONB)
+    spells_known: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(
         JSONB, default=list, server_default="[]"
     )
-    skill_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    tool_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    armor_proficiencies: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    weapon_proficiencies: Mapped[list[Any]] = mapped_column(
+    skill_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    tool_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    armor_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    weapon_proficiencies: Mapped[list[str]] = mapped_column(
         JSONB, default=list, server_default="[]"
-    )  # noqa: E501
-    features: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    feats: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    inventory: Mapped[list[Any]] = mapped_column(JSONB, default=list, server_default="[]")
-    currency: Mapped[dict[str, Any]] = mapped_column(
+    )
+    features: Mapped[list[FeatureEntry]] = mapped_column(JSONB, default=list, server_default="[]")
+    feats: Mapped[list[FeatEntry]] = mapped_column(JSONB, default=list, server_default="[]")
+    inventory: Mapped[list[InventoryItem]] = mapped_column(JSONB, default=list, server_default="[]")
+    currency: Mapped[Currency] = mapped_column(
         JSONB,
         default=lambda: {"gp": 0, "sp": 0, "cp": 0},
         server_default='{"gp": 0, "sp": 0, "cp": 0}',

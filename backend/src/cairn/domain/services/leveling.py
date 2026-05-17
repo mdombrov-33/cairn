@@ -1,6 +1,7 @@
 import math
 import uuid
 from dataclasses import dataclass, field
+from typing import cast
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,8 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, ValidationError
 from cairn.domain.services import feat_effects
-from cairn.domain.services.ac import derive_ac
+from cairn.domain.services.ac import AcInput, derive_ac
+from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.srd import (
     get_class_levels,
     get_feat,
@@ -18,6 +20,7 @@ from cairn.srd import (
     list_all_feats,
     list_subclasses_for_class,
 )
+from cairn.types import AbilityKey, AbilityScores, FeatureEntry
 
 log = structlog.get_logger()
 
@@ -171,7 +174,7 @@ def recompute_derived_stats(char: Character) -> None:
         10 + wis_mod + (2 if has_perception else 0) + (5 if "observant" in feat_indices else 0)
     )
 
-    char.ac = derive_ac(char)
+    char.ac = derive_ac(AcInput.from_row(char))
 
 
 # Preview
@@ -372,7 +375,7 @@ async def apply_level_up(
         char.spells_known = list(char.spells_known) + list(choices.new_spells)
 
     # 6. New features — append for visibility (LLM reads this list)
-    new_features = [
+    new_features: list[FeatureEntry] = [
         {"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])
     ]
     char.features = list(char.features) + new_features
@@ -421,12 +424,12 @@ def _apply_asi(char: Character, asi: dict[str, int]) -> None:
     if sum(asi.values()) != 2:
         raise ValidationError(f"asi must total 2 points, got {sum(asi.values())}")
 
-    new_scores = dict(char.ability_scores)
+    new_scores: AbilityScores = {**char.ability_scores}
     for k, v in asi.items():
-        new_score = new_scores.get(k, 10) + v
+        new_score = get_ability_score(new_scores, k) + v
         if new_score > 20:
             raise ValidationError(f"{k} cannot exceed 20")
-        new_scores[k] = new_score
+        new_scores[cast(AbilityKey, k)] = new_score
     char.ability_scores = new_scores
 
 

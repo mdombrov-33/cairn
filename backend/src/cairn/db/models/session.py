@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
+from cairn.types import CombatState
 
 
 class Session(Base):
@@ -23,4 +23,4 @@ class Session(Base):
 
     # Combat
     combat_active: Mapped[bool] = mapped_column(default=False)
-    combat_state: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    combat_state: Mapped[CombatState | None] = mapped_column(JSONB)

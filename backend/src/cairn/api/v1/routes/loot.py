@@ -28,4 +28,4 @@ async def loot(
         item_name=body.item_name,
         character_id=body.character_id,
     )
-    return LootResponse(item=item)
+    return LootResponse(item=dict(item))

@@ -8,12 +8,14 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, ValidationError
 from cairn.domain.services import feat_effects, leveling
+from cairn.domain.services.combat.helpers import empty_combat_state
 from cairn.domain.services.leveling import (
     LevelUpChoices,
     build_level_up_preview,
     initialize_resources,
     level_for_xp,
 )
+from cairn.types import AbilityScores
 from tests._factories import make_campaign, make_character, make_session
 
 # Class presets — pass as `**WIZARD` to override the default fighter
@@ -386,7 +388,7 @@ async def test_apply_level_up_blocks_during_combat(client: AsyncClient) -> None:
         char = await character_queries.get_character(db, cid)
         char.xp = 300
         await session_queries.update_combat_state(
-            db, uuid.UUID(sess["id"]), combat_state={"round": 1}, combat_active=True
+            db, uuid.UUID(sess["id"]), combat_state=empty_combat_state(), combat_active=True
         )
         await db.commit()
 
@@ -709,7 +711,7 @@ async def test_feat_ability_caps_at_20(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         # Force CON to 20 first
-        scores = dict(char.ability_scores)
+        scores: AbilityScores = {**char.ability_scores}
         scores["con"] = 20
         char.ability_scores = scores
         feat_effects.apply_feat(char, "durable")

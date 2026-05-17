@@ -7,6 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from cairn.db.models.session import Session
 from cairn.domain.exceptions import NotFoundError
+from cairn.types import CombatState
 
 
 async def create_session(
@@ -43,7 +44,7 @@ async def update_combat_state(
     session: AsyncSession,
     session_id: uuid.UUID,
     *,
-    combat_state: dict | None,
+    combat_state: CombatState | None,
     combat_active: bool,
 ) -> Session:
     db_session = await get_session(session, session_id)

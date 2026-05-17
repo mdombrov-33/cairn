@@ -1,7 +1,6 @@
 import math
 import uuid
-from dataclasses import dataclass, field
-from typing import Any
+from typing import cast
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,7 @@ from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import AuthError, ValidationError
-from cairn.domain.services.ac import derive_ac
+from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.leveling import SUBCLASS_LEVEL, initialize_resources
 from cairn.srd import (
     get_armor,
@@ -22,17 +21,9 @@ from cairn.srd import (
     get_subclass,
     get_subrace,
 )
+from cairn.types import AbilityScores, InventoryItem
 
 log = structlog.get_logger()
-
-
-@dataclass
-class _AcInput:
-    id: str
-    ability_scores: dict[str, Any]
-    class_: str | None
-    inventory: list[Any]
-    feats: list[Any] = field(default_factory=list)
 
 
 def _modifier(score: int) -> int:
@@ -96,13 +87,13 @@ def _extract_proficiencies(
     return armor_profs, weapon_profs
 
 
-def _build_inventory(cls_data: dict) -> list[dict]:
+def _build_inventory(cls_data: dict) -> list[InventoryItem]:
     """
     Build the starting inventory list. Items from starting_equipment get an
     srd_index field so the equip service can do reliable SRD lookups.
     Armor and shields are auto-equipped (first one found of each type).
     """
-    inventory: list[dict] = []
+    inventory: list[InventoryItem] = []
     equipped_armor = False
     equipped_shield = False
 
@@ -269,7 +260,12 @@ async def create(
     inventory = _build_inventory(cls_data)
 
     initial_ac = derive_ac(
-        _AcInput(id="new", ability_scores=final_scores, class_=character_class, inventory=inventory)
+        AcInput(
+            id="new",
+            ability_scores=cast(AbilityScores, final_scores),
+            class_=character_class,
+            inventory=inventory,
+        )
     )
 
     log.info(

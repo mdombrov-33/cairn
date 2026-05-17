@@ -1,11 +1,14 @@
 import math
 import random
 import uuid
+from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.services.combat.helpers import empty_combat_state
+from cairn.types import TurnEconomy
 
 
 async def consume_spell_slot(
@@ -17,19 +20,16 @@ async def consume_spell_slot(
     char = await character_queries.get_character(db, character_id)
     slots = dict(char.spell_slots or {})
     key = str(level)
-    slot = slots.get(key, {})
-    current = slot.get("current", 0)
-    if current <= 0:
+    remaining = slots.get(key, 0)
+    if remaining <= 0:
         return {"error": f"{char.name} has no level {level} spell slots remaining."}
-    slot["current"] = current - 1
-    slots[key] = slot
+    slots[key] = remaining - 1
     char.spell_slots = slots
     await db.commit()
     return {
         "character": char.name,
         "level": level,
-        "slots_remaining": slot["current"],
-        "slots_max": slot.get("max", slot.get("current", 0)),
+        "slots_remaining": slots[key],
     }
 
 
@@ -43,12 +43,10 @@ async def restore_spell_slot(
     char = await character_queries.get_character(db, character_id)
     slots = dict(char.spell_slots or {})
     key = str(level)
-    slot = slots.get(key, {"current": 0, "max": 0})
-    slot["current"] = min(slot.get("max", 0), slot.get("current", 0) + count)
-    slots[key] = slot
+    slots[key] = slots.get(key, 0) + count
     char.spell_slots = slots
     await db.commit()
-    return {"character": char.name, "level": level, "slots_remaining": slot["current"]}
+    return {"character": char.name, "level": level, "slots_remaining": slots[key]}
 
 
 async def use_resource(
@@ -159,17 +157,20 @@ async def roll_concentration_check(
     }
 
 
+EconomyFlag = Literal["action_used", "bonus_action_used", "reaction_used"]
+
+
 async def spend_economy(
     db: AsyncSession,
     *,
     session_id: uuid.UUID,
     combatant_id: str,
-    field: str,
+    field: EconomyFlag,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     economy = state.setdefault("turn_economy", {})
-    entry = economy.setdefault(
+    entry: TurnEconomy = economy.setdefault(
         combatant_id,
         {
             "action_used": False,
@@ -178,7 +179,7 @@ async def spend_economy(
             "movement_remaining": 30,
         },
     )
-    if entry.get(field):
+    if entry[field]:
         label = field.replace("_used", "").replace("_", " ")
         return {"error": f"{label} already used this turn."}
     entry[field] = True
@@ -197,7 +198,7 @@ async def spend_movement(
     feet: int,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    state = session.combat_state or {}
+    state = session.combat_state or empty_combat_state()
     economy = state.setdefault("turn_economy", {})
     entry = economy.setdefault(
         combatant_id,

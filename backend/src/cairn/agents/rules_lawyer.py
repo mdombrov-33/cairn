@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import json
 import math
 from collections.abc import Sequence
-from typing import Any, Literal, Protocol
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Literal
 
 import structlog
 from pydantic import BaseModel, ValidationError
@@ -9,48 +12,65 @@ from pydantic import BaseModel, ValidationError
 from cairn.domain.exceptions import AgentError
 from cairn.llm.client import complete
 from cairn.llm.router import agent_setup
+from cairn.types import AbilityKey, AbilityScores, FeatEntry, FeatureEntry
+
+if TYPE_CHECKING:
+    from cairn.db.models.character import Character
 
 log = structlog.get_logger()
 
 
-class CharacterLike(Protocol):
-    """Structural type for the fields rules_lawyer reads off a character.
-    Satisfied by the SQLAlchemy Character model in production and by test fakes.
-    Properties (read-only) so covariance works on fields like `class_`."""
+@dataclass(frozen=True)
+class CharacterView:
+    """The character fields the RulesLawyer prompt needs, as a plain projection.
 
-    @property
-    def id(self) -> Any: ...
-    @property
-    def name(self) -> str: ...
-    @property
-    def class_(self) -> str | None: ...
-    @property
-    def level(self) -> int: ...
-    @property
-    def background(self) -> str | None: ...
-    @property
-    def hp(self) -> int: ...
-    @property
-    def max_hp(self) -> int: ...
-    @property
-    def ac(self) -> int: ...
-    @property
-    def ability_scores(self) -> dict[str, Any]: ...
-    @property
-    def proficiency_bonus(self) -> int: ...
-    @property
-    def skill_proficiencies(self) -> list[Any]: ...
-    @property
-    def conditions(self) -> list[Any]: ...
-    @property
-    def feats(self) -> list[Any]: ...
-    @property
-    def features(self) -> list[Any]: ...
-    @property
-    def is_companion(self) -> bool: ...
+    SQLAlchemy `Mapped[...]` attributes don't structurally satisfy a Protocol
+    under Pyright (it compares the raw `Mapped[T]`, not the descriptor result),
+    so callers project the ORM row into this via `from_character`. Defaults
+    exist so unit tests can build partial instances."""
+
+    id: object = ""
+    name: str = ""
+    class_: str | None = None
+    level: int = 1
+    background: str | None = None
+    hp: int = 0
+    max_hp: int = 0
+    ac: int = 10
+    ability_scores: AbilityScores = field(
+        default_factory=lambda: AbilityScores(
+            {"str": 10, "dex": 10, "con": 10, "int": 10, "wis": 10, "cha": 10}
+        )
+    )
+    proficiency_bonus: int = 2
+    skill_proficiencies: list[str] = field(default_factory=list)
+    conditions: list[str] = field(default_factory=list)
+    feats: list[FeatEntry] = field(default_factory=list)
+    features: list[FeatureEntry] = field(default_factory=list)
+    is_companion: bool = False
+
+    @classmethod
+    def from_character(cls, char: Character) -> CharacterView:
+        return cls(
+            id=char.id,
+            name=char.name,
+            class_=char.class_,
+            level=char.level,
+            background=char.background,
+            hp=char.hp,
+            max_hp=char.max_hp,
+            ac=char.ac,
+            ability_scores=char.ability_scores,
+            proficiency_bonus=char.proficiency_bonus,
+            skill_proficiencies=char.skill_proficiencies,
+            conditions=char.conditions,
+            feats=char.feats,
+            features=char.features,
+            is_companion=char.is_companion,
+        )
 
 
-_SKILL_TO_ABILITY = {
+_SKILL_TO_ABILITY: dict[str, AbilityKey] = {
     "acrobatics": "dex",
     "animal handling": "wis",
     "arcana": "int",
@@ -76,10 +96,17 @@ def _mod(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
-def build_character_context(char: CharacterLike) -> str:
+def build_character_context(char: CharacterView) -> str:
     """Serialize a Character into a compact text block for the RulesLawyer prompt."""
-    scores = char.ability_scores or {}
-    mods = {ab: _mod(scores.get(ab, 10)) for ab in ("str", "dex", "con", "int", "wis", "cha")}
+    scores = char.ability_scores
+    mods = {
+        "str": _mod(scores["str"]),
+        "dex": _mod(scores["dex"]),
+        "con": _mod(scores["con"]),
+        "int": _mod(scores["int"]),
+        "wis": _mod(scores["wis"]),
+        "cha": _mod(scores["cha"]),
+    }
     prof = char.proficiency_bonus or 2
     profs_lower = [s.lower() for s in (char.skill_proficiencies or [])]
 
@@ -98,9 +125,9 @@ def build_character_context(char: CharacterLike) -> str:
         f"Name: {char.name}",
         f"Class: {char.class_}  Level: {char.level}  Background: {char.background}",
         f"HP: {char.hp}/{char.max_hp}  AC: {char.ac}",
-        f"Ability scores: STR {scores.get('str', 10)} DEX {scores.get('dex', 10)} "
-        f"CON {scores.get('con', 10)} INT {scores.get('int', 10)} "
-        f"WIS {scores.get('wis', 10)} CHA {scores.get('cha', 10)}",
+        f"Ability scores: STR {scores['str']} DEX {scores['dex']} "
+        f"CON {scores['con']} INT {scores['int']} "
+        f"WIS {scores['wis']} CHA {scores['cha']}",
         f"Proficiency bonus: +{prof}",
         "Skill modifiers:",
         *skill_lines,
@@ -111,7 +138,7 @@ def build_character_context(char: CharacterLike) -> str:
     return "\n".join(lines)
 
 
-def build_party_manifest(party: Sequence[CharacterLike], active_id: object) -> str:
+def build_party_manifest(party: Sequence[CharacterView], active_id: object) -> str:
     """Build a thin manifest of party members other than the active character."""
     others = [c for c in party if str(c.id) != str(active_id)]
     if not others:
@@ -119,11 +146,11 @@ def build_party_manifest(party: Sequence[CharacterLike], active_id: object) -> s
 
     lines = []
     for c in others:
-        scores = c.ability_scores or {}
+        scores = c.ability_scores
         prof = c.proficiency_bonus or 2
         profs_lower = [s.lower() for s in (c.skill_proficiencies or [])]
         proficient_mods = {
-            skill: _mod(scores.get(ability, 10)) + prof
+            skill: _mod(scores[ability]) + prof
             for skill, ability in _SKILL_TO_ABILITY.items()
             if skill in profs_lower
         }

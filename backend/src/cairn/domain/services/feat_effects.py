@@ -1,18 +1,21 @@
 """
 Handlers here apply persistent, deterministic state changes (numeric bumps to
 ability scores / AC / speed / max_hp, new proficiencies, new resources, new
-spells). Feats whose effect is conditional or per-action — Sentinel, Sharpshooter,
+spells). Feats whose effect is conditional or per-action - Sentinel, Sharpshooter,
 Great Weapon Master, War Caster, fighting styles like Archery — have NO handler.
 They're appended to char.feats and the LLM reads the SRD description at runtime.
 """
 
 from collections.abc import Callable
+from typing import Literal, cast
 
 import structlog
 
 from cairn.db.models.character import Character
 from cairn.domain.exceptions import ValidationError
+from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.srd import get_feat
+from cairn.types import AbilityKey, AbilityScores, Resource
 
 log = structlog.get_logger()
 
@@ -37,8 +40,9 @@ def _register(*indices: str) -> Callable[[FeatHandler], FeatHandler]:
 
 
 def _bump_ability(char: Character, ability: str, by: int = 1, cap: int = 20) -> None:
-    new_scores = dict(char.ability_scores)
-    new_scores[ability] = min(cap, new_scores.get(ability, 10) + by)
+    new_scores: AbilityScores = {**char.ability_scores}
+    current = get_ability_score(new_scores, ability)
+    new_scores[cast(AbilityKey, ability)] = min(cap, current + by)
     char.ability_scores = new_scores
 
 
@@ -51,9 +55,15 @@ def _require_ability_choice(options: dict, allowed: set[str]) -> str:
     return ability
 
 
-def _grant_resource(char: Character, name: str, count: int, resets_on: str) -> None:
+def _grant_resource(
+    char: Character,
+    name: str,
+    count: int,
+    resets_on: Literal["short_rest", "long_rest"],
+) -> None:
     resources = dict(char.resources or {})
-    resources[name] = {"current": count, "max": count, "resets_on": resets_on}
+    entry: Resource = {"current": count, "max": count, "resets_on": resets_on}
+    resources[name] = entry
     char.resources = resources
 
 

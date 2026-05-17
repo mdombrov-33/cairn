@@ -77,8 +77,9 @@ async def submit(
                     "modifier": check["modifier"],
                     "roll_type": check["roll_type"],
                 }
-                if check.get("helper"):
-                    check_payload["helper"] = check["helper"]
+                helper = check.get("helper")
+                if helper:
+                    check_payload["helper"] = helper
                 yield sse("check_required", check_payload)
 
             elif intent == "npc_dialogue":
@@ -115,15 +116,18 @@ async def resolve(
         success = total >= check["dc"]
 
         roll_payload: dict = {"roll": body.roll, "total": total, "success": success}
-        if check.get("helper"):
-            roll_payload["helper"] = check["helper"]
+        helper = check.get("helper")
+        if helper:
+            roll_payload["helper"] = helper
         yield sse("roll_result", roll_payload)
 
+        # setup_prose is written by save_check_setup before this resolve runs.
+        setup_prose = check.get("setup_prose", "")
         outcome_context = (
             f"[Skill Check] {check['skill'].title()} DC {check['dc']}: "
             f"rolled {body.roll} + {check['modifier']} = {total} — "
             f"{'SUCCESS' if success else 'FAILURE'}\n"
-            f"Setup: {check['setup_prose']}"
+            f"Setup: {setup_prose}"
         )
         outcome_chunks: list[str] = []
         async for chunk in scene_narrator.run(turn.player_input, context=outcome_context):
@@ -131,7 +135,7 @@ async def resolve(
             yield sse("token", {"text": chunk})
 
         outcome_prose = "".join(outcome_chunks)
-        dm_response = check["setup_prose"] + "\n\n" + outcome_prose
+        dm_response = setup_prose + "\n\n" + outcome_prose
         await service.save_resolved_check(
             db,
             turn_id=turn.id,

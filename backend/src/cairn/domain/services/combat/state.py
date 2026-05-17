@@ -1,5 +1,6 @@
 import random
 import uuid
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,19 +13,20 @@ from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
 from cairn.domain.services.combat.emitter import emit
 from cairn.domain.services.combat.rolls import dex_mod, parse_and_roll
+from cairn.types import Combatant, CombatantTeam, CombatEffect, CombatState
 
 
 async def init_state(
     db: AsyncSession,
     session_id: uuid.UUID,
     enemies: list[dict],
-) -> dict:
+) -> CombatState:
     """Build and persist initial combat state. No ownership check — callers handle auth."""
     db_session = await session_queries.get_session(db, session_id)
     if db_session.combat_active:
         raise ConflictError("combat is already active for this session", code="combat_active")
 
-    combatants: list[dict] = []
+    combatants: list[Combatant] = []
 
     characters = await party_queries.get_party(db, session_id)
     for char in characters:
@@ -45,7 +47,7 @@ async def init_state(
         )
 
     for enemy in enemies:
-        team = enemy.get("team", "enemies")
+        team = cast(CombatantTeam, enemy.get("team", "enemies"))
         if enemy["type"] == "npc":
             npc = await npc_queries.get_npc(db, uuid.UUID(str(enemy["id"])))
             combatants.append(
@@ -100,7 +102,7 @@ async def init_state(
         reverse=True,
     )
 
-    combat_state = {
+    combat_state: CombatState = {
         "round": 1,
         "turn_index": 0,
         "combatants": combatants,
@@ -121,7 +123,7 @@ async def start(
     session_id: uuid.UUID,
     owner_id: str,
     enemies: list[dict],
-) -> dict:
+) -> CombatState:
     db_session = await session_queries.get_session(db, session_id)
     await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
     return await init_state(db, session_id, enemies)
@@ -183,9 +185,9 @@ async def advance_turn(
     outgoing = combatants[state["turn_index"]]
 
     effects = state.setdefault("effects", [])
-    end_of_turn_ticks: list[dict] = []
+    end_of_turn_ticks: list[CombatEffect] = []
     expired_effects: list[str] = []
-    surviving: list[dict] = []
+    surviving: list[CombatEffect] = []
     for effect in effects:
         if effect["target_id"] == outgoing["id"]:
             if effect.get("tick") == "end_of_target_turn":
@@ -215,12 +217,13 @@ async def advance_turn(
         if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
     ]
 
+    movement = current.get("speed", 30) if current["type"] == "monster" else 30
     economy = state.setdefault("turn_economy", {})
     economy[current["id"]] = {
         "action_used": False,
         "bonus_action_used": False,
         "reaction_used": False,
-        "movement_remaining": current.get("speed", 30),
+        "movement_remaining": movement,
     }
 
     await session_queries.update_combat_state(
@@ -270,10 +273,11 @@ async def add_combatant(
 
     state = session.combat_state
     combatants = state["combatants"]
+    team_t = cast(CombatantTeam, team)
 
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(name_or_id))
-        entry: dict = {
+        entry: Combatant = {
             "id": str(char.id),
             "type": "character",
             "team": "players",
@@ -291,7 +295,7 @@ async def add_combatant(
         entry = {
             "id": str(npc.id),
             "type": "npc",
-            "team": team,
+            "team": team_t,
             "name": npc.name,
             "initiative_roll": initiative_roll,
             "initiative_modifier": npc.initiative,
@@ -309,7 +313,7 @@ async def add_combatant(
         entry = {
             "id": f"monster-{uuid.uuid4()}",
             "type": "monster",
-            "team": team,
+            "team": team_t,
             "name": monster["name"],
             "srd_index": monster["index"],
             "initiative_roll": initiative_roll,
