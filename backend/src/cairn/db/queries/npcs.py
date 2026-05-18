@@ -16,9 +16,7 @@ async def create_npc(session: AsyncSession, *, campaign_id: uuid.UUID, **fields:
 
 
 async def get_npcs_by_campaign(session: AsyncSession, campaign_id: uuid.UUID) -> list[NPC]:
-    result = await session.execute(
-        select(NPC).where(NPC.campaign_id == campaign_id).order_by(NPC.name)
-    )
+    result = await session.execute(select(NPC).where(NPC.campaign_id == campaign_id).order_by(NPC.name))
     return list(result.scalars().all())
 
 

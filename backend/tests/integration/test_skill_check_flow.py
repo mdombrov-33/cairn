@@ -41,15 +41,9 @@ async def test_skill_check_fetches_party_and_calls_rules_lawyer(client: AsyncCli
     await make_character(client, camp["id"], **RANGER_COMPANION)
     sess = await make_session(client, camp["id"])
 
-    fake_run = AsyncMock(
-        return_value=CheckDecision(
-            skill="athletics", dc=14, modifier=4, roll_type="d20", helper=None
-        )
-    )
+    fake_run = AsyncMock(return_value=CheckDecision(skill="athletics", dc=14, modifier=4, roll_type="d20", helper=None))
     with patch("cairn.pipelines.turn_graph.rules_lawyer.run", fake_run):
-        result = await _resolve_skill_check(
-            _state(sess["id"], camp["id"], "I try to climb the wall")
-        )
+        result = await _resolve_skill_check(_state(sess["id"], camp["id"], "I try to climb the wall"))
 
     fake_run.assert_called_once()
     kwargs = fake_run.call_args.kwargs
@@ -79,9 +73,7 @@ async def test_skill_check_with_valid_helper_propagates(client: AsyncClient) -> 
         )
     )
     with patch("cairn.pipelines.turn_graph.rules_lawyer.run", fake_run):
-        result = await _resolve_skill_check(
-            _state(sess["id"], camp["id"], "I tend to my wound with Bria's help")
-        )
+        result = await _resolve_skill_check(_state(sess["id"], camp["id"], "I tend to my wound with Bria's help"))
 
     assert result["check"]["helper"]["character_id"] == companion["id"]
     assert result["check"]["helper"]["name"] == "Bria"

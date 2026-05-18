@@ -6,7 +6,9 @@ runtime validation. Postgres still stores arbitrary JSON.
 
 """
 
-from typing import Any, Literal, NotRequired, Required, TypedDict
+from typing import Annotated, Any, Literal, NotRequired, Required, TypedDict
+
+type ToolUUID = Annotated[str, "UUID as string — converted at the tool boundary"]
 
 # Ability score key — the 6 D&D abilities. Used everywhere we index AbilityScores
 # with a runtime variable; declaring this as Literal lets mypy verify the access.

@@ -1,4 +1,3 @@
-import copy
 import uuid
 from typing import cast
 
@@ -8,6 +7,7 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import NotFoundError, ValidationError
+from cairn.domain.services.inventory import copy_inventory, find_item
 from cairn.types import InventoryItem
 
 
@@ -32,12 +32,8 @@ async def loot_item(
     if char.campaign_id != db_session.campaign_id:
         raise ValidationError("character does not belong to this session's campaign")
 
-    npc_inventory = copy.deepcopy(npc.inventory or [])
-    name_lower = item_name.lower()
-    item = next(
-        (i for i in npc_inventory if i.get("name", "").lower() == name_lower),
-        None,
-    )
+    npc_inventory = copy_inventory(npc.inventory or [])
+    item = find_item(npc_inventory, item_name)
     if item is None:
         raise NotFoundError(f"item {item_name!r} not in NPC inventory", code="item_not_found")
 
@@ -45,7 +41,7 @@ async def loot_item(
     npc.inventory = npc_inventory
 
     looted = cast(InventoryItem, {k: v for k, v in item.items() if k != "equipped"})
-    char.inventory = copy.deepcopy(char.inventory or []) + [looted]
+    char.inventory = copy_inventory(char.inventory or []) + [looted]
 
     await db.flush()
     return looted

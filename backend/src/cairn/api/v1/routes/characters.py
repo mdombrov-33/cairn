@@ -39,20 +39,7 @@ async def create(
         db,
         campaign_id=campaign_id,
         owner_id=user_id,
-        name=body.name,
-        race=body.race,
-        character_class=body.character_class,
-        background=body.background,
-        ability_scores=body.ability_scores,
-        skill_choices=body.skill_choices,
-        alignment=body.alignment,
-        bio=body.bio,
-        personality=body.personality,
-        voice_traits=body.voice_traits,
-        subrace=body.subrace,
-        subclass=body.subclass,
-        is_companion=body.is_companion,
-        spell_choices=body.spell_choices,
+        body=body,
     )
     return CharacterResponse.model_validate(character)
 
@@ -80,8 +67,7 @@ async def patch(
         character_id=character_id,
         campaign_id=campaign_id,
         owner_id=user_id,
-        name=body.name,
-        bio=body.bio,
+        body=body,
     )
     return CharacterResponse.model_validate(character)
 
@@ -118,7 +104,7 @@ async def equip(
         character_id=character_id,
         campaign_id=campaign_id,
         owner_id=user_id,
-        item_name=body.item_name,
+        body=body,
     )
     return CharacterResponse.model_validate(character)
 
@@ -139,7 +125,7 @@ async def unequip(
         character_id=character_id,
         campaign_id=campaign_id,
         owner_id=user_id,
-        item_name=body.item_name,
+        body=body,
     )
     return CharacterResponse.model_validate(character)
 
@@ -157,9 +143,7 @@ async def level_up_preview(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> dict:
-    return await leveling.get_level_up_preview(
-        db, character_id=character_id, campaign_id=campaign_id, owner_id=user_id
-    )
+    return await leveling.get_level_up_preview(db, character_id=character_id, campaign_id=campaign_id, owner_id=user_id)
 
 
 @router.post(

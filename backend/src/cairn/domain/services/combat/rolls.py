@@ -142,7 +142,7 @@ async def save_modifier(
     combatant_type: str,
     ability: str,
 ) -> tuple[str, int]:
-    """Return (name, save_modifier) for a combatant. Shared by roll_saving_throw and apply_aoe_damage."""  # noqa: E501
+    """Return (name, save_modifier) for a combatant. Shared by roll_saving_throw and apply_aoe_damage."""
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(combatant_id))
         modifier = mod(get_ability_score(char.ability_scores, ability))
@@ -174,9 +174,7 @@ async def save_modifier(
             ),
             None,
         )
-        modifier = (
-            prof_entry["value"] if prof_entry else mod(monster_data.get(ABILITY_LONG[ability], 10))
-        )  # noqa: E501
+        modifier = prof_entry["value"] if prof_entry else mod(monster_data.get(ABILITY_LONG[ability], 10))
         return combatant["name"], modifier
 
     raise ValueError(f"Unknown combatant_type: {combatant_type!r}")
@@ -190,7 +188,7 @@ async def skill_modifier(
     combatant_type: str,
     skill: str,
 ) -> tuple[str, int]:
-    """Return (name, skill_modifier) for a combatant. Shared by roll_skill_check and resolve_contest."""  # noqa: E501
+    """Return (name, skill_modifier) for a combatant. Shared by roll_skill_check and resolve_contest."""
     skill_key = skill.lower()
     ability = SKILL_ABILITY.get(skill_key)
     if ability is None:
@@ -221,17 +219,10 @@ async def skill_modifier(
             raise ValueError(f"Monster SRD data not found for '{combatant['srd_index']}'.")
         skill_index = f"skill-{skill_key.replace(' ', '-')}"
         prof_entry = next(
-            (
-                p
-                for p in monster_data.get("proficiencies", [])
-                if p["proficiency"]["index"] == skill_index
-            ),
+            (p for p in monster_data.get("proficiencies", []) if p["proficiency"]["index"] == skill_index),
             None,
         )
-        if prof_entry is not None:
-            modifier = prof_entry["value"]
-        else:
-            modifier = mod(monster_data.get(ABILITY_LONG[ability], 10))
+        modifier = prof_entry["value"] if prof_entry is not None else mod(monster_data.get(ABILITY_LONG[ability], 10))
         return combatant["name"], modifier
 
     raise ValueError(f"Unknown combatant_type: {combatant_type!r}")

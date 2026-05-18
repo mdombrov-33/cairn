@@ -6,9 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.db.models.location import Location
 
 
-async def create_location(
-    db: AsyncSession, *, campaign_id: uuid.UUID, **kwargs: object
-) -> Location:
+async def create_location(db: AsyncSession, *, campaign_id: uuid.UUID, **kwargs: object) -> Location:
     location = Location(campaign_id=campaign_id, **kwargs)
     db.add(location)
     return location

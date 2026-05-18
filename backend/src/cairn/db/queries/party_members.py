@@ -7,9 +7,7 @@ from cairn.db.models.character import Character
 from cairn.db.models.party_member import PartyMember
 
 
-async def add_member(
-    session: AsyncSession, *, session_id: uuid.UUID, character_id: uuid.UUID
-) -> PartyMember:
+async def add_member(session: AsyncSession, *, session_id: uuid.UUID, character_id: uuid.UUID) -> PartyMember:
     member = PartyMember(session_id=session_id, character_id=character_id)
     session.add(member)
     await session.flush()

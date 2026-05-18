@@ -10,9 +10,7 @@ log = structlog.get_logger("error")
 async def cairn_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, CairnError)
     if exc.http_status >= 500:
-        log.error(
-            "cairn_error", code=exc.code, message=exc.message, status=exc.http_status, exc_info=True
-        )  # noqa: E501
+        log.error("cairn_error", code=exc.code, message=exc.message, status=exc.http_status, exc_info=True)
     else:
         log.info("cairn_error", code=exc.code, message=exc.message, status=exc.http_status)
     return JSONResponse(

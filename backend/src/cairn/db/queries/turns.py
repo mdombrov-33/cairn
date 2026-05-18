@@ -30,9 +30,7 @@ async def get_turn(session: AsyncSession, turn_id: uuid.UUID) -> Turn:
 
 
 async def list_turns(session: AsyncSession, session_id: uuid.UUID) -> list[Turn]:
-    result = await session.execute(
-        select(Turn).where(Turn.session_id == session_id).order_by(Turn.idx)
-    )
+    result = await session.execute(select(Turn).where(Turn.session_id == session_id).order_by(Turn.idx))
     return list(result.scalars().all())
 
 

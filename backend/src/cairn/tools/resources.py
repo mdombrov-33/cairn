@@ -12,11 +12,9 @@ async def consume_spell_slot(
     character_id: Annotated[str, "The character's UUID."],
     level: Annotated[int, "Spell slot level to consume (1-9)."],
 ) -> dict:
-    """Consume one spell slot of the given level. Call whenever a character casts a leveled spell (not cantrips)."""  # noqa: E501
+    """Consume one spell slot of the given level. Call whenever a character casts a leveled spell (not cantrips)."""
     async with db_client.get_session() as db:
-        return await resource_service.consume_spell_slot(
-            db, character_id=uuid.UUID(character_id), level=level
-        )
+        return await resource_service.consume_spell_slot(db, character_id=uuid.UUID(character_id), level=level)
 
 
 @tool
@@ -35,12 +33,10 @@ async def restore_spell_slot(
 @tool
 async def use_resource(
     character_id: Annotated[str, "The character's UUID."],
-    resource: Annotated[
-        str, 'Resource key, e.g. "action_surge", "ki", "rage", "bardic_inspiration".'
-    ],
+    resource: Annotated[str, 'Resource key, e.g. "action_surge", "ki", "rage", "bardic_inspiration".'],
     count: Annotated[int, "Number of uses to spend. Default 1."] = 1,
 ) -> dict:
-    """Spend uses of a class resource (Action Surge, Ki, Rage, Superiority Dice, Second Wind, etc.)."""  # noqa: E501
+    """Spend uses of a class resource (Action Surge, Ki, Rage, Superiority Dice, Second Wind, etc.)."""
     async with db_client.get_session() as db:
         return await resource_service.use_resource(
             db, character_id=uuid.UUID(character_id), resource=resource, count=count
@@ -67,16 +63,17 @@ async def set_concentration(
 ) -> dict:
     """Begin concentrating on a spell. Automatically drops any previous concentration."""
     async with db_client.get_session() as db:
-        return await resource_service.set_concentration(
-            db, character_id=uuid.UUID(character_id), spell_name=spell_name
-        )
+        return await resource_service.set_concentration(db, character_id=uuid.UUID(character_id), spell_name=spell_name)
 
 
 @tool
 async def drop_concentration(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
-    """End a character's concentration. Call when they choose to drop it, fail a save, cast another concentration spell, or die."""  # noqa: E501
+    """End a character's concentration.
+
+    Call when they choose to drop it, fail a save, cast another concentration spell, or die.
+    """
     async with db_client.get_session() as db:
         return await resource_service.drop_concentration(db, character_id=uuid.UUID(character_id))
 
@@ -86,7 +83,10 @@ async def roll_concentration_check(
     character_id: Annotated[str, "The character's UUID."],
     damage_taken: Annotated[int, "Total damage taken that triggered the check."],
 ) -> dict:
-    """Roll a Constitution saving throw to maintain concentration after taking damage. DC = max(10, half damage taken)."""  # noqa: E501
+    """Roll a Constitution saving throw to maintain concentration after taking damage.
+
+    DC = max(10, half damage taken).
+    """
     async with db_client.get_session() as db:
         return await resource_service.roll_concentration_check(
             db, character_id=uuid.UUID(character_id), damage_taken=damage_taken
@@ -110,7 +110,7 @@ async def use_bonus_action(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
 ) -> dict:
-    """Mark a combatant's bonus action as used for this turn (Off-hand Attack, Misty Step, Healing Word, etc.)."""  # noqa: E501
+    """Mark a combatant's bonus action as used for this turn (Off-hand Attack, Misty Step, Healing Word, etc.)."""
     async with db_client.get_session() as db:
         return await resource_service.spend_economy(
             db,
@@ -125,7 +125,10 @@ async def use_reaction(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
 ) -> dict:
-    """Mark a combatant's reaction as used until the start of their next turn (Opportunity Attack, Shield, Counterspell, etc.)."""  # noqa: E501
+    """Mark a combatant's reaction as used until the start of their next turn.
+
+    Examples: Opportunity Attack, Shield, Counterspell.
+    """
     async with db_client.get_session() as db:
         return await resource_service.spend_economy(
             db,

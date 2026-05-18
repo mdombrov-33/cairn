@@ -76,15 +76,11 @@ class Character(Base):
     ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
     spell_slots: Mapped[SpellSlots | None] = mapped_column(JSONB)
     spells_known: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
-    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
-    )
+    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     skill_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     tool_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     armor_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
-    weapon_proficiencies: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
-    )
+    weapon_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     features: Mapped[list[FeatureEntry]] = mapped_column(JSONB, default=list, server_default="[]")
     feats: Mapped[list[FeatEntry]] = mapped_column(JSONB, default=list, server_default="[]")
     inventory: Mapped[list[InventoryItem]] = mapped_column(JSONB, default=list, server_default="[]")

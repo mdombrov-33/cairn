@@ -43,9 +43,7 @@ async def _call(
     fallbacks: list[str],
     **kwargs: Any,
 ) -> Any:
-    return await litellm.acompletion(
-        model=model, messages=messages, fallbacks=fallbacks or None, **kwargs
-    )
+    return await litellm.acompletion(model=model, messages=messages, fallbacks=fallbacks or None, **kwargs)
 
 
 async def _invoke_tool(t: BaseTool, args: dict) -> Any:
@@ -176,9 +174,7 @@ async def complete_with_tools(
                 try:
                     result = await _invoke_tool(tool_map[name], args)
                 except Exception as exc:
-                    log.error(
-                        "tool_call_failed", tool=name, agent=agent, error=str(exc), exc_info=True
-                    )
+                    log.error("tool_call_failed", tool=name, agent=agent, error=str(exc), exc_info=True)
                     raise ToolError(f"Tool '{name}' failed: {exc}") from exc
 
             log.info("tool_call", tool=name, agent=agent)
@@ -200,7 +196,7 @@ async def stream(
     fallbacks: list[str] | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[str]:
-    """Call the LLM with streaming and yield text chunks. No retry — caller handles partial streams."""  # noqa: E501
+    """Call the LLM with streaming and yield text chunks. No retry — caller handles partial streams."""
     t0 = time.perf_counter()
     try:
         response = cast(

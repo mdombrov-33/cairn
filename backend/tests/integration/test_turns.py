@@ -3,9 +3,7 @@ from httpx import AsyncClient
 from tests._factories import make_campaign, make_session, parse_sse
 
 
-async def _submit(
-    client: AsyncClient, session_id: str, player_input: str, owner: str = "user_a"
-) -> list[dict]:
+async def _submit(client: AsyncClient, session_id: str, player_input: str, owner: str = "user_a") -> list[dict]:
     r = await client.post(
         f"/v1/sessions/{session_id}/turns",
         headers={"X-User-Id": owner},

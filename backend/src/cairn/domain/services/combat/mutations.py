@@ -163,9 +163,7 @@ async def apply_condition(
     conditions = combatant.setdefault("conditions", [])
     if condition not in conditions:
         conditions.append(condition)
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     result = {"combatant": combatant["name"], "conditions": conditions}
     await emit(db, {"type": "condition_applied", "condition": condition, **result})
     await db.commit()
@@ -185,9 +183,7 @@ async def remove_condition(
     if combatant is None:
         return {"error": f"Combatant '{combatant_id}' not found in combat state."}
     combatant["conditions"] = [c for c in combatant.get("conditions", []) if c != condition]
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     result = {"combatant": combatant["name"], "conditions": combatant["conditions"]}
     await emit(db, {"type": "condition_removed", "condition": condition, **result})
     await db.commit()
@@ -233,9 +229,7 @@ async def apply_effect(
     if source_id:
         effect["source_id"] = source_id
     effects.append(cast(CombatEffect, effect))
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     await emit(
         db,
         {
@@ -262,9 +256,7 @@ async def remove_effect(
     if removed is None:
         return {"error": f"Effect '{effect_id}' not found."}
     state["effects"] = [e for e in effects if e["id"] != effect_id]
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     await emit(db, {"type": "effect_removed", "effect_name": removed["name"]})
     await db.commit()
     return {"effect_removed": True, "effect_name": removed["name"]}
@@ -401,7 +393,10 @@ async def stabilize_character(
     *,
     character_id: str,
 ) -> dict:
-    """Stabilize a character at 0 HP (e.g. via Spare the Dying or a healer's kit). Clears death save counters — no more saves needed until damaged again."""  # noqa: E501
+    """Stabilize a character at 0 HP (e.g. via Spare the Dying or a healer's kit).
+
+    Clears death save counters — no more saves needed until damaged again.
+    """
     char = await character_queries.get_character(db, uuid.UUID(character_id))
     if char.hp > 0:
         return {"error": f"{char.name} is not at 0 HP and doesn't need stabilizing."}

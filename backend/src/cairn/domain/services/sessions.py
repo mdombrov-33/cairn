@@ -25,9 +25,7 @@ async def start(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> S
         current_location_id=starting_location.id if starting_location else None,
     )
 
-    await party_queries.enroll_campaign_characters(
-        db, session_id=db_session.id, campaign_id=campaign_id
-    )
+    await party_queries.enroll_campaign_characters(db, session_id=db_session.id, campaign_id=campaign_id)
 
     return db_session
 

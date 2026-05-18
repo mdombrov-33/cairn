@@ -68,9 +68,7 @@ async def submit(
                     setup_chunks.append(chunk)
                     yield sse("token", {"text": chunk})
                 setup_prose = "".join(setup_chunks)
-                await service.save_check_setup(
-                    db, turn_id=turn.id, check=check, setup_prose=setup_prose
-                )
+                await service.save_check_setup(db, turn_id=turn.id, check=check, setup_prose=setup_prose)
                 check_payload: dict = {
                     "skill": check["skill"],
                     "dc": check["dc"],
@@ -106,9 +104,7 @@ async def resolve(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, check = await service.prepare_resolve(
-        db, session_id=session_id, turn_id=turn_id, owner_id=user_id
-    )
+    turn, check = await service.prepare_resolve(db, session_id=session_id, turn_id=turn_id, owner_id=user_id)
     campaign_id, namespace = await service.get_campaign_info(db, session_id=session_id)
 
     async def generate() -> AsyncGenerator[str]:

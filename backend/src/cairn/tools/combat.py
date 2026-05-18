@@ -14,10 +14,14 @@ async def start_combat(
     session_id: Annotated[str, "The session UUID."],
     enemies_json: Annotated[
         str,
-        'JSON array of enemies. Each entry: {"type": "monster", "name": "goblin", "count": 2} or {"type": "npc", "id": "<uuid>", "team": "enemies"}.',  # noqa: E501
+        "JSON array of enemies. Each entry: "
+        '{"type": "monster", "name": "goblin", "count": 2} or {"type": "npc", "id": "<uuid>", "team": "enemies"}.',
     ],
 ) -> dict:
-    """Initialize a combat encounter. Rolls initiative for all combatants. Party members enrolled automatically. enemies_json is a JSON array of enemy descriptors."""  # noqa: E501
+    """Initialize a combat encounter. Rolls initiative for all combatants.
+
+    Party members enrolled automatically. enemies_json is a JSON array of enemy descriptors.
+    """
     try:
         enemies = json.loads(enemies_json)
     except json.JSONDecodeError as e:
@@ -42,16 +46,15 @@ async def end_combat(
 @tool
 async def apply_damage(
     session_id: Annotated[str, "The session UUID."],
-    combatant_id: Annotated[
-        str, "The combatant's ID (UUID for character/npc, generated id for monster)."
-    ],
+    combatant_id: Annotated[str, "The combatant's ID (UUID for character/npc, generated id for monster)."],
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     amount: Annotated[int, "Raw damage amount before temp HP absorption."],
-    damage_type: Annotated[
-        str, 'Damage type for narrative purposes, e.g. "fire", "slashing".'
-    ] = "untyped",
+    damage_type: Annotated[str, 'Damage type for narrative purposes, e.g. "fire", "slashing".'] = "untyped",
 ) -> dict:
-    """Apply damage to a combatant, respecting temp HP. Monsters track HP in combat_state; characters and NPCs are persisted to DB."""  # noqa: E501
+    """Apply damage to a combatant, respecting temp HP.
+
+    Monsters track HP in combat_state; characters and NPCs are persisted to DB.
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_damage(
             db,
@@ -70,7 +73,7 @@ async def apply_healing(
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     amount: Annotated[int, "HP to restore."],
 ) -> dict:
-    """Heal a combatant by amount, not exceeding max HP. Clears unconscious/death save status for characters."""  # noqa: E501
+    """Heal a combatant by amount, not exceeding max HP. Clears unconscious/death save status for characters."""
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_healing(
             db,
@@ -87,7 +90,10 @@ async def apply_condition(
     combatant_id: Annotated[str, "The combatant's UUID or monster id."],
     condition: Annotated[str, "The condition name."],
 ) -> dict:
-    """Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned"). Tracked in combat_state for all types."""  # noqa: E501
+    """Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned").
+
+    Tracked in combat_state for all combatant types.
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_condition(
             db,
@@ -118,7 +124,10 @@ async def roll_death_save(
     session_id: Annotated[str, "The session UUID."],
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
-    """Roll a death saving throw for an unconscious character at 0 HP. Only valid for player characters — NPCs/monsters die at 0 HP."""  # noqa: E501
+    """Roll a death saving throw for an unconscious character at 0 HP.
+
+    Only valid for player characters — NPCs/monsters die at 0 HP.
+    """
     async with db_client.get_session() as db:
         return await combat_service.rolls.roll_death_save(
             db,
@@ -131,7 +140,10 @@ async def roll_death_save(
 async def advance_turn(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
-    """Advance to the next combatant's turn, skipping dead combatants. Increments round when order wraps. Returns end_of_turn_ticks, start_of_turn_ticks, and expired_effects."""  # noqa: E501
+    """Advance to the next combatant's turn, skipping dead combatants.
+
+    Increments round when order wraps. Returns end_of_turn_ticks, start_of_turn_ticks, and expired_effects.
+    """
     async with db_client.get_session() as db:
         return await combat_service.state.advance_turn(db, session_id=uuid.UUID(session_id))
 
@@ -145,15 +157,16 @@ async def apply_effect(
     tick: Annotated[str, '"start_of_target_turn", "end_of_target_turn", or "" for passive.'] = "",
     save_ability: Annotated[str, 'Ability for repeating save, e.g. "wis". Empty if no save.'] = "",
     save_dc: Annotated[int, "DC for the repeating save. 0 if no save."] = 0,
-    condition: Annotated[
-        str, 'Condition applied by this effect, e.g. "paralyzed". Empty if none.'
-    ] = "",
+    condition: Annotated[str, 'Condition applied by this effect, e.g. "paralyzed". Empty if none.'] = "",
     damage: Annotated[str, 'Tick damage dice, e.g. "1d6". Empty if no tick damage.'] = "",
     damage_type: Annotated[str, 'Damage type for tick damage, e.g. "poison".'] = "",
     mechanical_notes: Annotated[str, "Free-text notes on how to resolve ticks."] = "",
     source_id: Annotated[str, "Combatant ID of the caster or source. Optional."] = "",
 ) -> dict:
-    """Track a multi-round effect (concentration spell, poison, regen). tick controls when advance_turn returns reminders."""  # noqa: E501
+    """Track a multi-round effect (concentration spell, poison, regen).
+
+    tick controls when advance_turn returns reminders.
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_effect(
             db,
@@ -177,7 +190,10 @@ async def remove_effect(
     session_id: Annotated[str, "The session UUID."],
     effect_id: Annotated[str, "The effect's UUID (from the apply_effect response)."],
 ) -> dict:
-    """Remove an active effect by its ID. Call when concentration breaks, dispel magic succeeds, or a repeating save ends the effect."""  # noqa: E501
+    """Remove an active effect by its ID.
+
+    Call when concentration breaks, dispel magic succeeds, or a repeating save ends the effect.
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.remove_effect(
             db,
@@ -195,7 +211,7 @@ async def roll_saving_throw(
     dc: Annotated[int, "Difficulty class to beat."],
     roll_type: Annotated[str, '"normal", "advantage", or "disadvantage".'] = "normal",
 ) -> dict:
-    """Roll a saving throw for a combatant against a DC. Returns roll, modifier, total, and pass/fail."""  # noqa: E501
+    """Roll a saving throw for a combatant against a DC. Returns roll, modifier, total, and pass/fail."""
     async with db_client.get_session() as db:
         return await combat_service.rolls.roll_saving_throw(
             db,
@@ -214,14 +230,15 @@ async def add_combatant(
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     name_or_id: Annotated[
         str,
-        "Character or NPC UUID for character/npc types; monster name (e.g. 'goblin') for monster type.",  # noqa: E501
+        "Character or NPC UUID for character/npc types; monster name (e.g. 'goblin') for monster type.",
     ],
     initiative_roll: Annotated[int, "Pre-rolled initiative total (from roll_initiative)."],
-    team: Annotated[
-        str, '"enemies" or "players". Ignored for characters (always players).'
-    ] = "enemies",  # noqa: E501
+    team: Annotated[str, '"enemies" or "players". Ignored for characters (always players).'] = "enemies",
 ) -> dict:
-    """Add a late-joining combatant to an active combat at the correct initiative position. Call roll_initiative first to get the initiative_roll value."""  # noqa: E501
+    """Add a late-joining combatant to an active combat at the correct initiative position.
+
+    Call roll_initiative first to get the initiative_roll value.
+    """
     async with db_client.get_session() as db:
         return await combat_service.state.add_combatant(
             db,
@@ -238,7 +255,10 @@ async def remove_combatant(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's combat-state id to remove."],
 ) -> dict:
-    """Remove a combatant from the active initiative order (e.g. flees, is banished, or surrenders). Does not kill them — use apply_damage for death."""  # noqa: E501
+    """Remove a combatant from the active initiative order (e.g. flees, is banished, or surrenders).
+
+    Does not kill them — use apply_damage for death.
+    """
     async with db_client.get_session() as db:
         return await combat_service.state.remove_combatant(
             db,
@@ -252,11 +272,9 @@ async def award_xp(
     character_id: Annotated[str, "The character's UUID."],
     amount: Annotated[int, "XP to award. Must be non-negative."],
 ) -> dict:
-    """Award XP to a character. Returns new XP total, current level, and whether they're ready to level up."""  # noqa: E501
+    """Award XP to a character. Returns new XP total, current level, and whether they're ready to level up."""
     async with db_client.get_session() as db:
-        return await leveling_service._award_xp(
-            db, character_id=uuid.UUID(character_id), amount=amount
-        )
+        return await leveling_service._award_xp(db, character_id=uuid.UUID(character_id), amount=amount)
 
 
 @tool
@@ -264,11 +282,9 @@ async def add_exhaustion(
     character_id: Annotated[str, "The character's UUID."],
     levels: Annotated[int, "Number of exhaustion levels to add. Default 1."] = 1,
 ) -> dict:
-    """Add exhaustion levels to a character (stored as 'exhaustion-N' in conditions). Level 6 kills the character."""  # noqa: E501
+    """Add exhaustion levels to a character (stored as 'exhaustion-N' in conditions). Level 6 kills the character."""
     async with db_client.get_session() as db:
-        return await combat_service.mutations.add_exhaustion(
-            db, character_id=character_id, levels=levels
-        )
+        return await combat_service.mutations.add_exhaustion(db, character_id=character_id, levels=levels)
 
 
 @tool
@@ -278,16 +294,17 @@ async def remove_exhaustion(
 ) -> dict:
     """Remove exhaustion levels from a character (e.g. after a long rest or Greater Restoration)."""
     async with db_client.get_session() as db:
-        return await combat_service.mutations.remove_exhaustion(
-            db, character_id=character_id, levels=levels
-        )
+        return await combat_service.mutations.remove_exhaustion(db, character_id=character_id, levels=levels)
 
 
 @tool
 async def stabilize_character(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
-    """Stabilize an unconscious character at 0 HP (Spare the Dying, healer's kit). Clears death save counters so no further saves are needed until they take damage again."""  # noqa: E501
+    """Stabilize an unconscious character at 0 HP (Spare the Dying, healer's kit).
+
+    Clears death save counters so no further saves are needed until they take damage again.
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.stabilize_character(db, character_id=character_id)
 
@@ -295,15 +312,14 @@ async def stabilize_character(
 @tool
 async def apply_temp_hp(
     session_id: Annotated[str, "The session UUID."],
-    combatant_id: Annotated[
-        str, "The combatant's UUID (character/npc) or monster combat-state id."
-    ],
+    combatant_id: Annotated[str, "The combatant's UUID (character/npc) or monster combat-state id."],
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
-    amount: Annotated[
-        int, "Temp HP to grant. Replaces current temp HP only if this value is higher."
-    ],
+    amount: Annotated[int, "Temp HP to grant. Replaces current temp HP only if this value is higher."],
 ) -> dict:
-    """Grant temporary HP to a combatant. Temp HP never stack — the new amount replaces the old only if it's higher (PHB p. 198)."""  # noqa: E501
+    """Grant temporary HP to a combatant.
+
+    Temp HP never stack — the new amount replaces the old only if it's higher (PHB p. 198).
+    """
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_temp_hp(
             db,
@@ -319,7 +335,7 @@ async def apply_aoe_damage(
     session_id: Annotated[str, "The session UUID."],
     targets_json: Annotated[
         str,
-        'JSON array of targets. Each entry: {"id": "<uuid-or-monster-id>", "type": "character|npc|monster"}.',  # noqa: E501
+        'JSON array of targets. Each entry: {"id": "<uuid-or-monster-id>", "type": "character|npc|monster"}.',
     ],
     damage_dice: Annotated[str, 'Damage dice expression, e.g. "8d6", "6d8+3".'],
     save_ability: Annotated[str, 'Ability for the saving throw, e.g. "dex", "con", "wis".'],
@@ -327,9 +343,12 @@ async def apply_aoe_damage(
     damage_type: Annotated[str, 'Damage type, e.g. "fire", "cold", "thunder".'] = "untyped",
     half_on_save: Annotated[
         bool, "If true, targets take half damage on a successful save. If false, no damage on save."
-    ] = True,  # noqa: E501
+    ] = True,
 ) -> dict:
-    """Apply area-of-effect damage to multiple targets. Rolls damage once, then rolls a saving throw per target and applies full, half, or no damage."""  # noqa: E501
+    """Apply area-of-effect damage to multiple targets.
+
+    Rolls damage once, then rolls a saving throw per target and applies full, half, or no damage.
+    """
     try:
         targets = json.loads(targets_json)
     except json.JSONDecodeError as e:
@@ -358,7 +377,10 @@ async def resolve_contest(
     defender_type: Annotated[str, '"character", "npc", or "monster".'],
     defender_skill: Annotated[str, 'Skill the defender uses, e.g. "Athletics", "Perception".'],
 ) -> dict:
-    """Resolve an opposed skill contest (e.g. grapple, shove, stealth vs. perception). Both sides roll; ties go to the defender per PHB rules."""  # noqa: E501
+    """Resolve an opposed skill contest (e.g. grapple, shove, stealth vs. perception).
+
+    Both sides roll; ties go to the defender per PHB rules.
+    """
     async with db_client.get_session() as db:
         return await combat_service.rolls.resolve_contest(
             db,
@@ -377,12 +399,15 @@ async def roll_initiative(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[
         str,
-        "Character/NPC UUID, an existing monster's combat-state id, or a monster name for SRD lookup.",  # noqa: E501
+        "Character/NPC UUID, an existing monster's combat-state id, or a monster name for SRD lookup.",
     ],
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     roll_type: Annotated[str, '"normal", "advantage", or "disadvantage".'] = "normal",
 ) -> dict:
-    """Roll initiative (d20 + DEX modifier) for a combatant. Returns the initiative total to pass to add_combatant or use when re-inserting into the initiative order."""  # noqa: E501
+    """Roll initiative (d20 + DEX modifier) for a combatant.
+
+    Returns the initiative total to pass to add_combatant or use when re-inserting into the initiative order.
+    """
     async with db_client.get_session() as db:
         return await combat_service.rolls.roll_initiative(
             db,
@@ -405,7 +430,10 @@ async def roll_skill_check(
     dc: Annotated[int, "Difficulty class to beat."],
     roll_type: Annotated[str, '"normal", "advantage", or "disadvantage".'] = "normal",
 ) -> dict:
-    """Roll a skill check for a combatant against a DC. Applies proficiency bonus if the combatant is proficient. Returns roll, modifier, total, and pass/fail."""  # noqa: E501
+    """Roll a skill check for a combatant against a DC.
+
+    Applies proficiency bonus if the combatant is proficient. Returns roll, modifier, total, and pass/fail.
+    """
     async with db_client.get_session() as db:
         return await combat_service.rolls.roll_skill_check(
             db,

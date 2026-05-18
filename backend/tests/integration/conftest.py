@@ -94,10 +94,7 @@ async def _truncate_tables() -> AsyncIterator[None]:
     engine = db_client.get_engine()
     async with engine.begin() as conn:
         result = await conn.execute(
-            text(
-                "SELECT tablename FROM pg_tables "
-                "WHERE schemaname = 'public' AND tablename != 'alembic_version'"
-            )
+            text("SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename != 'alembic_version'")
         )
         tables = [row[0] for row in result]
         if tables:

@@ -20,9 +20,7 @@ class NPC(Base):
     __tablename__ = "npcs"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    campaign_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("campaigns.id", ondelete="CASCADE"), index=True
-    )
+    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), index=True)
     location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"))
 
     # Identity
@@ -64,15 +62,11 @@ class NPC(Base):
 
     # JSONB — typed shapes live in cairn/types.py
     ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
-    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
-    )
+    saving_throw_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     skill_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     tool_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     armor_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
-    weapon_proficiencies: Mapped[list[str]] = mapped_column(
-        JSONB, default=list, server_default="[]"
-    )
+    weapon_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     features: Mapped[list[FeatureEntry]] = mapped_column(JSONB, default=list, server_default="[]")
     feats: Mapped[list[FeatEntry]] = mapped_column(JSONB, default=list, server_default="[]")
     inventory: Mapped[list[InventoryItem]] = mapped_column(JSONB, default=list, server_default="[]")

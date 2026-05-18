@@ -19,10 +19,7 @@ def get_model(agent: str, llm_env: str) -> tuple[str, list[str]]:
     data = _load_models()
     agents = data.get("agents", {})
 
-    if agent in agents and llm_env in agents[agent]:
-        tier = agents[agent][llm_env]
-    else:
-        tier = data["defaults"][llm_env]
+    tier = agents[agent][llm_env] if agent in agents and llm_env in agents[agent] else data["defaults"][llm_env]
 
     primary: str = tier["primary"]
     fallbacks: list[str] = [tier["fallback"]] if "fallback" in tier else []

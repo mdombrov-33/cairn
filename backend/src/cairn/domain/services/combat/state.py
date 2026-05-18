@@ -67,9 +67,7 @@ async def init_state(
         elif enemy["type"] == "monster":
             monster = rules.get_monster(enemy["name"])
             if monster is None:
-                raise NotFoundError(
-                    f"monster '{enemy['name']}' not found in SRD", code="monster_not_found"
-                )
+                raise NotFoundError(f"monster '{enemy['name']}' not found in SRD", code="monster_not_found")
             dex = dex_mod(monster.get("dexterity", 10))
             ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
             count = max(1, enemy.get("count", 1))
@@ -109,9 +107,7 @@ async def init_state(
         "effects": [],
     }
 
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=combat_state, combat_active=True
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=combat_state, combat_active=True)
     await emit(db, {"type": "combat_started", "combatant_count": len(combatants)})
     await db.commit()
     return combat_state
@@ -142,9 +138,7 @@ async def end(
     if not db_session.combat_active:
         raise ConflictError("no active combat for this session", code="combat_not_active")
 
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=None, combat_active=False
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=None, combat_active=False)
     await db.commit()
 
 
@@ -161,9 +155,7 @@ async def get_state(
 
 async def end_state(db: AsyncSession, *, session_id: uuid.UUID) -> None:
     """Clear combat state without ownership check — for tool-facing use."""
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=None, combat_active=False
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=None, combat_active=False)
     await db.commit()
 
 
@@ -212,9 +204,7 @@ async def advance_turn(
 
     current = combatants[state["turn_index"]]
     start_of_turn_ticks = [
-        e
-        for e in state["effects"]
-        if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
+        e for e in state["effects"] if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
     ]
 
     movement = current.get("speed", 30) if current["type"] == "monster" else 30
@@ -226,9 +216,7 @@ async def advance_turn(
         "movement_remaining": movement,
     }
 
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=True
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
 
     result: dict = {
         "round": state["round"],
@@ -341,12 +329,8 @@ async def add_combatant(
     if insert_idx <= state["turn_index"]:
         state["turn_index"] += 1
 
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=True
-    )
-    await emit(
-        db, {"type": "combatant_added", "name": entry["name"], "initiative": initiative_roll}
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
+    await emit(db, {"type": "combatant_added", "name": entry["name"], "initiative": initiative_roll})
     await db.commit()
     return {
         "combatant_added": True,
@@ -383,9 +367,7 @@ async def remove_combatant(
         # Removed the active combatant — land on whoever is next (or wrap to 0).
         state["turn_index"] = state["turn_index"] % len(combatants) if combatants else 0
 
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=True
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
     await emit(db, {"type": "combatant_removed", "name": removed["name"]})
     await db.commit()
     return {"combatant_removed": True, "combatant": removed["name"]}

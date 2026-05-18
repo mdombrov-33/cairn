@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import math
 import uuid
-from typing import cast
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from cairn.api.v1.schemas.characters import CharacterCreate, CharacterPatch
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -135,8 +140,7 @@ def _extract_skill_choices(cls_data: dict) -> tuple[int, list[str]]:
         skill_opts = [
             o["item"]["name"].replace("Skill: ", "")
             for o in opts
-            if o.get("option_type") == "reference"
-            and o.get("item", {}).get("index", "").startswith("skill-")
+            if o.get("option_type") == "reference" and o.get("item", {}).get("index", "").startswith("skill-")
         ]
         if skill_opts:
             total += group.get("choose", 0)
@@ -156,11 +160,7 @@ def _build_spell_slots(level_data: dict) -> dict[str, int] | None:
     sc = level_data.get("spellcasting")
     if not sc:
         return None
-    slots = {
-        str(i): sc[f"spell_slots_level_{i}"]
-        for i in range(1, 10)
-        if sc.get(f"spell_slots_level_{i}", 0) > 0
-    }
+    slots = {str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0}
     return slots or None
 
 
@@ -169,21 +169,23 @@ async def create(
     *,
     campaign_id: uuid.UUID,
     owner_id: str,
-    name: str,
-    race: str,
-    character_class: str,
-    background: str,
-    ability_scores: dict[str, int],
-    skill_choices: list[str],
-    alignment: str,
-    bio: str,
-    personality: str,
-    voice_traits: dict,
-    subrace: str | None = None,
-    subclass: str | None = None,
-    is_companion: bool = False,
-    spell_choices: list[str] | None = None,
+    body: CharacterCreate,
 ) -> Character:
+    name = body.name
+    race = body.race
+    character_class = body.character_class
+    background = body.background
+    ability_scores = body.ability_scores
+    skill_choices = body.skill_choices
+    alignment = body.alignment
+    bio = body.bio
+    personality = body.personality
+    voice_traits = body.voice_traits
+    subrace = body.subrace
+    subclass = body.subclass
+    is_companion = body.is_companion
+    spell_choices = body.spell_choices
+
     await campaign_queries.get_campaign_owned_by(db, campaign_id, owner_id)
 
     cls_data = get_class(character_class)
@@ -208,16 +210,12 @@ async def create(
         if sub_data is None or sub_data.get("class", {}).get("index") != character_class:
             raise ValidationError(f"invalid subclass for {character_class}: {subclass!r}")
     if SUBCLASS_LEVEL.get(character_class) == 1 and not subclass:
-        raise ValidationError(
-            f"{character_class} requires subclass selection at character creation"
-        )
+        raise ValidationError(f"{character_class} requires subclass selection at character creation")
 
     # Validate skill choices against class options
     num_required, allowed = _extract_skill_choices(cls_data)
     if len(skill_choices) != num_required:
-        raise ValidationError(
-            f"{character_class} requires {num_required} skill choice(s), got {len(skill_choices)}"
-        )
+        raise ValidationError(f"{character_class} requires {num_required} skill choice(s), got {len(skill_choices)}")
     if len(set(skill_choices)) != len(skill_choices):
         raise ValidationError("duplicate skill choices are not allowed")
     invalid = [s for s in skill_choices if s not in allowed]
@@ -326,18 +324,15 @@ async def patch(
     character_id: uuid.UUID,
     campaign_id: uuid.UUID,
     owner_id: str,
-    name: str | None,
-    bio: str | None,
+    body: CharacterPatch,
 ) -> Character:
-    char = await character_queries.get_character_for_campaign_owned_by(
-        db, character_id, campaign_id, owner_id
-    )
+    char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
     if char.is_companion:
         raise AuthError("cannot modify companion characters", code="forbidden")
-    if name is not None:
-        char.name = name
-    if bio is not None:
-        char.bio = bio
+    if body.name is not None:
+        char.name = body.name
+    if body.bio is not None:
+        char.bio = body.bio
     await db.flush()
     return char
 

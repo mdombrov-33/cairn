@@ -49,9 +49,7 @@ def _bump_ability(char: Character, ability: str, by: int = 1, cap: int = 20) -> 
 def _require_ability_choice(options: dict, allowed: set[str]) -> str:
     ability = options.get("ability")
     if not isinstance(ability, str) or ability not in allowed:
-        raise ValidationError(
-            f"feat requires options.ability in {sorted(allowed)}, got {ability!r}"
-        )
+        raise ValidationError(f"feat requires options.ability in {sorted(allowed)}, got {ability!r}")
     return ability
 
 
@@ -122,9 +120,7 @@ def _martial_adept(char: Character, options: dict) -> None:
     """One superiority die per short rest. Maneuvers are stored in feat options."""
     maneuvers = options.get("maneuvers") or []
     if not isinstance(maneuvers, list) or len(maneuvers) != 2:
-        raise ValidationError(
-            "martial-adept requires options.maneuvers as a list of 2 maneuver names"
-        )
+        raise ValidationError("martial-adept requires options.maneuvers as a list of 2 maneuver names")
     _grant_resource(char, "superiority_die", count=1, resets_on="short_rest")
 
 
@@ -226,12 +222,10 @@ def _resilient(char: Character, options: dict) -> None:
 
 @_register("skilled")
 def _skilled(char: Character, options: dict) -> None:
-    """3 picks — each pick is a skill or a tool. Skills → skill_proficiencies, tools → tool_proficiencies."""  # noqa: E501
+    """3 picks — each pick is a skill or a tool. Skills → skill_proficiencies, tools → tool_proficiencies."""
     picks = options.get("picks") or []
     if not isinstance(picks, list) or len(picks) != 3:
-        raise ValidationError(
-            "skilled feat requires options.picks as a list of 3 {type, name} objects"
-        )
+        raise ValidationError("skilled feat requires options.picks as a list of 3 {type, name} objects")
     skill_profs = list(char.skill_proficiencies or [])
     tool_profs = list(char.tool_proficiencies or [])
     for pick in picks:
@@ -255,9 +249,7 @@ def _magic_initiate(char: Character, options: dict) -> None:
     """2 cantrips + 1 first-level spell. Grants one free 1st-level cast per long rest."""
     spells = options.get("spells") or []
     if not isinstance(spells, list) or len(spells) != 3:
-        raise ValidationError(
-            "magic-initiate requires options.spells: 2 cantrips + 1 first-level spell"
-        )
+        raise ValidationError("magic-initiate requires options.spells: 2 cantrips + 1 first-level spell")
     char.spells_known = list(char.spells_known) + list(spells)
     _grant_resource(char, "magic_initiate_free_cast", count=1, resets_on="long_rest")
 
@@ -293,6 +285,4 @@ def apply_feat(char: Character, feat_index: str, options: dict | None = None) ->
     else:
         log.info("feat_no_handler", feat=feat_index, character_id=str(char.id))
 
-    char.feats = list(char.feats) + [
-        {"index": feat_index, "name": feat_data["name"], "options": options}
-    ]
+    char.feats = list(char.feats) + [{"index": feat_index, "name": feat_data["name"], "options": options}]

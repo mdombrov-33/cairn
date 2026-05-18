@@ -66,9 +66,7 @@ def test_initialize_resources_fighter_l2() -> None:
 
 def test_initialize_resources_monk_l1_empty_l2_ki() -> None:
     assert initialize_resources("monk", 1) == {}
-    assert initialize_resources("monk", 2) == {
-        "ki_points": {"current": 2, "max": 2, "resets_on": "short_rest"}
-    }
+    assert initialize_resources("monk", 2) == {"ki_points": {"current": 2, "max": 2, "resets_on": "short_rest"}}
 
 
 def test_initialize_resources_unknown_class_returns_empty() -> None:
@@ -449,9 +447,7 @@ async def test_apply_level_up_rejects_wrong_spell_count(client: AsyncClient) -> 
                 character_id=cid,
                 campaign_id=uuid.UUID(camp["id"]),
                 owner_id="user_a",
-                choices=LevelUpChoices(
-                    hp_method="average", new_spells=["Misty Step"], subclass="evocation"
-                ),
+                choices=LevelUpChoices(hp_method="average", new_spells=["Misty Step"], subclass="evocation"),
             )
 
 
@@ -538,9 +534,7 @@ async def test_apply_level_up_observant_recomputes_passive_perception(
             character_id=cid,
             campaign_id=uuid.UUID(camp["id"]),
             owner_id="user_a",
-            choices=LevelUpChoices(
-                hp_method="average", feat="observant", feat_options={"ability": "wis"}
-            ),
+            choices=LevelUpChoices(hp_method="average", feat="observant", feat_options={"ability": "wis"}),
         )
     # WIS 10+human+1=11, +1 from observant = 12 → mod still +1.
     # Original PP = 10 + wis_mod(0) = 10. New PP = 10 + wis_mod(1) + 5 = 16.
@@ -566,9 +560,7 @@ async def test_feat_skilled_requires_three_picks(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="skilled feat requires"):
-            feat_effects.apply_feat(
-                char, "skilled", {"picks": [{"type": "skill", "name": "Stealth"}]}
-            )
+            feat_effects.apply_feat(char, "skilled", {"picks": [{"type": "skill", "name": "Stealth"}]})
 
 
 async def test_feat_skilled_routes_skills_and_tools(client: AsyncClient) -> None:
@@ -774,9 +766,7 @@ async def test_feat_weapon_master_requires_four_weapons(client: AsyncClient) -> 
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         with pytest.raises(ValidationError, match="4 weapon names"):
-            feat_effects.apply_feat(
-                char, "weapon-master", {"ability": "str", "weapons": ["longsword"]}
-            )
+            feat_effects.apply_feat(char, "weapon-master", {"ability": "str", "weapons": ["longsword"]})
 
 
 async def test_feat_weapon_master_adds_weapon_proficiencies(client: AsyncClient) -> None:

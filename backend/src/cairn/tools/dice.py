@@ -25,9 +25,7 @@ def parse_and_roll(expression: str) -> tuple[list[int], int]:
 @tool
 async def roll_d20(
     modifier: Annotated[int, "Integer modifier to add (can be negative)."] = 0,
-    roll_type: Annotated[
-        str, '"normal", "advantage" (higher of two), or "disadvantage" (lower of two).'
-    ] = "normal",
+    roll_type: Annotated[str, '"normal", "advantage" (higher of two), or "disadvantage" (lower of two).'] = "normal",
 ) -> dict:
     """Roll a d20 for attack rolls, saving throws, or ability checks."""
     if roll_type == "advantage":

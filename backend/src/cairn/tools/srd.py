@@ -10,7 +10,11 @@ from cairn.srd import _load_list, list_all_feats
 async def lookup_spell(
     name: Annotated[str, 'Spell name, e.g. "fireball", "cure wounds", "hold person".'],
 ) -> dict:
-    """Look up a D&D 5e spell by name. Returns level, school, casting time, range, components, duration, concentration, damage dice, saving throw, and which classes can cast it."""  # noqa: E501
+    """Look up a D&D 5e spell by name.
+
+    Returns level, school, casting time, range, components, duration, concentration, damage dice,
+    saving throw, and which classes can cast it.
+    """
     spell = rules.get_spell(name)
     if spell is None:
         return {"error": f"Spell '{name}' not found in SRD. Check spelling or try a variant name."}
@@ -21,7 +25,11 @@ async def lookup_spell(
 async def lookup_monster(
     name: Annotated[str, 'Monster name, e.g. "goblin", "skeleton", "ogre", "adult-red-dragon".'],
 ) -> dict:
-    """Look up a monster's full stat block from the SRD: AC, HP, speed, ability scores, saving throws, skills, challenge rating, special abilities, and actions."""  # noqa: E501
+    """Look up a monster's full stat block from the SRD.
+
+    Returns AC, HP, speed, ability scores, saving throws, skills, challenge rating, special abilities,
+    and actions.
+    """
     monster = rules.get_monster(name)
     if monster is None:
         return {"error": f"Monster '{name}' not found in SRD."}
@@ -43,7 +51,7 @@ async def lookup_condition(
 async def lookup_weapon(
     name: Annotated[str, 'Weapon name, e.g. "longsword", "shortbow", "dagger", "hand-crossbow".'],
 ) -> dict:
-    """Look up a weapon's damage dice, damage type, range, and properties (finesse, versatile, reach, etc.)."""  # noqa: E501
+    """Look up a weapon's damage dice, damage type, range, and properties (finesse, versatile, reach, etc.)."""
     weapon = rules.get_weapon(name)
     if weapon is None:
         return {"error": f"Weapon '{name}' not found in SRD or is not a weapon."}
@@ -86,12 +94,10 @@ async def lookup_class(
 async def lookup_feature(
     name: Annotated[str, 'Feature name, e.g. "action-surge-1-use", "sneak-attack", "rage".'],
 ) -> dict:
-    """Look up a class feature's full description and mechanics (Action Surge, Sneak Attack, Rage, Wild Shape, etc.)."""  # noqa: E501
+    """Look up a class feature's full description and mechanics (Action Surge, Sneak Attack, Rage, Wild Shape, etc.)."""
     feature = rules.get_feature(name)
     if feature is None:
-        return {
-            "error": f"Feature '{name}' not found. Try the index form e.g. 'action-surge-1-use'."
-        }
+        return {"error": f"Feature '{name}' not found. Try the index form e.g. 'action-surge-1-use'."}
     return feature
 
 
@@ -99,7 +105,7 @@ async def lookup_feature(
 async def lookup_trait(
     name: Annotated[str, 'Trait name, e.g. "darkvision", "fey-ancestry", "relentless-endurance".'],
 ) -> dict:
-    """Look up a racial trait's description and mechanics (Darkvision, Fey Ancestry, Relentless Endurance, etc.)."""  # noqa: E501
+    """Look up a racial trait's description and mechanics (Darkvision, Fey Ancestry, Relentless Endurance, etc.)."""
     trait = rules.get_trait(name)
     if trait is None:
         return {"error": f"Trait '{name}' not found."}
@@ -121,7 +127,7 @@ async def lookup_subclass(
 async def lookup_feat(
     name: Annotated[str, 'Feat name, e.g. "sentinel", "lucky", "war-caster", "sharpshooter".'],
 ) -> dict:
-    """Look up a feat's full description and prerequisites (Sentinel, Lucky, War Caster, Sharpshooter, etc.)."""  # noqa: E501
+    """Look up a feat's full description and prerequisites (Sentinel, Lucky, War Caster, Sharpshooter, etc.)."""
     feat = rules.get_feat(name)
     if feat is None:
         return {"error": f"Feat '{name}' not found. Try the index form e.g. 'great-weapon-master'."}
@@ -130,7 +136,10 @@ async def lookup_feat(
 
 @tool
 async def list_feats() -> list:
-    """List all available feats with their names, types, and prerequisites. Use during character creation or level-up to show feat options."""  # noqa: E501
+    """List all available feats with their names, types, and prerequisites.
+
+    Use during character creation or level-up to show feat options.
+    """
     return [
         {
             "index": f["index"],

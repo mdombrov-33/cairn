@@ -72,9 +72,7 @@ async def test_end_session_allows_new_session_after(client: AsyncClient) -> None
     started = await make_session(client, campaign["id"])
     await client.post(f"/v1/sessions/{started['id']}/end", headers={"X-User-Id": "user_a"})
 
-    r = await client.post(
-        f"/v1/campaigns/{campaign['id']}/sessions", headers={"X-User-Id": "user_a"}
-    )
+    r = await client.post(f"/v1/campaigns/{campaign['id']}/sessions", headers={"X-User-Id": "user_a"})
     assert r.status_code == 201
 
 

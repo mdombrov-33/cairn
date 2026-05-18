@@ -34,9 +34,7 @@ async def prepare(
     campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
 
     existing = await turn_queries.list_turns(db, session_id)
-    turn = await turn_queries.create_turn(
-        db, session_id=session_id, idx=len(existing), player_input=player_input
-    )
+    turn = await turn_queries.create_turn(db, session_id=session_id, idx=len(existing), player_input=player_input)
 
     if db_session.combat_active:
         state = TurnState(

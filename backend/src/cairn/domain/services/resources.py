@@ -183,9 +183,7 @@ async def spend_economy(
         label = field.replace("_used", "").replace("_", " ")
         return {"error": f"{label} already used this turn."}
     entry[field] = True
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     await db.commit()
     return {"combatant_id": combatant_id, field: True}
 
@@ -213,9 +211,7 @@ async def spend_movement(
     if feet > remaining:
         return {"error": f"Only {remaining}ft of movement remaining this turn."}
     entry["movement_remaining"] = remaining - feet
-    await session_queries.update_combat_state(
-        db, session_id, combat_state=state, combat_active=session.combat_active
-    )
+    await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     await db.commit()
     return {
         "combatant_id": combatant_id,

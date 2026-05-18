@@ -9,9 +9,7 @@ async def run(player_input: str, context: str = "") -> AsyncIterator[str]:
 
     async for chunk in stream(
         model=model,
-        messages=[
-            {"role": "user", "content": prompt.render(player_input=player_input, context=context)}
-        ],
+        messages=[{"role": "user", "content": prompt.render(player_input=player_input, context=context)}],
         agent="scene_narrator",
         fallbacks=fallbacks,
         temperature=prompt.temperature,

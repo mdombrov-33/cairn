@@ -170,9 +170,7 @@ async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
             return _fake_stream()
         if call_count["n"] % 2 == 1:
             return _tool_call_response("advance_turn", {"session_id": session_id})
-        return _content_response(
-            json.dumps({"resolved": True, "summary": "Fighter swings, goblin takes damage."})
-        )
+        return _content_response(json.dumps({"resolved": True, "summary": "Fighter swings, goblin takes damage."}))
 
     with patch("litellm.acompletion", side_effect=_fake_acompletion):
         r = await client.post(

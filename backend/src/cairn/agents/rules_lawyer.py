@@ -36,9 +36,7 @@ class CharacterView:
     max_hp: int = 0
     ac: int = 10
     ability_scores: AbilityScores = field(
-        default_factory=lambda: AbilityScores(
-            {"str": 10, "dex": 10, "con": 10, "int": 10, "wis": 10, "cha": 10}
-        )
+        default_factory=lambda: AbilityScores({"str": 10, "dex": 10, "con": 10, "int": 10, "wis": 10, "cha": 10})
     )
     proficiency_bonus: int = 2
     skill_proficiencies: list[str] = field(default_factory=list)
@@ -148,16 +146,11 @@ def build_party_manifest(party: Sequence[CharacterView], active_id: object) -> s
         prof = c.proficiency_bonus or 2
         profs_lower = [s.lower() for s in (c.skill_proficiencies or [])]
         proficient_mods = {
-            skill: _mod(scores[ability]) + prof
-            for skill, ability in _SKILL_TO_ABILITY.items()
-            if skill in profs_lower
+            skill: _mod(scores[ability]) + prof for skill, ability in _SKILL_TO_ABILITY.items() if skill in profs_lower
         }
         skills_str = ", ".join(f"{s}: {v:+d}" for s, v in proficient_mods.items()) or "none"
         role = "companion (AI)" if c.is_companion else "player character"
-        lines.append(
-            f"- {c.name} [id:{c.id}] ({c.class_} {c.level}, {role})"
-            f" | proficient skills: {skills_str}"
-        )
+        lines.append(f"- {c.name} [id:{c.id}] ({c.class_} {c.level}, {role}) | proficient skills: {skills_str}")
     return "\n".join(lines)
 
 

@@ -116,11 +116,7 @@ def _spell_slots_for_level(class_index: str, level: int) -> dict[str, int] | Non
     sc = data.get("spellcasting")
     if not sc:
         return None
-    slots = {
-        str(i): sc[f"spell_slots_level_{i}"]
-        for i in range(1, 10)
-        if sc.get(f"spell_slots_level_{i}", 0) > 0
-    }
+    slots = {str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0}
     return slots or None
 
 
@@ -170,9 +166,7 @@ def recompute_derived_stats(char: Character) -> None:
 
     wis_mod = _ability_modifier(char.ability_scores.get("wis", 10))
     has_perception = any(s.lower() == "perception" for s in (char.skill_proficiencies or []))
-    char.passive_perception = (
-        10 + wis_mod + (2 if has_perception else 0) + (5 if "observant" in feat_indices else 0)
-    )
+    char.passive_perception = 10 + wis_mod + (2 if has_perception else 0) + (5 if "observant" in feat_indices else 0)
 
     char.ac = derive_ac(AcInput.from_row(char))
 
@@ -195,17 +189,14 @@ def build_level_up_preview(char: Character) -> dict | None:
 
     available_subclasses: list[dict] = []
     if needs_subclass:
-        available_subclasses = [
-            {"index": s["index"], "name": s["name"]} for s in list_subclasses_for_class(cls)
-        ]
+        available_subclasses = [{"index": s["index"], "name": s["name"]} for s in list_subclasses_for_class(cls)]
 
     available_feats: list[dict] = []
     if asi_or_feat:
         available_feats = [
             {"index": f["index"], "name": f["name"], "type": f.get("type", "general")}
             for f in list_all_feats()
-            if f.get("type") in {"general", "epic-boon"}
-            and f["index"] != "ability-score-improvement"
+            if f.get("type") in {"general", "epic-boon"} and f["index"] != "ability-score-improvement"
         ]
 
     return {
@@ -219,9 +210,7 @@ def build_level_up_preview(char: Character) -> dict | None:
         "subclass_required": needs_subclass,
         "available_subclasses": available_subclasses,
         "available_feats": available_feats,
-        "new_features": [
-            {"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])
-        ],
+        "new_features": [{"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])],
         "new_spell_slots": _spell_slots_for_level(cls, target_level),
         "spells_to_choose": expected_spell_picks(cls, target_level),
         "proficiency_bonus": _proficiency_bonus_for_level(target_level),
@@ -252,9 +241,7 @@ async def get_level_up_preview(
     campaign_id: uuid.UUID,
     owner_id: str,
 ) -> dict:
-    char = await character_queries.get_character_for_campaign_owned_by(
-        db, character_id, campaign_id, owner_id
-    )
+    char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
     preview = build_level_up_preview(char)
     if preview is None:
         return {"pending": False}
@@ -294,9 +281,7 @@ async def award_xp(
     """Add XP to a character. Returns whether they're now ready to level up."""
     if amount < 0:
         raise ValidationError(f"xp amount must be non-negative, got {amount}")
-    char = await character_queries.get_character_for_campaign_owned_by(
-        db, character_id, campaign_id, owner_id
-    )
+    char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
     char.xp = (char.xp or 0) + amount
     ready = has_pending_level_up(char)
     log.info(
@@ -317,14 +302,10 @@ async def apply_level_up(
     owner_id: str,
     choices: LevelUpChoices,
 ) -> Character:
-    char = await character_queries.get_character_for_campaign_owned_by(
-        db, character_id, campaign_id, owner_id
-    )
+    char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
 
     if not has_pending_level_up(char):
-        raise ValidationError(
-            f"{char.name} has no pending level-up (xp={char.xp}, level={char.level})"
-        )
+        raise ValidationError(f"{char.name} has no pending level-up (xp={char.xp}, level={char.level})")
 
     # Block during active combat — UI/route enforces too, this is the safety net.
     active_session = await session_queries.get_active_session(db, char.campaign_id)
@@ -433,9 +414,7 @@ def _apply_asi(char: Character, asi: dict[str, int]) -> None:
     char.ability_scores = new_scores
 
 
-def _validate_choices_against_preview(
-    char: Character, choices: LevelUpChoices, target_level: int
-) -> None:
+def _validate_choices_against_preview(char: Character, choices: LevelUpChoices, target_level: int) -> None:
     cls = char.class_
     asi_level = _is_asi_level(cls, target_level)
 
@@ -470,9 +449,7 @@ def _validate_choices_against_preview(
     expected = expected_spell_picks(cls, target_level)
     provided = len(choices.new_spells or [])
     if provided != expected:
-        raise ValidationError(
-            f"expected {expected} new spell(s)/cantrip(s) for {cls} L{target_level}, got {provided}"
-        )
+        raise ValidationError(f"expected {expected} new spell(s)/cantrip(s) for {cls} L{target_level}, got {provided}")
 
 
 def _merge_resources(existing: dict, fresh: dict) -> dict:

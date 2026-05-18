@@ -98,9 +98,7 @@ def list_all_feats() -> list[dict]:
 
 
 def get_feature(name: str) -> dict | None:
-    key = (
-        name.lower().replace(" ", "-").replace("(", "").replace(")", "").replace(",", "").strip("-")
-    )  # noqa: E501
+    key = name.lower().replace(" ", "-").replace("(", "").replace(")", "").replace(",", "").strip("-")
     return _load_dict("features").get(key)
 
 
@@ -177,9 +175,7 @@ def list_monsters(max_cr: float | None = None) -> list[dict]:
 def list_spells(class_index: str | None = None, max_level: int | None = None) -> list[dict]:
     spells = _load_list("spells")
     if class_index:
-        spells = [
-            s for s in spells if any(c.get("index") == class_index for c in s.get("classes", []))
-        ]
+        spells = [s for s in spells if any(c.get("index") == class_index for c in s.get("classes", []))]
     if max_level is not None:
         spells = [s for s in spells if s.get("level", 0) <= max_level]
     return spells

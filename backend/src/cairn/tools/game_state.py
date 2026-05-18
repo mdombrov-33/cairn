@@ -33,7 +33,7 @@ def npc_to_dict(n: NPC) -> dict:
 async def get_character(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
-    """Get a player character's full combat sheet: stats, current HP, AC, spell slots, and inventory."""  # noqa: E501
+    """Get a player character's full combat sheet: stats, current HP, AC, spell slots, and inventory."""
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(character_id))
         return character_to_dict(char)
@@ -53,7 +53,7 @@ async def get_npc(
 async def get_party(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
-    """Get all party members' current combat stats for a session: HP, AC, conditions, and spell slots."""  # noqa: E501
+    """Get all party members' current combat stats for a session: HP, AC, conditions, and spell slots."""
     async with db_client.get_session() as db:
         characters = await party_queries.get_party(db, uuid.UUID(session_id))
         return {"party": [character_to_dict(c) for c in characters]}
@@ -63,7 +63,7 @@ async def get_party(
 async def get_combat_state(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
-    """Get the full active combat state: initiative order, combatant HP, conditions, zones, and current round."""  # noqa: E501
+    """Get the full active combat state: initiative order, combatant HP, conditions, zones, and current round."""
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, uuid.UUID(session_id))
         if not session.combat_active:
@@ -78,7 +78,7 @@ async def loot_item(
     item_name: Annotated[str, "Name of the item to transfer."],
     character_id: Annotated[str, "The character UUID who receives the item."],
 ) -> InventoryItem:
-    """Move an item from an NPC's inventory into a character's inventory. Item is not auto-equipped."""  # noqa: E501
+    """Move an item from an NPC's inventory into a character's inventory. Item is not auto-equipped."""
     async with db_client.get_session() as db:
         result = await loot_service.loot_item(
             db,

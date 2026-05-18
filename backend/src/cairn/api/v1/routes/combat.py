@@ -9,9 +9,7 @@ from cairn.domain.services import combat as service
 router = APIRouter(prefix="/v1/sessions", tags=["combat"])
 
 
-@router.post(
-    "/{session_id}/combat/start", response_model=CombatResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/{session_id}/combat/start", response_model=CombatResponse, status_code=status.HTTP_201_CREATED)
 async def start(
     session_id: uuid.UUID,
     body: CombatStartRequest,
@@ -19,9 +17,7 @@ async def start(
     db: DBSession,
 ) -> CombatResponse:
     enemies = [e.model_dump() for e in body.enemies]
-    combat_state = await service.state.start(
-        db, session_id=session_id, owner_id=user_id, enemies=enemies
-    )
+    combat_state = await service.state.start(db, session_id=session_id, owner_id=user_id, enemies=enemies)
     return CombatResponse(combat_active=True, combat_state=dict(combat_state))
 
 

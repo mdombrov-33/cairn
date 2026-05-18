@@ -29,9 +29,7 @@ async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, template_id: str)
         await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)
 
 
-async def _seed_locations(
-    db: AsyncSession, campaign_id: uuid.UUID, template_id: str
-) -> list[Location]:
+async def _seed_locations(db: AsyncSession, campaign_id: uuid.UUID, template_id: str) -> list[Location]:
     path = _SEED_DIR / template_id / "locations.yaml"
     if not path.exists():
         return []

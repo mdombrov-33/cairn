@@ -32,9 +32,7 @@ _IGNORED_TABLES = {
 def include_object(
     obj: SchemaItem,
     name: str | None,
-    type_: Literal[
-        "schema", "table", "column", "index", "unique_constraint", "foreign_key_constraint"
-    ],
+    type_: Literal["schema", "table", "column", "index", "unique_constraint", "foreign_key_constraint"],
     reflected: bool,
     compare_to: SchemaItem | None,
 ) -> bool:
@@ -56,9 +54,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(
-        connection=connection, target_metadata=target_metadata, include_object=include_object
-    )
+    context.configure(connection=connection, target_metadata=target_metadata, include_object=include_object)
 
     with context.begin_transaction():
         context.run_migrations()
