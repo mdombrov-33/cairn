@@ -9,7 +9,9 @@ from cairn.api.v1.schemas.characters import (
     CharacterResponse,
     EquipRequest,
     GrantXpRequest,
+    LevelUpPreviewResponse,
     LevelUpRequest,
+    XpAwardResponse,
 )
 from cairn.domain.services import characters as service
 from cairn.domain.services import equipment as equipment_service
@@ -147,7 +149,7 @@ async def unequip(
 
 @router.get(
     "/{campaign_id}/characters/{character_id}/level-up",
-    response_model=dict,
+    response_model=LevelUpPreviewResponse,
 )
 async def level_up_preview(
     campaign_id: uuid.UUID,
@@ -191,7 +193,7 @@ async def level_up_apply(
 
 @router.post(
     "/{campaign_id}/characters/{character_id}/grant-xp",
-    response_model=dict,
+    response_model=XpAwardResponse,
 )
 async def grant_xp(
     campaign_id: uuid.UUID,

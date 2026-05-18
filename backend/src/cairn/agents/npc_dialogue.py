@@ -1,12 +1,10 @@
-import json
 from typing import Literal
 
 import structlog
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from cairn.db.models.npc import NPC
-from cairn.domain.exceptions import AgentError
-from cairn.llm.client import complete
+from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
@@ -26,7 +24,7 @@ async def run(
 
     voice_summary = npc.voice_traits.get("speech_pattern", "") if npc.voice_traits else ""
 
-    raw = await complete(
+    return await complete_to_model(
         model=model,
         messages=[
             {
@@ -42,14 +40,8 @@ async def run(
                 ),
             }
         ],
+        model_cls=NPCDialogueResult,
         agent="npc_dialogue",
         fallbacks=fallbacks,
         temperature=prompt.temperature,
     )
-
-    try:
-        data = json.loads(raw.strip())
-        return NPCDialogueResult.model_validate(data)
-    except (json.JSONDecodeError, ValidationError) as exc:
-        log.error("npc_dialogue_bad_output", raw=raw, error=str(exc))
-        raise AgentError(f"NPCDialogue returned invalid JSON: {raw!r}") from exc

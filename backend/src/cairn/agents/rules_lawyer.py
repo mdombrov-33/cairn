@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
 import structlog
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from cairn.domain.exceptions import AgentError
-from cairn.llm.client import complete
+from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
 from cairn.types import AbilityKey, AbilityScores, FeatEntry, FeatureEntry
 
@@ -183,7 +181,7 @@ async def run(
 ) -> CheckDecision:
     prompt, model, fallbacks = agent_setup("rules_lawyer")
 
-    raw = await complete(
+    return await complete_to_model(
         model=model,
         messages=[
             {
@@ -195,14 +193,8 @@ async def run(
                 ),
             }
         ],
+        model_cls=CheckDecision,
         agent="rules_lawyer",
         fallbacks=fallbacks,
         temperature=prompt.temperature,
     )
-
-    try:
-        data = json.loads(raw.strip())
-        return CheckDecision.model_validate(data)
-    except (json.JSONDecodeError, ValidationError) as exc:
-        log.error("rules_lawyer_bad_output", raw=raw, error=str(exc))
-        raise AgentError(f"RulesLawyer returned invalid JSON: {raw!r}") from exc

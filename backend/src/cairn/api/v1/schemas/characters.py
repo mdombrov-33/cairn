@@ -58,6 +58,27 @@ class GrantXpRequest(BaseModel):
     amount: int
 
 
+class LevelUpPreviewResponse(BaseModel):
+    pending: bool
+    target_level: int | None = None
+    hp: dict | None = None
+    asi_or_feat: bool | None = None
+    subclass_required: bool | None = None
+    available_subclasses: list[dict] | None = None
+    available_feats: list[dict] | None = None
+    new_features: list[dict] | None = None
+    new_spell_slots: dict | None = None
+    spells_to_choose: int | None = None
+    proficiency_bonus: int | None = None
+
+
+class XpAwardResponse(BaseModel):
+    character: str
+    xp: int
+    level: int
+    ready_to_level_up: bool
+
+
 class CharacterPatch(BaseModel):
     name: str | None = None
     bio: str | None = None

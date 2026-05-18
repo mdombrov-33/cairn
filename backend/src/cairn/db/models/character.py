@@ -32,8 +32,8 @@ class Character(Base):
     subclass: Mapped[str | None]
     background: Mapped[str]
     alignment: Mapped[str | None]
-    level: Mapped[int] = mapped_column(default=1)
-    xp: Mapped[int] = mapped_column(default=0)
+    level: Mapped[int] = mapped_column(default=1, server_default="1")
+    xp: Mapped[int] = mapped_column(default=0, server_default="0")
     hit_die_size: Mapped[int] = mapped_column(default=8, server_default="8")
     hit_dice_remaining: Mapped[int] = mapped_column(default=1, server_default="1")
     portrait_url: Mapped[str | None]
@@ -41,19 +41,19 @@ class Character(Base):
     # combat stats - real columns, queried/displayed individually
     hp: Mapped[int]
     max_hp: Mapped[int]
-    temp_hp: Mapped[int] = mapped_column(default=0)
+    temp_hp: Mapped[int] = mapped_column(default=0, server_default="0")
     ac: Mapped[int]
-    speed: Mapped[int] = mapped_column(default=30)
-    death_save_successes: Mapped[int] = mapped_column(default=0)
-    death_save_failures: Mapped[int] = mapped_column(default=0)
+    speed: Mapped[int] = mapped_column(default=30, server_default="30")
+    death_save_successes: Mapped[int] = mapped_column(default=0, server_default="0")
+    death_save_failures: Mapped[int] = mapped_column(default=0, server_default="0")
 
-    cr: Mapped[float] = mapped_column(default=0.0)
+    cr: Mapped[float] = mapped_column(default=0.0, server_default="0")
     conditions: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # derived stats - stored for fast reads, recalculated on level-up
-    proficiency_bonus: Mapped[int] = mapped_column(default=2)
-    initiative: Mapped[int] = mapped_column(default=0)
-    passive_perception: Mapped[int] = mapped_column(default=10)
+    proficiency_bonus: Mapped[int] = mapped_column(default=2, server_default="2")
+    initiative: Mapped[int] = mapped_column(default=0, server_default="0")
+    passive_perception: Mapped[int] = mapped_column(default=10, server_default="10")
 
     # companion flag — False = player's own character, True = AI-controlled party member
     is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")

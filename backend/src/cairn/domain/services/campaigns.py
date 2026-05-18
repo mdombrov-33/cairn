@@ -1,13 +1,17 @@
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.campaign import Campaign
-from cairn.db.models.location import Location
 from cairn.db.queries import campaigns as queries
+from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
+
+if TYPE_CHECKING:
+    from cairn.db.models.location import Location
 
 _SEED_DIR = Path(__file__).parent.parent.parent / "seed" / "templates"
 
@@ -35,8 +39,7 @@ async def _seed_locations(
     locations = []
     for loc_data in data.get("locations", []):
         kwargs = {k: v for k, v in loc_data.items() if k != "id_slug"}
-        location = Location(campaign_id=campaign_id, **kwargs)
-        db.add(location)
+        location = await location_queries.create_location(db, campaign_id=campaign_id, **kwargs)
         locations.append(location)
     await db.flush()
     return locations
@@ -62,10 +65,7 @@ async def create(
 
 
 async def get_starting_location(db: AsyncSession, campaign_id: uuid.UUID) -> Location | None:
-    from sqlalchemy import select
-
-    result = await db.execute(select(Location).where(Location.campaign_id == campaign_id).limit(1))
-    return result.scalar_one_or_none()
+    return await location_queries.get_first_for_campaign(db, campaign_id)
 
 
 async def get(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> Campaign:

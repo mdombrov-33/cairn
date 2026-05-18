@@ -15,9 +15,10 @@ from litellm.exceptions import (
     ServiceUnavailableError,
     Timeout,
 )
+from pydantic import BaseModel, ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from cairn.domain.exceptions import LLMError, ToolError
+from cairn.domain.exceptions import AgentError, LLMError, ToolError
 
 log = structlog.get_logger()
 
@@ -87,6 +88,24 @@ async def complete(
     if content is None:
         raise LLMError("LLM returned empty content")
     return content
+
+
+async def complete_to_model[T: BaseModel](
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    model_cls: type[T],
+    agent: str = "unknown",
+    fallbacks: list[str] | None = None,
+    **kwargs: Any,
+) -> T:
+    raw = await complete(model=model, messages=messages, agent=agent, fallbacks=fallbacks, **kwargs)
+    cleaned = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    try:
+        return model_cls.model_validate_json(cleaned)
+    except ValidationError as exc:
+        log.error(f"{agent}_bad_output", raw=raw, error=str(exc))
+        raise AgentError(f"{agent} returned invalid output: {raw!r}") from exc
 
 
 async def complete_with_tools(

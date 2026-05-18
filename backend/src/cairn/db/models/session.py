@@ -22,5 +22,5 @@ class Session(Base):
     summary: Mapped[str | None]
 
     # Combat
-    combat_active: Mapped[bool] = mapped_column(default=False)
+    combat_active: Mapped[bool] = mapped_column(default=False, server_default="false")
     combat_state: Mapped[CombatState | None] = mapped_column(JSONB)

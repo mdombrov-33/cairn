@@ -32,28 +32,28 @@ class NPC(Base):
     subclass: Mapped[str | None]
     background: Mapped[str | None]
     alignment: Mapped[str | None]
-    level: Mapped[int] = mapped_column(default=1)
+    level: Mapped[int] = mapped_column(default=1, server_default="1")
     portrait_url: Mapped[str | None]
 
     # Narrative / voice — replaced by NarrativeProfile in Slice 7.
     bio: Mapped[str]
     personality: Mapped[str]
     voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
-    disposition: Mapped[str] = mapped_column(default="neutral")
+    disposition: Mapped[str] = mapped_column(default="neutral", server_default="neutral")
 
     # Combat stats
-    ac: Mapped[int] = mapped_column(default=10)
-    max_hp: Mapped[int] = mapped_column(default=1)
-    hp: Mapped[int] = mapped_column(default=1)
-    temp_hp: Mapped[int] = mapped_column(default=0)
-    speed: Mapped[int] = mapped_column(default=30)
-    proficiency_bonus: Mapped[int] = mapped_column(default=2)
-    initiative: Mapped[int] = mapped_column(default=0)
-    passive_perception: Mapped[int] = mapped_column(default=10)
+    ac: Mapped[int] = mapped_column(default=10, server_default="10")
+    max_hp: Mapped[int] = mapped_column(default=1, server_default="1")
+    hp: Mapped[int] = mapped_column(default=1, server_default="1")
+    temp_hp: Mapped[int] = mapped_column(default=0, server_default="0")
+    speed: Mapped[int] = mapped_column(default=30, server_default="30")
+    proficiency_bonus: Mapped[int] = mapped_column(default=2, server_default="2")
+    initiative: Mapped[int] = mapped_column(default=0, server_default="0")
+    passive_perception: Mapped[int] = mapped_column(default=10, server_default="10")
 
     # NPC-specific combat
-    cr: Mapped[float] = mapped_column(default=0.0)
-    xp_value: Mapped[int] = mapped_column(default=0)
+    cr: Mapped[float] = mapped_column(default=0.0, server_default="0")
+    xp_value: Mapped[int] = mapped_column(default=0, server_default="0")
     conditions: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # Spellcasting
