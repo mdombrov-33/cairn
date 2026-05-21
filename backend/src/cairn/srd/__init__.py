@@ -112,6 +112,15 @@ def get_subclass(name: str) -> dict | None:
     return _load_dict("subclasses").get(key)
 
 
+def get_subclass_features_at_level(subclass_index: str, level: int) -> list[dict]:
+    """Return features granted by a subclass at exactly the given level."""
+    return [
+        f
+        for f in _load_list("features")
+        if f.get("subclass", {}).get("index") == subclass_index and f.get("level") == level
+    ]
+
+
 def list_subclasses_for_class(class_index: str) -> list[dict]:
     return [s for s in _load_list("subclasses") if s.get("class", {}).get("index") == class_index]
 

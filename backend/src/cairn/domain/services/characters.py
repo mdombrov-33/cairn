@@ -310,7 +310,7 @@ async def create(
         features=features,
         inventory=inventory,
         currency={"gp": 0, "sp": 0, "cp": 0},
-        resources=initialize_resources(character_class, 1),
+        resources=initialize_resources(character_class, 1, final_scores),
         is_companion=is_companion,
         bio=bio,
         personality=personality,

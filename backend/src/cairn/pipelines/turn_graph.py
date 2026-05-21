@@ -29,6 +29,7 @@ class TurnState(TypedDict):
     npc_name: str | None
     check: CheckData | None  # set by resolve_skill_check; consumed by route layer
     npc_context: str | None  # set by resolve_npc_dialogue; consumed by route layer
+    rest_context: str | None  # set by resolve_rest; consumed by route layer
 
 
 async def _route_intent(state: TurnState) -> dict[str, Any]:
@@ -83,6 +84,33 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
     return {"check": check_dict}
 
 
+def _infer_rest_type(text: str) -> str:
+    lowered = text.lower()
+    long_words = ("long rest", "camp", "sleep", "night", "8 hour", "full rest", "dawn", "morning")
+    return "long" if any(w in lowered for w in long_words) else "short"
+
+
+async def _resolve_rest(state: TurnState) -> dict[str, Any]:
+    from cairn.domain.exceptions import ConflictError
+    from cairn.domain.services import rests as rest_service
+
+    session_id = uuid.UUID(state["session_id"])
+    rest_type = _infer_rest_type(state["player_input"])
+
+    async with db_client.get_session() as db:
+        try:
+            if rest_type == "long":
+                result = await rest_service.apply_long_rest(db, session_id=session_id)
+            else:
+                result = await rest_service.apply_short_rest(db, session_id=session_id)
+            context = rest_service.build_rest_context(rest_type, result)
+        except ConflictError as e:
+            context = rest_service.build_blocked_context(e.code)
+
+    log.info("rest_resolved", session_id=state["session_id"], rest_type=rest_type)
+    return {"rest_context": context}
+
+
 async def _resolve_npc_dialogue(state: TurnState) -> dict[str, Any]:
 
     campaign_id = uuid.UUID(state["campaign_id"])
@@ -109,6 +137,8 @@ def _pick_node(state: TurnState) -> str:
         return "resolve_skill_check"
     if intent == "npc_dialogue":
         return "resolve_npc_dialogue"
+    if intent == "rest_action":
+        return "resolve_rest"
     return END
 
 
@@ -118,11 +148,13 @@ def _get_graph() -> Any:
     builder.add_node("route_intent", _route_intent)
     builder.add_node("resolve_skill_check", _resolve_skill_check)
     builder.add_node("resolve_npc_dialogue", _resolve_npc_dialogue)
+    builder.add_node("resolve_rest", _resolve_rest)
 
     builder.add_edge(START, "route_intent")
     builder.add_conditional_edges("route_intent", _pick_node)
     builder.add_edge("resolve_skill_check", END)
     builder.add_edge("resolve_npc_dialogue", END)
+    builder.add_edge("resolve_rest", END)
 
     return builder.compile(checkpointer=get_checkpointer())
 
@@ -143,6 +175,7 @@ async def run(
             npc_name=None,
             check=None,
             npc_context=None,
+            rest_context=None,
         ),
         config=config,
     )

@@ -67,6 +67,7 @@ class Character(Base):
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]
     concentration: Mapped[str | None]  # name of currently concentrated spell, if any
+    prepared_spells: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # class resources with limited uses (Action Surge, Ki, Rage, Superiority Dice, etc.)
     # Keyed by resource name → Resource shape.

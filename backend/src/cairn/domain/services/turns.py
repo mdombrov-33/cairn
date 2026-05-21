@@ -45,6 +45,7 @@ async def prepare(
             npc_name=None,
             check=None,
             npc_context=None,
+            rest_context=None,
         )
     else:
         state = await turn_graph.run(

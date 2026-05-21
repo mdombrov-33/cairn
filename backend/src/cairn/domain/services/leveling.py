@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.character import Character
 from cairn.db.queries import characters as character_queries
-from cairn.db.queries import sessions as session_queries
-from cairn.domain.exceptions import ConflictError, ValidationError
+from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import feat_effects
 from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.combat.helpers import get_ability_score
@@ -17,6 +16,7 @@ from cairn.srd import (
     get_class_levels,
     get_feat,
     get_subclass,
+    get_subclass_features_at_level,
     list_all_feats,
     list_subclasses_for_class,
 )
@@ -120,7 +120,7 @@ def _spell_slots_for_level(class_index: str, level: int) -> dict[str, int] | Non
     return slots or None
 
 
-def initialize_resources(class_index: str, level: int) -> dict[str, dict]:
+def initialize_resources(class_index: str, level: int, ability_scores: dict[str, int] | None = None) -> dict[str, dict]:
     """Build the resources dict for a character at the given class+level."""
     data = _level_data(class_index, level)
     if data is None:
@@ -131,6 +131,11 @@ def initialize_resources(class_index: str, level: int) -> dict[str, dict]:
         value = cs.get(srd_key)
         if isinstance(value, int) and value > 0:
             resources[name] = {"current": value, "max": value, "resets_on": reset}
+    # Bardic inspiration max = CHA modifier (min 1); resets on long rest, short rest at bard L5+
+    if class_index == "bard":
+        cha_mod = max(1, _ability_modifier((ability_scores or {}).get("cha", 10)))
+        reset = "short_rest" if level >= 5 else "long_rest"
+        resources["bardic_inspiration"] = {"current": cha_mod, "max": cha_mod, "resets_on": reset}
     return resources
 
 
@@ -302,15 +307,14 @@ async def apply_level_up(
     owner_id: str,
     choices: LevelUpChoices,
 ) -> Character:
+    # TODO Slice 10: for companion characters (is_companion=True), when
+    # settings.companion.leveling == "ai", auto-build LevelUpChoices server-side
+    # (average HP, first available feat/ASI, pick balanced spells) instead of
+    # requiring player submission. When == "player", flow is the same as a PC.
     char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
 
     if not has_pending_level_up(char):
         raise ValidationError(f"{char.name} has no pending level-up (xp={char.xp}, level={char.level})")
-
-    # Block during active combat — UI/route enforces too, this is the safety net.
-    active_session = await session_queries.get_active_session(db, char.campaign_id)
-    if active_session is not None and active_session.combat_active:
-        raise ConflictError("cannot level up during active combat", code="combat_active")
 
     target_level = char.level + 1
     cls = char.class_
@@ -355,10 +359,13 @@ async def apply_level_up(
     if choices.new_spells:
         char.spells_known = list(char.spells_known) + list(choices.new_spells)
 
-    # 6. New features — append for visibility (LLM reads this list)
+    # 6. New features — class features + subclass features at this level
     new_features: list[FeatureEntry] = [
         {"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])
     ]
+    if char.subclass:
+        subclass_feats = get_subclass_features_at_level(char.subclass, target_level)
+        new_features += cast(list[FeatureEntry], [{"index": f["index"], "name": f["name"]} for f in subclass_feats])
     char.features = list(char.features) + new_features
 
     # 7. Bookkeeping: level, prof bonus, hit dice
@@ -367,7 +374,9 @@ async def apply_level_up(
     char.hit_dice_remaining = (char.hit_dice_remaining or 0) + 1
 
     # 8. Resources — re-derive max from new level, preserve current spent uses
-    char.resources = _merge_resources(char.resources or {}, initialize_resources(cls, target_level))
+    char.resources = _merge_resources(
+        char.resources or {}, initialize_resources(cls, target_level, cast(dict[str, int], char.ability_scores))
+    )
 
     # 9. Re-derive initiative & passive_perception from final ability scores + feats
     recompute_derived_stats(char)

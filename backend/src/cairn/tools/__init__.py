@@ -34,11 +34,14 @@ from cairn.tools.game_state import (
     loot_item,
 )
 from cairn.tools.resources import (
+    apply_long_rest,
+    apply_short_rest,
     consume_spell_slot,
     drop_concentration,
     restore_resource,
     restore_spell_slot,
     roll_concentration_check,
+    roll_hit_die,
     set_concentration,
     spend_movement,
     use_action,
@@ -120,6 +123,10 @@ ALL_TOOLS: list[BaseTool] = [
     use_bonus_action,
     use_reaction,
     spend_movement,
+    # Rests
+    apply_short_rest,
+    apply_long_rest,
+    roll_hit_die,
 ]
 
 # Subset for combat agents — excludes state reads injected into prompts directly

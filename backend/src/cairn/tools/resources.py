@@ -4,7 +4,9 @@ from typing import Annotated
 from langchain_core.tools import tool
 
 import cairn.domain.services.resources as resource_service
+import cairn.domain.services.rests as rest_service
 from cairn.db import client as db_client
+from cairn.types import ToolUUID
 
 
 @tool
@@ -149,3 +151,43 @@ async def spend_movement(
         return await resource_service.spend_movement(
             db, session_id=uuid.UUID(session_id), combatant_id=combatant_id, feet=feet
         )
+
+
+@tool
+async def apply_short_rest(
+    session_id: Annotated[ToolUUID, "The session UUID."],
+) -> dict:
+    """Take a short rest for the whole party.
+
+    Resets short-rest resources (Action Surge, Ki, Channel Divinity, etc.) and
+    restores Warlock spell slots. Takes ~1 hour of in-game time. Blocked during combat.
+    """
+    async with db_client.get_session() as db:
+        return await rest_service.apply_short_rest(db, session_id=uuid.UUID(session_id))
+
+
+@tool
+async def apply_long_rest(
+    session_id: Annotated[ToolUUID, "The session UUID."],
+) -> dict:
+    """Take a long rest for the whole party.
+
+    Restores full HP, all spell slots, all resources, and half max hit dice. Clears
+    prepared spells for prepared casters (wizard/cleric/druid/paladin) — they must
+    re-prepare after. Advances in-game time by 8 hours. Blocked during combat.
+    """
+    async with db_client.get_session() as db:
+        return await rest_service.apply_long_rest(db, session_id=uuid.UUID(session_id))
+
+
+@tool
+async def roll_hit_die(
+    character_id: Annotated[ToolUUID, "The character's UUID."],
+) -> dict:
+    """Spend one hit die to heal during a short rest.
+
+    Rolls d{hit_die_size} + CON modifier (minimum 1 HP gained). Call repeatedly
+    — the player decides when to stop spending dice.
+    """
+    async with db_client.get_session() as db:
+        return dict(await rest_service.roll_hit_die(db, character_id=uuid.UUID(character_id)))

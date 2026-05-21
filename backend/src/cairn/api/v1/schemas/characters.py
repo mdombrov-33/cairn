@@ -79,6 +79,10 @@ class XpAwardResponse(BaseModel):
     ready_to_level_up: bool
 
 
+class PrepareSpellsRequest(BaseModel):
+    spells: list[str]
+
+
 class CharacterPatch(BaseModel):
     name: str | None = None
     bio: str | None = None
@@ -100,3 +104,4 @@ class CharacterResponse(CreatureBase):
     bio: str | None
     personality: str | None
     voice_traits: dict[str, Any]
+    prepared_spells: list[str] = []

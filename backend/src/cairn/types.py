@@ -200,3 +200,26 @@ class CombatState(TypedDict, total=False):
 # cast at every emit site, so this stays an honest open mapping.
 
 TurnEvent = dict[str, Any]
+
+
+# Rest results
+
+
+class CharacterRestResult(TypedDict):
+    character_id: str
+    name: str
+    hp_restored: int
+    hp_new: int
+    resources_reset: list[str]
+    spell_slots_restored: bool
+    prepared_spells_cleared: bool  # True for prepared casters on long rest
+
+
+class HitDieResult(TypedDict):
+    character_id: str
+    die_size: int
+    roll: int
+    con_modifier: int
+    hp_gained: int
+    hp_new: int
+    hit_dice_remaining: int

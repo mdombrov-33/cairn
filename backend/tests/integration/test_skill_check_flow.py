@@ -31,6 +31,7 @@ def _state(session_id: str, campaign_id: str, player_input: str) -> TurnState:
         npc_name=None,
         check=None,
         npc_context=None,
+        rest_context=None,
     )
 
 

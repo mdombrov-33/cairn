@@ -5,10 +5,8 @@ from httpx import AsyncClient
 
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
-from cairn.db.queries import sessions as session_queries
-from cairn.domain.exceptions import ConflictError, ValidationError
+from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import feat_effects, leveling
-from cairn.domain.services.combat.helpers import empty_combat_state
 from cairn.domain.services.leveling import (
     LevelUpChoices,
     build_level_up_preview,
@@ -16,7 +14,7 @@ from cairn.domain.services.leveling import (
     level_for_xp,
 )
 from cairn.types import AbilityScores
-from tests._factories import make_campaign, make_character, make_session
+from tests._factories import make_campaign, make_character
 
 # Class presets — pass as `**WIZARD` to override the default fighter
 WIZARD: dict = {
@@ -71,6 +69,17 @@ def test_initialize_resources_monk_l1_empty_l2_ki() -> None:
 
 def test_initialize_resources_unknown_class_returns_empty() -> None:
     assert initialize_resources("bogus", 1) == {}
+
+
+def test_initialize_resources_bard_l1_bardic_inspiration() -> None:
+    # CHA 16 → mod +3 → 3 bardic inspiration dice, resets on long_rest at L1
+    resources = initialize_resources("bard", 1, {"cha": 16, "str": 8, "dex": 14, "con": 12, "int": 10, "wis": 13})
+    assert resources["bardic_inspiration"] == {"current": 3, "max": 3, "resets_on": "long_rest"}
+
+
+def test_initialize_resources_bard_l5_resets_on_short_rest() -> None:
+    resources = initialize_resources("bard", 5, {"cha": 16, "str": 8, "dex": 14, "con": 12, "int": 10, "wis": 13})
+    assert resources["bardic_inspiration"]["resets_on"] == "short_rest"
 
 
 # Character creation wires resources
@@ -374,31 +383,6 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
             choices=LevelUpChoices(hp_method="average", subclass="champion"),
         )
     assert char.subclass == "champion"
-
-
-async def test_apply_level_up_blocks_during_combat(client: AsyncClient) -> None:
-    camp = await make_campaign(client)
-    char_resp = await make_character(client, camp["id"])
-    cid = uuid.UUID(char_resp["id"])
-    sess = await make_session(client, camp["id"])
-
-    async with db_client.get_session() as db:
-        char = await character_queries.get_character(db, cid)
-        char.xp = 300
-        await session_queries.update_combat_state(
-            db, uuid.UUID(sess["id"]), combat_state=empty_combat_state(), combat_active=True
-        )
-        await db.commit()
-
-    async with db_client.get_session() as db:
-        with pytest.raises(ConflictError, match="combat"):
-            await leveling.apply_level_up(
-                db,
-                character_id=cid,
-                campaign_id=uuid.UUID(camp["id"]),
-                owner_id="user_a",
-                choices=LevelUpChoices(hp_method="average"),
-            )
 
 
 async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
@@ -799,7 +783,7 @@ async def test_feat_martial_adept_stores_maneuvers_in_feat_options(client: Async
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         feat_effects.apply_feat(char, "martial-adept", {"maneuvers": ["Riposte", "Trip Attack"]})
     feat = next(f for f in char.feats if f["index"] == "martial-adept")
-    assert feat["options"]["maneuvers"] == ["Riposte", "Trip Attack"]
+    assert (feat.get("options") or {}).get("maneuvers") == ["Riposte", "Trip Attack"]
     assert "superiority_die" in char.resources
 
 

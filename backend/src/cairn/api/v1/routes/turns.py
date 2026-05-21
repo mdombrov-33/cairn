@@ -86,6 +86,12 @@ async def submit(
                 async for event in _narrate(narrator, turn, db, campaign_id, namespace):
                     yield event
 
+            elif intent == "rest_action":
+                rest_ctx = state["rest_context"] or ""
+                narrator = scene_narrator.run(body.player_input, context=rest_ctx)
+                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                    yield event
+
             else:  # narrative_action
                 narrator = scene_narrator.run(body.player_input)
                 async for event in _narrate(narrator, turn, db, campaign_id, namespace):

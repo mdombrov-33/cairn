@@ -22,3 +22,6 @@ class Session(Base):
     # Combat
     combat_active: Mapped[bool] = mapped_column(default=False, server_default="false")
     combat_state: Mapped[CombatState | None] = mapped_column(JSONB)
+
+    # TODO Slice 5: pair with world template calendar for full date display
+    in_game_hours_elapsed: Mapped[int] = mapped_column(default=0, server_default="0")

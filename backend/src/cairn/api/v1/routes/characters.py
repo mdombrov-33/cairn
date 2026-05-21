@@ -11,11 +11,13 @@ from cairn.api.v1.schemas.characters import (
     GrantXpRequest,
     LevelUpPreviewResponse,
     LevelUpRequest,
+    PrepareSpellsRequest,
     XpAwardResponse,
 )
 from cairn.domain.services import characters as service
 from cairn.domain.services import equipment as equipment_service
 from cairn.domain.services import leveling
+from cairn.domain.services import rests as rest_service
 from cairn.domain.services.leveling import LevelUpChoices
 
 router = APIRouter(prefix="/v1/campaigns", tags=["characters"])
@@ -171,6 +173,27 @@ async def level_up_apply(
             new_spells=body.new_spells,
             subclass=body.subclass,
         ),
+    )
+    return CharacterResponse.model_validate(char)
+
+
+@router.post(
+    "/{campaign_id}/characters/{character_id}/prepare-spells",
+    response_model=CharacterResponse,
+)
+async def prepare_spells(
+    campaign_id: uuid.UUID,
+    character_id: uuid.UUID,
+    body: PrepareSpellsRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CharacterResponse:
+    char = await rest_service.prepare_spells(
+        db,
+        character_id=character_id,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        spells=body.spells,
     )
     return CharacterResponse.model_validate(char)
 

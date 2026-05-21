@@ -16,3 +16,4 @@ class SessionResponse(BaseModel):
     summary: str | None
     combat_active: bool
     combat_state: dict[str, Any] | None
+    in_game_hours_elapsed: int
