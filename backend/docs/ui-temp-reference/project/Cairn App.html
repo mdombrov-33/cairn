@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cairn — AI Dungeon Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=IM+Fell+English:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#root{width:100%;height:100%;overflow:hidden;background:#0a0809;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#2e2318;border-radius:2px;}
+textarea::placeholder,input::placeholder{opacity:0.35;}
+button{cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─── DESIGN TOKENS ────────────────────────────────────────
+const T = {
+  bg:       "#0a0809",
+  bgDeep:   "#070607",
+  bgPanel:  "#100d0c",
+  bgCard:   "#14110f",
+  bgHover:  "#1a1612",
+  border:   "#2a1f17",
+  borderGold:"#4a3820",
+  gold:     "#c9a84c",
+  goldDim:  "#7a6030",
+  goldFaint:"#3a2c18",
+  ember:    "#b54a1e",
+  emberDim: "#6a2a10",
+  parchment:"#e8d9b8",
+  parchDim: "#9a8f78",
+  parchFaint:"#5a5040",
+  ink:      "#1a1410",
+  dimText:  "#6a6050",
+  midText:  "#9a8f78",
+  success:  "#5a9e5a",
+  danger:   "#c04030",
+  warn:     "#c08030",
+  purple:   "#8060c0",
+  blue:     "#4070c0",
+};
+
+// ─── SHARED PRIMITIVES ────────────────────────────────────
+const F = {
+  cinzel: "'Cinzel', serif",
+  fell:   "'IM Fell English', serif",
+  sans:   "'DM Sans', sans-serif",
+};
+
+function CornerRune({size=16,color=T.goldDim}) {
+  return <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <path d="M0 0 L6 0 L6 1.5 L1.5 1.5 L1.5 6 L0 6 Z" fill={color}/>
+    <path d="M3 3 L4.5 3 L4.5 4.5 L3 4.5 Z" fill={color} opacity="0.5"/>
+  </svg>;
+}
+
+function GoldDivider({label, style:s={}}) {
+  return <div style={{display:"flex",alignItems:"center",gap:8,...s}}>
+    <div style={{flex:1,height:1,background:`linear-gradient(to right,transparent,${T.borderGold})`}}/>
+    {label
+      ? <span style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,textTransform:"uppercase",flexShrink:0}}>{label}</span>
+      : <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <rect x="3" y="0" width="4" height="4" transform="rotate(45 5 2)" fill={T.goldDim}/>
+        </svg>
+    }
+    <div style={{flex:1,height:1,background:`linear-gradient(to left,transparent,${T.borderGold})`}}/>
+  </div>;
+}
+
+function OrnamentBox({children, style:s={}, glow=false}) {
+  return <div style={{position:"relative",border:`1px solid ${T.borderGold}`,background:T.bgCard,...s,
+    boxShadow:glow?`0 0 24px rgba(201,168,76,0.08) inset`:"none"}}>
+    <div style={{position:"absolute",top:0,left:0}}><CornerRune/></div>
+    <div style={{position:"absolute",top:0,right:0,transform:"scaleX(-1)"}}><CornerRune/></div>
+    <div style={{position:"absolute",bottom:0,left:0,transform:"scaleY(-1)"}}><CornerRune/></div>
+    <div style={{position:"absolute",bottom:0,right:0,transform:"scale(-1)"}}><CornerRune/></div>
+    {children}
+  </div>;
+}
+
+function GoldBtn({children,onClick,variant="outline",style:s={},disabled=false}) {
+  const base = {fontFamily:F.cinzel,fontSize:10,letterSpacing:2,textTransform:"uppercase",padding:"9px 20px",border:"none",cursor:disabled?"not-allowed":"pointer",transition:"all 0.15s",opacity:disabled?0.5:1,...s};
+  if(variant==="solid") return <button onClick={onClick} disabled={disabled} style={{...base,background:T.gold,color:T.bgDeep,fontWeight:"600"}}>{children}</button>;
+  if(variant==="ember") return <button onClick={onClick} disabled={disabled} style={{...base,background:T.ember,color:T.parchment,border:`1px solid ${T.emberDim}`}}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} style={{...base,background:"none",border:`1px solid ${T.gold}`,color:T.gold}}>{children}</button>;
+}
+
+function ImagePlaceholder({label,width="100%",height=120,style:s={}}) {
+  return <div style={{width,height,background:T.bgDeep,border:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",...s}}>
+    <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.06}}>
+      <defs><pattern id={`h${label}`} width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="10" stroke={T.parchDim} strokeWidth="0.8"/>
+      </pattern></defs>
+      <rect width="100%" height="100%" fill={`url(#h${label})`}/>
+    </svg>
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{opacity:0.2,marginBottom:6}}>
+      <rect x="1" y="1" width="26" height="26" stroke={T.parchDim} strokeWidth="0.5"/>
+      <line x1="1" y1="1" x2="27" y2="27" stroke={T.parchDim} strokeWidth="0.5"/>
+      <line x1="27" y1="1" x2="1" y2="27" stroke={T.parchDim} strokeWidth="0.5"/>
+    </svg>
+    <span style={{fontFamily:F.sans,fontSize:9,color:T.dimText,letterSpacing:1,textTransform:"uppercase",textAlign:"center",padding:"0 8px"}}>{label}</span>
+  </div>;
+}
+
+// Floating dust particles
+function DustCanvas({opacity=1}) {
+  const ref=useRef(null);
+  useEffect(()=>{
+    const c=ref.current; if(!c)return;
+    const ctx=c.getContext("2d");
+    c.width=c.offsetWidth; c.height=c.offsetHeight;
+    const pts=Array.from({length:50},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+0.2,dx:(Math.random()-.5)*.1,dy:-Math.random()*.15-.03,op:Math.random()*.18+.04}));
+    let raf;
+    const draw=()=>{
+      ctx.clearRect(0,0,c.width,c.height);
+      pts.forEach(p=>{
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(201,168,76,${p.op})`;ctx.fill();
+        p.x+=p.dx;p.y+=p.dy;
+        if(p.y<-2){p.y=c.height+2;p.x=Math.random()*c.width;}
+        if(p.x<-2)p.x=c.width+2;if(p.x>c.width+2)p.x=-2;
+      });
+      raf=requestAnimationFrame(draw);
+    };
+    draw();return()=>cancelAnimationFrame(raf);
+  },[]);
+  return <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity}}/>;
+}
+
+// ─── SIDEBAR NAV ──────────────────────────────────────────
+const NAV_ITEMS = [
+  {id:"campaigns", icon:"⬡", label:"Campaigns"},
+  {id:"session",   icon:"◈", label:"Play"},
+  {id:"sheet",     icon:"◇", label:"Character"},
+  {id:"spells",    icon:"✦", label:"Spells"},
+  {id:"lore",      icon:"⌬", label:"Lore"},
+  {id:"summary",   icon:"⏣", label:"Summary"},
+];
+
+function Sidebar({screen, onNav, collapsed, onToggle}) {
+  return <div style={{width:collapsed?52:190,background:T.bgDeep,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",flexShrink:0,transition:"width 0.2s",overflow:"hidden"}}>
+    {/* Logo */}
+    <div style={{padding:collapsed?"14px 0":"16px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:10,justifyContent:collapsed?"center":"flex-start",flexShrink:0}}>
+      <svg width="22" height="28" viewBox="0 0 22 28" fill="none" style={{flexShrink:0}}>
+        <rect x="7" y="0" width="8" height="5" rx="0.5" fill={T.gold} opacity="0.9"/>
+        <rect x="4" y="6.5" width="14" height="5" rx="0.5" fill={T.gold} opacity="0.65"/>
+        <rect x="1" y="13" width="20" height="5" rx="0.5" fill={T.gold} opacity="0.4"/>
+        <rect x="4" y="19.5" width="14" height="5" rx="0.5" fill={T.gold} opacity="0.22"/>
+      </svg>
+      {!collapsed&&<div>
+        <div style={{fontFamily:F.cinzel,fontSize:14,color:T.gold,letterSpacing:3}}>CAIRN</div>
+        <div style={{fontFamily:F.sans,fontSize:8,color:T.dimText,letterSpacing:2,textTransform:"uppercase"}}>AI Dungeon Master</div>
+      </div>}
+    </div>
+    {/* Nav items */}
+    <div style={{flex:1,paddingTop:8,overflowY:"auto"}}>
+      {NAV_ITEMS.map(item=>{
+        const active=screen===item.id;
+        return <div key={item.id} onClick={()=>onNav(item.id)} style={{
+          display:"flex",alignItems:"center",gap:10,
+          padding:collapsed?"12px 0":"10px 14px",
+          justifyContent:collapsed?"center":"flex-start",
+          cursor:"pointer",
+          background:active?T.bgHover:"none",
+          borderLeft:active?`2px solid ${T.gold}`:"2px solid transparent",
+          transition:"all 0.12s",
+          marginBottom:2,
+        }}>
+          <span style={{fontSize:14,color:active?T.gold:T.dimText,flexShrink:0,lineHeight:1}}>{item.icon}</span>
+          {!collapsed&&<span style={{fontFamily:F.cinzel,fontSize:10,color:active?T.gold:T.dimText,letterSpacing:2,textTransform:"uppercase"}}>{item.label}</span>}
+        </div>;
+      })}
+    </div>
+    {/* Collapse toggle */}
+    <div style={{borderTop:`1px solid ${T.border}`,padding:"10px 0",display:"flex",justifyContent:"center"}}>
+      <button onClick={onToggle} style={{background:"none",border:"none",color:T.dimText,fontSize:12,padding:"4px 8px"}}>
+        {collapsed?"▶":"◀"}
+      </button>
+    </div>
+    {/* User */}
+    {!collapsed&&<div style={{borderTop:`1px solid ${T.border}`,padding:"12px 14px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+      <div style={{width:26,height:26,border:`1px solid ${T.borderGold}`,background:T.ink,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <span style={{fontFamily:F.cinzel,fontSize:10,color:T.goldDim}}>A</span>
+      </div>
+      <div>
+        <div style={{fontFamily:F.cinzel,fontSize:9,color:T.parchDim,letterSpacing:1}}>Ser Aldric</div>
+        <div style={{fontFamily:F.sans,fontSize:8,color:T.dimText}}>Free Tier</div>
+      </div>
+    </div>}
+  </div>;
+}
+
+// ─── SCREEN: LOGIN ────────────────────────────────────────
+function LoginScreen({onEnter}) {
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [mode,setMode]=useState("login");
+  return <div style={{width:"100%",height:"100%",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+    <DustCanvas opacity={0.7}/>
+    {/* Vignette */}
+    <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at center, transparent 30%, rgba(7,6,7,0.85) 100%)`,pointerEvents:"none"}}/>
+    {/* Background art placeholder */}
+    <div style={{position:"absolute",inset:0,zIndex:0}}>
+      <ImagePlaceholder label="Scene art — tavern at night, torchlight, fog" width="100%" height="100%" style={{border:"none"}}/>
+    </div>
+    {/* Panel */}
+    <div style={{position:"relative",zIndex:2,width:380}}>
+      <OrnamentBox style={{padding:"36px 32px"}} glow>
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <svg width="36" height="46" viewBox="0 0 36 46" fill="none" style={{margin:"0 auto 10px",display:"block"}}>
+            <rect x="11" y="0" width="14" height="8" rx="1" fill={T.gold} opacity="0.95"/>
+            <rect x="6" y="10" width="24" height="8" rx="1" fill={T.gold} opacity="0.7"/>
+            <rect x="1" y="20" width="34" height="8" rx="1" fill={T.gold} opacity="0.45"/>
+            <rect x="6" y="30" width="24" height="8" rx="1" fill={T.gold} opacity="0.25"/>
+            <rect x="11" y="40" width="14" height="6" rx="1" fill={T.gold} opacity="0.12"/>
+          </svg>
+          <div style={{fontFamily:F.cinzel,fontSize:28,color:T.gold,letterSpacing:6,marginBottom:4}}>CAIRN</div>
+          <div style={{fontFamily:F.fell,fontSize:13,color:T.parchDim,fontStyle:"italic"}}>The world remembers. The trail extends.</div>
+        </div>
+        <GoldDivider style={{marginBottom:24}}/>
+        {/* Mode tabs */}
+        <div style={{display:"flex",gap:0,marginBottom:20,border:`1px solid ${T.border}`}}>
+          {["login","register"].map(m=><button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"8px",background:mode===m?T.goldFaint:"none",border:"none",fontFamily:F.cinzel,fontSize:9,color:mode===m?T.gold:T.dimText,letterSpacing:2,textTransform:"uppercase"}}>
+            {m==="login"?"Sign In":"Create Account"}
+          </button>)}
+        </div>
+        {/* Form */}
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          <div>
+            <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,marginBottom:5,textTransform:"uppercase"}}>Email</div>
+            <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" style={{width:"100%",background:T.ink,border:`1px solid ${T.borderGold}`,color:T.parchment,fontFamily:F.fell,fontSize:13,padding:"9px 12px",outline:"none"}}/>
+          </div>
+          <div>
+            <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,marginBottom:5,textTransform:"uppercase"}}>Password</div>
+            <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%",background:T.ink,border:`1px solid ${T.borderGold}`,color:T.parchment,fontFamily:F.fell,fontSize:13,padding:"9px 12px",outline:"none"}}/>
+          </div>
+          {mode==="register"&&<div>
+            <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,marginBottom:5,textTransform:"uppercase"}}>Confirm Password</div>
+            <input type="password" placeholder="••••••••" style={{width:"100%",background:T.ink,border:`1px solid ${T.borderGold}`,color:T.parchment,fontFamily:F.fell,fontSize:13,padding:"9px 12px",outline:"none"}}/>
+          </div>}
+        </div>
+        <GoldBtn variant="solid" onClick={onEnter} style={{width:"100%",padding:"12px"}}>
+          {mode==="login"?"Enter the World":"Begin Your Journey"}
+        </GoldBtn>
+        {mode==="login"&&<div style={{textAlign:"center",marginTop:12}}>
+          <span style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic",cursor:"pointer"}} onClick={()=>setMode("register")}>No account yet? Create one →</span>
+        </div>}
+      </OrnamentBox>
+      <div style={{textAlign:"center",marginTop:14}}>
+        <span style={{fontFamily:F.sans,fontSize:9,color:T.dimText,letterSpacing:1}}>Secured by Clerk · Free tier available</span>
+      </div>
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: CAMPAIGN BROWSER ─────────────────────────────
+const CAMPAIGNS = [
+  {id:1,name:"The Tavern at Grimwood Crossing",template:"The Grimwood Chronicles",author:"Cairn Official",sessions:1,turns:14,lastPlayed:"Today",status:"active",character:"Ser Aldric",class:"Fighter",level:3,desc:"A crossroads inn on the edge of a haunted forest. A missing merchant, a mysterious stranger, and a bartender with secrets.",tags:["Intrigue","Forest","Low Combat"]},
+  {id:2,name:"Descent into the Salt Mines",template:"Underdark Delve",author:"Cairn Official",sessions:0,turns:0,lastPlayed:"Never",status:"new",character:null,class:null,level:null,desc:"Ancient mines beneath the city have awakened. The miners sent to investigate have not returned.",tags:["Dungeon","Horror","Combat"]},
+  {id:3,name:"The Court of Embers",template:"Political Intrigue",author:"Cairn Official",sessions:0,turns:0,lastPlayed:"Never",status:"new",character:null,class:null,level:null,desc:"A noble house on the verge of collapse. Every ally is a suspect. Every suspect is a potential ally.",tags:["Intrigue","Urban","Roleplay-Heavy"]},
+];
+
+function CampaignCard({camp, onPlay, onNew}) {
+  const [hovered,setHovered]=useState(false);
+  const isActive=camp.status==="active";
+  return <div onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}
+    style={{background:hovered?T.bgHover:T.bgCard,border:`1px solid ${hovered?T.borderGold:T.border}`,transition:"all 0.15s",position:"relative",overflow:"hidden"}}>
+    {isActive&&<div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(to right,${T.ember},${T.gold})`}}/>}
+    {/* Art placeholder */}
+    <ImagePlaceholder label={`Campaign art — ${camp.name}`} height={100} style={{borderBottom:`1px solid ${T.border}`,border:"none",borderBottom:`1px solid ${T.border}`}}/>
+    <div style={{padding:"14px 16px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:F.cinzel,fontSize:13,color:T.gold,marginBottom:2,letterSpacing:0.5}}>{camp.name}</div>
+          <div style={{fontFamily:F.sans,fontSize:9,color:T.dimText,letterSpacing:1,textTransform:"uppercase"}}>{camp.template} · by {camp.author}</div>
+        </div>
+        {isActive&&<div style={{fontFamily:F.cinzel,fontSize:7,color:T.ember,border:`1px solid ${T.ember}`,padding:"2px 6px",letterSpacing:1,flexShrink:0,marginLeft:8}}>ACTIVE</div>}
+      </div>
+      <p style={{fontFamily:F.fell,fontSize:12,color:T.parchDim,lineHeight:1.65,marginBottom:10,fontStyle:"italic"}}>{camp.desc}</p>
+      {/* Tags */}
+      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>
+        {camp.tags.map(t=><span key={t} style={{fontFamily:F.sans,fontSize:8,color:T.dimText,border:`1px solid ${T.border}`,padding:"2px 7px"}}>{t}</span>)}
+      </div>
+      {/* Character / stats */}
+      {isActive
+        ? <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.border}`,paddingTop:10}}>
+            <div style={{display:"flex",gap:14}}>
+              <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:1,marginBottom:2}}>CHARACTER</div><div style={{fontFamily:F.cinzel,fontSize:10,color:T.parchDim}}>{camp.character} · {camp.class} {camp.level}</div></div>
+              <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:1,marginBottom:2}}>SESSIONS</div><div style={{fontFamily:F.cinzel,fontSize:10,color:T.parchDim}}>{camp.sessions}</div></div>
+              <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:1,marginBottom:2}}>LAST PLAYED</div><div style={{fontFamily:F.cinzel,fontSize:10,color:T.parchDim}}>{camp.lastPlayed}</div></div>
+            </div>
+            <GoldBtn variant="ember" onClick={onPlay} style={{padding:"7px 16px",fontSize:9}}>Continue →</GoldBtn>
+          </div>
+        : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.border}`,paddingTop:10}}>
+            <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic"}}>No character yet · Session 0</div>
+            <GoldBtn onClick={onNew} style={{padding:"7px 16px",fontSize:9}}>Begin →</GoldBtn>
+          </div>
+      }
+    </div>
+  </div>;
+}
+
+function CampaignScreen({onPlay, onNew}) {
+  return <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    {/* Header */}
+    <div style={{padding:"20px 28px 16px",borderBottom:`1px solid ${T.border}`,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+      <div>
+        <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic",marginBottom:4}}>Good evening, Ser Aldric</div>
+        <div style={{fontFamily:F.cinzel,fontSize:20,color:T.gold,letterSpacing:1}}>Your Campaigns</div>
+      </div>
+      <GoldBtn style={{fontSize:9,padding:"8px 16px"}}>+ New Campaign</GoldBtn>
+    </div>
+    {/* Grid */}
+    <div style={{flex:1,overflowY:"auto",padding:"24px 28px"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:20}}>
+        {CAMPAIGNS.map(c=><CampaignCard key={c.id} camp={c} onPlay={onPlay} onNew={onNew}/>)}
+      </div>
+      <GoldDivider label="Campaign Templates" style={{margin:"28px 0 20px"}}/>
+      <div style={{fontFamily:F.fell,fontSize:12,color:T.dimText,fontStyle:"italic",marginBottom:16}}>Start a new campaign from a curated template. The DM will generate the world; you bring the character.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:14}}>
+        {["The Sunken City","Plague of Ravens","The Last Kingdom","Crown of Thorns"].map(t=><div key={t} style={{background:T.bgCard,border:`1px solid ${T.border}`,padding:"14px 14px",cursor:"pointer"}}>
+          <ImagePlaceholder label={t} height={70} style={{marginBottom:10}}/>
+          <div style={{fontFamily:F.cinzel,fontSize:11,color:T.parchDim,letterSpacing:0.5}}>{t}</div>
+          <div style={{fontFamily:F.sans,fontSize:9,color:T.dimText,marginTop:3}}>Official Template</div>
+        </div>)}
+      </div>
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: CHARACTER SHEET ──────────────────────────────
+const CHAR = {
+  name:"Ser Aldric Vane", race:"Human", class:"Fighter", subclass:"Battle Master",
+  level:3, xp:900, xpNext:2700, background:"Soldier",
+  hp:24, hpMax:32, hpTemp:0, ac:16, speed:30, initiative:1, profBonus:2,
+  hitDice:"3d10",
+  stats:{STR:{val:16,mod:3},DEX:{val:12,mod:1},CON:{val:14,mod:2},INT:{val:8,mod:-1},WIS:{val:10,mod:0},CHA:{val:13,mod:1}},
+  saves:{STR:true,DEX:false,CON:true,INT:false,WIS:false,CHA:false},
+  skills:[
+    {name:"Athletics",stat:"STR",prof:true,exp:false},
+    {name:"Perception",stat:"WIS",prof:true,exp:false},
+    {name:"Intimidation",stat:"CHA",prof:true,exp:false},
+    {name:"History",stat:"INT",prof:false,exp:false},
+    {name:"Stealth",stat:"DEX",prof:false,exp:false},
+    {name:"Persuasion",stat:"CHA",prof:false,exp:false},
+  ],
+  features:[
+    {name:"Action Surge",uses:1,maxUses:1,desc:"Take one additional action on your turn.",reset:"Short Rest"},
+    {name:"Second Wind",uses:1,maxUses:1,desc:"Regain 1d10 + 3 HP as a bonus action.",reset:"Short Rest"},
+    {name:"Combat Superiority",uses:4,maxUses:4,desc:"4 superiority dice (d8). Fuel maneuvers.",reset:"Short Rest"},
+  ],
+  weapons:[
+    {name:"Longsword",type:"Melee",atk:"+5",dmg:"1d8+3",dmgType:"Slashing",props:"Versatile (1d10)"},
+    {name:"Handaxe",type:"Melee",atk:"+5",dmg:"1d6+3",dmgType:"Slashing",props:"Light, Thrown (20/60)"},
+    {name:"Longbow",type:"Ranged",atk:"+3",dmg:"1d8+1",dmgType:"Piercing",props:"Range (150/600), Heavy"},
+  ],
+  inventory:[
+    {name:"Chain Mail",qty:1,wt:55,notes:"AC 16, Disadvantage on Stealth"},
+    {name:"Longsword",qty:1,wt:3,notes:""},
+    {name:"Handaxe",qty:2,wt:4,notes:""},
+    {name:"Longbow",qty:1,wt:2,notes:""},
+    {name:"Quiver (20 arrows)",qty:1,wt:1,notes:""},
+    {name:"Healer's Kit",qty:1,wt:3,notes:"10 uses"},
+    {name:"Rope, Hempen (50ft)",qty:1,wt:10,notes:""},
+    {name:"Rations (5 days)",qty:1,wt:10,notes:""},
+    {name:"Gold Pieces",qty:30,wt:0,notes:""},
+  ],
+  conditions:[],
+  inspiration:false,
+};
+
+function StatBox({label,val,mod}) {
+  return <div style={{textAlign:"center",background:T.bgDeep,border:`1px solid ${T.borderGold}`,padding:"8px 4px 6px",
+    clipPath:"polygon(0 6px,6px 0,calc(100%-6px) 0,100% 6px,100% calc(100%-6px),calc(100%-6px) 100%,6px 100%,0 calc(100%-6px))"}}>
+    <div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>{label}</div>
+    <div style={{fontFamily:F.cinzel,fontSize:22,color:T.gold,lineHeight:1}}>{val}</div>
+    <div style={{fontFamily:F.cinzel,fontSize:11,color:T.parchDim,marginTop:2}}>{mod>=0?`+${mod}`:mod}</div>
+  </div>;
+}
+
+function ResourcePip({filled}) {
+  return <div style={{width:14,height:14,background:filled?T.gold:T.bgDeep,border:`1px solid ${filled?T.gold:T.borderGold}`,transform:"rotate(45deg)"}}/>;
+}
+
+function SheetScreen({char=CHAR}) {
+  const [tab,setTab]=useState("core");
+  const TABS=["core","features","weapons","inventory"];
+
+  return <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    {/* Character header */}
+    <div style={{background:T.bgDeep,borderBottom:`1px solid ${T.border}`,padding:"16px 24px",flexShrink:0}}>
+      <div style={{display:"flex",gap:18,alignItems:"flex-start"}}>
+        <ImagePlaceholder label="Portrait" width={72} height={88} style={{flexShrink:0}}/>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:F.cinzel,fontSize:18,color:T.gold,letterSpacing:1,marginBottom:2}}>{char.name}</div>
+          <div style={{fontFamily:F.cinzel,fontSize:9,color:T.dimText,letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
+            {char.race} · {char.class} ({char.subclass}) · Level {char.level} · {char.background}
+          </div>
+          <div style={{display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
+            {/* HP */}
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:2}}>HP</div>
+              <div style={{fontFamily:F.cinzel,fontSize:16,color:T.ember}}>{char.hp}</div>
+              <div style={{fontFamily:F.cinzel,fontSize:10,color:T.dimText}}>/ {char.hpMax}</div>
+              <div style={{width:60,height:4,background:T.border,position:"relative",marginLeft:2}}>
+                <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${(char.hp/char.hpMax)*100}%`,background:`linear-gradient(to right,${T.emberDim},${T.ember})`}}/>
+              </div>
+            </div>
+            {[["AC",char.ac],["Speed",`${char.speed}ft`],["Init",`+${char.initiative}`],["Prof",`+${char.profBonus}`],["Hit Dice",char.hitDice]].map(([l,v])=>
+              <div key={l} style={{display:"flex",alignItems:"baseline",gap:4}}>
+                <span style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:2}}>{l}</span>
+                <span style={{fontFamily:F.cinzel,fontSize:14,color:T.parchDim}}>{v}</span>
+              </div>
+            )}
+          </div>
+          {/* XP bar */}
+          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:1}}>XP</span>
+            <div style={{flex:1,height:3,background:T.border,position:"relative",maxWidth:180}}>
+              <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${(char.xp/char.xpNext)*100}%`,background:`linear-gradient(to right,${T.goldFaint},${T.gold})`}}/>
+            </div>
+            <span style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText}}>{char.xp} / {char.xpNext}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Tab bar */}
+    <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+      {TABS.map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"9px 18px",background:tab===t?T.bgCard:"none",border:"none",borderBottom:tab===t?`2px solid ${T.gold}`:"2px solid transparent",fontFamily:F.cinzel,fontSize:9,color:tab===t?T.gold:T.dimText,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",transition:"all 0.12s"}}>
+        {t}
+      </button>)}
+    </div>
+
+    {/* Tab content */}
+    <div style={{flex:1,overflowY:"auto"}}>
+      {tab==="core"&&<div style={{display:"flex",gap:0}}>
+        {/* Stats column */}
+        <div style={{width:180,borderRight:`1px solid ${T.border}`,padding:"16px 14px",flexShrink:0}}>
+          <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>Ability Scores</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+            {Object.entries(char.stats).map(([k,v])=><StatBox key={k} label={k} val={v.val} mod={v.mod}/>)}
+          </div>
+          <GoldDivider label="Saving Throws" style={{marginBottom:8}}/>
+          {Object.entries(char.saves).map(([stat,prof])=>{
+            const mod=char.stats[stat].mod+(prof?char.profBonus:0);
+            return <div key={stat} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
+              <div style={{width:8,height:8,background:prof?T.gold:"none",border:`1px solid ${prof?T.gold:T.borderGold}`,borderRadius:"50%",flexShrink:0}}/>
+              <span style={{fontFamily:F.sans,fontSize:10,color:T.parchDim,flex:1}}>{stat}</span>
+              <span style={{fontFamily:F.cinzel,fontSize:10,color:T.gold}}>{mod>=0?`+${mod}`:mod}</span>
+            </div>;
+          })}
+        </div>
+        {/* Skills + conditions */}
+        <div style={{flex:1,padding:"16px 18px"}}>
+          <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>Skills</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:18}}>
+            {char.skills.map(sk=>{
+              const base=char.stats[sk.stat].mod;
+              const bonus=sk.prof?char.profBonus:0;
+              const total=base+bonus;
+              return <div key={sk.name} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",background:sk.prof?T.goldFaint:"none",borderLeft:sk.prof?`2px solid ${T.goldDim}`:"2px solid transparent"}}>
+                <div style={{width:7,height:7,background:sk.prof?T.gold:"none",border:`1px solid ${sk.prof?T.gold:T.borderGold}`,borderRadius:"50%",flexShrink:0}}/>
+                <span style={{fontFamily:F.sans,fontSize:10,color:T.parchDim,flex:1}}>{sk.name}</span>
+                <span style={{fontFamily:F.cinzel,fontSize:9,color:T.dimText}}>{sk.stat}</span>
+                <span style={{fontFamily:F.cinzel,fontSize:11,color:T.gold,minWidth:24,textAlign:"right"}}>{total>=0?`+${total}`:total}</span>
+              </div>;
+            })}
+          </div>
+          <GoldDivider label="Class Resources" style={{marginBottom:12}}/>
+          {char.features.filter(f=>f.maxUses>0).map(f=><div key={f.name} style={{marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+              <span style={{fontFamily:F.cinzel,fontSize:11,color:T.parchment,letterSpacing:0.5}}>{f.name}</span>
+              <span style={{fontFamily:F.sans,fontSize:9,color:T.dimText}}>{f.reset}</span>
+            </div>
+            <div style={{display:"flex",gap:5,marginBottom:4}}>
+              {Array.from({length:f.maxUses}).map((_,i)=><ResourcePip key={i} filled={i<f.uses}/>)}
+            </div>
+            <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic",lineHeight:1.5}}>{f.desc}</div>
+          </div>)}
+          <GoldDivider label="Conditions" style={{margin:"16px 0 10px"}}/>
+          {char.conditions.length===0
+            ? <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic"}}>No active conditions.</div>
+            : char.conditions.map(c=><span key={c} style={{display:"inline-block",fontFamily:F.cinzel,fontSize:9,color:T.danger,border:`1px solid ${T.danger}`,padding:"2px 8px",marginRight:6}}>{c}</span>)
+          }
+        </div>
+      </div>}
+
+      {tab==="features"&&<div style={{padding:"20px 24px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          {[...char.features,
+            {name:"Extra Attack",uses:0,maxUses:0,desc:"Attack twice when you take the Attack action.",reset:""},
+            {name:"Martial Archetype: Battle Master",uses:0,maxUses:0,desc:"Maneuvers powered by Superiority Dice (d8s). Learn 3 maneuvers at level 3.",reset:""},
+            {name:"Fighting Style: Defense",uses:0,maxUses:0,desc:"+1 bonus to AC while wearing armor.",reset:""},
+          ].map(f=><div key={f.name} style={{background:T.bgCard,border:`1px solid ${T.border}`,padding:"14px 16px",borderLeft:`2px solid ${T.borderGold}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <span style={{fontFamily:F.cinzel,fontSize:12,color:T.gold,letterSpacing:0.5}}>{f.name}</span>
+              {f.maxUses>0&&<span style={{fontFamily:F.cinzel,fontSize:8,color:T.ember,border:`1px solid ${T.ember}`,padding:"1px 6px"}}>{f.uses}/{f.maxUses}</span>}
+            </div>
+            <p style={{fontFamily:F.fell,fontSize:12,color:T.parchDim,lineHeight:1.65,fontStyle:"italic",margin:0}}>{f.desc}</p>
+            {f.reset&&<div style={{fontFamily:F.sans,fontSize:8,color:T.dimText,marginTop:6,letterSpacing:1,textTransform:"uppercase"}}>Resets on: {f.reset}</div>}
+          </div>)}
+        </div>
+      </div>}
+
+      {tab==="weapons"&&<div style={{padding:"20px 24px"}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr style={{borderBottom:`1px solid ${T.borderGold}`}}>
+            {["Weapon","Type","Attack","Damage","Type","Properties"].map(h=><th key={h} style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,textAlign:"left",padding:"6px 12px",textTransform:"uppercase"}}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {char.weapons.map((w,i)=><tr key={w.name} style={{background:i%2?T.bgCard:"none",borderBottom:`1px solid ${T.border}`}}>
+              <td style={{fontFamily:F.cinzel,fontSize:11,color:T.parchment,padding:"10px 12px"}}>{w.name}</td>
+              <td style={{fontFamily:F.sans,fontSize:10,color:T.dimText,padding:"10px 12px"}}>{w.type}</td>
+              <td style={{fontFamily:F.cinzel,fontSize:13,color:T.gold,padding:"10px 12px"}}>{w.atk}</td>
+              <td style={{fontFamily:F.cinzel,fontSize:12,color:T.ember,padding:"10px 12px"}}>{w.dmg}</td>
+              <td style={{fontFamily:F.sans,fontSize:10,color:T.dimText,padding:"10px 12px"}}>{w.dmgType}</td>
+              <td style={{fontFamily:F.fell,fontSize:11,color:T.dimText,padding:"10px 12px",fontStyle:"italic"}}>{w.props}</td>
+            </tr>)}
+          </tbody>
+        </table>
+        <GoldDivider label="Armor" style={{margin:"20px 0 12px"}}/>
+        <div style={{background:T.bgCard,border:`1px solid ${T.border}`,padding:"12px 16px",display:"flex",gap:20,alignItems:"center"}}>
+          <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,marginBottom:3}}>EQUIPPED</div><div style={{fontFamily:F.cinzel,fontSize:13,color:T.parchment}}>Chain Mail</div></div>
+          <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,marginBottom:3}}>AC</div><div style={{fontFamily:F.cinzel,fontSize:22,color:T.gold}}>16</div></div>
+          <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,marginBottom:3}}>STEALTH</div><div style={{fontFamily:F.cinzel,fontSize:11,color:T.danger}}>Disadvantage</div></div>
+          <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic"}}>Heavy armor. No DEX modifier applied.</div>
+        </div>
+      </div>}
+
+      {tab==="inventory"&&<div style={{padding:"20px 24px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <div style={{fontFamily:F.fell,fontSize:12,color:T.dimText,fontStyle:"italic"}}>Carrying capacity: {char.stats.STR.val*15} lbs</div>
+          <div style={{fontFamily:F.cinzel,fontSize:11,color:T.gold}}>30 gp</div>
+        </div>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead><tr style={{borderBottom:`1px solid ${T.borderGold}`}}>
+            {["Item","Qty","Weight","Notes"].map(h=><th key={h} style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,textAlign:"left",padding:"6px 12px",textTransform:"uppercase"}}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {char.inventory.map((it,i)=><tr key={it.name} style={{background:i%2?T.bgCard:"none",borderBottom:`1px solid ${T.border}`}}>
+              <td style={{fontFamily:F.fell,fontSize:12,color:T.parchment,padding:"9px 12px"}}>{it.name}</td>
+              <td style={{fontFamily:F.cinzel,fontSize:11,color:T.parchDim,padding:"9px 12px"}}>{it.qty}</td>
+              <td style={{fontFamily:F.cinzel,fontSize:10,color:T.dimText,padding:"9px 12px"}}>{it.wt>0?`${it.wt} lb`:"-"}</td>
+              <td style={{fontFamily:F.fell,fontSize:11,color:T.dimText,padding:"9px 12px",fontStyle:"italic"}}>{it.notes||"-"}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>}
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: SPELL BOOK ────────────────────────────────────
+const SPELLS_DATA = {
+  cantrips:[
+    {name:"Fire Bolt",school:"Evocation",castTime:"1 Action",range:"120ft",components:"V,S",duration:"Instant",desc:"Hurl a mote of fire at a target. +5 to hit. 1d10 fire damage.",atk:true},
+    {name:"Minor Illusion",school:"Illusion",castTime:"1 Action",range:"30ft",components:"S,M",duration:"1 min",desc:"Create a sound or image of an object within range. Investigate (DC 14) to disbelieve.",atk:false},
+    {name:"Prestidigitation",school:"Transmutation",castTime:"1 Action",range:"10ft",components:"V,S",duration:"1 hr",desc:"Perform minor magical tricks. Clean, soil, chill, warm, flavor, color objects.",atk:false},
+  ],
+  1:[
+    {name:"Magic Missile",school:"Evocation",castTime:"1 Action",range:"120ft",components:"V,S",duration:"Instant",desc:"Create 3 darts of magical force. Each deals 1d4+1 force damage. Auto-hit.",atk:false,slots:4,slotsMax:4},
+    {name:"Shield",school:"Abjuration",castTime:"1 Reaction",range:"Self",components:"V,S",duration:"1 round",desc:"+5 to AC until start of next turn (including triggering attack). Negates Magic Missile.",atk:false,slots:4,slotsMax:4},
+    {name:"Mage Armor",school:"Abjuration",castTime:"1 Action",range:"Touch",components:"V,S,M",duration:"8 hrs",desc:"AC becomes 13 + DEX modifier for a willing creature not wearing armor.",atk:false,slots:4,slotsMax:4},
+    {name:"Burning Hands",school:"Evocation",castTime:"1 Action",range:"Self (15ft cone)",components:"V,S",duration:"Instant",desc:"3d6 fire damage (DEX save DC 14 for half) in a 15-foot cone.",atk:false,slots:4,slotsMax:4},
+  ],
+  2:[
+    {name:"Misty Step",school:"Conjuration",castTime:"1 Bonus Action",range:"Self",components:"V",duration:"Instant",desc:"Teleport to an unoccupied space you can see within 30 feet.",atk:false,slots:3,slotsMax:3},
+    {name:"Scorching Ray",school:"Evocation",castTime:"1 Action",range:"120ft",components:"V,S",duration:"Instant",desc:"Create 3 rays of fire. +5 to hit each. 2d6 fire damage per ray.",atk:true,slots:3,slotsMax:3},
+    {name:"Hold Person",school:"Enchantment",castTime:"1 Action",range:"60ft",components:"V,S,M",duration:"Conc, 1 min",desc:"Paralyze a humanoid (WIS save DC 14). Repeat save each turn.",atk:false,slots:3,slotsMax:3},
+  ],
+  3:[
+    {name:"Fireball",school:"Evocation",castTime:"1 Action",range:"150ft",components:"V,S,M",duration:"Instant",desc:"8d6 fire damage (DEX save DC 14 for half) in a 20-foot radius sphere.",atk:false,slots:2,slotsMax:2},
+    {name:"Counterspell",school:"Abjuration",castTime:"1 Reaction",range:"60ft",components:"S",duration:"Instant",desc:"Interrupt a creature casting a spell. Automatically stops spells of 3rd level or lower.",atk:false,slots:2,slotsMax:2},
+  ],
+};
+
+const SCHOOL_COLORS = {Evocation:T.ember,Abjuration:T.blue,Illusion:T.purple,Transmutation:T.success,Conjuration:T.warn,Enchantment:T.purple};
+
+function SpellCard({spell,compact=false}) {
+  const [open,setOpen]=useState(false);
+  const col=SCHOOL_COLORS[spell.school]||T.gold;
+  if(compact) return <div onClick={()=>setOpen(o=>!o)} style={{background:T.bgCard,border:`1px solid ${T.border}`,borderLeft:`2px solid ${col}`,padding:"8px 12px",cursor:"pointer",marginBottom:4}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontFamily:F.cinzel,fontSize:11,color:T.parchment}}>{spell.name}</span>
+        <span style={{fontFamily:F.sans,fontSize:8,color:col,border:`1px solid ${col}`,padding:"1px 5px",opacity:0.8}}>{spell.school}</span>
+        {spell.atk&&<span style={{fontFamily:F.sans,fontSize:8,color:T.ember,border:`1px solid ${T.ember}`,padding:"1px 5px",opacity:0.8}}>ATK</span>}
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <span style={{fontFamily:F.sans,fontSize:9,color:T.dimText}}>{spell.castTime}</span>
+        <span style={{color:T.dimText,fontSize:10}}>{open?"▲":"▼"}</span>
+      </div>
+    </div>
+    {open&&<div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${T.border}`}}>
+      <div style={{display:"flex",gap:12,marginBottom:6,flexWrap:"wrap"}}>
+        {[["Range",spell.range],["Duration",spell.duration],["Components",spell.components]].map(([l,v])=>
+          <div key={l}><span style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:1}}>{l}: </span><span style={{fontFamily:F.sans,fontSize:10,color:T.parchDim}}>{v}</span></div>
+        )}
+      </div>
+      <p style={{fontFamily:F.fell,fontSize:12,color:T.parchDim,fontStyle:"italic",lineHeight:1.65,margin:0}}>{spell.desc}</p>
+    </div>}
+  </div>;
+  return null;
+}
+
+function SpellSlotPips({used,max,level}) {
+  return <div style={{display:"flex",alignItems:"center",gap:4}}>
+    <span style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:1,minWidth:16,textAlign:"right"}}>{level}</span>
+    <div style={{display:"flex",gap:3}}>
+      {Array.from({length:max}).map((_,i)=><div key={i} style={{width:12,height:12,background:i<(max-used)?T.gold:T.bgDeep,border:`1px solid ${i<(max-used)?T.gold:T.borderGold}`,transform:"rotate(45deg)"}}/>)}
+    </div>
+    <span style={{fontFamily:F.sans,fontSize:9,color:T.dimText,marginLeft:2}}>{max-used}/{max}</span>
+  </div>;
+}
+
+function SpellScreen() {
+  const [view,setView]=useState("list");
+  const [selectedLevel,setSelectedLevel]=useState("all");
+  return <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    {/* Header */}
+    <div style={{padding:"16px 24px 12px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div>
+          <div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic",marginBottom:2}}>Ser Aldric · Wizard (Evocation) 5</div>
+          <div style={{fontFamily:F.cinzel,fontSize:18,color:T.gold,letterSpacing:1}}>Spell Book</div>
+        </div>
+        <div style={{display:"flex",gap:4}}>
+          {["list","grid"].map(v=><button key={v} onClick={()=>setView(v)} style={{background:view===v?T.goldFaint:"none",border:`1px solid ${view===v?T.gold:T.border}`,color:view===v?T.gold:T.dimText,fontFamily:F.cinzel,fontSize:9,letterSpacing:2,padding:"6px 12px",cursor:"pointer",textTransform:"uppercase"}}>{v}</button>)}
+        </div>
+      </div>
+      {/* Spell slot tracker */}
+      <div style={{display:"flex",gap:18,flexWrap:"wrap"}}>
+        <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,marginBottom:6,textTransform:"uppercase"}}>Spell Slots</div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {[[1,4,4],[2,3,3],[3,2,2]].map(([l,u,m])=><SpellSlotPips key={l} level={l} used={0} max={m}/>)}
+          </div>
+        </div>
+        <div><div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:2,marginBottom:6,textTransform:"uppercase"}}>Spellcasting</div>
+          <div style={{display:"flex",gap:12}}>
+            {[["Ability","INT"],["Modifier","+3"],["Save DC","14"],["Atk Bonus","+5"]].map(([l,v])=>
+              <div key={l}><div style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:1,marginBottom:2}}>{l}</div><div style={{fontFamily:F.cinzel,fontSize:13,color:T.parchDim}}>{v}</div></div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+    {/* Level filter */}
+    <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,flexShrink:0,overflowX:"auto"}}>
+      {["all","cantrips","1","2","3"].map(l=><button key={l} onClick={()=>setSelectedLevel(l)} style={{padding:"8px 14px",background:selectedLevel===l?T.bgCard:"none",border:"none",borderBottom:selectedLevel===l?`2px solid ${T.gold}`:"2px solid transparent",fontFamily:F.cinzel,fontSize:9,color:selectedLevel===l?T.gold:T.dimText,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>
+        {l==="all"?"All":l==="cantrips"?"Cantrips":`Level ${l}`}
+      </button>)}
+    </div>
+    {/* Spell list */}
+    <div style={{flex:1,overflowY:"auto",padding:"16px 24px"}}>
+      {(selectedLevel==="all"||selectedLevel==="cantrips")&&<>
+        <GoldDivider label="Cantrips · At Will" style={{marginBottom:10}}/>
+        {SPELLS_DATA.cantrips.map(s=><SpellCard key={s.name} spell={s} compact/>)}
+      </>}
+      {[1,2,3].map(lvl=>(selectedLevel==="all"||selectedLevel===String(lvl))&&<div key={lvl}>
+        <GoldDivider label={`Level ${lvl} · ${SPELLS_DATA[lvl][0].slots}/${SPELLS_DATA[lvl][0].slotsMax} slots`} style={{margin:"14px 0 10px"}}/>
+        {SPELLS_DATA[lvl].map(s=><SpellCard key={s.name} spell={s} compact/>)}
+      </div>)}
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: SESSION / PLAY ────────────────────────────────
+const SESSION_TURNS = [
+  {role:"dm",text:"The tavern at Grimwood Crossing reeks of pine smoke and old ale. Old Grim stands behind the bar, polishing the same tankard he's been polishing for an hour. He looks at you once — then looks away."},
+  {role:"player",text:"I approach the bar and ask him quietly if he has any work that needs doing."},
+  {role:"dm",text:"Grim sets the tankard down. Hard. Doesn't look up.\n\n\"Work.\" He says it like it's a confession. \"There's always work. Question is whether you'll still want it when you know what it is.\"\n\nHe reaches under the bar. Slides a folded piece of parchment across the wood."},
+  {role:"check",stat:"Persuasion",dc:14,modifier:3,rolled:null},
+];
+
+function DiceModal({check,onRoll,onClose}) {
+  const [rolling,setRolling]=useState(false);
+  const [face,setFace]=useState(20);
+  const [result,setResult]=useState(null);
+  const handleRoll=()=>{
+    setRolling(true);let t=0;
+    const iv=setInterval(()=>{setFace(Math.floor(Math.random()*20)+1);t++;
+      if(t>14){clearInterval(iv);const r=Math.floor(Math.random()*20)+1;setFace(r);setResult(r);setRolling(false);setTimeout(()=>onRoll(r),700);}
+    },60);
+  };
+  const total=result?result+check.modifier:null;
+  const ok=total>=check.dc;
+  return <div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(7,6,7,0.88)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}} onClick={result?onClose:undefined}>
+    <OrnamentBox style={{padding:"32px 40px",width:360,textAlign:"center"}} glow>
+      <div style={{fontFamily:F.cinzel,fontSize:10,color:T.goldDim,letterSpacing:4,marginBottom:6,textTransform:"uppercase"}}>Skill Check</div>
+      <div style={{fontFamily:F.cinzel,fontSize:22,color:T.gold,marginBottom:4,letterSpacing:1}}>{check.stat}</div>
+      <div style={{fontFamily:F.fell,fontSize:13,color:T.parchDim,fontStyle:"italic",marginBottom:20}}>DC {check.dc} · Modifier {check.modifier>=0?`+${check.modifier}`:check.modifier}</div>
+      <div onClick={!rolling&&!result?handleRoll:undefined} style={{cursor:result?"default":"pointer",display:"inline-block",marginBottom:16}}>
+        <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <polygon points="48,4 92,26 92,70 48,92 4,70 4,26"
+            stroke={result?(ok?T.success:T.danger):T.gold} strokeWidth="1.5" fill={T.bgDeep}
+            style={{filter:result?`drop-shadow(0 0 12px ${ok?T.success:T.danger})`:`drop-shadow(0 0 8px ${T.goldDim})`}}/>
+          <polygon points="48,14 80,31 80,65 48,82 16,65 16,31"
+            stroke={result?(ok?T.success:T.danger):T.borderGold} strokeWidth="0.5" fill="none" opacity="0.4"/>
+          <text x="48" y="58" textAnchor="middle" fontFamily="'Cinzel',serif"
+            fontSize={result?32:18} fill={result?(ok?T.success:T.danger):T.gold} fontWeight="400">
+            {rolling?face:result?face:"d20"}
+          </text>
+        </svg>
+      </div>
+      {result
+        ? <div>
+            <div style={{fontFamily:F.cinzel,fontSize:18,color:ok?T.success:T.danger,marginBottom:6,letterSpacing:1}}>{result} + {check.modifier} = {total}</div>
+            <div style={{fontFamily:F.cinzel,fontSize:12,color:ok?T.success:T.danger,letterSpacing:4,marginBottom:16}}>{ok?"✦ SUCCESS ✦":"✦ FAILURE ✦"}</div>
+            <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic",marginBottom:16}}>Click anywhere to continue</div>
+          </div>
+        : <GoldBtn onClick={handleRoll} disabled={rolling} style={{padding:"10px 28px"}}>{rolling?"Rolling...":"Roll the Dice"}</GoldBtn>
+      }
+    </OrnamentBox>
+  </div>;
+}
+
+const COMBAT_ENEMIES = [
+  {name:"Town Guard",hp:11,hpMax:11,ac:16,init:8,conditions:[]},
+  {name:"The Stranger",hp:22,hpMax:26,ac:13,init:14,conditions:["Focused"]},
+];
+const INIT_ORDER = [
+  {name:"Ser Aldric",hp:24,hpMax:32,init:15,isPlayer:true},
+  {name:"The Stranger",hp:22,hpMax:26,init:14,isPlayer:false},
+  {name:"Town Guard",hp:11,hpMax:11,init:8,isPlayer:false},
+];
+
+function SessionScreen() {
+  const [turns,setTurns]=useState(SESSION_TURNS);
+  const [input,setInput]=useState("");
+  const [mode,setMode]=useState("exploration"); // "exploration" | "combat"
+  const [diceModal,setDiceModal]=useState(null);
+  const [currentInit,setCurrentInit]=useState(0);
+  const [actionUsed,setActionUsed]=useState(false);
+  const [bonusUsed,setBonusUsed]=useState(false);
+  const [reactionUsed,setReactionUsed]=useState(false);
+  const scrollRef=useRef(null);
+
+  useEffect(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollRef.current.scrollHeight;},[turns]);
+
+  const handleRoll=(roll)=>{
+    const check=turns.find(t=>t.role==="check"&&!t.rolled);
+    if(!check)return;
+    const total=roll+check.modifier,ok=total>=check.dc;
+    setTurns(p=>p.map(t=>t.role==="check"&&!t.rolled?{...t,rolled:roll}:t));
+    setDiceModal(null);
+    setTimeout(()=>setTurns(p=>[...p,{role:"dm",text:ok
+      ?"Grim meets your eyes for the first time. Something shifts in the hard lines of his face.\n\n\"Alright. There's a merchant. Kael. Came through here three nights past. Owes me thirty gold and a lot more than that in explanations. He headed north — toward the old mill road.\"\n\nHe picks up the tankard again. \"Don't come back without word of him.\""
+      :"Grim doesn't even look up. \"I don't talk business with strangers.\" He turns away, and that's the end of it — for now."}]),800);
+  };
+
+  const pendingCheck=turns.find(t=>t.role==="check"&&!t.rolled);
+
+  return <div style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
+    {diceModal&&<DiceModal check={diceModal} onRoll={handleRoll} onClose={()=>setDiceModal(null)}/>}
+
+    {/* LEFT: Character mini-sheet */}
+    <div style={{width:186,background:T.bgDeep,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden"}}>
+      <div style={{padding:"14px 13px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+        <ImagePlaceholder label="Portrait" width="100%" height={72}/>
+        <div style={{fontFamily:F.cinzel,fontSize:12,color:T.gold,marginTop:8,marginBottom:1}}>Ser Aldric</div>
+        <div style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:2}}>FIGHTER 3 · HUMAN</div>
+      </div>
+      <div style={{padding:"12px 13px",flex:1,overflowY:"auto"}}>
+        {/* HP */}
+        <div style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <span style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:1}}>HIT POINTS</span>
+            <span style={{fontFamily:F.cinzel,fontSize:11,color:T.ember}}>24 / 32</span>
+          </div>
+          <div style={{height:5,background:T.border,borderRadius:0}}>
+            <div style={{height:"100%",width:"75%",background:`linear-gradient(to right,${T.emberDim},${T.ember})`}}/>
+          </div>
+        </div>
+        {/* Quick stats */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:12}}>
+          {[["AC","16"],["Init","+1"],["Speed","30"]].map(([l,v])=><div key={l} style={{textAlign:"center",background:T.bgCard,border:`1px solid ${T.border}`,padding:"5px 0"}}>
+            <div style={{fontFamily:F.cinzel,fontSize:13,color:T.parchDim}}>{v}</div>
+            <div style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:1}}>{l}</div>
+          </div>)}
+        </div>
+        {/* Class resources */}
+        <GoldDivider label="Resources" style={{marginBottom:8}}/>
+        {[{name:"Action Surge",pips:1,max:1},{name:"Second Wind",pips:1,max:1},{name:"Superiority",pips:4,max:4}].map(f=><div key={f.name} style={{marginBottom:9}}>
+          <div style={{fontFamily:F.cinzel,fontSize:8,color:T.parchDim,letterSpacing:1,marginBottom:4}}>{f.name}</div>
+          <div style={{display:"flex",gap:4}}>{Array.from({length:f.max}).map((_,i)=><div key={i} style={{width:11,height:11,background:i<f.pips?T.gold:T.bgDeep,border:`1px solid ${i<f.pips?T.gold:T.borderGold}`,transform:"rotate(45deg)"}}/>)}</div>
+        </div>)}
+        <GoldDivider label="Conditions" style={{marginBottom:8}}/>
+        <div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic"}}>None</div>
+      </div>
+    </div>
+
+    {/* MAIN: Transcript + input */}
+    <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+      {/* Top bar */}
+      <div style={{borderBottom:`1px solid ${T.border}`,padding:"9px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",background:T.bgDeep,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <polygon points="9,1 17,5 17,13 9,17 1,13 1,5" stroke={T.gold} strokeWidth="1" fill="none"/>
+            <polygon points="9,4 14,6.5 14,11.5 9,14 4,11.5 4,6.5" stroke={T.borderGold} strokeWidth="0.5" fill={T.bgDeep}/>
+            <text x="9" y="12" textAnchor="middle" fill={T.gold} fontSize="6" fontFamily="serif">C</text>
+          </svg>
+          <div>
+            <div style={{fontFamily:F.cinzel,fontSize:12,color:T.gold,letterSpacing:0.5}}>The Tavern at Grimwood Crossing</div>
+            <div style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:2}}>SESSION I · TURN {turns.filter(t=>t.role==="player").length + 1}</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {/* Mode toggle */}
+          <div style={{display:"flex",border:`1px solid ${T.border}`,overflow:"hidden"}}>
+            <button onClick={()=>setMode("exploration")} style={{padding:"5px 10px",background:mode==="exploration"?T.goldFaint:"none",border:"none",fontFamily:F.cinzel,fontSize:8,color:mode==="exploration"?T.gold:T.dimText,letterSpacing:1,cursor:"pointer",textTransform:"uppercase"}}>⌾ Explore</button>
+            <button onClick={()=>setMode("combat")} style={{padding:"5px 10px",background:mode==="combat"?T.emberDim:"none",border:"none",fontFamily:F.cinzel,fontSize:8,color:mode==="combat"?T.ember:T.dimText,letterSpacing:1,cursor:"pointer",textTransform:"uppercase"}}>⚔ Combat</button>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            {["Lore","Map","Party"].map(l=><button key={l} style={{background:"none",border:"none",fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:2,cursor:"pointer",textTransform:"uppercase",padding:0}}>{l}</button>)}
+          </div>
+          <div style={{width:7,height:7,borderRadius:"50%",background:T.success,boxShadow:`0 0 6px ${T.success}`}}/>
+        </div>
+      </div>
+
+      {/* Scene header */}
+      <div style={{padding:"10px 20px 8px",borderBottom:`1px solid ${T.border}`,background:`linear-gradient(to bottom,rgba(26,20,16,0.6),transparent)`,flexShrink:0}}>
+        <div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic",marginBottom:2}}>❧ Scene I — The Weary Road</div>
+        <div style={{fontFamily:F.cinzel,fontSize:15,color:T.parchment,letterSpacing:1}}>The Barroom Floor</div>
+      </div>
+
+      {/* Combat mode: initiative tracker */}
+      {mode==="combat"&&<div style={{background:T.bgDeep,borderBottom:`1px solid ${T.border}`,padding:"8px 18px",flexShrink:0}}>
+        <div style={{display:"flex",gap:0,alignItems:"center",overflowX:"auto"}}>
+          <span style={{fontFamily:F.cinzel,fontSize:8,color:T.ember,letterSpacing:2,marginRight:12,flexShrink:0}}>INITIATIVE</span>
+          {INIT_ORDER.map((e,i)=><div key={e.name} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:i===currentInit?T.bgHover:"none",border:i===currentInit?`1px solid ${T.gold}`:`1px solid transparent`,marginRight:4,flexShrink:0,cursor:"pointer"}} onClick={()=>setCurrentInit(i)}>
+            <span style={{fontFamily:F.cinzel,fontSize:9,color:i===currentInit?T.gold:(e.isPlayer?T.parchDim:T.dimText)}}>{e.name}</span>
+            <span style={{fontFamily:F.cinzel,fontSize:8,color:T.ember}}>({e.init})</span>
+            {e.isPlayer&&<span style={{fontFamily:F.cinzel,fontSize:7,color:T.ember}}>{e.hp}/{e.hpMax}hp</span>}
+          </div>)}
+          <button onClick={()=>setCurrentInit(i=>(i+1)%INIT_ORDER.length)} style={{marginLeft:"auto",background:"none",border:`1px solid ${T.border}`,color:T.dimText,fontFamily:F.cinzel,fontSize:8,padding:"4px 10px",cursor:"pointer",letterSpacing:1,flexShrink:0}}>Next →</button>
+        </div>
+        {/* Action economy */}
+        <div style={{display:"flex",gap:8,marginTop:7,alignItems:"center"}}>
+          <span style={{fontFamily:F.cinzel,fontSize:7,color:T.dimText,letterSpacing:1,marginRight:4}}>TURN ACTIONS</span>
+          {[["Action",actionUsed,()=>setActionUsed(v=>!v),T.gold],["Bonus",bonusUsed,()=>setBonusUsed(v=>!v),T.warn],["Reaction",reactionUsed,()=>setReactionUsed(v=>!v),T.blue]].map(([l,used,toggle,col])=>
+            <button key={l} onClick={toggle} style={{padding:"4px 10px",background:used?T.bgDeep:col+"22",border:`1px solid ${used?T.border:col}`,color:used?T.dimText:col,fontFamily:F.cinzel,fontSize:8,letterSpacing:1,cursor:"pointer",textDecoration:used?"line-through":"none",opacity:used?0.5:1}}>{l}</button>
+          )}
+          <button onClick={()=>{setActionUsed(false);setBonusUsed(false);setReactionUsed(false);}} style={{marginLeft:"auto",background:"none",border:`1px solid ${T.border}`,color:T.dimText,fontFamily:F.cinzel,fontSize:7,padding:"3px 8px",cursor:"pointer",letterSpacing:1}}>New Round</button>
+        </div>
+      </div>}
+
+      {/* Transcript */}
+      <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:"18px 20px",display:"flex",flexDirection:"column",gap:2}}>
+        {turns.map((turn,i)=>{
+          if(turn.role==="check") {
+            const rolled=turn.rolled;
+            const total=rolled?rolled+turn.modifier:null;
+            const ok=total>=turn.dc;
+            return <div key={i} style={{paddingLeft:24,marginBottom:14}}>
+              <div style={{background:T.bgCard,border:`1px solid ${T.borderGold}`,borderLeft:`3px solid ${rolled?(ok?T.success:T.danger):T.gold}`,padding:"12px 16px",display:"flex",alignItems:"center",gap:16}}>
+                <div style={{textAlign:"center",flexShrink:0}}>
+                  <div style={{fontFamily:F.cinzel,fontSize:28,color:rolled?(ok?T.success:T.danger):T.gold,lineHeight:1}}>{rolled||"?"}</div>
+                  <div style={{fontFamily:F.sans,fontSize:8,color:T.dimText,marginTop:2}}>d20 roll</div>
+                </div>
+                <div>
+                  <div style={{fontFamily:F.cinzel,fontSize:12,color:rolled?(ok?T.success:T.danger):T.gold,letterSpacing:1,marginBottom:3}}>
+                    {turn.stat} Check {rolled?`· ${rolled} + ${turn.modifier} = ${total} · ${ok?"SUCCESS":"FAILURE"}`:""}
+                  </div>
+                  <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic"}}>DC {turn.dc} · Modifier {turn.modifier>=0?`+${turn.modifier}`:turn.modifier}</div>
+                </div>
+                {!rolled&&<GoldBtn onClick={()=>setDiceModal(turn)} style={{marginLeft:"auto",padding:"7px 16px",fontSize:9}} variant="outline">Roll →</GoldBtn>}
+              </div>
+            </div>;
+          }
+          const isDM=turn.role==="dm";
+          return <div key={i} style={{marginBottom:14}}>
+            {isDM
+              ? <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5" fill={T.borderGold} stroke={T.gold} strokeWidth="0.5"/><polygon points="6,3 9,4.5 9,7.5 6,9 3,7.5 3,4.5" fill={T.goldDim} opacity="0.4"/></svg>
+                  <span style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,textTransform:"uppercase"}}>Dungeon Master</span>
+                </div>
+              : <div style={{textAlign:"right",marginBottom:5}}><span style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:3,textTransform:"uppercase"}}>Ser Aldric · Fighter</span></div>
+            }
+            <div style={{background:isDM?T.bgPanel:"none",border:isDM?`1px solid ${T.border}`:"none",borderLeft:isDM?`2px solid ${T.borderGold}`:"none",borderRight:!isDM?`2px solid ${T.borderGold}`:"none",padding:isDM?"12px 16px":"0",textAlign:isDM?"left":"right"}}>
+              <p style={{fontFamily:F.fell,fontSize:13,lineHeight:1.85,color:isDM?T.parchment:T.parchDim,margin:0,fontStyle:isDM?"normal":"italic",whiteSpace:"pre-wrap"}}>{turn.text}</p>
+            </div>
+          </div>;
+        })}
+      </div>
+
+      {/* Input area */}
+      <div style={{borderTop:`1px solid ${T.border}`,padding:"12px 18px",background:T.bgDeep,flexShrink:0}}>
+        {/* Quick actions - context-aware */}
+        {mode==="exploration"
+          ? <div style={{display:"flex",gap:6,marginBottom:9,flexWrap:"wrap"}}>
+              {["Ask about Kael","Inspect the parchment","Buy a round","Leave quietly"].map(s=><button key={s} onClick={()=>setInput(s)} style={{background:"none",border:`1px solid ${T.border}`,color:T.dimText,fontFamily:F.fell,fontSize:11,padding:"3px 10px",cursor:"pointer",fontStyle:"italic"}}>{s}</button>)}
+            </div>
+          : <div style={{display:"flex",gap:6,marginBottom:9,flexWrap:"wrap"}}>
+              {["Attack with Longsword","Use Action Surge","Shove the guard","Dodge","Disengage"].map(s=><button key={s} onClick={()=>setInput(s)} style={{background:"none",border:`1px solid ${s.includes("Action")?T.gold:T.border}`,color:s.includes("Action")?T.gold:T.dimText,fontFamily:F.fell,fontSize:11,padding:"3px 10px",cursor:"pointer",fontStyle:"italic"}}>{s}</button>)}
+            </div>
+        }
+        {pendingCheck&&!diceModal&&<div style={{marginBottom:9,padding:"7px 12px",background:T.goldFaint,border:`1px solid ${T.borderGold}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontFamily:F.fell,fontSize:11,color:T.gold,fontStyle:"italic"}}>⚄ {pendingCheck.stat} check pending (DC {pendingCheck.dc})</span>
+          <GoldBtn onClick={()=>setDiceModal(pendingCheck)} style={{padding:"4px 12px",fontSize:8}}>Roll Now →</GoldBtn>
+        </div>}
+        <div style={{display:"flex",gap:8,alignItems:"stretch"}}>
+          <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="Describe your action..." onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(input.trim()){setTurns(p=>[...p,{role:"player",text:input.trim()}]);setInput("");}}}}
+            style={{flex:1,background:T.ink,border:`1px solid ${T.borderGold}`,color:T.parchment,fontFamily:F.fell,fontSize:13,padding:"10px 14px",resize:"none",height:54,outline:"none",fontStyle:"italic",lineHeight:1.6}}/>
+          <button onClick={()=>{if(input.trim()){setTurns(p=>[...p,{role:"player",text:input.trim()}]);setInput("");}}}
+            style={{background:T.bgDeep,border:`1px solid ${T.gold}`,color:T.gold,fontFamily:F.cinzel,fontSize:10,letterSpacing:2,padding:"0 18px",cursor:"pointer",textTransform:"uppercase"}}>Act</button>
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT: Lore + NPC panel */}
+    <div style={{width:180,background:T.bgDeep,borderLeft:`1px solid ${T.border}`,padding:"14px 13px",flexShrink:0,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>NPCs Present</div>
+      {[{name:"Old Grim",role:"Bartender",mood:"Neutral",col:T.dimText},{name:"The Stranger",role:"Unknown",mood:"Watching",col:T.ember},{name:"Town Guard",role:"Guard",mood:"Suspicious",col:T.warn}].map((n,i)=><div key={i} style={{marginBottom:11}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+          <span style={{fontFamily:F.cinzel,fontSize:10,color:T.parchDim}}>{n.name}</span>
+          <span style={{fontFamily:F.cinzel,fontSize:7,color:n.col,border:`1px solid ${n.col}`,padding:"1px 4px",opacity:0.8}}>{n.mood}</span>
+        </div>
+        <div style={{fontFamily:F.sans,fontSize:9,color:T.dimText}}>{n.role}</div>
+        <div style={{height:2,background:T.border,marginTop:4}}><div style={{height:"100%",width:n.mood==="Watching"?"30%":n.mood==="Suspicious"?"65%":"50%",background:n.col,opacity:0.6}}/></div>
+      </div>)}
+      <GoldDivider style={{margin:"4px 0 10px"}}/>
+      <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>Known Lore</div>
+      {[{type:"NPC",name:"Kael",note:"Missing merchant. Headed north."},{type:"QUEST",name:"Find Kael",note:"Owes Grim 30gp."},{type:"PLACE",name:"Mill Road",note:"North of village."}].map((e,i)=><div key={i} style={{marginBottom:9}}>
+        <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:2}}>
+          <span style={{fontFamily:F.cinzel,fontSize:7,color:T.ember,border:`1px solid ${T.ember}`,padding:"1px 4px",opacity:0.7}}>{e.type}</span>
+          <span style={{fontFamily:F.cinzel,fontSize:9,color:T.parchDim}}>{e.name}</span>
+        </div>
+        <div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic",lineHeight:1.5,paddingLeft:6,borderLeft:`1px solid ${T.border}`}}>{e.note}</div>
+      </div>)}
+      <div style={{flex:1}}/>
+      <GoldDivider style={{margin:"4px 0 10px"}}/>
+      <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:6,textTransform:"uppercase"}}>DM Agents</div>
+      {[{n:"scene_narrator",s:"idle"},{n:"rules_lawyer",s:"active"},{n:"lore_keeper",s:"idle"}].map((a,i)=><div key={i} style={{display:"flex",gap:5,alignItems:"center",marginBottom:4}}>
+        <div style={{width:5,height:5,borderRadius:"50%",background:a.s==="active"?T.success:T.dimText,flexShrink:0,boxShadow:a.s==="active"?`0 0 5px ${T.success}`:"none"}}/>
+        <span style={{fontFamily:F.sans,fontSize:8,color:a.s==="active"?T.parchDim:T.dimText}}>{a.n}</span>
+      </div>)}
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: LORE JOURNAL ──────────────────────────────────
+const LORE_ENTRIES = [
+  {id:1,type:"NPC",subject:"Old Grim",content:"Retired soldier, possibly from the Northern Wars. Gruff manner, short sentences. Known to reference 'the old days.' Runs the Grimwood Tavern. Owed 30gp by Kael the merchant.",session:1,turn:3,tags:["Grimwood","Tavern"]},
+  {id:2,type:"NPC",subject:"Kael the Merchant",content:"Missing for three days. Last seen heading north along the Mill Road. Owes Old Grim thirty gold pieces. Purpose of journey unknown.",session:1,turn:5,tags:["Missing","Merchant","Kael"]},
+  {id:3,type:"PLACE",subject:"The Grimwood Tavern",content:"Crossroads inn at the forest edge. Known NPCs: Old Grim (bartender), The Stranger (hooded, identity unknown), Town Guard (patrol sergeant, Suspicious disposition).",session:1,turn:1,tags:["Grimwood","Location"]},
+  {id:4,type:"PLACE",subject:"Mill Road North",content:"Road leading north from Grimwood Crossing toward the old mill and deeper forest. Kael was last seen heading this direction.",session:1,turn:5,tags:["Road","North","Location"]},
+  {id:5,type:"EVENT",subject:"The Parchment",content:"Old Grim slid a folded parchment across the bar after Persuasion check DC 14. Contents as-yet unexamined.",session:1,turn:6,tags:["Quest","Parchment","Grim"]},
+  {id:6,type:"QUEST",subject:"Find Kael",content:"Active quest. Recover information about Kael's whereabouts for Old Grim. Start: Mill Road North. Reward: unspecified.",session:1,turn:6,tags:["Quest","Active","Kael"]},
+];
+const TYPE_COLORS = {NPC:T.gold,PLACE:T.blue,EVENT:T.ember,QUEST:T.success,ITEM:T.purple};
+
+function LoreScreen() {
+  const [filter,setFilter]=useState("ALL");
+  const [search,setSearch]=useState("");
+  const [selected,setSelected]=useState(LORE_ENTRIES[0]);
+  const types=["ALL","NPC","PLACE","EVENT","QUEST"];
+  const filtered=LORE_ENTRIES.filter(e=>(filter==="ALL"||e.type===filter)&&(e.subject.toLowerCase().includes(search.toLowerCase())||e.content.toLowerCase().includes(search.toLowerCase())));
+  return <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+    {/* List pane */}
+    <div style={{width:260,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <div style={{padding:"16px 16px 12px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+        <div style={{fontFamily:F.cinzel,fontSize:16,color:T.gold,letterSpacing:1,marginBottom:10}}>Lore Journal</div>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search entries..." style={{width:"100%",background:T.ink,border:`1px solid ${T.border}`,color:T.parchment,fontFamily:F.fell,fontSize:12,padding:"7px 10px",outline:"none",fontStyle:"italic"}}/>
+      </div>
+      <div style={{display:"flex",borderBottom:`1px solid ${T.border}`,flexShrink:0,overflowX:"auto"}}>
+        {types.map(t=><button key={t} onClick={()=>setFilter(t)} style={{padding:"6px 10px",background:filter===t?T.bgCard:"none",border:"none",borderBottom:filter===t?`2px solid ${T.gold}`:"2px solid transparent",fontFamily:F.cinzel,fontSize:7,color:filter===t?T.gold:T.dimText,letterSpacing:2,cursor:"pointer",whiteSpace:"nowrap"}}>{t}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:"auto"}}>
+        {filtered.map(e=><div key={e.id} onClick={()=>setSelected(e)} style={{padding:"11px 14px",borderBottom:`1px solid ${T.border}`,cursor:"pointer",background:selected?.id===e.id?T.bgHover:"none",borderLeft:selected?.id===e.id?`2px solid ${T.gold}`:"2px solid transparent",transition:"all 0.1s"}}>
+          <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:4}}>
+            <span style={{fontFamily:F.cinzel,fontSize:7,color:TYPE_COLORS[e.type]||T.gold,border:`1px solid ${TYPE_COLORS[e.type]||T.gold}`,padding:"1px 4px",opacity:0.8}}>{e.type}</span>
+            <span style={{fontFamily:F.cinzel,fontSize:10,color:selected?.id===e.id?T.gold:T.parchDim}}>{e.subject}</span>
+          </div>
+          <div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic",lineHeight:1.5,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{e.content}</div>
+          <div style={{fontFamily:F.sans,fontSize:8,color:T.dimText,marginTop:4}}>Session {e.session} · Turn {e.turn}</div>
+        </div>)}
+      </div>
+    </div>
+    {/* Detail pane */}
+    <div style={{flex:1,overflowY:"auto",padding:"24px 28px"}}>
+      {selected?<>
+        <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:6}}>
+          <span style={{fontFamily:F.cinzel,fontSize:9,color:TYPE_COLORS[selected.type]||T.gold,border:`1px solid ${TYPE_COLORS[selected.type]||T.gold}`,padding:"2px 8px"}}>{selected.type}</span>
+          <span style={{fontFamily:F.cinzel,fontSize:9,color:T.dimText,letterSpacing:2}}>Session {selected.session} · Turn {selected.turn}</span>
+        </div>
+        <div style={{fontFamily:F.cinzel,fontSize:22,color:T.gold,letterSpacing:1,marginBottom:14}}>{selected.subject}</div>
+        <GoldDivider style={{marginBottom:16}}/>
+        <p style={{fontFamily:F.fell,fontSize:15,color:T.parchment,lineHeight:1.85,fontStyle:"italic",marginBottom:20}}>{selected.content}</p>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {selected.tags.map(t=><span key={t} style={{fontFamily:F.sans,fontSize:9,color:T.dimText,border:`1px solid ${T.border}`,padding:"2px 9px"}}>{t}</span>)}
+        </div>
+        <GoldDivider label="Related Entries" style={{margin:"24px 0 14px"}}/>
+        {LORE_ENTRIES.filter(e=>e.id!==selected.id&&e.tags.some(t=>selected.tags.includes(t))).slice(0,3).map(e=><div key={e.id} onClick={()=>setSelected(e)} style={{padding:"10px 14px",border:`1px solid ${T.border}`,marginBottom:8,cursor:"pointer",background:T.bgCard,display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{fontFamily:F.cinzel,fontSize:7,color:TYPE_COLORS[e.type]||T.gold,border:`1px solid ${TYPE_COLORS[e.type]||T.gold}`,padding:"1px 4px",flexShrink:0,marginTop:2}}>{e.type}</span>
+          <div><div style={{fontFamily:F.cinzel,fontSize:11,color:T.parchDim,marginBottom:2}}>{e.subject}</div><div style={{fontFamily:F.fell,fontSize:10,color:T.dimText,fontStyle:"italic"}}>{e.content.slice(0,80)}...</div></div>
+        </div>)}
+      </>:<div style={{fontFamily:F.fell,fontSize:13,color:T.dimText,fontStyle:"italic"}}>Select an entry to read.</div>}
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: SESSION SUMMARY ───────────────────────────────
+function SummaryScreen({onContinue}) {
+  return <div style={{flex:1,overflowY:"auto",padding:"32px 40px"}}>
+    <div style={{maxWidth:720,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{fontFamily:F.fell,fontSize:12,color:T.dimText,fontStyle:"italic",marginBottom:6}}>Session I complete</div>
+        <div style={{fontFamily:F.cinzel,fontSize:26,color:T.gold,letterSpacing:2,marginBottom:4}}>The Weary Road</div>
+        <div style={{fontFamily:F.fell,fontSize:14,color:T.parchDim,fontStyle:"italic"}}>The Tavern at Grimwood Crossing · 14 turns</div>
+      </div>
+      <GoldDivider style={{marginBottom:28}}/>
+
+      {/* Summary text */}
+      <OrnamentBox style={{padding:"24px 28px",marginBottom:28}} glow>
+        <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}}>DM Summary</div>
+        <p style={{fontFamily:F.fell,fontSize:14,color:T.parchment,lineHeight:2,fontStyle:"italic",margin:0}}>
+          Ser Aldric arrived at the Grimwood Tavern at nightfall, road-worn and coin-light. The barroom was quiet — unusual for a crossroads inn. Old Grim proved difficult, but a well-placed word at the right moment earned the knight's trust. A merchant named Kael has gone missing on the North Road. Grim's parchment holds a name — someone in the village who may know more. The night is young. The forest is old.
+        </p>
+      </OrnamentBox>
+
+      {/* Stats */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:28}}>
+        {[["Turns","14"],["Skill Checks","3"],["Checks Passed","2"],["XP Earned","150"]].map(([l,v])=><div key={l} style={{background:T.bgCard,border:`1px solid ${T.border}`,padding:"16px 14px",textAlign:"center"}}>
+          <div style={{fontFamily:F.cinzel,fontSize:26,color:T.gold,marginBottom:4}}>{v}</div>
+          <div style={{fontFamily:F.cinzel,fontSize:8,color:T.dimText,letterSpacing:2,textTransform:"uppercase"}}>{l}</div>
+        </div>)}
+      </div>
+
+      {/* Lore discovered */}
+      <div style={{marginBottom:28}}>
+        <GoldDivider label="Lore Discovered" style={{marginBottom:14}}/>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {[{type:"NPC",txt:"Old Grim — Retired soldier, gruff, knows the merchant Kael"},
+            {type:"NPC",txt:"Kael — Missing merchant, last seen heading north"},
+            {type:"QUEST",txt:"Find Kael — Active quest, reward pending"},
+            {type:"PLACE",txt:"Mill Road North — Kael's last known direction"},
+          ].map((e,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",padding:"8px 12px",background:T.bgCard,border:`1px solid ${T.border}`}}>
+            <span style={{fontFamily:F.cinzel,fontSize:7,color:TYPE_COLORS[e.type],border:`1px solid ${TYPE_COLORS[e.type]}`,padding:"1px 5px",flexShrink:0}}>{e.type}</span>
+            <span style={{fontFamily:F.fell,fontSize:12,color:T.parchDim,fontStyle:"italic"}}>{e.txt}</span>
+          </div>)}
+        </div>
+      </div>
+
+      {/* XP bar */}
+      <div style={{marginBottom:28}}>
+        <GoldDivider label="Experience" style={{marginBottom:14}}/>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+          <span style={{fontFamily:F.cinzel,fontSize:9,color:T.dimText,letterSpacing:2}}>LEVEL 3</span>
+          <span style={{fontFamily:F.cinzel,fontSize:9,color:T.dimText,letterSpacing:2}}>LEVEL 4 — 2700 XP</span>
+        </div>
+        <div style={{height:6,background:T.border,position:"relative"}}>
+          <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${(1050/2700)*100}%`,background:`linear-gradient(to right,${T.goldFaint},${T.gold})`}}/>
+          <div style={{position:"absolute",left:`${(900/2700)*100}%`,top:-2,height:"calc(100% + 4px)",width:2,background:T.ember}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+          <span style={{fontFamily:F.sans,fontSize:9,color:T.gold}}>900 XP (before session)</span>
+          <span style={{fontFamily:F.sans,fontSize:9,color:T.ember}}>+150 XP</span>
+          <span style={{fontFamily:F.sans,fontSize:9,color:T.gold}}>1050 XP (now)</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+        <GoldBtn onClick={onContinue} variant="ember" style={{padding:"11px 28px"}}>Continue Campaign →</GoldBtn>
+        <GoldBtn style={{padding:"11px 28px"}}>View Full Transcript</GoldBtn>
+        <GoldBtn style={{padding:"11px 28px"}}>Back to Campaigns</GoldBtn>
+      </div>
+    </div>
+  </div>;
+}
+
+// ─── SCREEN: CHARACTER CREATION ────────────────────────────
+const RACES = ["Human","Elf","Dwarf","Halfling","Gnome","Half-Orc","Tiefling","Dragonborn"];
+const CLASSES = [
+  {name:"Fighter",icon:"⚔",desc:"Martial mastery. Action Surge, Combat Superiority. Second Wind. No spells."},
+  {name:"Wizard",icon:"✦",desc:"Arcane spellcaster. Spell slots, cantrips, ritual casting. Spellbook."},
+  {name:"Rogue",icon:"◈",desc:"Sneak Attack, Cunning Action. Expertise. High skill ceiling."},
+  {name:"Cleric",icon:"☩",desc:"Divine spellcaster. Channel Divinity. Domain powers. Support or combat."},
+  {name:"Paladin",icon:"◇",desc:"Hybrid fighter/caster. Smite, Aura of Protection. Lay on Hands."},
+  {name:"Ranger",icon:"⌾",desc:"Wilderness hunter. Favored Enemy, Natural Explorer. Hunter's Mark."},
+  {name:"Barbarian",icon:"⬡",desc:"Rage, Reckless Attack, Unarmored Defense. Pure martial force."},
+  {name:"Warlock",icon:"⏣",desc:"Eldritch Blast, Pact Magic (few slots, short rest recovery). Patron powers."},
+];
+const BG_LIST = ["Soldier","Criminal","Sage","Folk Hero","Acolyte","Noble","Outlander","Charlatan"];
+
+function CharCreationScreen({onDone}) {
+  const [step,setStep]=useState(0);
+  const [name,setName]=useState("");
+  const [race,setRace]=useState("");
+  const [cls,setCls]=useState("");
+  const [bg,setBg]=useState("");
+  const [stats,setStats]=useState({STR:15,DEX:14,CON:13,INT:12,WIS:10,CHA:8});
+  const STEPS=["Name & Race","Class","Background","Ability Scores","Review"];
+
+  const rollStats=()=>{
+    const roll=()=>{const d=[...Array(4)].map(()=>Math.floor(Math.random()*6)+1).sort((a,b)=>b-a);return d[0]+d[1]+d[2];};
+    const vals=[roll(),roll(),roll(),roll(),roll(),roll()].sort((a,b)=>b-a);
+    const keys=Object.keys(stats);
+    const next={};keys.forEach((k,i)=>next[k]=vals[i]);
+    setStats(next);
+  };
+
+  return <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    {/* Header */}
+    <div style={{padding:"16px 28px",borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+      <div style={{fontFamily:F.cinzel,fontSize:18,color:T.gold,letterSpacing:1,marginBottom:12}}>Create Your Character</div>
+      {/* Step progress */}
+      <div style={{display:"flex",alignItems:"center",gap:0}}>
+        {STEPS.map((s,i)=><React.Fragment key={s}>
+          <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}} onClick={()=>i<=step&&setStep(i)}>
+            <div style={{width:22,height:22,borderRadius:"50%",background:i<=step?T.gold:T.border,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{fontFamily:F.cinzel,fontSize:9,color:i<=step?T.bgDeep:T.dimText}}>{i+1}</span>
+            </div>
+            <span style={{fontFamily:F.cinzel,fontSize:8,color:i===step?T.gold:i<step?T.goldDim:T.dimText,letterSpacing:1,textTransform:"uppercase",whiteSpace:"nowrap"}}>{s}</span>
+          </div>
+          {i<STEPS.length-1&&<div style={{flex:1,height:1,background:i<step?T.borderGold:T.border,minWidth:20,margin:"0 8px"}}/>}
+        </React.Fragment>)}
+      </div>
+    </div>
+
+    {/* Step content */}
+    <div style={{flex:1,overflowY:"auto",padding:"24px 28px"}}>
+      {step===0&&<div>
+        <div style={{marginBottom:24}}>
+          <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>Character Name</div>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter a name..." style={{width:"100%",maxWidth:360,background:T.ink,border:`1px solid ${T.borderGold}`,color:T.parchment,fontFamily:F.fell,fontSize:16,padding:"10px 14px",outline:"none"}}/>
+        </div>
+        <div>
+          <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,marginBottom:10,textTransform:"uppercase"}}>Race</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,maxWidth:680}}>
+            {RACES.map(r=><div key={r} onClick={()=>setRace(r)} style={{padding:"12px 14px",background:race===r?T.goldFaint:T.bgCard,border:`1px solid ${race===r?T.gold:T.border}`,cursor:"pointer",textAlign:"center",transition:"all 0.12s"}}>
+              <div style={{fontFamily:F.cinzel,fontSize:12,color:race===r?T.gold:T.parchDim}}>{r}</div>
+            </div>)}
+          </div>
+        </div>
+      </div>}
+
+      {step===1&&<div>
+        <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>Choose Your Class</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
+          {CLASSES.map(c=><div key={c.name} onClick={()=>setCls(c.name)} style={{padding:"16px 16px",background:cls===c.name?T.goldFaint:T.bgCard,border:`1px solid ${cls===c.name?T.gold:T.border}`,cursor:"pointer",display:"flex",gap:12,alignItems:"flex-start",transition:"all 0.12s",borderLeft:cls===c.name?`3px solid ${T.gold}`:`3px solid transparent`}}>
+            <span style={{fontSize:22,lineHeight:1,flexShrink:0,marginTop:2}}>{c.icon}</span>
+            <div>
+              <div style={{fontFamily:F.cinzel,fontSize:13,color:cls===c.name?T.gold:T.parchment,marginBottom:5}}>{c.name}</div>
+              <div style={{fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic",lineHeight:1.6}}>{c.desc}</div>
+            </div>
+          </div>)}
+        </div>
+      </div>}
+
+      {step===2&&<div>
+        <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>Background</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:10,maxWidth:680,marginBottom:24}}>
+          {BG_LIST.map(b=><div key={b} onClick={()=>setBg(b)} style={{padding:"14px 14px",background:bg===b?T.goldFaint:T.bgCard,border:`1px solid ${bg===b?T.gold:T.border}`,cursor:"pointer",transition:"all 0.12s"}}>
+            <div style={{fontFamily:F.cinzel,fontSize:12,color:bg===b?T.gold:T.parchDim}}>{b}</div>
+            <div style={{fontFamily:F.sans,fontSize:9,color:T.dimText,marginTop:3}}>+2 skill proficiencies</div>
+          </div>)}
+        </div>
+      </div>}
+
+      {step===3&&<div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,textTransform:"uppercase"}}>Ability Scores</div>
+          <GoldBtn onClick={rollStats} style={{padding:"6px 14px",fontSize:8}}>⚄ Roll 4d6 Drop Lowest</GoldBtn>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:440}}>
+          {Object.entries(stats).map(([stat,val])=>{
+            const mod=Math.floor((val-10)/2);
+            return <div key={stat} style={{background:T.bgCard,border:`1px solid ${T.borderGold}`,padding:"14px",textAlign:"center",clipPath:"polygon(0 6px,6px 0,calc(100%-6px) 0,100% 6px,100% calc(100%-6px),calc(100%-6px) 100%,6px 100%,0 calc(100%-6px))"}}>
+              <div style={{fontFamily:F.cinzel,fontSize:8,color:T.goldDim,letterSpacing:2,marginBottom:4}}>{stat}</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <button onClick={()=>setStats(s=>({...s,[stat]:Math.max(8,s[stat]-1)}))} style={{background:"none",border:`1px solid ${T.border}`,color:T.dimText,width:18,height:18,cursor:"pointer",fontSize:11,lineHeight:1}}>−</button>
+                <span style={{fontFamily:F.cinzel,fontSize:24,color:T.gold,minWidth:32,textAlign:"center"}}>{val}</span>
+                <button onClick={()=>setStats(s=>({...s,[stat]:Math.min(18,s[stat]+1)}))} style={{background:"none",border:`1px solid ${T.border}`,color:T.dimText,width:18,height:18,cursor:"pointer",fontSize:11,lineHeight:1}}>+</button>
+              </div>
+              <div style={{fontFamily:F.cinzel,fontSize:13,color:T.parchDim,marginTop:2}}>{mod>=0?`+${mod}`:mod}</div>
+            </div>;
+          })}
+        </div>
+        <div style={{marginTop:14,fontFamily:F.fell,fontSize:11,color:T.dimText,fontStyle:"italic"}}>Point buy, standard array, or roll. Adjust freely in this mockup.</div>
+      </div>}
+
+      {step===4&&<div style={{maxWidth:560}}>
+        <div style={{fontFamily:F.cinzel,fontSize:9,color:T.goldDim,letterSpacing:2,marginBottom:20,textTransform:"uppercase"}}>Review Your Character</div>
+        <OrnamentBox style={{padding:"22px 24px",marginBottom:20}} glow>
+          <div style={{fontFamily:F.cinzel,fontSize:20,color:T.gold,marginBottom:4}}>{name||"(unnamed)"}</div>
+          <div style={{fontFamily:F.cinzel,fontSize:10,color:T.dimText,letterSpacing:2,marginBottom:16}}>{race||"—"} · {cls||"—"} · {bg||"—"} · Level 1</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
+            {Object.entries(stats).map(([k,v])=>{const m=Math.floor((v-10)/2);return <div key={k} style={{textAlign:"center"}}>
+              <div style={{fontFamily:F.cinzel,fontSize:7,color:T.goldDim,letterSpacing:1}}>{k}</div>
+              <div style={{fontFamily:F.cinzel,fontSize:18,color:T.gold}}>{v}</div>
+              <div style={{fontFamily:F.cinzel,fontSize:10,color:T.parchDim}}>{m>=0?`+${m}`:m}</div>
+            </div>;})}
+          </div>
+        </OrnamentBox>
+        <GoldBtn variant="solid" onClick={onDone} style={{width:"100%",padding:"13px"}}>Begin the Adventure →</GoldBtn>
+      </div>}
+    </div>
+
+    {/* Footer nav */}
+    <div style={{borderTop:`1px solid ${T.border}`,padding:"12px 28px",display:"flex",justifyContent:"space-between",flexShrink:0}}>
+      <GoldBtn onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0} style={{padding:"8px 18px",fontSize:9}}>← Back</GoldBtn>
+      {step<STEPS.length-1&&<GoldBtn onClick={()=>setStep(s=>s+1)} style={{padding:"8px 18px",fontSize:9}}>Next →</GoldBtn>}
+    </div>
+  </div>;
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────
+function App() {
+  const [screen,setScreen]=useState("login");
+  const [sidebarCollapsed,setSidebarCollapsed]=useState(false);
+  const showSidebar=screen!=="login"&&screen!=="creation";
+  const showTopNav=screen==="campaigns";
+
+  const handleLogin=()=>setScreen("campaigns");
+  const handlePlay=()=>setScreen("session");
+  const handleNew=()=>setScreen("creation");
+  const handleCreationDone=()=>setScreen("sheet");
+  const handleContinue=()=>setScreen("session");
+
+  if(screen==="login") return <div style={{width:"100vw",height:"100vh"}}><LoginScreen onEnter={handleLogin}/></div>;
+
+  return <div style={{width:"100vw",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",background:T.bg}}>
+    {/* Top nav for pre-game screens */}
+    {showTopNav&&<div style={{borderBottom:`1px solid ${T.border}`,padding:"0 24px",display:"flex",alignItems:"center",gap:24,height:44,background:T.bgDeep,flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+          <rect x="4" y="0" width="8" height="5" rx="0.5" fill={T.gold} opacity="0.9"/>
+          <rect x="1" y="6.5" width="14" height="5" rx="0.5" fill={T.gold} opacity="0.6"/>
+          <rect x="4" y="13" width="8" height="4" rx="0.5" fill={T.gold} opacity="0.3"/>
+        </svg>
+        <span style={{fontFamily:F.cinzel,fontSize:12,color:T.gold,letterSpacing:3}}>CAIRN</span>
+      </div>
+      <div style={{flex:1}}/>
+      {["How It Works","Pricing","About"].map(l=><button key={l} style={{background:"none",border:"none",fontFamily:F.cinzel,fontSize:9,color:T.dimText,letterSpacing:2,cursor:"pointer",textTransform:"uppercase",padding:"0 4px"}}>{l}</button>)}
+      <GoldBtn onClick={handleLogin} style={{padding:"6px 14px",fontSize:8}}>Sign In</GoldBtn>
+    </div>}
+
+    {/* Main layout */}
+    <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+      {showSidebar&&<Sidebar screen={screen} onNav={setScreen} collapsed={sidebarCollapsed} onToggle={()=>setSidebarCollapsed(v=>!v)}/>}
+
+      {/* Screen content */}
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {screen==="campaigns"&&<CampaignScreen onPlay={handlePlay} onNew={handleNew}/>}
+        {screen==="creation"&&<CharCreationScreen onDone={handleCreationDone}/>}
+        {screen==="session"&&<SessionScreen/>}
+        {screen==="sheet"&&<SheetScreen/>}
+        {screen==="spells"&&<SpellScreen/>}
+        {screen==="lore"&&<LoreScreen/>}
+        {screen==="summary"&&<SummaryScreen onContinue={handleContinue}/>}
+      </div>
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

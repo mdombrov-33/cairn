@@ -1,9 +1,9 @@
 ## Project
 
 ### What this is
-FastAPI backend for an AI Dungeon Master platform. Players submit text turns; agents classify intent, route through a LangGraph pipeline, and stream DM responses as SSE. Postgres for state, LangGraph for orchestration, LiteLLM as the universal LLM gateway.
+AI Dungeon Master platform. Currently the repo contains only the backend (`backend/`) — frontend will be added later. Players submit text turns; agents classify intent, route through a LangGraph pipeline, and stream DM responses as SSE. Postgres for state, LangGraph for orchestration, LiteLLM as the universal LLM gateway.
 
-Working directory for all backend work: `backend/`. Run everything from the repo root via `make`.
+Backend working directory: `backend/`. Run everything from the repo root via `make`.
 
 ### Key commands
 ```
@@ -33,11 +33,9 @@ prompts/           Versioned markdown + Jinja2. Loaded via load_prompt(name, ver
 POST /sessions/{id}/turns
   → turns.service.prepare()
       if session.combat_active → intent = "combat_action" (bypasses graph)
-      else → turn_graph.run() → IntentRouter classifies:
-          narrative_action  → SceneNarrator streams tokens
-          skill_check       → RulesLawyer → check_required SSE → [player rolls] → SceneNarrator
-          npc_dialogue      → NPCDialogue → SceneNarrator
-          combat_action     → CombatResolver (tool loop) → enemy turns via combat_ai → SceneNarrator
+      else → turn_graph.run() → IntentRouter classifies intent
+           → each intent maps to a resolver node → pre-processes state (DB, agents)
+  → route streams SSE tokens from SceneNarrator based on resolved state
   → turn_end SSE event
   → LoreKeeper fires async (fire-and-forget via asyncio.create_task)
 ```
@@ -52,6 +50,16 @@ POST /sessions/{id}/turns
 1. `tools/<module>.py` — `@tool` decorator from `langchain_core.tools`, `Annotated[type, "description"]` per param
 2. `tools/__init__.py` — import and add to `ALL_TOOLS`. If combat-relevant, also add to `COMBAT_TOOLS`.
 3. Invoke via `await tool.ainvoke({"arg": val})` — never `.coroutine()`
+
+### DB sessions — two contexts
+Routes get an injected `db: DBSession` (one session per request). Services called directly from routes share it — their writes are atomic with the response. Graph nodes (`pipelines/`) open their own sessions via `db_client.get_session()` because they run before streaming starts and must commit independently.
+
+### Shared types
+`cairn/types.py` has shared TypedDicts and result types (`CheckData`, `CharacterRestResult`, `HitDieResult`, etc.). Check there before defining a new dict shape inline.
+
+### Docs
+- `backend/docs/roadmap.md` — slice plan, deferred decisions, and UI/UX context. Read before starting any new feature work.
+- `backend/docs/ui-temp-reference/` — rough UI vision for reference; not a spec, just directional context.
 
 ### Hard rules
 - All LLM calls through `llm/client.py` only

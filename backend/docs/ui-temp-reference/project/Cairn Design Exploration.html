@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cairn — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=IM+Fell+English:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:ital,wght@0,400;0,500;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #0a0808; overflow: hidden; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2020; border-radius: 2px; }
+  textarea::placeholder, input::placeholder { opacity: 0.4; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ═══════════════════════════════════════════════════════════
+// DIRECTION A — DARK GRIMOIRE
+// Ink + aged gold + ember · Cinzel + IM Fell English
+// ═══════════════════════════════════════════════════════════
+const A = {
+  bg:"#0d0b0f", bgDeep:"#0a0809", bgPanel:"#13100f",
+  border:"#2e2318", borderGold:"#4a3820",
+  gold:"#c9a84c", goldDim:"#7a6030", ember:"#b54a1e",
+  parchment:"#e8d9b8", parchmentDim:"#9a8f78", ink:"#1e1812",
+  dimText:"#7a7060", success:"#5a9e5a", danger:"#c04030",
+};
+
+function ParchmentDust() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext("2d");
+    c.width = c.offsetWidth; c.height = c.offsetHeight;
+    const pts = Array.from({length:60}, () => ({
+      x: Math.random()*c.width, y: Math.random()*c.height,
+      r: Math.random()*1.5+0.3,
+      dx: (Math.random()-.5)*.12, dy: -Math.random()*.2-.05,
+      op: Math.random()*.25+.05,
+    }));
+    let raf;
+    const draw = () => {
+      ctx.clearRect(0,0,c.width,c.height);
+      pts.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(201,168,76,${p.op})`; ctx.fill();
+        p.x+=p.dx; p.y+=p.dy;
+        if(p.y<-2){p.y=c.height+2;p.x=Math.random()*c.width;}
+        if(p.x<-2)p.x=c.width+2; if(p.x>c.width+2)p.x=-2;
+      });
+      raf=requestAnimationFrame(draw);
+    };
+    draw(); return ()=>cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}} />;
+}
+
+function CornerRune({size=20,color=A.goldDim}) {
+  return <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <path d="M0 0 L8 0 L8 2 L2 2 L2 8 L0 8 Z" fill={color}/>
+    <path d="M4 4 L6 4 L6 6 L4 6 Z" fill={color} opacity="0.5"/>
+  </svg>;
+}
+
+function OrnamentDivider() {
+  return <div style={{display:"flex",alignItems:"center",gap:8,margin:"10px 0"}}>
+    <div style={{flex:1,height:1,background:`linear-gradient(to right,transparent,${A.borderGold})`}}/>
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <rect x="4" y="0" width="4" height="4" transform="rotate(45 6 2)" fill={A.goldDim}/>
+      <rect x="4" y="8" width="4" height="4" transform="rotate(45 6 10)" fill={A.goldDim} opacity="0.4"/>
+    </svg>
+    <div style={{flex:1,height:1,background:`linear-gradient(to left,transparent,${A.borderGold})`}}/>
+  </div>;
+}
+
+const TURNS_A_INIT = [
+  {role:"dm", text:"The tavern at Grimwood Crossing reeks of pine smoke and old ale. Old Grim stands behind the bar, polishing the same tankard he's been polishing for an hour. He looks at you once — then looks away."},
+  {role:"player", text:"I approach the bar and ask him quietly if he has any work that needs doing."},
+  {role:"dm", text:"Grim sets the tankard down. Hard. Doesn't look up.\n\n\"Work.\" He says it like it's a confession. \"There's always work. Question is whether you'll still want it when you know what it is.\"\n\nHe reaches under the bar. Slides a folded piece of parchment across the wood."},
+  {role:"check", stat:"PERSUASION", dc:14, rolled:null, modifier:3},
+];
+
+function ADicePrompt({check, onRoll}) {
+  const [rolling,setRolling]=useState(false);
+  const [face,setFace]=useState(20);
+  const [result,setResult]=useState(null);
+  const handleRoll=()=>{
+    setRolling(true); let t=0;
+    const iv=setInterval(()=>{
+      setFace(Math.floor(Math.random()*20)+1); t++;
+      if(t>14){clearInterval(iv);const r=Math.floor(Math.random()*20)+1;setFace(r);setResult(r);setRolling(false);setTimeout(()=>onRoll(r),600);}
+    },60);
+  };
+  const total=result?result+check.modifier:null;
+  const ok=total>=check.dc;
+  return <div style={{background:A.bgDeep,border:`1px solid ${A.borderGold}`,padding:"18px 20px",position:"relative",marginTop:8}}>
+    {[[0,0],[0,1],[1,0],[1,1]].map(([r,c],i)=><div key={i} style={{position:"absolute",top:r?"auto":0,bottom:r?0:"auto",left:c?"auto":0,right:c?0:"auto",transform:r&&c?"scale(-1)":r?"scaleY(-1)":c?"scaleX(-1)":"none"}}><CornerRune/></div>)}
+    <div style={{textAlign:"center"}}>
+      <div style={{fontFamily:"'Cinzel',serif",color:A.gold,fontSize:11,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}}>Skill Check Required</div>
+      <div style={{fontFamily:"'Cinzel',serif",color:A.parchment,fontSize:16,marginBottom:4}}>{check.stat}</div>
+      <div style={{color:A.parchmentDim,fontSize:12,marginBottom:16}}>DC {check.dc} · Modifier +{check.modifier}</div>
+      <div onClick={!rolling&&!result?handleRoll:undefined} style={{width:64,height:64,margin:"0 auto 14px",cursor:result?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style={{position:"absolute"}}>
+          <polygon points="32,4 60,20 60,44 32,60 4,44 4,20" stroke={result?(ok?A.success:A.danger):A.gold} strokeWidth="1.5" fill={A.bgDeep}/>
+          <polygon points="32,10 54,23 54,41 32,54 10,41 10,23" stroke={result?(ok?A.success:A.danger):A.borderGold} strokeWidth="0.5" fill="none"/>
+        </svg>
+        <span style={{fontFamily:"'Cinzel',serif",fontSize:result?22:18,color:result?(ok?A.success:A.danger):A.gold,position:"relative",zIndex:1}}>{rolling?face:result?face:"d20"}</span>
+      </div>
+      {result ? <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:ok?A.success:A.danger,letterSpacing:2}}>{result} + {check.modifier} = {total} · {ok?"SUCCESS":"FAILURE"}</div>
+      : <button onClick={handleRoll} disabled={rolling} style={{background:"none",border:`1px solid ${A.gold}`,color:A.gold,fontFamily:"'Cinzel',serif",fontSize:11,letterSpacing:3,padding:"8px 24px",cursor:rolling?"wait":"pointer",textTransform:"uppercase",opacity:rolling?.5:1}}>{rolling?"Rolling...":"Roll the Dice"}</button>}
+    </div>
+  </div>;
+}
+
+function AStatPip({label,val,mod}) {
+  return <div style={{textAlign:"center"}}>
+    <div style={{width:40,height:46,border:`1px solid ${A.borderGold}`,background:A.bgDeep,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",clipPath:"polygon(0 8px,8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px))"}}>
+      <span style={{fontFamily:"'Cinzel',serif",fontSize:16,color:A.gold}}>{val}</span>
+      <span style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText}}>{mod>=0?`+${mod}`:mod}</span>
+    </div>
+    <div style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.dimText,marginTop:4,letterSpacing:1}}>{label}</div>
+  </div>;
+}
+
+function DirectionA({width,height}) {
+  const [turns,setTurns]=useState(TURNS_A_INIT);
+  const [input,setInput]=useState("");
+  const handleRoll=(roll)=>{
+    const total=roll+3,ok=total>=14;
+    setTurns(p=>p.map(t=>t.role==="check"?{...t,rolled:roll}:t));
+    setTimeout(()=>setTurns(p=>[...p,{role:"dm",text:ok
+      ?"Grim meets your eyes for the first time. Something shifts in the hard lines of his face.\n\n\"Alright. There's a merchant. Kael. Came through here three nights past. Owes me thirty gold and a lot more than that in explanations. He headed north — toward the old mill road.\"\n\nHe picks up the tankard again. \"Don't come back without word of him.\""
+      :"Grim doesn't even look up. \"I don't talk business with strangers.\" He turns away, and that's the end of it — for now."}]),1000);
+  };
+  return <div style={{width,height,background:A.bg,display:"flex",overflow:"hidden",position:"relative",fontFamily:"'IM Fell English',serif"}}>
+    <ParchmentDust/>
+    {/* LEFT */}
+    <div style={{width:196,background:A.bgDeep,borderRight:`1px solid ${A.border}`,display:"flex",flexDirection:"column",padding:"18px 13px",flexShrink:0,zIndex:1,overflow:"hidden"}}>
+      <div style={{width:"100%",aspectRatio:"1/1",border:`1px solid ${A.borderGold}`,background:A.ink,position:"relative",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+        {[[2,2,"none"],[2,null,2,"scaleX(-1)"],[null,2,2,"scaleY(-1)"],[null,null,null,"scale(-1)"]].map(([t,b,l,tr],i)=><div key={i} style={{position:"absolute",top:t??undefined,bottom:b??undefined,left:l??undefined,right:l===undefined?2:undefined,transform:tr}}><CornerRune size={14}/></div>)}
+        <svg width="60" height="80" viewBox="0 0 60 80" fill="none" opacity="0.15">
+          <ellipse cx="30" cy="18" rx="13" ry="15" fill={A.parchment}/>
+          <path d="M10 80 Q10 45 30 42 Q50 45 50 80 Z" fill={A.parchment}/>
+          <rect x="2" y="44" width="14" height="28" rx="4" fill={A.parchment}/>
+          <rect x="44" y="44" width="14" height="28" rx="4" fill={A.parchment}/>
+        </svg>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.6)",padding:"3px 0",textAlign:"center"}}>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.parchmentDim,letterSpacing:1}}>character portrait</span>
+        </div>
+      </div>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:13,color:A.gold,textAlign:"center",marginBottom:2}}>Ser Aldric</div>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText,textAlign:"center",letterSpacing:2,marginBottom:12}}>HUMAN FIGHTER · LVL 3</div>
+      <div style={{marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.dimText,letterSpacing:1}}>VITALITY</span>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.ember}}>24 / 32</span>
+        </div>
+        <div style={{height:4,background:A.border,position:"relative"}}>
+          <div style={{position:"absolute",left:0,top:0,height:"100%",width:"75%",background:`linear-gradient(to right,${A.ember},${A.gold})`}}/>
+        </div>
+      </div>
+      <OrnamentDivider/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:5,marginBottom:12}}>
+        {[["STR","16",3],["DEX","12",1],["CON","14",2],["INT","8",-1],["WIS","10",0],["CHA","13",1]].map(([l,v,m])=><AStatPip key={l} label={l} val={v} mod={m}/>)}
+      </div>
+      <OrnamentDivider/>
+      <div style={{marginTop:4,marginBottom:8}}>
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.dimText,letterSpacing:2,marginBottom:5}}>LOCATION</div>
+        <span style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.parchmentDim}}>The Grimwood Tavern</span>
+        <div style={{fontFamily:"'IM Fell English',serif",fontSize:10,color:A.dimText,marginTop:3,fontStyle:"italic",lineHeight:1.5}}>A crossroads inn at the forest edge.</div>
+      </div>
+      <div style={{flex:1}}/>
+      <div style={{borderTop:`1px solid ${A.border}`,paddingTop:8,marginTop:8}}>
+        {["Longsword","Chain Mail","Healer's Kit","30 gp"].map((item,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+          <div style={{width:3,height:3,background:A.borderGold,transform:"rotate(45deg)",flexShrink:0}}/>
+          <span style={{fontFamily:"'IM Fell English',serif",fontSize:10,color:A.dimText}}>{item}</span>
+        </div>)}
+      </div>
+    </div>
+    {/* MAIN */}
+    <div style={{flex:1,display:"flex",flexDirection:"column",position:"relative",zIndex:1,minWidth:0}}>
+      <div style={{borderBottom:`1px solid ${A.border}`,padding:"11px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",background:A.bgDeep,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <polygon points="10,1 19,5.5 19,14.5 10,19 1,14.5 1,5.5" stroke={A.gold} strokeWidth="1" fill="none"/>
+            <polygon points="10,5 15,7.5 15,12.5 10,15 5,12.5 5,7.5" stroke={A.borderGold} strokeWidth="0.5" fill={A.bgDeep}/>
+            <text x="10" y="13" textAnchor="middle" fill={A.gold} fontSize="7" fontFamily="serif">C</text>
+          </svg>
+          <div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:12,color:A.gold,letterSpacing:1}}>The Tavern at Grimwood Crossing</div>
+            <div style={{fontFamily:"'Cinzel',serif",fontSize:8,color:A.dimText,letterSpacing:2}}>SESSION I · TURN 4</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:14,alignItems:"center"}}>
+          {["Lore","Party","Map"].map(l=><button key={l} style={{background:"none",border:"none",fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText,letterSpacing:2,cursor:"pointer",textTransform:"uppercase",padding:0}}>{l}</button>)}
+          <div style={{width:7,height:7,borderRadius:"50%",background:A.success,boxShadow:`0 0 6px ${A.success}`}}/>
+        </div>
+      </div>
+      <div style={{padding:"14px 22px 10px",borderBottom:`1px solid ${A.border}`,background:`linear-gradient(to bottom,rgba(30,24,18,0.5),transparent)`,flexShrink:0}}>
+        <div style={{fontFamily:"'IM Fell English',serif",fontSize:11,color:A.dimText,fontStyle:"italic",letterSpacing:1,marginBottom:3}}>❧ Scene I — The Weary Road</div>
+        <div style={{fontFamily:"'Cinzel',serif",fontSize:16,color:A.parchment,letterSpacing:1}}>The Barroom Floor</div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"18px 22px",display:"flex",flexDirection:"column",gap:3}}>
+        {turns.map((turn,i)=>{
+          if(turn.role==="check") return <div key={i} style={{paddingLeft:20}}><ADicePrompt check={turn} onRoll={handleRoll}/></div>;
+          const isDM=turn.role==="dm";
+          return <div key={i} style={{marginBottom:14}}>
+            {isDM?<div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="6.5,1 12,3.5 12,9.5 6.5,12 1,9.5 1,3.5" fill={A.borderGold} stroke={A.gold} strokeWidth="0.5"/><polygon points="6.5,3.5 10,5.5 10,8 6.5,9.5 3,8 3,5.5" fill={A.goldDim} opacity="0.4"/></svg>
+              <span style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.goldDim,letterSpacing:3,textTransform:"uppercase"}}>Dungeon Master</span>
+            </div>:<div style={{textAlign:"right",marginBottom:5}}><span style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText,letterSpacing:3,textTransform:"uppercase"}}>Ser Aldric · Fighter</span></div>}
+            <div style={{background:isDM?A.bgPanel:"transparent",border:isDM?`1px solid ${A.border}`:"none",borderLeft:isDM?`2px solid ${A.borderGold}`:"none",borderRight:!isDM?`2px solid ${A.borderGold}`:"none",padding:isDM?"11px 15px":"0",textAlign:isDM?"left":"right"}}>
+              <p style={{fontFamily:"'IM Fell English',serif",fontSize:13,lineHeight:1.8,color:isDM?A.parchment:A.parchmentDim,margin:0,fontStyle:isDM?"normal":"italic",whiteSpace:"pre-wrap"}}>{turn.text}</p>
+            </div>
+          </div>;
+        })}
+      </div>
+      <div style={{borderTop:`1px solid ${A.border}`,padding:"12px 18px",background:A.bgDeep,flexShrink:0}}>
+        <div style={{display:"flex",gap:7,marginBottom:7}}>
+          {["Ask about Kael","Buy a drink","Leave quietly"].map(s=><button key={s} onClick={()=>setInput(s)} style={{background:"none",border:`1px solid ${A.border}`,color:A.dimText,fontFamily:"'IM Fell English',serif",fontSize:11,padding:"3px 9px",cursor:"pointer",fontStyle:"italic"}}>{s}</button>)}
+        </div>
+        <div style={{display:"flex",gap:7,alignItems:"stretch"}}>
+          <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="Describe your action..." style={{flex:1,background:A.ink,border:`1px solid ${A.borderGold}`,color:A.parchment,fontFamily:"'IM Fell English',serif",fontSize:13,padding:"9px 12px",resize:"none",height:52,outline:"none",fontStyle:"italic",lineHeight:1.6}}/>
+          <button style={{background:A.bgDeep,border:`1px solid ${A.gold}`,color:A.gold,fontFamily:"'Cinzel',serif",fontSize:10,letterSpacing:2,padding:"0 16px",cursor:"pointer",textTransform:"uppercase"}}>Act</button>
+        </div>
+      </div>
+    </div>
+    {/* RIGHT */}
+    <div style={{width:172,background:A.bgDeep,borderLeft:`1px solid ${A.border}`,padding:"18px 13px",display:"flex",flexDirection:"column",flexShrink:0,zIndex:1,overflow:"hidden"}}>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText,letterSpacing:3,marginBottom:11,textTransform:"uppercase"}}>Known Lore</div>
+      {[{type:"NPC",name:"Old Grim",note:"Retired soldier. Gruff."},{type:"NPC",name:"The Stranger",note:"Hooded figure. Watching."},{type:"PLACE",name:"Mill Road North",note:"Kael was seen heading this way."},{type:"QUEST",name:"Find Kael",note:"Missing merchant. Owes Grim 30gp."}].map((e,i)=><div key={i} style={{marginBottom:11}}>
+        <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:2}}>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:7,color:A.ember,letterSpacing:1,border:`1px solid ${A.ember}`,padding:"1px 3px",opacity:.7}}>{e.type}</span>
+          <span style={{fontFamily:"'Cinzel',serif",fontSize:10,color:A.parchmentDim}}>{e.name}</span>
+        </div>
+        <div style={{fontFamily:"'IM Fell English',serif",fontSize:10,color:A.dimText,fontStyle:"italic",lineHeight:1.5,paddingLeft:7,borderLeft:`1px solid ${A.border}`}}>{e.note}</div>
+      </div>)}
+      <OrnamentDivider/>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:9,color:A.dimText,letterSpacing:3,margin:"7px 0 9px",textTransform:"uppercase"}}>NPC Status</div>
+      {[{name:"Old Grim",mood:"Neutral",color:A.dimText},{name:"The Stranger",mood:"Watching",color:A.ember},{name:"Town Guard",mood:"Suspicious",color:"#8a6a30"}].map((n,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+        <span style={{fontFamily:"'IM Fell English',serif",fontSize:11,color:A.parchmentDim}}>{n.name}</span>
+        <span style={{fontFamily:"'Cinzel',serif",fontSize:8,color:n.color,letterSpacing:1}}>{n.mood}</span>
+      </div>)}
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIRECTION B — ARCANE TERMINAL
+// Void navy + cyan + cold white · monospace · scanlines
+// ═══════════════════════════════════════════════════════════
+const B = {
+  bg:"#050b14", bgPanel:"#080f1c", bgCard:"#0b1424",
+  border:"#0e2040", borderCyan:"#0d4060",
+  cyan:"#2ee8c8", cyanDim:"#0d8a70",
+  blue:"#1a6eb5", white:"#d4eef8",
+  dimText:"#2a5070", midText:"#4a7a9a",
+  danger:"#e05050", warn:"#e0a030", success:"#2ee890",
+  grid:"rgba(14,32,64,0.6)",
+};
+
+function GridBg() {
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,backgroundImage:`linear-gradient(${B.grid} 1px,transparent 1px),linear-gradient(90deg,${B.grid} 1px,transparent 1px)`,backgroundSize:"40px 40px"}}/>;
+}
+function ScanlinesBg() {
+  return <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,backgroundImage:`repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(14,32,64,0.3) 3px,rgba(14,32,64,0.3) 4px)`,opacity:.5}}/>;
+}
+
+function RuneField() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c=ref.current; if(!c) return;
+    const ctx=c.getContext("2d");
+    c.width=c.offsetWidth; c.height=c.offsetHeight;
+    const G="ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ⌬⌘⎔⏣◈◇⬡⬢";
+    const cols=Math.floor(c.width/28), rows=Math.floor(c.height/28);
+    const cells=Array.from({length:cols*rows},()=>({glyph:G[Math.floor(Math.random()*G.length)],op:Math.random()*.04,tick:Math.random()*200,speed:Math.random()*.3+.05}));
+    let raf;
+    const draw=()=>{
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.font="14px monospace";
+      cells.forEach((cell,i)=>{
+        const col=i%cols, row=Math.floor(i/cols);
+        cell.tick+=cell.speed;
+        const pulse=Math.sin(cell.tick*.05)*.5+.5;
+        ctx.fillStyle=`rgba(46,232,200,${cell.op*pulse})`;
+        ctx.fillText(cell.glyph,col*28+8,row*28+20);
+        if(Math.random()<.0002)cell.glyph=G[Math.floor(Math.random()*G.length)];
+      });
+      raf=requestAnimationFrame(draw);
+    };
+    draw(); return ()=>cancelAnimationFrame(raf);
+  },[]);
+  return <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>;
+}
+
+function BIcon({type="cairn",size=18,color=B.cyan}) {
+  if(type==="cairn") return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <rect x="1" y="1" width="16" height="16" stroke={color} strokeWidth="0.5"/>
+    <rect x="4" y="4" width="10" height="10" stroke={color} strokeWidth="0.5" opacity="0.5"/>
+    <line x1="9" y1="1" x2="9" y2="17" stroke={color} strokeWidth="0.5" opacity="0.3"/>
+    <line x1="1" y1="9" x2="17" y2="9" stroke={color} strokeWidth="0.5" opacity="0.3"/>
+    <rect x="7" y="7" width="4" height="4" fill={color} opacity="0.8"/>
+  </svg>;
+  if(type==="npc") return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <circle cx="9" cy="7" r="3.5" stroke={color} strokeWidth="1" fill="none"/>
+    <path d="M2 17 Q2 11 9 11 Q16 11 16 17" stroke={color} strokeWidth="1" fill="none"/>
+    <circle cx="9" cy="7" r="1.5" fill={color} opacity="0.5"/>
+  </svg>;
+  return null;
+}
+
+function CyanDiv({label}) {
+  return <div style={{display:"flex",alignItems:"center",gap:8,margin:"11px 0 9px"}}>
+    <div style={{width:6,height:6,background:B.cyanDim,transform:"rotate(45deg)",flexShrink:0}}/>
+    {label&&<span style={{fontFamily:"monospace",fontSize:9,color:B.dimText,letterSpacing:3,textTransform:"uppercase"}}>{label}</span>}
+    <div style={{flex:1,height:1,background:B.border}}/>
+  </div>;
+}
+
+const TURNS_B_INIT = [
+  {role:"dm",text:"The tavern at Grimwood Crossing reeks of pine smoke and old ale. Old Grim stands behind the bar, polishing the same tankard he's been polishing for an hour. He looks at you once — then looks away."},
+  {role:"player",text:"I approach the bar and ask him quietly if he has any work that needs doing."},
+  {role:"dm",text:"Grim sets the tankard down. Hard. Doesn't look up.\n\n\"Work.\" He says it like it's a confession. \"There's always work. Question is whether you'll still want it when you know what it is.\"\n\nHe reaches under the bar. Slides a folded piece of parchment across the wood."},
+  {role:"check",stat:"PERSUASION",dc:14,rolled:null,modifier:3},
+];
+
+function BDicePrompt({check,onRoll}) {
+  const [rolling,setRolling]=useState(false);
+  const [face,setFace]=useState(null);
+  const [result,setResult]=useState(null);
+  const [scan,setScan]=useState(0);
+  const handleRoll=()=>{
+    setRolling(true); setScan(0); let t=0;
+    const iv=setInterval(()=>{
+      setFace(Math.floor(Math.random()*20)+1);
+      setScan(Math.min(100,(t/14)*100)); t++;
+      if(t>14){clearInterval(iv);const r=Math.floor(Math.random()*20)+1;setFace(r);setResult(r);setRolling(false);setScan(100);setTimeout(()=>onRoll(r),800);}
+    },60);
+  };
+  const total=result?result+check.modifier:null;
+  const ok=total>=check.dc;
+  return <div style={{background:B.bgCard,border:`1px solid ${B.borderCyan}`,padding:"14px 18px",position:"relative",marginTop:8,overflow:"hidden"}}>
+    {[[0,0],[0,1],[1,0],[1,1]].map(([r,c],i)=><div key={i} style={{position:"absolute",top:r?"auto":0,bottom:r?0:"auto",left:c?"auto":0,right:c?0:"auto",width:8,height:8,borderTop:r?"none":`1px solid ${B.cyan}`,borderBottom:r?`1px solid ${B.cyan}`:"none",borderLeft:c?"none":`1px solid ${B.cyan}`,borderRight:c?`1px solid ${B.cyan}`:"none"}}/>)}
+    {rolling&&<div style={{position:"absolute",left:0,right:0,height:1,background:B.cyan,top:`${scan}%`,boxShadow:`0 0 8px ${B.cyan}`,transition:"top 0.05s linear"}}/>}
+    <div style={{display:"flex",alignItems:"center",gap:20}}>
+      <div>
+        <div style={{fontFamily:"monospace",fontSize:8,color:B.dimText,letterSpacing:3,marginBottom:7}}>// SKILL_CHECK</div>
+        <div style={{fontFamily:"monospace",fontSize:12,color:B.white,marginBottom:3}}>{check.stat}</div>
+        <div style={{fontFamily:"monospace",fontSize:10,color:B.midText}}>DC:{check.dc} · MOD:+{check.modifier}</div>
+      </div>
+      <div style={{flex:1,display:"flex",justifyContent:"center"}}>
+        <div onClick={!rolling&&!result?handleRoll:undefined} style={{width:54,height:54,cursor:result?"default":"pointer",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
+          <svg width="54" height="54" viewBox="0 0 54 54" style={{position:"absolute"}}>
+            <polygon points="27,2 52,15.5 52,38.5 27,52 2,38.5 2,15.5" stroke={result?(ok?B.success:B.danger):B.cyan} strokeWidth="1" fill={B.bgCard} style={{filter:result?`drop-shadow(0 0 6px ${ok?B.success:B.danger})`:`drop-shadow(0 0 6px ${B.cyanDim})`}}/>
+            <polygon points="27,8 46,18.5 46,35.5 27,45 8,35.5 8,18.5" stroke={result?(ok?B.success:B.danger):B.borderCyan} strokeWidth="0.5" fill="none" opacity="0.5"/>
+          </svg>
+          <span style={{fontFamily:"monospace",fontSize:face!==null?19:10,color:result?(ok?B.success:B.danger):B.cyan,position:"relative",zIndex:1,textShadow:`0 0 10px currentColor`}}>{face!==null?face:"d20"}</span>
+        </div>
+      </div>
+      <div style={{textAlign:"right",minWidth:60}}>
+        {result?<><div style={{fontFamily:"monospace",fontSize:18,color:ok?B.success:B.danger,textShadow:`0 0 12px currentColor`}}>{total}</div><div style={{fontFamily:"monospace",fontSize:9,color:ok?B.success:B.danger,letterSpacing:2}}>{ok?"// PASS":"// FAIL"}</div></>
+        :<button onClick={handleRoll} disabled={rolling} style={{background:"none",border:`1px solid ${B.cyan}`,color:B.cyan,fontFamily:"monospace",fontSize:10,letterSpacing:2,padding:"6px 12px",cursor:rolling?"wait":"pointer",opacity:rolling?.5:1,textShadow:`0 0 8px ${B.cyan}`}}>{rolling?"...":"ROLL"}</button>}
+      </div>
+    </div>
+  </div>;
+}
+
+function DirectionB({width,height}) {
+  const [turns,setTurns]=useState(TURNS_B_INIT);
+  const [input,setInput]=useState("");
+  const [tick,setTick]=useState(0);
+  useEffect(()=>{const id=setInterval(()=>setTick(t=>t+1),1000);return()=>clearInterval(id);},[]);
+  const handleRoll=(roll)=>{
+    const total=roll+3,ok=total>=14;
+    setTurns(p=>p.map(t=>t.role==="check"?{...t,rolled:roll}:t));
+    setTimeout(()=>setTurns(p=>[...p,{role:"dm",text:ok
+      ?"Grim meets your eyes for the first time. Something shifts in the hard lines of his face.\n\n\"Alright. There's a merchant. Kael. Came through here three nights past. Owes me thirty gold and a lot more than that in explanations. He headed north — toward the old mill road.\"\n\nHe picks up the tankard again. \"Don't come back without word of him.\""
+      :"Grim doesn't even look up. \"I don't talk business with strangers.\" He turns away, and that's the end of it — for now."}]),1200);
+  };
+  const ts=`${String(Math.floor((tick%3600)/60)).padStart(2,"0")}:${String(tick%60).padStart(2,"0")}`;
+  return <div style={{width,height,background:B.bg,display:"flex",overflow:"hidden",position:"relative",fontFamily:"monospace"}}>
+    <GridBg/><ScanlinesBg/><RuneField/>
+    {/* LEFT */}
+    <div style={{width:186,background:"rgba(5,11,20,0.93)",borderRight:`1px solid ${B.border}`,padding:"14px 11px",display:"flex",flexDirection:"column",flexShrink:0,zIndex:2,backdropFilter:"blur(4px)",overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:18}}>
+        <BIcon type="cairn" size={18}/>
+        <div>
+          <div style={{fontFamily:"monospace",fontSize:12,color:B.cyan,letterSpacing:4,textShadow:`0 0 10px ${B.cyan}`}}>CAIRN</div>
+          <div style={{fontFamily:"monospace",fontSize:7,color:B.dimText,letterSpacing:2}}>v1.0.0 · LOCAL</div>
+        </div>
+      </div>
+      <CyanDiv label="Character"/>
+      <div style={{width:"100%",aspectRatio:"1/1",border:`1px solid ${B.borderCyan}`,background:B.bgCard,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:9,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:`repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(14,32,64,0.3) 4px,rgba(14,32,64,0.3) 5px)`}}/>
+        <div style={{position:"relative",textAlign:"center"}}>
+          <BIcon type="npc" size={34} color={B.borderCyan}/>
+          <div style={{fontFamily:"monospace",fontSize:7,color:B.dimText,marginTop:3}}>portrait</div>
+        </div>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:B.borderCyan,boxShadow:`0 0 8px ${B.cyanDim}`}}/>
+      </div>
+      <div style={{fontFamily:"monospace",fontSize:11,color:B.white,letterSpacing:2,marginBottom:2}}>SER_ALDRIC</div>
+      <div style={{fontFamily:"monospace",fontSize:8,color:B.dimText,letterSpacing:1,marginBottom:11}}>FIGHTER · LVL:3 · HP:24/32</div>
+      {[["HP",24,32,B.success],["STR",16,20,B.cyan],["DEX",12,20,B.blue],["CHA",13,20,"#b060e0"]].map(([l,v,m,col])=><div key={l} style={{marginBottom:7}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+          <span style={{fontFamily:"monospace",fontSize:8,color:B.dimText}}>{l}</span>
+          <span style={{fontFamily:"monospace",fontSize:8,color:col}}>{v}</span>
+        </div>
+        <div style={{height:2,background:B.border}}><div style={{height:"100%",width:`${(v/m)*100}%`,background:col,boxShadow:`0 0 6px ${col}`}}/></div>
+      </div>)}
+      <CyanDiv label="Location"/>
+      <div style={{fontFamily:"monospace",fontSize:9,color:B.midText,lineHeight:1.6}}>
+        <span style={{color:B.cyanDim}}>›</span> Grimwood Tavern<br/>
+        <span style={{color:B.dimText,fontSize:8}}>session:1 · turn:4</span>
+      </div>
+      <div style={{flex:1}}/>
+      <CyanDiv label="Nav"/>
+      {["/ campaign","/ character","/ lore","/ settings"].map((item,i)=><div key={i} style={{fontFamily:"monospace",fontSize:9,color:i===0?B.cyan:B.dimText,padding:"3px 0",cursor:"pointer"}}>{item}</div>)}
+    </div>
+    {/* MAIN */}
+    <div style={{flex:1,display:"flex",flexDirection:"column",zIndex:2,minWidth:0}}>
+      <div style={{borderBottom:`1px solid ${B.border}`,padding:"7px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(5,11,20,0.9)",backdropFilter:"blur(4px)",flexShrink:0}}>
+        <div style={{fontFamily:"monospace",fontSize:10,color:B.midText,letterSpacing:2}}><span style={{color:B.cyanDim}}>›</span> THE_TAVERN_AT_GRIMWOOD · SESSION_01</div>
+        <div style={{display:"flex",gap:14,alignItems:"center"}}>
+          <span style={{fontFamily:"monospace",fontSize:8,color:B.dimText}}>{ts} · <span style={{color:B.success}}>●</span> CONNECTED</span>
+          <span style={{fontFamily:"monospace",fontSize:8,color:B.dimText}}>SSE:ACTIVE</span>
+        </div>
+      </div>
+      <div style={{padding:"9px 14px 7px",borderBottom:`1px solid ${B.border}`,background:"rgba(8,15,28,0.8)",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+        <div style={{width:3,height:18,background:B.cyan,boxShadow:`0 0 8px ${B.cyan}`}}/>
+        <div>
+          <div style={{fontFamily:"monospace",fontSize:13,color:B.white,letterSpacing:2}}>THE BARROOM FLOOR</div>
+          <div style={{fontFamily:"monospace",fontSize:8,color:B.dimText}}>SCENE_01 · 3 NPCs present · Neutral atmosphere</div>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"14px",display:"flex",flexDirection:"column",gap:2}}>
+        {turns.map((turn,i)=>{
+          if(turn.role==="check") return <div key={i} style={{paddingLeft:18}}><BDicePrompt check={turn} onRoll={handleRoll}/></div>;
+          const isDM=turn.role==="dm";
+          return <div key={i} style={{marginBottom:12}}>
+            {isDM?<div style={{display:"flex",gap:5,alignItems:"center",marginBottom:3}}><BIcon type="cairn" size={11}/><span style={{fontFamily:"monospace",fontSize:8,color:B.cyanDim,letterSpacing:3}}>DM_AGENT</span></div>
+            :<div style={{textAlign:"right",marginBottom:3}}><span style={{fontFamily:"monospace",fontSize:8,color:B.dimText,letterSpacing:3}}>PLAYER::SER_ALDRIC</span></div>}
+            <div style={{background:isDM?B.bgCard:"transparent",border:isDM?`1px solid ${B.border}`:"none",borderLeft:isDM?`2px solid ${B.cyanDim}`:"none",borderRight:!isDM?`1px solid ${B.border}`:"none",padding:isDM?"9px 12px":"5px 12px",textAlign:isDM?"left":"right",position:"relative"}}>
+              {isDM&&<div style={{position:"absolute",top:0,right:0,width:4,height:4,background:B.cyanDim}}/>}
+              <p style={{fontFamily:"monospace",fontSize:11,lineHeight:1.8,color:isDM?B.white:B.midText,margin:0,whiteSpace:"pre-wrap"}}>{turn.text}</p>
+            </div>
+          </div>;
+        })}
+      </div>
+      <div style={{borderTop:`1px solid ${B.border}`,padding:"9px 12px",background:"rgba(5,11,20,0.95)",backdropFilter:"blur(4px)",flexShrink:0}}>
+        <div style={{display:"flex",gap:5,marginBottom:7}}>
+          {["→ ask about kael","→ buy drink","→ leave"].map(s=><button key={s} onClick={()=>setInput(s.replace("→ ",""))} style={{background:"none",border:`1px solid ${B.border}`,color:B.dimText,fontFamily:"monospace",fontSize:9,padding:"3px 9px",cursor:"pointer"}}>{s}</button>)}
+        </div>
+        <div style={{display:"flex",gap:7,alignItems:"center"}}>
+          <div style={{fontFamily:"monospace",fontSize:12,color:B.cyanDim,flexShrink:0}}>›</div>
+          <input value={input} onChange={e=>setInput(e.target.value)} placeholder="describe your action..." style={{flex:1,background:"none",border:"none",borderBottom:`1px solid ${B.borderCyan}`,color:B.white,fontFamily:"monospace",fontSize:11,padding:"5px 0",outline:"none"}}/>
+          <button style={{background:"none",border:`1px solid ${B.cyan}`,color:B.cyan,fontFamily:"monospace",fontSize:9,letterSpacing:3,padding:"0 12px",height:30,cursor:"pointer",textShadow:`0 0 8px ${B.cyan}`}}>SEND</button>
+        </div>
+      </div>
+    </div>
+    {/* RIGHT */}
+    <div style={{width:172,background:"rgba(5,11,20,0.93)",borderLeft:`1px solid ${B.border}`,padding:"14px 11px",flexShrink:0,zIndex:2,backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <CyanDiv label="NPC Status"/>
+      {[{name:"OLD_GRIM",state:"NEUTRAL",bar:50},{name:"STRANGER",state:"WATCHING",bar:20},{name:"TOWN_GUARD",state:"HOSTILE",bar:80}].map((n,i)=><div key={i} style={{marginBottom:11}}>
+        <div style={{display:"flex",gap:5,alignItems:"center",marginBottom:3}}><BIcon type="npc" size={10} color={B.dimText}/><span style={{fontFamily:"monospace",fontSize:9,color:B.midText}}>{n.name}</span></div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+          <span style={{fontFamily:"monospace",fontSize:7,color:B.dimText}}>disposition</span>
+          <span style={{fontFamily:"monospace",fontSize:7,color:n.state==="HOSTILE"?B.danger:n.state==="WATCHING"?B.warn:B.midText}}>{n.state}</span>
+        </div>
+        <div style={{height:2,background:B.border}}><div style={{height:"100%",width:`${n.bar}%`,background:n.state==="HOSTILE"?B.danger:n.state==="WATCHING"?B.warn:B.cyanDim}}/></div>
+      </div>)}
+      <CyanDiv label="World Log"/>
+      <div style={{display:"flex",flexDirection:"column",gap:5}}>
+        {[{tag:"NPC",msg:"Kael: merchant, headed north"},{tag:"DEBT",msg:"Grim owed 30gp by Kael"},{tag:"QUEST",msg:"Find Kael · active"}].map((e,i)=><div key={i} style={{borderLeft:`1px solid ${B.borderCyan}`,paddingLeft:7}}>
+          <span style={{fontFamily:"monospace",fontSize:7,color:B.cyanDim}}>[{e.tag}]</span>
+          <div style={{fontFamily:"monospace",fontSize:9,color:B.dimText,lineHeight:1.5}}>{e.msg}</div>
+        </div>)}
+      </div>
+      <div style={{flex:1}}/>
+      <CyanDiv label="Agents"/>
+      {[{name:"scene_narrator",s:"idle"},{name:"rules_lawyer",s:"active"},{name:"lore_keeper",s:"idle"},{name:"npc::old_grim",s:"standby"}].map((a,i)=><div key={i} style={{display:"flex",gap:5,alignItems:"center",marginBottom:4}}>
+        <div style={{width:5,height:5,borderRadius:"50%",background:a.s==="active"?B.success:a.s==="standby"?B.warn:B.dimText,flexShrink:0,boxShadow:a.s==="active"?`0 0 6px ${B.success}`:"none"}}/>
+        <span style={{fontFamily:"monospace",fontSize:8,color:a.s==="active"?B.midText:B.dimText}}>{a.name}</span>
+      </div>)}
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIRECTION C — PAINTERLY LITERARY
+// Warm ink + rust + cream · Cormorant Garamond + DM Sans
+// ═══════════════════════════════════════════════════════════
+const C = {
+  bg:"#12100e", bgPanel:"#16130f", bgCard:"#1e1a13",
+  border:"#2e2820", borderWarm:"#3a3025",
+  rust:"#c4522a", rustDim:"#6e2e18",
+  cream:"#e8dcc8", creamDim:"#9a8e78", creamFaint:"#4a4438",
+  midText:"#7a6e5a", dimText:"#4a4438",
+  success:"#6a9e5a", danger:"#c04830",
+};
+
+function InkWash() {
+  const ref=useRef(null);
+  useEffect(()=>{
+    const c=ref.current; if(!c) return;
+    const ctx=c.getContext("2d");
+    c.width=c.offsetWidth; c.height=c.offsetHeight;
+    let t=0, raf;
+    const draw=()=>{
+      ctx.clearRect(0,0,c.width,c.height);
+      for(let i=0;i<4;i++){
+        const x=(c.width*.2*i+Math.sin(t*.0003+i*1.3)*c.width*.08)%c.width;
+        const y=c.height*.5+Math.cos(t*.0002+i*.9)*c.height*.25;
+        const r=c.width*.28;
+        const g=ctx.createRadialGradient(x,y,0,x,y,r);
+        g.addColorStop(0,"rgba(196,82,42,0.025)"); g.addColorStop(1,"transparent");
+        ctx.fillStyle=g; ctx.fillRect(0,0,c.width,c.height);
+      }
+      t++; raf=requestAnimationFrame(draw);
+    };
+    draw(); return ()=>cancelAnimationFrame(raf);
+  },[]);
+  return <canvas ref={ref} style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>;
+}
+
+function InkLine({extraStyle={}}) {
+  return <div style={{height:1,background:`linear-gradient(to right,transparent,${C.borderWarm} 20%,${C.borderWarm} 80%,transparent)`,margin:"11px 0",...extraStyle}}/>;
+}
+function Ann({children,color=C.rust}) {
+  return <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,letterSpacing:2,textTransform:"uppercase",color}}>{children}</span>;
+}
+
+const TURNS_C_INIT = [
+  {role:"dm",text:"The tavern at Grimwood Crossing reeks of pine smoke and old ale. Old Grim stands behind the bar, polishing the same tankard he's been polishing for an hour. He looks at you once — then looks away."},
+  {role:"player",text:"I approach the bar and ask him quietly if he has any work that needs doing."},
+  {role:"dm",text:"Grim sets the tankard down. Hard. Doesn't look up.\n\n\"Work.\" He says it like it's a confession. \"There's always work. Question is whether you'll still want it when you know what it is.\"\n\nHe reaches under the bar. Slides a folded piece of parchment across the wood."},
+  {role:"check",stat:"Persuasion",dc:14,rolled:null,modifier:3},
+];
+
+function CDicePrompt({check,onRoll}) {
+  const [rolling,setRolling]=useState(false);
+  const [face,setFace]=useState(null);
+  const [result,setResult]=useState(null);
+  const handleRoll=()=>{
+    setRolling(true); let t=0;
+    const iv=setInterval(()=>{
+      setFace(Math.floor(Math.random()*20)+1); t++;
+      if(t>14){clearInterval(iv);const r=Math.floor(Math.random()*20)+1;setFace(r);setResult(r);setRolling(false);setTimeout(()=>onRoll(r),700);}
+    },65);
+  };
+  const total=result?result+check.modifier:null;
+  const ok=total>=check.dc;
+  return <div style={{margin:"14px 0",padding:"16px 18px",background:C.bgCard,borderTop:`2px solid ${C.rust}`,position:"relative"}}>
+    <div style={{display:"flex",alignItems:"center",gap:18}}>
+      <div onClick={!rolling&&!result?handleRoll:undefined} style={{cursor:result?"default":"pointer",flexShrink:0}}>
+        <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
+          <polygon points="34,3 66,20 66,48 34,65 2,48 2,20" stroke={result?(ok?C.success:C.danger):C.rust} strokeWidth="1.5" strokeLinejoin="round" fill={C.bgCard}/>
+          <polygon points="34,11 56,23 56,45 34,57 12,45 12,23" stroke={result?(ok?C.success:C.danger):C.rustDim} strokeWidth="0.5" fill="none" opacity="0.4"/>
+          <text x="34" y="40" textAnchor="middle" fontFamily="'Cormorant Garamond',serif" fontSize={face!==null?"25":"13"} fill={result?(ok?C.success:C.danger):C.cream} fontWeight="300">{face!==null?face:"d20"}</text>
+        </svg>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",alignItems:"baseline",gap:7,marginBottom:7}}>
+          <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:C.cream,fontWeight:300}}>{check.stat}</span>
+          <Ann color={C.midText}>check</Ann>
+        </div>
+        <div style={{display:"flex",gap:14,marginBottom:9}}>
+          <div><Ann color={C.dimText}>Difficulty</Ann><div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:C.creamDim}}>{check.dc}</div></div>
+          <div><Ann color={C.dimText}>Modifier</Ann><div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:C.creamDim}}>+{check.modifier}</div></div>
+          {result&&<div><Ann color={C.dimText}>Result</Ann><div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:ok?C.success:C.danger}}>{result} + {check.modifier} = {total}</div></div>}
+        </div>
+        {result?<div style={{display:"inline-block",padding:"4px 11px",background:ok?"rgba(106,158,90,0.15)":"rgba(192,72,48,0.15)",border:`1px solid ${ok?C.success:C.danger}`}}><Ann color={ok?C.success:C.danger}>{ok?"— Success —":"— Failure —"}</Ann></div>
+        :<button onClick={handleRoll} disabled={rolling} style={{background:"none",border:`1px solid ${C.rust}`,color:C.cream,fontFamily:"'Cormorant Garamond',serif",fontSize:14,fontStyle:"italic",padding:"5px 18px",cursor:rolling?"wait":"pointer",opacity:rolling?.6:1}}>{rolling?"Rolling...":"Throw the dice"}</button>}
+      </div>
+    </div>
+  </div>;
+}
+
+function DirectionC({width,height}) {
+  const [turns,setTurns]=useState(TURNS_C_INIT);
+  const [input,setInput]=useState("");
+  const handleRoll=(roll)=>{
+    const total=roll+3,ok=total>=14;
+    setTurns(p=>p.map(t=>t.role==="check"?{...t,rolled:roll}:t));
+    setTimeout(()=>setTurns(p=>[...p,{role:"dm",text:ok
+      ?"Grim meets your eyes for the first time. Something shifts in the hard lines of his face.\n\n\"Alright. There's a merchant. Kael. Came through here three nights past. Owes me thirty gold and a lot more than that in explanations. He headed north — toward the old mill road.\"\n\nHe picks up the tankard again. \"Don't come back without word of him.\""
+      :"Grim doesn't even look up. \"I don't talk business with strangers.\" He turns away, and that's the end of it — for now."}]),1000);
+  };
+  return <div style={{width,height,background:C.bg,display:"flex",overflow:"hidden",position:"relative"}}>
+    <InkWash/>
+    <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:.03}}>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+      <rect width="100%" height="100%" filter="url(#grain)"/>
+    </svg>
+    {/* LEFT */}
+    <div style={{width:206,background:"rgba(18,16,14,0.97)",borderRight:`1px solid ${C.border}`,padding:"22px 16px",display:"flex",flexDirection:"column",flexShrink:0,zIndex:2,overflow:"hidden"}}>
+      <div style={{marginBottom:24}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:C.cream,fontWeight:300,letterSpacing:4,lineHeight:1}}>Cairn</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:C.midText,letterSpacing:3,marginTop:2,textTransform:"uppercase"}}>AI Dungeon Master</div>
+      </div>
+      <div style={{width:"100%",aspectRatio:"3/4",background:C.bgCard,border:`1px solid ${C.borderWarm}`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:13,position:"relative",overflow:"hidden"}}>
+        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",opacity:.08}}>
+          <defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke={C.creamDim} strokeWidth="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#hatch)"/>
+        </svg>
+        <div style={{textAlign:"center",position:"relative"}}>
+          <svg width="48" height="68" viewBox="0 0 48 68" fill="none" opacity="0.18">
+            <ellipse cx="24" cy="13" rx="10" ry="11" fill={C.cream}/>
+            <path d="M7 68 Q7 35 24 33 Q41 35 41 68 Z" fill={C.cream}/>
+            <rect x="1" y="35" width="11" height="24" rx="4" fill={C.cream}/>
+            <rect x="36" y="35" width="11" height="24" rx="4" fill={C.cream}/>
+          </svg>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:C.dimText,marginTop:5,letterSpacing:1,textTransform:"uppercase"}}>portrait</div>
+        </div>
+      </div>
+      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:C.cream,fontWeight:400,marginBottom:2}}>Ser Aldric</div>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:C.midText,letterSpacing:2,marginBottom:12,textTransform:"uppercase"}}>Human Fighter · Level 3</div>
+      <div style={{marginBottom:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><Ann color={C.dimText}>Vitality</Ann><Ann color={C.rust}>24 / 32</Ann></div>
+        <div style={{height:3,background:C.border}}><div style={{height:"100%",width:"75%",background:C.rust,opacity:.7}}/></div>
+      </div>
+      <InkLine/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7,marginBottom:14}}>
+        {[["STR","16",3],["DEX","12",1],["CON","14",2],["INT","8",-1],["WIS","10",0],["CHA","13",1]].map(([l,v,m])=><div key={l} style={{textAlign:"center"}}>
+          <div style={{width:36,height:36,border:`1px solid ${C.borderWarm}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:C.bgCard,margin:"0 auto"}}>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:C.cream,fontWeight:300,lineHeight:1}}>{v}</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:C.midText}}>{m>=0?`+${m}`:m}</span>
+          </div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:C.dimText,marginTop:3,letterSpacing:1,textTransform:"uppercase"}}>{l}</div>
+        </div>)}
+      </div>
+      <InkLine/>
+      <div style={{marginBottom:14}}>
+        <Ann color={C.dimText}>Location</Ann>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:C.creamDim,marginTop:3,lineHeight:1.4}}>The Grimwood Tavern</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:C.dimText,marginTop:2,lineHeight:1.5}}>Crossroads inn, forest edge.</div>
+      </div>
+      <div style={{flex:1}}/>
+      <InkLine/>
+      <div>
+        <Ann color={C.dimText}>Carried</Ann>
+        <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:7}}>
+          {["Longsword","Chain Mail","Healer's Kit","30 gold pieces"].map((item,i)=><div key={i} style={{display:"flex",gap:7,alignItems:"center"}}>
+            <div style={{width:3,height:3,borderRadius:"50%",background:C.rustDim,flexShrink:0}}/>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:C.midText}}>{item}</span>
+          </div>)}
+        </div>
+      </div>
+    </div>
+    {/* MAIN */}
+    <div style={{flex:1,display:"flex",flexDirection:"column",zIndex:2,minWidth:0}}>
+      <div style={{padding:"16px 28px 12px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"flex-end",background:"rgba(18,16,14,0.8)",flexShrink:0}}>
+        <div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:C.rust,letterSpacing:3,textTransform:"uppercase",marginBottom:3}}>Session I · Turn 4</div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:C.cream,fontWeight:300,letterSpacing:1}}>The Tavern at Grimwood Crossing</div>
+        </div>
+        <div style={{display:"flex",gap:18,alignItems:"center"}}>
+          {["Lore Index","Party","Map"].map(l=><button key={l} style={{background:"none",border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:10,color:C.midText,cursor:"pointer",padding:0}}>{l}</button>)}
+        </div>
+      </div>
+      <div style={{padding:"12px 28px 10px",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:C.dimText,letterSpacing:3,textTransform:"uppercase",marginBottom:3}}>Scene I · The Weary Road</div>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:C.cream,fontWeight:300,fontStyle:"italic"}}>The Barroom Floor</div>
+      </div>
+      <div style={{flex:1,overflowY:"auto",padding:"20px 28px"}}>
+        {turns.map((turn,i)=>{
+          if(turn.role==="check") return <CDicePrompt key={i} check={turn} onRoll={handleRoll}/>;
+          const isDM=turn.role==="dm";
+          return <div key={i} style={{marginBottom:18,display:"flex",gap:14}}>
+            {isDM&&<div style={{flexShrink:0,paddingTop:3}}>
+              <svg width="14" height="18" viewBox="0 0 14 18" fill="none" opacity="0.45">
+                <rect x="4" y="0" width="6" height="4" rx="0.5" fill={C.rustDim}/>
+                <rect x="2" y="5" width="10" height="4" rx="0.5" fill={C.rustDim}/>
+                <rect x="0" y="10" width="14" height="4" rx="0.5" fill={C.rustDim}/>
+                <rect x="2" y="15" width="10" height="3" rx="0.5" fill={C.rustDim}/>
+              </svg>
+            </div>}
+            <div style={{flex:1,textAlign:isDM?"left":"right"}}>
+              <div style={{marginBottom:4}}>{isDM?<Ann color={C.rust}>The Dungeon Master</Ann>:<Ann color={C.midText}>Ser Aldric, Fighter</Ann>}</div>
+              <p style={{fontFamily:isDM?"'Cormorant Garamond',serif":"'DM Sans',sans-serif",fontSize:isDM?15:12,lineHeight:isDM?1.9:1.7,color:isDM?C.cream:C.creamDim,margin:0,fontStyle:isDM?"normal":"italic",fontWeight:isDM?300:400,whiteSpace:"pre-wrap",maxWidth:"92%",marginLeft:isDM?0:"auto"}}>{turn.text}</p>
+            </div>
+          </div>;
+        })}
+      </div>
+      <div style={{borderTop:`1px solid ${C.border}`,padding:"14px 28px",background:"rgba(18,16,14,0.96)",flexShrink:0}}>
+        <div style={{display:"flex",gap:9,marginBottom:10}}>
+          {["Ask about Kael","Order something","Leave quietly"].map(s=><button key={s} onClick={()=>setInput(s)} style={{background:"none",border:`1px solid ${C.border}`,color:C.midText,fontFamily:"'DM Sans',sans-serif",fontSize:10,padding:"4px 11px",cursor:"pointer"}}>{s}</button>)}
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+          <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="What do you do?" style={{flex:1,background:C.bgCard,border:`1px solid ${C.borderWarm}`,borderTop:`2px solid ${C.rustDim}`,color:C.cream,fontFamily:"'Cormorant Garamond',serif",fontSize:14,padding:"9px 12px",resize:"none",height:56,outline:"none",fontStyle:"italic",lineHeight:1.7,fontWeight:300,boxSizing:"border-box"}}/>
+          <button style={{background:C.rust,border:"none",color:C.cream,fontFamily:"'DM Sans',sans-serif",fontSize:10,letterSpacing:2,padding:"0 18px",height:56,cursor:"pointer",textTransform:"uppercase",flexShrink:0}}>Act</button>
+        </div>
+      </div>
+    </div>
+    {/* RIGHT */}
+    <div style={{width:184,background:"rgba(18,16,14,0.97)",borderLeft:`1px solid ${C.border}`,padding:"22px 14px",flexShrink:0,zIndex:2,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      <Ann color={C.dimText}>Known Facts</Ann>
+      <InkLine extraStyle={{margin:"7px 0 11px"}}/>
+      {[{type:"Person",name:"Old Grim",note:"Retired soldier. Gruff. Measured words."},{type:"Person",name:"The Stranger",note:"Hooded. Watching since you arrived."},{type:"Place",name:"The Mill Road",note:"North of the village. Last seen here."},{type:"Object",name:"The Parchment",note:"Grim slid it across. Unread."}].map((e,i)=><div key={i} style={{marginBottom:12}}>
+        <div style={{display:"flex",gap:5,alignItems:"baseline",marginBottom:2}}>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:7,color:C.rust,letterSpacing:1,textTransform:"uppercase",flexShrink:0}}>{e.type}</span>
+          <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:12,color:C.creamDim}}>{e.name}</span>
+        </div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:C.midText,margin:0,lineHeight:1.6,paddingLeft:9,borderLeft:`1px solid ${C.border}`}}>{e.note}</p>
+      </div>)}
+      <InkLine/>
+      <Ann color={C.dimText}>Dispositions</Ann>
+      <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:7}}>
+        {[{name:"Old Grim",mood:"Neutral",pct:50},{name:"The Stranger",mood:"Wary",pct:25},{name:"Town Guard",mood:"Suspicious",pct:65}].map((n,i)=><div key={i}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:C.midText}}>{n.name}</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:C.creamFaint}}>{n.mood}</span>
+          </div>
+          <div style={{height:2,background:C.border}}><div style={{height:"100%",width:`${n.pct}%`,background:C.rustDim,opacity:.8}}/></div>
+        </div>)}
+      </div>
+      <div style={{flex:1}}/>
+      <InkLine/>
+      <Ann color={C.dimText}>Active Quest</Ann>
+      <div style={{marginTop:7,padding:"9px 11px",background:C.bgCard,borderLeft:`2px solid ${C.rust}`}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:12,color:C.cream,marginBottom:2}}>Find Kael the Merchant</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:C.midText,lineHeight:1.5}}>Missing three days. Owed Grim 30gp. Last seen north.</div>
+      </div>
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TWEAKS PANEL (inline, no external file dependency)
+// ═══════════════════════════════════════════════════════════
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showNotes": true
+}/*EDITMODE-END*/;
+
+function useTweaksLocal(defaults) {
+  const [tweaks, setTweaksState] = useState(defaults);
+  const setTweak = useCallback((key, val) => {
+    setTweaksState(prev => {
+      const next = typeof key === "object" ? {...prev,...key} : {...prev,[key]:val};
+      window.parent.postMessage({type:"__edit_mode_set_keys", edits: next},"*");
+      return next;
+    });
+  }, []);
+  return [tweaks, setTweak];
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIRECTION METADATA
+// ═══════════════════════════════════════════════════════════
+const DIRS = [
+  {id:"A", label:"Dark Grimoire", sub:"Ink · Gold · Ember", accent:"#c9a84c",
+   typeA:"Cinzel", typeB:"IM Fell English",
+   desc:"BG3-adjacent. Heavy ornament, aged gold, candlelit. Feels like reading a cursed tome.",
+   palette:["#0d0b0f","#c9a84c","#b54a1e","#e8d9b8"]},
+  {id:"B", label:"Arcane Terminal", sub:"Void Navy · Cyan · Signal", accent:"#2ee8c8",
+   typeA:"Space Mono", typeB:"Monospace",
+   desc:"Hades × Nier:Automata. Scan-lines, glowing runes, system HUD. Magic through a CLI.",
+   palette:["#050b14","#2ee8c8","#1a6eb5","#d4eef8"]},
+  {id:"C", label:"Painterly Literary", sub:"Warm Ink · Rust · Cream", accent:"#c4522a",
+   typeA:"Cormorant Garamond", typeB:"DM Sans",
+   desc:"Disco Elysium DNA. Editorial type, generous margins. A novel illustrated by a mapmaker.",
+   palette:["#12100e","#c4522a","#e8dcc8","#7a6e5a"]},
+];
+
+const SYSTEM_NOTES = [
+  {h:"Typography System", b:"A: Cinzel (display) + IM Fell English (body) — ornate, classical\nB: Space Mono — terminal, cold, all-monospace\nC: Cormorant Garamond (display) + DM Sans (UI) — literary, editorial"},
+  {h:"Color Philosophy", b:"All three use near-black backgrounds with a single dominant accent. A = warm gold. B = cold cyan. C = warm rust. One accent = one signal."},
+  {h:"Custom Icons", b:"A: Hexagonal d20 + runic corner ornaments + cairn glyph\nB: Geometric nested squares HUD + angular rune field\nC: Stacked-stone cairn logotype + editorial minimal marks"},
+  {h:"Animated Backgrounds", b:"A: Floating gold dust particles (canvas)\nB: Drifting runic glyph field + scanlines grid overlay\nC: Slow ink wash fog blobs + film grain SVG filter"},
+  {h:"Interactive Dice Roll", b:"All three have a live d20 — click the die or the button to roll. Each uses its visual language: A=ornate hex, B=glowing scan sweep, C=large editorial."},
+  {h:"Recommended Next Steps", b:"Pick a direction (or hybrid). Expand: campaign browser, character creation, login screen. Commission Midjourney art for scene header images."},
+];
+
+// ═══════════════════════════════════════════════════════════
+// FOCUS OVERLAY
+// ═══════════════════════════════════════════════════════════
+function FocusOverlay({dir, onClose}) {
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const W=1100, H=680;
+  const scale=Math.min((vw*.9)/W,(vh*.9)/H);
+  const Comp=dir.id==="A"?DirectionA:dir.id==="B"?DirectionB:DirectionC;
+  useEffect(()=>{const h=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);},[onClose]);
+  return <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.88)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}}>
+    <div onClick={e=>e.stopPropagation()} style={{position:"relative"}}>
+      <button onClick={onClose} style={{position:"absolute",top:-32,right:0,background:"none",border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,0.4)",cursor:"pointer",letterSpacing:2}}>ESC — close</button>
+      <div style={{transform:`scale(${scale})`,transformOrigin:"top left",width:W,height:H}}>
+        <Comp width={W} height={H}/>
+      </div>
+      <div style={{position:"absolute",bottom:-28,left:0,fontFamily:"'DM Sans',sans-serif",fontSize:10,color:dir.accent,letterSpacing:2,textTransform:"uppercase"}}>Direction {dir.id} · {dir.label} · {dir.sub}</div>
+    </div>
+  </div>;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════
+function App() {
+  const [tweaks, setTweak] = useTweaksLocal(TWEAK_DEFAULTS);
+  const [activeDir, setActiveDir] = useState("all");
+  const [focused, setFocused] = useState(null);
+
+  const W=920, H=640;
+  const visible = activeDir==="all" ? DIRS : DIRS.filter(d=>d.id===activeDir);
+  const Comp = (id) => id==="A"?DirectionA:id==="B"?DirectionB:DirectionC;
+
+  return <div style={{width:"100vw",height:"100vh",background:"#0a0808",display:"flex",overflow:"hidden",fontFamily:"'DM Sans',sans-serif"}}>
+    {/* RAIL */}
+    <div style={{width:238,background:"#0e0c0b",borderRight:"1px solid rgba(255,255,255,0.05)",display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
+      {/* Logo */}
+      <div style={{padding:"18px 16px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <svg width="20" height="26" viewBox="0 0 20 26" fill="none">
+            <rect x="6" y="0" width="8" height="5" rx="0.5" fill="rgba(255,255,255,0.5)"/>
+            <rect x="3" y="6" width="14" height="5" rx="0.5" fill="rgba(255,255,255,0.38)"/>
+            <rect x="0" y="12" width="20" height="5" rx="0.5" fill="rgba(255,255,255,0.26)"/>
+            <rect x="3" y="18" width="14" height="5" rx="0.5" fill="rgba(255,255,255,0.16)"/>
+          </svg>
+          <div>
+            <div style={{fontSize:15,color:"rgba(255,255,255,0.82)",letterSpacing:3,fontWeight:500}}>CAIRN</div>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.24)",letterSpacing:2,textTransform:"uppercase"}}>Design Exploration</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Direction selector */}
+      <div style={{padding:"13px 13px 0",flexShrink:0}}>
+        <div style={{fontSize:8,color:"rgba(255,255,255,0.24)",letterSpacing:3,textTransform:"uppercase",marginBottom:9}}>Directions</div>
+        {/* All */}
+        <div onClick={()=>setActiveDir("all")} style={{padding:"7px 10px",marginBottom:5,cursor:"pointer",background:activeDir==="all"?"rgba(255,255,255,0.05)":"none",border:`1px solid ${activeDir==="all"?"rgba(255,255,255,0.1)":"transparent"}`,display:"flex",gap:7,alignItems:"center"}}>
+          <div style={{display:"flex",gap:3}}>{DIRS.map(d=><div key={d.id} style={{width:6,height:6,background:d.accent}}/>)}</div>
+          <span style={{fontSize:11,color:activeDir==="all"?"rgba(255,255,255,0.7)":"rgba(255,255,255,0.3)"}}>All three</span>
+        </div>
+        {DIRS.map(dir=><div key={dir.id} onClick={()=>setActiveDir(dir.id)} style={{padding:"7px 10px",marginBottom:4,cursor:"pointer",background:activeDir===dir.id?"rgba(255,255,255,0.05)":"none",border:`1px solid ${activeDir===dir.id?dir.accent+"44":"transparent"}`,display:"flex",gap:7,alignItems:"center"}}>
+          <div style={{width:7,height:7,background:dir.accent,flexShrink:0}}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11,color:activeDir===dir.id?"rgba(255,255,255,0.7)":"rgba(255,255,255,0.32)"}}>{dir.label}</div>
+            <div style={{fontSize:8,color:"rgba(255,255,255,0.18)",letterSpacing:1}}>{dir.sub}</div>
+          </div>
+          <button onClick={e=>{e.stopPropagation();setFocused(dir.id);}} style={{background:"none",border:"none",fontSize:12,color:"rgba(255,255,255,0.18)",cursor:"pointer",padding:"1px 3px",lineHeight:1}} title="Fullscreen">⊞</button>
+        </div>)}
+      </div>
+
+      {/* Info cards */}
+      <div style={{flex:1,overflowY:"auto",padding:"13px 13px 16px"}}>
+        {(activeDir==="all"?DIRS:DIRS.filter(d=>d.id===activeDir)).map(dir=><div key={dir.id} style={{background:activeDir===dir.id?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.015)",border:`1px solid ${activeDir===dir.id?dir.accent+"44":"rgba(255,255,255,0.05)"}`,padding:"12px 13px",marginBottom:8,position:"relative",cursor:"pointer"}} onClick={()=>setActiveDir(dir.id)}>
+          {activeDir===dir.id&&<div style={{position:"absolute",top:0,left:0,right:0,height:2,background:dir.accent}}/>}
+          <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
+            <div style={{width:7,height:7,background:dir.accent}}/>
+            <span style={{fontSize:11,color:"rgba(255,255,255,0.75)",fontWeight:500}}>{dir.label}</span>
+          </div>
+          <div style={{fontSize:8,color:"rgba(255,255,255,0.28)",letterSpacing:2,textTransform:"uppercase",marginBottom:7}}>{dir.sub}</div>
+          <div style={{display:"flex",gap:3,marginBottom:7}}>{dir.palette.map((c,i)=><div key={i} style={{width:13,height:13,background:c,border:"1px solid rgba(255,255,255,0.08)"}}/>)}</div>
+          <div style={{fontSize:9,color:"rgba(255,255,255,0.32)",lineHeight:1.65}}>{dir.desc}</div>
+          <div style={{marginTop:7,fontSize:9,color:"rgba(255,255,255,0.22)"}}>{dir.typeA} + {dir.typeB}</div>
+        </div>)}
+
+        {tweaks.showNotes&&<div style={{background:"rgba(255,255,255,0.015)",border:"1px solid rgba(255,255,255,0.05)",padding:"13px",marginTop:8}}>
+          <div style={{fontSize:8,color:"rgba(255,255,255,0.25)",letterSpacing:3,textTransform:"uppercase",marginBottom:12}}>Design System Notes</div>
+          {SYSTEM_NOTES.map((n,i)=><div key={i} style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginBottom:3,fontWeight:500}}>{n.h}</div>
+            <div style={{fontSize:9,color:"rgba(255,255,255,0.28)",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{n.b}</div>
+          </div>)}
+        </div>}
+      </div>
+    </div>
+
+    {/* CANVAS */}
+    <div style={{flex:1,overflowX:"auto",overflowY:"auto",padding:"28px 28px 44px",display:"flex",flexDirection:"column",gap:36,alignItems:"flex-start"}}>
+      {/* Canvas header */}
+      <div style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexShrink:0}}>
+        <div>
+          <div style={{fontSize:20,color:"rgba(255,255,255,0.78)",fontWeight:500,marginBottom:3}}>Active Session View</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.28)",lineHeight:1.7,maxWidth:500}}>Three distinct directions for Cairn's main game UI. Each is fully interactive — click the die to roll, type in the inputs. Click ⊞ or Focus to zoom fullscreen.</div>
+        </div>
+        <div style={{display:"flex",gap:7,alignItems:"center",flexShrink:0}}>
+          <button onClick={()=>setTweak("showNotes",!tweaks.showNotes)} style={{background:"none",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.35)",fontFamily:"'DM Sans',sans-serif",fontSize:9,letterSpacing:2,padding:"5px 11px",cursor:"pointer",textTransform:"uppercase"}}>{tweaks.showNotes?"Hide":"Show"} Notes</button>
+          {visible.map(dir=><button key={dir.id} onClick={()=>setFocused(dir.id)} style={{background:"none",border:`1px solid ${dir.accent}44`,color:dir.accent,fontFamily:"'DM Sans',sans-serif",fontSize:9,letterSpacing:2,padding:"5px 11px",cursor:"pointer",textTransform:"uppercase"}}>Focus {dir.id}</button>)}
+        </div>
+      </div>
+
+      {/* Artboards */}
+      <div style={{display:"flex",flexDirection:activeDir==="all"?"column":"row",gap:36,alignItems:"flex-start",flexShrink:0}}>
+        {visible.map(dir=>{
+          const DirComp=Comp(dir.id);
+          return <div key={dir.id} style={{flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+              <div style={{width:3,height:14,background:dir.accent}}/>
+              <span style={{fontSize:12,color:"rgba(255,255,255,0.65)",fontWeight:500}}>Direction {dir.id} — {dir.label}</span>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.22)",marginLeft:6}}>{dir.sub}</span>
+              <span style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginLeft:4}}>{dir.typeA} + {dir.typeB}</span>
+            </div>
+            <div style={{width:W,height:H,position:"relative",overflow:"hidden",border:"1px solid rgba(255,255,255,0.06)"}}>
+              <div style={{position:"absolute",top:10,right:10,zIndex:100,background:"rgba(0,0,0,0.72)",border:`1px solid ${dir.accent}`,padding:"2px 9px",pointerEvents:"none"}}>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:dir.accent,letterSpacing:2,textTransform:"uppercase"}}>Dir {dir.id} · {dir.label}</span>
+              </div>
+              <DirComp width={W} height={H}/>
+            </div>
+          </div>;
+        })}
+      </div>
+    </div>
+
+    {focused&&<FocusOverlay dir={DIRS.find(d=>d.id===focused)} onClose={()=>setFocused(null)}/>}
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
