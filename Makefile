@@ -84,10 +84,14 @@ current:
 revision:
 	cd backend && uv run alembic revision --autogenerate -m "$(m)"
 
+# Seed a world + campaign template into the DB. Usage:  make seed TEMPLATE=tavern_v1
+seed:
+	cd backend && uv run python -m cairn.cli.seed $(TEMPLATE)
+
 #  Help
 
 # List all targets with their leading comment.
 help:
 	@awk 'BEGIN{FS=":"} /^# /{c=substr($$0,3)} /^[a-zA-Z][a-zA-Z0-9_-]*:/ && c{printf "  %-12s  %s\n", $$1, c; c=""}' $(MAKEFILE_LIST)
 
-.PHONY: up up-fg down nuke logs psql install dev shell test fmt lint fix typecheck check migrate downgrade current revision help
+.PHONY: up up-fg down nuke logs psql install dev shell test fmt lint fix typecheck check migrate downgrade current revision seed help

@@ -7,18 +7,16 @@ from tests._factories import make_campaign, make_session
 
 async def test_lore_endpoint_requires_auth(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    sess = await make_session(client, camp["id"])
 
-    r = await client.get(f"/v1/sessions/{sess['id']}/lore")
+    r = await client.get(f"/v1/campaigns/{camp['id']}/lore")
     assert r.status_code == 401
 
 
 async def test_lore_endpoint_wrong_owner_returns_404(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    sess = await make_session(client, camp["id"])
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/lore",
+        f"/v1/campaigns/{camp['id']}/lore",
         headers={"X-User-Id": "user_b"},
     )
     assert r.status_code == 404
@@ -26,10 +24,9 @@ async def test_lore_endpoint_wrong_owner_returns_404(client: AsyncClient) -> Non
 
 async def test_lore_empty_before_any_turns(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    sess = await make_session(client, camp["id"])
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/lore",
+        f"/v1/campaigns/{camp['id']}/lore",
         headers={"X-User-Id": "user_a"},
     )
     assert r.status_code == 200
@@ -49,7 +46,7 @@ async def test_lore_populates_after_turn(client: AsyncClient) -> None:
     await asyncio.sleep(0.5)
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/lore",
+        f"/v1/campaigns/{camp['id']}/lore",
         headers={"X-User-Id": "user_a"},
     )
     assert r.status_code == 200
@@ -71,7 +68,7 @@ async def test_lore_type_filter(client: AsyncClient) -> None:
     await asyncio.sleep(0.5)
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/lore",
+        f"/v1/campaigns/{camp['id']}/lore",
         headers={"X-User-Id": "user_a"},
         params={"type": "PLACE"},
     )
@@ -92,7 +89,7 @@ async def test_lore_upserts_on_repeat_key(client: AsyncClient) -> None:
     await asyncio.sleep(0.5)
 
     r = await client.get(
-        f"/v1/sessions/{sess['id']}/lore",
+        f"/v1/campaigns/{camp['id']}/lore",
         headers={"X-User-Id": "user_a"},
     )
     # same key should be upserted, not duplicated

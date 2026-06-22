@@ -10,7 +10,6 @@ from cairn.db.models.character import Character
 from cairn.db.models.npc import NPC
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
-from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.services import loot as loot_service
 from cairn.domain.services.combat.helpers import empty_combat_state
@@ -55,7 +54,7 @@ async def get_party(
 ) -> dict:
     """Get all party members' current combat stats for a session: HP, AC, conditions, and spell slots."""
     async with db_client.get_session() as db:
-        characters = await party_queries.get_party(db, uuid.UUID(session_id))
+        characters = await character_queries.get_party_for_session(db, uuid.UUID(session_id))
         return {"party": [character_to_dict(c) for c in characters]}
 
 
@@ -96,6 +95,6 @@ async def fetch_combat_context(session_id: str) -> tuple[CombatState, list[dict]
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, sid)
         combat_state = session.combat_state or empty_combat_state()
-        characters = await party_queries.get_party(db, sid)
+        characters = await character_queries.get_party_for_session(db, sid)
         party = [character_to_dict(c) for c in characters]
     return combat_state, party

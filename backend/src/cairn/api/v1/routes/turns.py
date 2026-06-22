@@ -11,8 +11,14 @@ from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
 from cairn.context import current_turn_id
 from cairn.db.models.turn import Turn
+from cairn.domain.services import narrative_context
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
+
+
+def _join_context(*parts: str) -> str:
+    return "\n\n".join(p for p in parts if p)
+
 
 log = structlog.get_logger()
 
@@ -49,6 +55,11 @@ async def submit(
     )
     campaign_id = uuid.UUID(state["campaign_id"])
     intent = state["intent"]
+    # Combat is resolved by the tool loop and rest has its own context block — neither
+    # uses the layered DM context, so skip assembling it for those.
+    dm_context = ""
+    if intent not in ("combat_action", "rest_action"):
+        dm_context = await narrative_context.build_dm_context(db, session_id)
 
     async def generate() -> AsyncGenerator[str]:
         token = current_turn_id.set(turn.id)
@@ -64,7 +75,7 @@ async def submit(
                 check = state["check"]
                 assert check is not None
                 setup_chunks: list[str] = []
-                async for chunk in scene_narrator.run(body.player_input):
+                async for chunk in scene_narrator.run(body.player_input, context=dm_context):
                     setup_chunks.append(chunk)
                     yield sse("token", {"text": chunk})
                 setup_prose = "".join(setup_chunks)
@@ -82,18 +93,19 @@ async def submit(
 
             elif intent == "npc_dialogue":
                 npc_context = state["npc_context"] or ""
-                narrator = scene_narrator.run(body.player_input, context=npc_context)
+                narrator = scene_narrator.run(body.player_input, context=_join_context(dm_context, npc_context))
                 async for event in _narrate(narrator, turn, db, campaign_id, namespace):
                     yield event
 
             elif intent == "rest_action":
+                # Rest context uses a special prefix the narrator keys on; keep it standalone.
                 rest_ctx = state["rest_context"] or ""
                 narrator = scene_narrator.run(body.player_input, context=rest_ctx)
                 async for event in _narrate(narrator, turn, db, campaign_id, namespace):
                     yield event
 
             else:  # narrative_action
-                narrator = scene_narrator.run(body.player_input)
+                narrator = scene_narrator.run(body.player_input, context=dm_context)
                 async for event in _narrate(narrator, turn, db, campaign_id, namespace):
                     yield event
         finally:

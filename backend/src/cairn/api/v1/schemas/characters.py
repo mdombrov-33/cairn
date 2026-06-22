@@ -89,6 +89,11 @@ class CharacterPatch(BaseModel):
 
 
 class CharacterResponse(CreatureBase):
+    # Character stores class/subclass inside the `classes` JSONB; expose them via the
+    # derived properties (NPC, sharing CreatureBase, still has real class_/subclass columns).
+    class_: str | None = Field(None, validation_alias="class_name", serialization_alias="class")
+    subclass: str | None = Field(None, validation_alias="subclass_name")
+    classes: list[dict[str, Any]] = Field(default_factory=list)
     owner_id: str
     xp: int
     race: str
@@ -101,6 +106,7 @@ class CharacterResponse(CreatureBase):
     death_save_failures: int
     resources: dict[str, Any]
     is_companion: bool
+    has_inspiration: bool = False
     bio: str | None
     personality: str | None
     voice_traits: dict[str, Any]

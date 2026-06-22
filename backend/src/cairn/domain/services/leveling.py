@@ -79,6 +79,22 @@ def has_pending_level_up(char: Character) -> bool:
     return level_for_xp(char.xp) > char.level
 
 
+def _set_primary_class(
+    char: Character, *, name: str | None = None, level: int | None = None, subclass: str | None = None
+) -> None:
+    """Mutate the primary (v1: only) class entry. Reassigns the list so SQLAlchemy
+    detects the JSONB change. subclass=None means 'leave unchanged' here — we never
+    clear a subclass on level-up."""
+    classes = [dict(c) for c in (char.classes or [{}])]
+    if name is not None:
+        classes[0]["name"] = name
+    if level is not None:
+        classes[0]["level"] = level
+    if subclass is not None:
+        classes[0]["subclass"] = subclass
+    char.classes = classes
+
+
 def _ability_modifier(score: int) -> int:
     return math.floor((score - 10) / 2)
 
@@ -184,13 +200,13 @@ def build_level_up_preview(char: Character) -> dict | None:
     if not has_pending_level_up(char):
         return None
     target_level = char.level + 1
-    cls = char.class_
+    cls = char.class_name
     target_data = _level_data(cls, target_level)
     if target_data is None:
         return None
 
     asi_or_feat = _is_asi_level(cls, target_level)
-    needs_subclass = SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass
+    needs_subclass = SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass_name
 
     available_subclasses: list[dict] = []
     if needs_subclass:
@@ -317,7 +333,7 @@ async def apply_level_up(
         raise ValidationError(f"{char.name} has no pending level-up (xp={char.xp}, level={char.level})")
 
     target_level = char.level + 1
-    cls = char.class_
+    cls = char.class_name
     target_data = _level_data(cls, target_level)
     if target_data is None:
         raise ValidationError(f"max level reached for {cls}")
@@ -345,10 +361,10 @@ async def apply_level_up(
             raise ValidationError("must choose asi or feat at this level")
 
     # 3. Subclass (if applicable)
-    if SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass:
+    if SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass_name:
         if choices.subclass is None:
             raise ValidationError("subclass choice required at this level")
-        char.subclass = choices.subclass
+        _set_primary_class(char, subclass=choices.subclass)
 
     # 4. Spell slots — re-derive from class table for the new level
     new_slots = _spell_slots_for_level(cls, target_level)
@@ -363,13 +379,14 @@ async def apply_level_up(
     new_features: list[FeatureEntry] = [
         {"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])
     ]
-    if char.subclass:
-        subclass_feats = get_subclass_features_at_level(char.subclass, target_level)
+    if char.subclass_name:
+        subclass_feats = get_subclass_features_at_level(char.subclass_name, target_level)
         new_features += cast(list[FeatureEntry], [{"index": f["index"], "name": f["name"]} for f in subclass_feats])
     char.features = list(char.features) + new_features
 
     # 7. Bookkeeping: level, prof bonus, hit dice
     char.level = target_level
+    _set_primary_class(char, level=target_level)
     char.proficiency_bonus = _proficiency_bonus_for_level(target_level)
     char.hit_dice_remaining = (char.hit_dice_remaining or 0) + 1
 
@@ -424,7 +441,7 @@ def _apply_asi(char: Character, asi: dict[str, int]) -> None:
 
 
 def _validate_choices_against_preview(char: Character, choices: LevelUpChoices, target_level: int) -> None:
-    cls = char.class_
+    cls = char.class_name
     asi_level = _is_asi_level(cls, target_level)
 
     if asi_level:
@@ -445,7 +462,7 @@ def _validate_choices_against_preview(char: Character, choices: LevelUpChoices, 
         if choices.asi is not None or choices.feat is not None:
             raise ValidationError(f"level {target_level} does not grant ASI/feat for {cls}")
 
-    needs_subclass = SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass
+    needs_subclass = SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass_name
     if needs_subclass:
         if choices.subclass is None:
             raise ValidationError("subclass choice required at this level")

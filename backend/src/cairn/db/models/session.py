@@ -23,5 +23,9 @@ class Session(Base):
     combat_active: Mapped[bool] = mapped_column(default=False, server_default="false")
     combat_state: Mapped[CombatState | None] = mapped_column(JSONB)
 
-    # TODO Slice 5: pair with world template calendar for full date display
     in_game_hours_elapsed: Mapped[int] = mapped_column(default=0, server_default="0")
+    last_day_summarized: Mapped[int] = mapped_column(default=0, server_default="0")
+
+    # Seed for session_rng(). Tests pass a known seed for determinism; prod sessions
+    # get a random int at creation. v1 does not persist runtime RNG state across rolls.
+    rng_seed: Mapped[int] = mapped_column(default=0, server_default="0")

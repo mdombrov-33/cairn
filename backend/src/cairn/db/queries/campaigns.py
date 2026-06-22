@@ -12,7 +12,7 @@ async def create_campaign(
     *,
     owner_id: str,
     name: str,
-    template_id: str,
+    template_id: uuid.UUID,
     world_bible_namespace: str,
 ) -> Campaign:
     campaign = Campaign(

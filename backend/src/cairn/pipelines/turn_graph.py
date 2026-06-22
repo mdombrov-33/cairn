@@ -13,8 +13,8 @@ from cairn.agents import (
 )
 from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.db import client as db_client
+from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
-from cairn.db.queries import party_members as party_queries
 from cairn.pipelines.checkpointer import get_checkpointer
 from cairn.types import CheckData, HelperRef
 
@@ -42,7 +42,7 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
     session_id = uuid.UUID(state["session_id"])
 
     async with db_client.get_session() as db:
-        party = await party_queries.get_party(db, session_id)
+        party = await character_queries.get_party_for_session(db, session_id)
 
     # Active character: prefer the PC (non-companion); fall back to first available.
     active = next((c for c in party if not c.is_companion), party[0] if party else None)

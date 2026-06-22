@@ -16,6 +16,7 @@ async def upsert_entry(
     key: str,
     content: str,
     source_turn_id: uuid.UUID | None = None,
+    day_index: int | None = None,
 ) -> WorldBibleEntry:
     stmt = (
         insert(WorldBibleEntry)
@@ -26,10 +27,11 @@ async def upsert_entry(
             key=key,
             content=content,
             source_turn_id=source_turn_id,
+            day_index=day_index,
         )
         .on_conflict_do_update(
             constraint="uq_entry_campaign_type_key",
-            set_={"content": content, "source_turn_id": source_turn_id},
+            set_={"content": content, "source_turn_id": source_turn_id, "day_index": day_index},
         )
         .returning(WorldBibleEntry)
     )
@@ -47,5 +49,16 @@ async def list_by_campaign(
     if type_ is not None:
         q = q.where(WorldBibleEntry.type == type_)
     q = q.order_by(WorldBibleEntry.type, WorldBibleEntry.key)
+    result = await session.execute(q)
+    return list(result.scalars().all())
+
+
+async def list_day_summaries(session: AsyncSession, campaign_id: uuid.UUID) -> list[WorldBibleEntry]:
+    """DAY_SUMMARY entries in calendar order — powers the calendar sidebar."""
+    q = (
+        select(WorldBibleEntry)
+        .where(WorldBibleEntry.campaign_id == campaign_id, WorldBibleEntry.type == "DAY_SUMMARY")
+        .order_by(WorldBibleEntry.day_index)
+    )
     result = await session.execute(q)
     return list(result.scalars().all())

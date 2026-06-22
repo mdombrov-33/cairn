@@ -28,8 +28,9 @@ class Character(Base):
     name: Mapped[str]
     race: Mapped[str]
     subrace: Mapped[str | None]
-    class_: Mapped[str] = mapped_column("class")
-    subclass: Mapped[str | None]
+    # Multiclass-ready shape: [{name, level, hit_dice_spent, subclass}]. v1 enforces
+    # len(classes) == 1 in the service layer; multiclass unlocks in a later slice.
+    classes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
     background: Mapped[str]
     alignment: Mapped[str | None]
     level: Mapped[int] = mapped_column(default=1, server_default="1")
@@ -37,6 +38,16 @@ class Character(Base):
     hit_die_size: Mapped[int] = mapped_column(default=8, server_default="8")
     hit_dice_remaining: Mapped[int] = mapped_column(default=1, server_default="1")
     portrait_url: Mapped[str | None]
+
+    @property
+    def class_name(self) -> str:
+        """Primary class name. v1 single-class invariant: classes[0] is canonical."""
+        return self.classes[0]["name"] if self.classes else ""
+
+    @property
+    def subclass_name(self) -> str | None:
+        """Subclass of the primary class, if chosen."""
+        return self.classes[0].get("subclass") if self.classes else None
 
     # combat stats - real columns, queried/displayed individually
     hp: Mapped[int]
@@ -58,6 +69,12 @@ class Character(Base):
     # companion flag — False = player's own character, True = AI-controlled party member
     is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")
     status: Mapped[str] = mapped_column(default="active", server_default="active")
+
+    # System-enforced advantage flag. Granted by DM for good roleplay, spent for advantage.
+    has_inspiration: Mapped[bool] = mapped_column(default=False, server_default="false")
+
+    # For is_companion=True: approval/mood/personal_goal/secret. Populated in a later slice.
+    companion_meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     # narrative voice — replaced by NarrativeProfile in Slice 7; stays loose for now.
     bio: Mapped[str | None]

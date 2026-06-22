@@ -50,7 +50,7 @@ class CharacterView:
         return cls(
             id=char.id,
             name=char.name,
-            class_=char.class_,
+            class_=char.class_name,
             level=char.level,
             background=char.background,
             hp=char.hp,

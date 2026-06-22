@@ -8,9 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.character import Character
 from cairn.db.models.session import Session
-from cairn.db.queries import party_members as party_queries
+from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
+from cairn.domain.services import day_roll
 from cairn.domain.services.combat.helpers import exhaustion_level
 from cairn.types import CharacterRestResult, HitDieResult
 
@@ -42,7 +43,7 @@ def _reset_character_short_rest(char: Character) -> CharacterRestResult:
 
     # Warlock spell slots recharge on short rest
     slots_restored = False
-    if char.class_ == "warlock" and char.spell_slots:
+    if char.class_name == "warlock" and char.spell_slots:
         from cairn.srd import get_class_levels
 
         levels = get_class_levels("warlock")
@@ -84,7 +85,7 @@ def _reset_character_long_rest(char: Character) -> CharacterRestResult:
     if char.spell_slots is not None:
         from cairn.srd import get_class_levels
 
-        levels = get_class_levels(char.class_)
+        levels = get_class_levels(char.class_name)
         if char.level >= 1 and char.level <= len(levels):
             sc = levels[char.level - 1].get("spellcasting") or {}
             full_slots = {
@@ -112,7 +113,7 @@ def _reset_character_long_rest(char: Character) -> CharacterRestResult:
     # TODO Slice 10: companions with settings.companion.leveling == "ai" should auto-re-prepare
     # instead of entering the spell_prep_required flow; skip clearing and pick spells server-side.
     prepared_cleared = False
-    if char.class_ in PREPARED_CASTERS:
+    if char.class_name in PREPARED_CASTERS:
         char.prepared_spells = []
         prepared_cleared = True
 
@@ -137,13 +138,14 @@ async def apply_short_rest(
     if not ok:
         raise ConflictError(f"cannot rest: {reason}", code=reason)
 
-    party = await party_queries.get_party(db, session_id)
+    party = await character_queries.get_party_for_session(db, session_id)
     if not party:
         raise NotFoundError("no party members in session", code="no_party")
 
     results = [_reset_character_short_rest(char) for char in party]
 
     session.in_game_hours_elapsed += 1  # short rest ~1 hour
+    await day_roll.maybe_roll_days(db, session)
     log.info("short_rest_applied", session_id=str(session_id), party_size=len(party))
     return {"rest_type": "short", "results": results}
 
@@ -158,13 +160,14 @@ async def apply_long_rest(
     if not ok:
         raise ConflictError(f"cannot rest: {reason}", code=reason)
 
-    party = await party_queries.get_party(db, session_id)
+    party = await character_queries.get_party_for_session(db, session_id)
     if not party:
         raise NotFoundError("no party members in session", code="no_party")
 
     results = [_reset_character_long_rest(char) for char in party]
 
     session.in_game_hours_elapsed += 8  # long rest = 8 hours
+    await day_roll.maybe_roll_days(db, session)
     log.info("long_rest_applied", session_id=str(session_id), party_size=len(party))
 
     needs_spell_prep = [r["character_id"] for r in results if r["prepared_spells_cleared"]]
@@ -176,8 +179,6 @@ async def roll_hit_die(
     *,
     character_id: uuid.UUID,
 ) -> HitDieResult:
-    from cairn.db.queries import characters as character_queries
-
     char = await character_queries.get_character(db, character_id)
     if (char.hit_dice_remaining or 0) <= 0:
         raise ConflictError("no hit dice remaining", code="no_hit_dice")
@@ -208,13 +209,12 @@ async def prepare_spells(
     owner_id: str,
     spells: list[str],
 ) -> Character:
-    from cairn.db.queries import characters as character_queries
     from cairn.domain.exceptions import ValidationError
 
     char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
 
-    if char.class_ not in PREPARED_CASTERS:
-        raise ValidationError(f"{char.class_} does not prepare spells")
+    if char.class_name not in PREPARED_CASTERS:
+        raise ValidationError(f"{char.class_name} does not prepare spells")
 
     # Validate all spells are in spells_known (or class list for clerics/druids/paladins)
     # For now validate count only — full legality check requires SRD class spell list lookup
@@ -256,9 +256,9 @@ def build_blocked_context(reason: str) -> str:
 def _max_prepared_spells(char: Character) -> int:
     """Prepared spell cap per class (ability mod + level, minimum 1)."""
     scores = cast(dict[str, int], char.ability_scores)
-    if char.class_ == "paladin":
+    if char.class_name == "paladin":
         mod = _ability_modifier(scores.get("cha", 10))
         return max(1, mod + char.level // 2)
-    ability_key = {"wizard": "int", "cleric": "wis", "druid": "wis"}.get(char.class_, "int")
+    ability_key = {"wizard": "int", "cleric": "wis", "druid": "wis"}.get(char.class_name, "int")
     mod = _ability_modifier(scores.get(ability_key, 10))
     return max(1, mod + char.level)

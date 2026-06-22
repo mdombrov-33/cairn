@@ -60,6 +60,21 @@ async def list_characters_by_campaign(
     return list(result.scalars().all())
 
 
+async def get_party_for_session(session: AsyncSession, session_id: uuid.UUID) -> list[Character]:
+    """Party = characters in the session's campaign (PCs + companions).
+
+    Party membership derives from Character.campaign_id — there is no per-session enrollment.
+    """
+    from cairn.db.models.session import Session as SessionModel
+
+    result = await session.execute(
+        select(Character)
+        .join(SessionModel, SessionModel.campaign_id == Character.campaign_id)
+        .where(SessionModel.id == session_id)
+    )
+    return list(result.scalars().all())
+
+
 async def delete_character(session: AsyncSession, character_id: uuid.UUID) -> None:
     character = await get_character(session, character_id)
     await session.delete(character)

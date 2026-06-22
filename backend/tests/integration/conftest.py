@@ -101,6 +101,18 @@ async def _truncate_tables() -> AsyncIterator[None]:
             await conn.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def _seed_template() -> None:
+    """Seed the tavern_v1 world + template before each test.
+
+    Campaign creation resolves template_id against a seeded CampaignTemplate row, and
+    the truncate fixture wipes seed tables between tests, so re-seed each time.
+    """
+    from cairn.cli.seed import run as seed_run
+
+    await seed_run("tavern_v1")
+
+
 @pytest_asyncio.fixture
 async def client() -> AsyncIterator[AsyncClient]:
     # Inline: cairn.main runs `app = create_app()` at module load, which reads

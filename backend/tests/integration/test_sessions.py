@@ -56,29 +56,3 @@ async def test_get_session_wrong_owner_returns_404(client: AsyncClient) -> None:
 
     r = await client.get(f"/v1/sessions/{started['id']}", headers={"X-User-Id": "user_b"})
     assert r.status_code == 404
-
-
-async def test_end_session_sets_ended_at(client: AsyncClient) -> None:
-    campaign = await make_campaign(client)
-    started = await make_session(client, campaign["id"])
-
-    r = await client.post(f"/v1/sessions/{started['id']}/end", headers={"X-User-Id": "user_a"})
-    assert r.status_code == 200
-    assert r.json()["ended_at"] is not None
-
-
-async def test_end_session_allows_new_session_after(client: AsyncClient) -> None:
-    campaign = await make_campaign(client)
-    started = await make_session(client, campaign["id"])
-    await client.post(f"/v1/sessions/{started['id']}/end", headers={"X-User-Id": "user_a"})
-
-    r = await client.post(f"/v1/campaigns/{campaign['id']}/sessions", headers={"X-User-Id": "user_a"})
-    assert r.status_code == 201
-
-
-async def test_end_session_wrong_owner_returns_404(client: AsyncClient) -> None:
-    campaign = await make_campaign(client)
-    started = await make_session(client, campaign["id"])
-
-    r = await client.post(f"/v1/sessions/{started['id']}/end", headers={"X-User-Id": "user_b"})
-    assert r.status_code == 404

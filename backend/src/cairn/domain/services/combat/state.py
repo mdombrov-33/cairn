@@ -1,4 +1,3 @@
-import random
 import uuid
 from typing import cast
 
@@ -8,11 +7,11 @@ from cairn import srd as rules
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
-from cairn.db.queries import party_members as party_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
 from cairn.domain.services.combat.emitter import emit
 from cairn.domain.services.combat.rolls import dex_mod, parse_and_roll
+from cairn.domain.services.rng import session_rng
 from cairn.types import Combatant, CombatantTeam, CombatEffect, CombatState
 
 
@@ -26,9 +25,10 @@ async def init_state(
     if db_session.combat_active:
         raise ConflictError("combat is already active for this session", code="combat_active")
 
+    rng = session_rng(db_session)
     combatants: list[Combatant] = []
 
-    characters = await party_queries.get_party(db, session_id)
+    characters = await character_queries.get_party_for_session(db, session_id)
     for char in characters:
         combatants.append(
             {
@@ -37,7 +37,7 @@ async def init_state(
                 "team": "players",
                 "ai_controlled": char.is_companion,
                 "name": char.name,
-                "initiative_roll": random.randint(1, 20) + char.initiative,
+                "initiative_roll": rng.randint(1, 20) + char.initiative,
                 "initiative_modifier": char.initiative,
                 "zone": None,
                 "conditions": list(char.conditions),
@@ -56,7 +56,7 @@ async def init_state(
                     "type": "npc",
                     "team": team,
                     "name": npc.name,
-                    "initiative_roll": random.randint(1, 20) + npc.initiative,
+                    "initiative_roll": rng.randint(1, 20) + npc.initiative,
                     "initiative_modifier": npc.initiative,
                     "zone": None,
                     "conditions": list(npc.conditions),
@@ -72,7 +72,7 @@ async def init_state(
             ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
             count = max(1, enemy.get("count", 1))
             for i in range(count):
-                max_hp = parse_and_roll(monster["hit_points_roll"])
+                max_hp = parse_and_roll(monster["hit_points_roll"], rng)
                 label = monster["name"] if count == 1 else f"{monster['name']} {i + 1}"
                 combatants.append(
                     {
@@ -81,7 +81,7 @@ async def init_state(
                         "team": "enemies",
                         "name": label,
                         "srd_index": monster["index"],
-                        "initiative_roll": random.randint(1, 20) + dex,
+                        "initiative_roll": rng.randint(1, 20) + dex,
                         "initiative_modifier": dex,
                         "zone": None,
                         "hp": max_hp,
@@ -96,7 +96,7 @@ async def init_state(
                 )
 
     combatants.sort(
-        key=lambda c: (c["initiative_roll"], c["initiative_modifier"], random.random()),
+        key=lambda c: (c["initiative_roll"], c["initiative_modifier"], rng.random()),
         reverse=True,
     )
 

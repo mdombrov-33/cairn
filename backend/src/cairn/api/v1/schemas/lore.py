@@ -14,5 +14,6 @@ class WorldBibleEntryResponse(BaseModel):
     type: str
     key: str
     content: str
+    day_index: int | None = None
     created_at: datetime
     updated_at: datetime

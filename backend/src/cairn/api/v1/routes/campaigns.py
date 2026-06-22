@@ -1,11 +1,13 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.campaigns import CampaignResponse, CreateCampaignRequest
+from cairn.api.v1.schemas.lore import WorldBibleEntryResponse
 from cairn.api.v1.schemas.sessions import SessionResponse
 from cairn.domain.services import campaigns as service
+from cairn.domain.services import lore as lore_service
 from cairn.domain.services import sessions as session_service
 
 router = APIRouter(prefix="/v1/campaigns", tags=["campaigns"])
@@ -43,6 +45,28 @@ async def get(
 ) -> CampaignResponse:
     campaign = await service.get(db, campaign_id=campaign_id, owner_id=user_id)
     return CampaignResponse.model_validate(campaign)
+
+
+@router.get("/{campaign_id}/lore", response_model=list[WorldBibleEntryResponse])
+async def lore(
+    campaign_id: uuid.UUID,
+    user_id: CurrentUserId,
+    db: DBSession,
+    type: str | None = Query(None, description="Filter by world bible entry type"),
+) -> list[WorldBibleEntryResponse]:
+    entries = await lore_service.list_lore(db, campaign_id=campaign_id, owner_id=user_id, type_=type)
+    return [WorldBibleEntryResponse.model_validate(e) for e in entries]
+
+
+@router.get("/{campaign_id}/calendar", response_model=list[WorldBibleEntryResponse])
+async def calendar(
+    campaign_id: uuid.UUID,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> list[WorldBibleEntryResponse]:
+    """Day summaries in calendar order — powers the calendar sidebar."""
+    entries = await lore_service.list_calendar(db, campaign_id=campaign_id, owner_id=user_id)
+    return [WorldBibleEntryResponse.model_validate(e) for e in entries]
 
 
 @router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)

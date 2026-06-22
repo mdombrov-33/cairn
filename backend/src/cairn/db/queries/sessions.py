@@ -1,5 +1,4 @@
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +14,13 @@ async def create_session(
     *,
     campaign_id: uuid.UUID,
     current_location_id: uuid.UUID | None = None,
+    rng_seed: int = 0,
 ) -> Session:
-    db_session = Session(campaign_id=campaign_id, current_location_id=current_location_id)
+    db_session = Session(
+        campaign_id=campaign_id,
+        current_location_id=current_location_id,
+        rng_seed=rng_seed,
+    )
     session.add(db_session)
     await session.flush()
     return db_session
@@ -51,12 +55,5 @@ async def update_combat_state(
     db_session.combat_active = combat_active
     db_session.combat_state = combat_state
     flag_modified(db_session, "combat_state")
-    await session.flush()
-    return db_session
-
-
-async def end_session(session: AsyncSession, session_id: uuid.UUID) -> Session:
-    db_session = await get_session(session, session_id)
-    db_session.ended_at = datetime.now(UTC)
     await session.flush()
     return db_session

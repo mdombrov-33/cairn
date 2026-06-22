@@ -11,9 +11,12 @@ async def test_create_requires_auth(client: AsyncClient) -> None:
 async def test_create_returns_campaign(client: AsyncClient) -> None:
     body = await make_campaign(client, name="Tavern A")
     assert body["name"] == "Tavern A"
-    assert body["template_id"] == "tavern_v1"
+    # template_id is now a FK UUID to the seeded CampaignTemplate, not the string key.
+    assert body["template_id"]
     assert body["owner_id"] == "user_a"
     assert body["world_bible_namespace"].startswith("campaign_")
+    assert body["status"] == "active"
+    assert body["current_act_index"] == 0
     assert "id" in body
     assert "created_at" in body
 

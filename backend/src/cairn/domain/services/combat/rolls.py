@@ -18,19 +18,23 @@ from cairn.domain.services.combat.helpers import (
     find_monster,
     get_ability_score,
 )
+from cairn.domain.services.rng import session_rng
+
+# A Random | None — when None, fall back to the module-level random (non-deterministic).
+type Rng = random.Random | None
 
 
-def _roll_die(sides: int) -> int:
-    return random.randint(1, sides)
+def _roll_die(sides: int, rng: Rng = None) -> int:
+    return (rng or random).randint(1, sides)
 
 
-def parse_and_roll(expression: str) -> int:
+def parse_and_roll(expression: str, rng: Rng = None) -> int:
     match = re.fullmatch(r"(\d+)d(\d+)([+-]\d+)?", expression.strip())
     if not match:
         raise ValueError(f"Invalid dice expression: {expression!r}")
     count, sides = int(match.group(1)), int(match.group(2))
     modifier = int(match.group(3) or 0)
-    return sum(_roll_die(sides) for _ in range(count)) + modifier
+    return sum(_roll_die(sides, rng) for _ in range(count)) + modifier
 
 
 def mod(score: int) -> int:
@@ -41,15 +45,21 @@ def dex_mod(score: int) -> int:
     return mod(score)
 
 
-def roll_d20(roll_type: str) -> tuple[list[int], int]:
+def roll_d20(roll_type: str, rng: Rng = None) -> tuple[list[int], int]:
     if roll_type == "advantage":
-        r1, r2 = _roll_die(20), _roll_die(20)
+        r1, r2 = _roll_die(20, rng), _roll_die(20, rng)
         return [r1, r2], max(r1, r2)
     if roll_type == "disadvantage":
-        r1, r2 = _roll_die(20), _roll_die(20)
+        r1, r2 = _roll_die(20, rng), _roll_die(20, rng)
         return [r1, r2], min(r1, r2)
-    r = _roll_die(20)
+    r = _roll_die(20, rng)
     return [r], r
+
+
+async def _rng_for(db: AsyncSession, session_id: uuid.UUID) -> random.Random:
+    """Build the session-seeded RNG for a combat roll."""
+    session = await session_queries.get_session(db, session_id)
+    return session_rng(session)
 
 
 async def roll_death_save(
@@ -62,7 +72,8 @@ async def roll_death_save(
     if char.hp > 0:
         return {"error": f"{char.name} is not at 0 HP and doesn't need a death save."}
 
-    roll = random.randint(1, 20)
+    rng = await _rng_for(db, session_id)
+    roll = rng.randint(1, 20)
     outcome = "ongoing"
 
     if roll == 20:
@@ -120,7 +131,7 @@ async def roll_saving_throw(
     except ValueError as e:
         return {"error": str(e)}
 
-    rolls, result = roll_d20(roll_type)
+    rolls, result = roll_d20(roll_type, await _rng_for(db, session_id))
     total = result + modifier
     return {
         "combatant": name,
@@ -252,7 +263,7 @@ async def roll_skill_check(
         return {"error": str(e)}
 
     ability = SKILL_ABILITY[skill.lower()]
-    rolls, result = roll_d20(roll_type)
+    rolls, result = roll_d20(roll_type, await _rng_for(db, session_id))
     total = result + modifier
     return {
         "combatant": name,
@@ -303,7 +314,7 @@ async def roll_initiative(
     else:
         return {"error": f"Unknown combatant_type: {combatant_type!r}"}
 
-    rolls, result = roll_d20(roll_type)
+    rolls, result = roll_d20(roll_type, await _rng_for(db, session_id))
     total = result + modifier
     return {
         "combatant": name,
@@ -343,8 +354,9 @@ async def resolve_contest(
     except ValueError as e:
         return {"error": str(e)}
 
-    atk_rolls, atk_result = roll_d20("normal")
-    def_rolls, def_result = roll_d20("normal")
+    rng = await _rng_for(db, session_id)
+    atk_rolls, atk_result = roll_d20("normal", rng)
+    def_rolls, def_result = roll_d20("normal", rng)
     atk_total = atk_result + atk_mod
     def_total = def_result + def_mod
 

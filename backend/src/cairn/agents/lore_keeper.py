@@ -8,7 +8,17 @@ from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
 
-_VALID_TYPES = {"NPC", "PLACE", "EVENT", "QUEST"}
+_VALID_TYPES = {
+    "NPC",
+    "PLACE",
+    "EVENT",
+    "QUEST",
+    "FACTION",
+    "RELATIONSHIP",
+    "SESSION_END",
+    "CAMPAIGN_CONCLUDED",
+    "DAY_SUMMARY",
+}
 
 
 class LoreEntry(BaseModel):
@@ -17,12 +27,17 @@ class LoreEntry(BaseModel):
     content: str
 
 
-async def run(dm_response: str) -> list[LoreEntry]:
+async def run(dm_response: str, existing_keys: list[str] | None = None) -> list[LoreEntry]:
     prompt, model, fallbacks = agent_setup("lore_keeper")
 
     raw = await complete(
         model=model,
-        messages=[{"role": "user", "content": prompt.render(dm_response=dm_response)}],
+        messages=[
+            {
+                "role": "user",
+                "content": prompt.render(dm_response=dm_response, existing_keys=existing_keys or []),
+            }
+        ],
         agent="lore_keeper",
         fallbacks=fallbacks,
         temperature=prompt.temperature,

@@ -182,7 +182,7 @@ async def test_preview_fighter_l3_to_l4_offers_asi_and_feats(client: AsyncClient
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, uuid.UUID(char_resp["id"]))
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         preview = build_level_up_preview(char)
     assert preview is not None
@@ -276,7 +276,7 @@ async def test_apply_level_up_asi_increases_ability(client: AsyncClient) -> None
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         await db.commit()
 
@@ -301,7 +301,7 @@ async def test_apply_level_up_asi_must_total_two(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         await db.commit()
 
@@ -324,7 +324,7 @@ async def test_apply_level_up_with_general_feat_mobile(client: AsyncClient) -> N
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         original_speed = char.speed
         await db.commit()
@@ -382,7 +382,7 @@ async def test_apply_level_up_subclass_required_at_l3(client: AsyncClient) -> No
             owner_id="user_a",
             choices=LevelUpChoices(hp_method="average", subclass="champion"),
         )
-    assert char.subclass == "champion"
+    assert char.subclass_name == "champion"
 
 
 async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
@@ -412,7 +412,7 @@ async def test_apply_level_up_wizard_grows_spell_slots_and_learns_spells(
     assert char.spell_slots == {"1": 3}
     assert "Misty Step" in char.spells_known
     assert "Detect Thoughts" in char.spells_known
-    assert char.subclass == "evocation"
+    assert char.subclass_name == "evocation"
 
 
 async def test_apply_level_up_rejects_wrong_spell_count(client: AsyncClient) -> None:
@@ -443,7 +443,7 @@ async def test_apply_level_up_rejects_origin_feat_at_asi(client: AsyncClient) ->
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         await db.commit()
 
@@ -467,7 +467,7 @@ async def test_apply_level_up_recomputes_initiative_after_dex_asi(
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         await db.commit()
 
@@ -507,7 +507,7 @@ async def test_apply_level_up_observant_recomputes_passive_perception(
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 3
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 2700
         original_pp = char.passive_perception
         await db.commit()
@@ -704,7 +704,7 @@ async def test_tough_scaling_on_level_up(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         char.level = 4
-        char.subclass = "champion"
+        char.classes = [{**char.classes[0], "subclass": "champion"}]
         char.xp = 6500  # qualify for L5
         feat_effects.apply_feat(char, "tough")
         after_tough = char.max_hp

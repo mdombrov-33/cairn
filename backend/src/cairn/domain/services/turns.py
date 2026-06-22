@@ -74,7 +74,11 @@ async def run_lore_keeper(
     """Extract and persist world bible entries from a completed DM response. Fire-and-forget."""
 
     try:
-        entries = await lore_keeper.run(dm_response)
+        async with db_client.get_sessionmaker()() as session:
+            existing = await world_bible_queries.list_by_campaign(session, campaign_id)
+        existing_keys = [e.key for e in existing]
+
+        entries = await lore_keeper.run(dm_response, existing_keys=existing_keys)
         if not entries:
             return
         async with db_client.get_sessionmaker()() as session, session.begin():

@@ -40,9 +40,11 @@ class AcInput:
 
     @classmethod
     def from_row(cls, row: Character | NPC) -> AcInput:
+        # Character exposes class_name (derived from classes[0]); NPC keeps a class_ column.
+        class_name = getattr(row, "class_name", None) or getattr(row, "class_", None)
         return cls(
             id=row.id,
-            class_=row.class_,
+            class_=class_name,
             ability_scores=row.ability_scores,
             inventory=row.inventory,
             feats=row.feats,
