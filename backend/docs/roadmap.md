@@ -578,82 +578,396 @@ Distinction that drives everything: **template content is authored canon (seeded
 
 _Depends on: Slice 5._
 
-The "make the DM smart" slice. Adds meta-routing, fixes dialogue, lands the combat-polish backlog, ships system-enforced mechanics: concentration, inspiration, passive checks, death modes.
+The "make the DM smart" slice. Adds meta-routing via Scene Director, restructures the turn graph so combat is no longer special-cased outside it, ships system-enforced concentration + inspiration + death modes, extends loot, polishes combat, and lays the foundation for the dialogue and DM-persona work that lands in Slices 7 + 8.
 
-**Build (Scene Director):**
+This slice is the largest architectural shift since Slice 5. This section is the implementation handoff — every decision is locked here.
 
-- `agents/scene_director.py` + `prompts/scene_director/v1.md` — new agent, runs before `IntentRouter`.
-- Detects: combat triggers (hostile action/NPC), scene transitions, act progression, combat end, in-game-time advancement (travel/rest).
-- Tags new scenes with `safety_level: safe | risky | hostile` (used by rest gating, Slice 4).
-- `Session.scene_mode` transitions: `exploration → combat` auto-calls `start_combat`; `combat → exploration` on combat end.
-- **Owns Scene row creation** (table shipped in Slice 5, empty until now). On session start, creates the initial `Scene` for the current location and stamps it on `Turn.scene_id`. On detected transition, ends current scene (`ended_at`, `summary`) and starts a new one. Backfill migration in this slice: assign existing turns to the campaign's initial Scene, then tighten `Turn.scene_id` to NOT NULL.
+#### Architectural shift — turn graph topology
 
-**Build (DM persona — foundation; depth comes in Slices 7 + 8):**
+Before Slice 6, `turns.service.prepare()` branches: if `db_session.combat_active` it hardcodes `intent="combat_action"` and skips the graph entirely; otherwise it runs `turn_graph.run()` which is `route_intent → (skill_check | npc_dialogue | rest | END)`. Combat is special-cased outside the graph.
 
-- `scene_narrator/v1.md` rewrite — strong DM persona: tone, pacing, style, awareness of campaign genre and current act. Provisional companion context (name, bio, personality, voice_traits) — replaced by full `NarrativeProfile` injection in Slice 7. Layered scene rules and pacing instrumentation come in Slice 8.
-- **Passive Perception silent roll on scene entry — provisional implementation.** SceneNarrator calls `_silent_passive_check(subject_char, scene)`; on success, prompt includes "the character noticed: X" → DM weaves it into prose. Per-campaign override: `settings.checks.passive_perception ∈ {silent, surfaced, on_demand}`. The full eligibility-based model (DM receives whole party perception profile + class/race/knowledge gating) lands in Slice 8 when scene depth gives it a proper home.
+After Slice 6, the graph runs every turn. Scene Director is the first node. Combat is a routing decision inside the graph, not a bypass before it. The streaming boundary stays at the route layer — the graph produces non-streaming pre-processing only; the route layer then streams the chosen narrator/resolver.
 
-**Build (`npc_dialogue` → `dialogue` rename + plumbing only — content rewrite is Slice 7):**
+```
+START → scene_director (pre-input pass)
+  ├─ combat_active=true               → combat_terminus
+  ├─ combat_trigger detected          → combat_entry → combat_terminus
+  ├─ pending_transition set on session → scene_create → intent_router → resolvers
+  └─ no meta event                    → intent_router → resolvers
+```
 
-- Rename files, agent, prompt; update `models.yaml`, `turn_graph.py`, routes, tests.
-- Provisional `DialogueEntity` struct (`name`, `bio`, `personality`, `voice_traits`, `disposition`) — temporary shape, replaced by the full `NarrativeProfile` in Slice 7. Two-step because Slice 6 unblocks dialogue for both NPCs and companions (the existing crippling bug); Slice 7 lands the depth.
-- Fix companion lookup — `_resolve_npc_dialogue` falls back to `character_queries.find_companion_by_name` when NPC lookup returns None.
-- Fix context plumbing — inject last N turns of current scene + relevant world bible entries (rich profile injection comes in Slice 7).
+A second Scene Director pass (post-response) runs **after** streaming completes, in the same fire-and-forget slot as LoreKeeper. It updates Scene state for the next turn — see Scene Director section below.
 
-**Build (custom character onboarding):**
+The `combat_active` bypass in `turns.service.prepare()` is removed. The route layer reads the graph's final state to decide what to stream (combat resolver vs scene narrator vs skill check setup vs npc dialogue vs rest context).
 
-- Detect new campaign + custom character on first turn.
-- Run 2–3 turn intro scene via `scene_narrator` with campaign premise + character class/background injected.
+#### Build — Scene Director (the centerpiece)
 
-**Build (reaction bus):**
+**Two LLM passes per turn. Both are required for the slice to function.**
 
-- Event types: `creature_moves` (Sentinel, opportunity attacks), `creature_takes_damage_while_concentrating`.
-- Subscribed feats/features fan out deterministically. Resolver narrates outcome.
+##### Pre-input pass (latency-critical, fast tier)
 
-**Build (concentration enforcement — system):**
+- `agents/scene_director.py::run_pre(player_input, context) -> ScenePreOutput`
+- `prompts/scene_director_pre/v1.md` (Jinja template)
+- `llm/models.yaml` entry under `agents:` for `scene_director_pre` (fast tier, with fallbacks)
 
-- `apply_damage` (already in mutations) checks: if target is concentrating (`concentration: {spell_id, level} | None`), auto-roll CON save (DC = `max(10, damage_taken // 2)`). On fail, drop concentration and remove the linked effect from `combat_state.effects`. Emit `concentration_broken` event.
-- Removes the LLM's responsibility to remember concentration rules.
+**Input** (assembled by `domain/services/scene_director_context.py::build_pre_input_context(db, session_id, player_input) -> dict`):
 
-**Build (inspiration mechanic):**
+```
+player_input: str
+current_scene:
+  location_name: str
+  scene_mode: str                  # exploration | social
+  safety_level: str                # safe | risky | hostile
+  authored_summary: str | None     # Scene.summary if set (rare — usually only set after scene closes)
+  npcs_present: list[{name, role, disposition}]
+reachable_locations: list[{id, name, one_line}]   # from Location.connections of current location
+combat_active: bool
+pending_transition: bool           # if true, scene_create runs this turn; pass mostly no-op
+current_act:
+  title: str
+  premise: str                     # 1–2 sentences
+session_time_label: str            # e.g. "Day 4 of Riftfall, late evening"
+```
 
-- `grant_inspiration(character_id, reason)` tool — DM-callable. Sets `has_inspiration=True` (idempotent — no stacking). Emits `inspiration_granted` event.
-- `spend_inspiration(character_id)` tool — player-callable via UI. Sets `has_inspiration=False`. Next d20 roll for that character uses advantage. Emits `inspiration_spent` event.
-- RulesLawyer reads `has_inspiration` and applies advantage when spent.
+Deliberately omitted: mood, beat_count, tension_level (Slice 8 columns); turn history (post-response's job); companion approval (Slice 7); world bible chunks (RAG = Slice 13); full NPC profiles (Slice 7 — disposition + name is enough to identify hostile targets).
 
-**Build (death model handling):**
+`npcs_present` source for Slice 6: `npc_queries.list_by_location(campaign_id, location_id)`. Slice 7 will introduce per-scene NPC presence and we will switch the source then.
 
-- Read `Campaign.death_mode` (or `settings.death_mode`).
-- In `apply_damage` → `hp == 0` path:
-  - `pacifist` mode: clamp `hp = max(1, hp)`. PC never goes unconscious.
-  - `hardcore`: PC death = run death save sequence; on full failure, set `Campaign.status = "ended_dead"`, emit `campaign_ended` event, freeze further turns.
-  - `narrative` (default): PC death = death save sequence; on full failure, DM narrates recovery (DM prompt receives `death_recovery: true` flag), HP set to 1, story continues with a consequence tag in the world bible.
-- Companion death always runs the death save sequence regardless of mode; on failure, `is_dead=True`, removed from combat. Story-driven revival possible.
+**Output** (`ScenePreOutput` TypedDict):
 
-**Build (loot enhancements — extends Slice 3 loot foundation):**
+```python
+{
+  "combat_trigger": {"hostile_npc_ids": list[uuid]} | None,
+  "scene_transition_pull": {"to_location_id": uuid, "reason": str} | None,
+  "pacing_nudge": str | None,        # always None in Slice 6 — schema slot for Slice 8
+}
+```
 
-- **Search narrative** — when player input is "I search the body / chest / corpse" classified as a `narrative_action`, SceneNarrator receives the target NPC's inventory in its context block. Narrator describes what the character finds in prose ("on the guard's belt, a ring of three keys; under his cloak, a sealed letter"). Does NOT auto-loot — player still calls the loot route to take items. Requires SceneNarrator context assembly work in this slice.
-- **Pickpocket flow** — when player input is "I pickpocket / steal X from Y" and target NPC is alive/conscious, IntentRouter routes to `skill_check`; RulesLawyer picks Sleight of Hand and flags `loot_intent: {npc_id, item_name}` on the CheckDecision. On successful resolve, the resolve route calls the loot service. On failure, narrate the failed attempt; NPC may turn hostile (Scene Director decides).
-- **Currency loot** — extend the loot route to accept `{currency: {gp, sp, cp}}` instead of (or alongside) `item_name`. Validates NPC has enough, decrements NPC currency, increments character currency. No state validation beyond balance.
+##### Post-response pass (background, mid tier)
 
-**Fix (combat polish):**
+- `agents/scene_director.py::run_post(player_input, dm_response, context) -> ScenePostOutput`
+- `prompts/scene_director_post/v1.md`
+- `llm/models.yaml` entry for `scene_director_post` (mid tier, with fallbacks)
+- Scheduled by the route layer **after streaming completes**, via `asyncio.create_task` in the same slot as LoreKeeper. The player never waits on it.
 
-- **Massive damage instant-kill missing** — `apply_damage` doesn't check: 0 HP + damage ≥ max HP = instant death.
-- **No knockout blow option** — `apply_damage` gets optional `subdue: bool`.
-- **Combat resolver hardcoded combatant cap of 20** — replace `range(20)` with a count derived from `combat_state.combatants`.
-- **Combat resolver inner-loop failure leaves inconsistent state** — surface partial state to the player; emit `combat_step_failed` event.
+**Input** (assembled by `scene_director_context.py::build_post_response_context(db, session_id, turn_id) -> dict`):
 
-**Fix (long-pending dialogue bugs — most move to Slice 7 once profiles exist):**
+```
+player_input: str
+dm_response: str                   # the streamed narration that just landed
+current_scene:                     # same shape as pre-input + nothing extra in Slice 6
+  location_name, scene_mode, safety_level
+recent_turns: list[{player_input, dm_response}]   # last N=5 within current scene
+combat_events_this_turn: list[dict]               # from Turn.events JSONB (combat events only)
+current_act:
+  title, premise
+  core_events: list[str]           # for act_progress detection
+session_time_label: str
+```
 
-- (Slice 7 owns the `NPC.find_by_name` fix and `NPC.disposition`-to-world-bible — they need the new profile schema in place to be meaningful.)
+**Output** (`ScenePostOutput` TypedDict):
 
-**Decide:**
+```python
+{
+  "combat_ended": bool,              # safety-net; combat_resolver is the primary authority
+  "scene_transition_push": {"to_location_id": uuid, "reason": str} | None,
+  "time_advance_hours": int,         # 0 unless scene_transition_push is also set (see Time advancement)
+  "act_progress": bool,              # true if DM narrated a core_event resolution
+}
+```
 
-- **Combat lifecycle paths** — `routes/combat.py` user-facing `/combat/start` and `/combat/end` vs. tools vs. scene_director auto-detect. Drop user-facing routes; scene_director + tools own it.
-- **Scene transition pacing** — tension level concept (after 3 combat scenes, push toward social). Track turn-type history in `Scene` or compute on the fly. Lean compute-on-the-fly to avoid brittleness.
-- **Massive damage threshold for monsters** — apply same rule as PCs? Probably yes.
+Slice 8 will extend post-response output with `tension_delta` and `mood`.
 
-**Verify:** "I attack the guard" starts combat without a client REST call. Sentinel triggers on enemy movement. Companion makes a contextual comment during a narrative turn. Concentrating wizard rolls CON save automatically when struck. Inspiration grant → spend → advantage on next roll. Pacifist mode PC takes 1000 damage → stays at 1 HP. Hardcore mode PC death → campaign locks. Narrative mode PC death → DM narrates wake-up scene.
+##### Combat trigger handling
+
+When pre-input pass returns `combat_trigger != None`:
+
+- `combat_entry` graph node calls `combat_service.state.init_state(db, session_id, enemies)` directly — no LLM hop. Enemies are derived from `combat_trigger.hostile_npc_ids`.
+- Invalid NPC ids (not in scene, or unknown) are filtered with a warning log. If the result is empty, `combat_entry` falls back to no-op and the graph routes to `intent_router` (player swung at nothing; DM narrates as narrative_action).
+- `init_state` flips `Session.combat_active = true`, initializes `combat_state` (initiative, combatants, etc.).
+- Graph then routes to `combat_terminus`; route layer streams the combat resolver.
+
+**Scope for Slice 6:** NPC-driven combat triggers only. SRD-monster spawns from authored scenes (e.g., "you walk into a room with three goblins") are deferred to Slice 8, which adds authored `encounter` declarations on scene YAML.
+
+**Combat END** is owned by `combat_resolver` via the existing `end_combat` tool — combat_resolver is the deterministic authority for when combat is over (all enemies at 0 HP; or TPK). The post-response Scene Director pass only OBSERVES `combat_active=false` and may detect a follow-on scene transition. It does not itself flip `combat_active`.
+
+##### Scene transition handling (pending_transition flag)
+
+Scene boundaries are detected by either pass and applied on the **next** turn:
+
+1. **Detection.** Pre-input pass MAY set `Session.pending_transition: {to_location_id, reason}` when the player pulls a transition ("I head to the tavern"). Post-response pass MAY set the same flag when the DM pushes a transition ("...you walk out into the cold street and head home"). Detection is the only thing the post-response pass does for scene boundaries — it never mutates Scene rows itself.
+2. **Application.** On the next turn, the pre-input pass sees the flag set, and the graph routes through a `scene_create` node before `intent_router`:
+   - Calls `scene_summarizer` agent (new — see below) to write `Scene.summary` + `ended_at` on the old scene.
+   - Creates the new `Scene` row (location_id, started_at, scene_mode from authored data if any else `exploration`, safety_level default `safe`, summary `None`).
+   - Stamps the current `Turn.scene_id` with the **new** scene id. The previous turn (whose post-response pass set the flag) keeps the old scene_id — its action belonged to the old scene.
+   - Clears `Session.pending_transition`.
+3. SceneNarrator on this turn receives `is_scene_entry=true` in its context. The Slice 8 layered-scene rules later use this flag for "first-entry narration discipline" (atmosphere first, 2–3 details max). Slice 6 SceneNarrator just uses it to weave in the arrival moment.
+
+Sub-cases:
+- **Unauthored target location**: scene_create writes a thin Scene row with only required fields. SceneNarrator falls back to `Location.description` + nearby NPCs + act premise + current scene `mood`/`safety_level`. Slice 8 `scene_builder` will enrich.
+- **Pre-input pass and post-response pass both set the flag on adjacent turns**: the post-response pass on turn N sets it; pre-input pass on turn N+1 reads and acts; if turn N+1's pre-input also detects a new pull, the second detection silently overwrites the first (the second is more recent and reflects the player's most recent intent).
+
+##### `scene_summarizer` — new dedicated agent
+
+- `agents/scene_summarizer.py`
+- `prompts/scene_summarizer/v1.md` (fast tier)
+- `llm/models.yaml` entry for `scene_summarizer`
+- Called synchronously from `scene_create`. Input: the old scene's authored data (if any) + the list of `(player_input, dm_response)` pairs for all turns belonging to the scene. Output: a 1–2 paragraph prose summary written to `Scene.summary`.
+- Cost is acceptable in the latency path because transitions are infrequent (~every 10–30 turns), and the user is reading the new scene's narration anyway.
+
+##### Initial scene on session start
+
+`sessions.service.start()` eagerly creates the campaign's first `Scene` (location = `campaign.current_location_id`, scene_mode = `exploration`, safety_level = `safe`). Every turn from turn 0 has a non-null `scene_id`. No special "no current scene yet" state machine edge.
+
+If the player's first input happens to be a transition, the pre-input pass sets `pending_transition`; the **second** turn's `scene_create` handles it (turn 0 stays in the auto-created scene). Acceptable — authored campaigns nearly always have an authored opening scene at `current_location_id` anyway.
+
+##### Existing turns / migration backfill
+
+Migration: `DELETE FROM turns; DELETE FROM sessions;` + `ALTER COLUMN scene_id SET NOT NULL` on the turns table. Pre-launch posture, same as Slice 5. No backfill script needed.
+
+#### Build — Time advancement coordination
+
+Slice 6 introduces a second writer to `Session.in_game_hours_elapsed` (Scene Director post-response), alongside the existing rest service. To prevent double-counting and centralize day-roll triggering:
+
+- **New service**: `domain/services/time.py::advance_time(db, session, hours: int, source: str) -> None`. Updates `in_game_hours_elapsed`, emits a `time_advanced` event into `Turn.events` (with `source`), and calls `day_roll.maybe_roll_days`. Single writer, single day-roll caller.
+- **Migrate rest service** onto it (was calling `day_roll` directly).
+- **Post-response handler** checks `Turn.events` for a `time_advanced` event BEFORE applying Scene Director's `time_advance_hours` proposal. If already present, skip and log. Prevents long-rest + DM-narrated-sleep double-count.
+- **Narrative time advancement is bounded**: Scene Director's prompt instructs that `time_advance_hours > 0` is only valid if `scene_transition_push` is also set on the same response. Mid-scene narration never advances time. This makes sense narratively (a scene is a few minutes; the boundary is the natural commit point) and bounds the LLM's discretion to one decision per transition.
+
+#### Build — Scene mode + combat_active orthogonality
+
+`Scene.scene_mode` (`exploration | combat | social`) and `Session.combat_active` (bool) are **orthogonal axes** post-Slice-6:
+
+- `scene_mode` is set ONCE by `scene_create` at scene birth. Source: authored Scene's declared mode if any (Slice 8 YAML schema declares this); else `exploration`. It does not change during the scene's lifetime.
+- `combat_active` remains the sole source of truth for "combat-tactics mode on." Only `combat_entry` and `end_combat` touch it. `scene_mode` is left alone — when combat ends mid-social-scene, the scene resumes as the social situation it was.
+- The roadmap-as-originally-written line "exploration → combat auto-calls start_combat" is reinterpreted: combat starts via Scene Director's `combat_trigger`, regardless of scene_mode. `scene_mode` is metadata for SceneNarrator + Scene Director to understand the scene's nature.
+- The `social` value is reserved for Slice 8 authored scenes; Slice 6 ships only `exploration` and `combat` (the latter only via `combat_entry` flipping `combat_active`, not via scene_mode mutation).
+
+#### Build — Dialogue rename + plumbing (content rewrite is Slice 7)
+
+Slice 6 unblocks dialogue for both NPCs and companions. The deep `NarrativeProfile` schema and the prompt rewrite land in Slice 7 — Slice 6 ships the minimum to make companion dialogue functional.
+
+- Rename: `agents/npc_dialogue.py` → `agents/dialogue.py`. Update `models.yaml` (`npc_dialogue` → `dialogue`), `prompts/npc_dialogue/` → `prompts/dialogue/`, `turn_graph.py` (`_resolve_npc_dialogue` → `_resolve_dialogue`, node name updated), all tests.
+- Provisional `DialogueEntity` TypedDict: `{name, bio, personality, disposition}`. **No `voice_traits`** — it doesn't exist on the current schema and adding a column we'll move in Slice 7 is the worst of both worlds. Voice arrives with `NarrativeProfile` in Slice 7.
+- **Companion lookup fallback**: `_resolve_dialogue` calls `npc_queries.find_by_name` first; on None, falls back to `character_queries.find_companion_by_name(campaign_id, name)`. Companions speak through the same path as NPCs.
+- **Context plumbing**: dialogue prompt receives `last_5_turns_in_scene: list[{player_input, dm_response}]` + matching world bible entries (key-match against existing bible keys for the named entity — no RAG until Slice 13).
+- Dialogue prompt itself is lightly updated to accept a companion entity. The deep rewrite happens in Slice 7.
+
+#### Build — DM persona foundation (`scene_narrator/v1.md` rewrite)
+
+`prompts/scene_narrator/v1.md` rewritten with a strong DM persona: tone, pacing, style, awareness of campaign genre and current act. Provisional companion context (name, bio, personality) — replaced by full `NarrativeProfile` injection in Slice 7. Layered scene rules and pacing instrumentation come in Slice 8.
+
+Slice 6 additions:
+- `is_scene_entry: bool` context flag — when true, prompt instructs the DM to weave in the arrival moment.
+- `intro_mode: bool` context flag (see Custom character onboarding) — when true, prompt instructs the DM to weave in the character's backstory hook and establish their reason to be in the world for the next few turns.
+- `death_recovery: bool` context flag — when true (narrative-mode PC death just happened), prompt instructs the DM to narrate the wake-up scene with consequences.
+- `dead_npcs_with_inventory` context (see Loot extensions).
+- Companion entities present in scene (name, bio, personality only — depth in Slice 7).
+
+#### Build — Inspiration mechanic
+
+- `domain/services/inspiration.py`:
+  - `grant(db, character_id, reason: str)` — idempotent (no stacking); sets `Character.has_inspiration=True`; emits `inspiration_granted` event.
+  - `spend(db, character_id)` — raises `ConflictError` if not inspired; sets `False`; emits `inspiration_spent` event.
+- `tools/inspiration.py`:
+  - `grant_inspiration(character_id, reason)` — LLM-callable. Registered in `ALL_TOOLS` and `COMBAT_TOOLS`.
+  - `spend_inspiration(character_id)` — registered in **neither** registry. Only called from request handlers, never by LLMs.
+- **Granters (prompts updated)**: `scene_narrator` and `combat_resolver` both get a one-paragraph addition on when to call `grant_inspiration` — genuinely clever play, dramatic RP. Not for routine actions. `scene_director` and `dialogue` do NOT have it — Scene Director is meta (doesn't watch behavior) and NPCs/companions don't grant inspiration in 5e.
+- **Spend mechanism (Slice 6 scope = non-combat skill checks)**:
+  - `POST /v1/sessions/{id}/turns/{turn_id}/resolve-check` body grows `use_inspiration: bool = False`.
+  - When true: handler validates `Character.has_inspiration`, calls `inspiration.spend`, sets advantage on the roll, returns the resolved check.
+  - If `has_inspiration=False` and `use_inspiration=true`: 400.
+- **Combat-path use_inspiration is punted to Slice 15** (frontend UI). Until Slice 15, players can spend inspiration only on non-combat skill checks via the API. Document this in the slice notes for Slice 15.
+- **Companions can have/spend inspiration** — `has_inspiration` is on Character; companions are Characters. UI surfaces both PC and companion in Slice 15.
+- Roll plumbing: existing `roll_d20_with_advantage` accepts the `advantage` flag — no new helper needed.
+
+#### Build — Concentration enforcement (system)
+
+Concentration was half-built before Slice 6 (`Character/NPC.concentration: String | None` columns; LLM-managed via `set_concentration`/`drop_concentration`/`roll_concentration_check` tools). Slice 6 makes the damage-triggered save automatic and tightens the schema.
+
+- **Schema migration**:
+  - `Character.concentration: String | None` → `JSONB | None` with shape `{spell_name: str, level: int, source_effect_id: str | None}`.
+  - `NPC.concentration` same migration.
+  - Monsters: add an optional `concentration` field to monster entries in `combat_state` (ephemeral, dies with combat_state). Same JSONB shape.
+- **`combat/mutations.apply_damage`** — after damage settles, if target.concentration is not None:
+  1. Roll CON save (DC = `max(10, damage_taken // 2)`).
+  2. On fail: call `resource_service.drop_concentration` (returns the dropped record including `source_effect_id`) → call `combat_service.mutations.remove_effect(effect_id)` for the linked effect → emit `concentration_broken` event.
+  3. On success: emit `concentration_check_passed` event.
+- **New convenience tool `cast_concentration_spell(caster_id, spell_name, level, effect_args...)`** in `tools/combat.py` — bundles `apply_effect` + `set_concentration` (with `source_effect_id` pointing at the new effect) in one atomic call. Prevents drift between concentration record and effect. Registered in `COMBAT_TOOLS`.
+- Existing `roll_concentration_check` tool stays in the registry as an escape hatch (LLM-detected non-damage trigger, manual narration override). Docstring updated to "rarely called — auto-fires on damage now."
+- Existing `set_concentration` and `drop_concentration` services updated to accept/return the new JSONB shape.
+
+#### Build — Death modes
+
+- **`Campaign.settings.death_mode`** read at damage-resolution time (settings JSONB lives on Campaign per Slice 5; preset resolver in Slice 10).
+- **New module**: `domain/services/death_mode.py::resolve_pc_death(db, session, character)` — called from `combat_service.state.end_state` (i.e., when combat ends) after checking PC death state. Death resolution happens at **combat END**, not per death-save failure.
+- **Pacifist mode**: in `apply_damage`, if target is a PC and `death_mode == "pacifist"`, clamp `hp = max(1, hp)` BEFORE any 0-HP path. PC never goes unconscious, never gets a death save, never triggers massive damage. Pacifist does NOT protect companions (they follow normal death save sequence per spec). Pacifist does NOT affect NPCs/monsters.
+- **Hardcore mode**: when `resolve_pc_death` fires for a PC who fully failed death saves, set `Campaign.status = "ended_dead"`, emit `campaign_ended` event. Campaign mutations frozen via middleware (see below).
+- **Narrative mode (default)**: when `resolve_pc_death` fires, set PC HP=1, set `Session.pending_recovery: JSONB | None` to a `{reason, prior_events_summary}` dict, write a consequence tag to the world bible. SceneNarrator on the next turn consumes `pending_recovery` (injected into its context as `death_recovery=true`), narrates the wake-up, and the route layer clears the flag.
+- **Recovery scene transition is organic** — `pending_recovery` does not set `pending_transition`. The next player action ("I look around the cell") triggers Scene Director's normal flow which can detect the new scene from the player's input. No mechanical plumbing.
+- **TPK**:
+  - Hardcore: PC death → `ended_dead`, regardless of companions.
+  - Narrative: PC recovers per narrative rules. Dead companions stay dead. Player wakes alone with consequences (LLM-narrated).
+  - Pacifist: PC never drops; TPK impossible by definition.
+- **Companion death**: always follows the death save sequence regardless of mode; on full failure, `is_dead=True`, removed from combat. Story-driven revival possible. **Massive damage instant-kills companions outright** (see Combat polish).
+- **Middleware**: `api/v1/middleware.py::require_active_campaign` decorator wrapped around all mutating routes (POST/PATCH/DELETE on /v1/campaigns/{cid}/* and dependent routes). Returns 409 with code `campaign_ended_dead` if `campaign.status == "ended_dead"`. Reads stay open — the campaign is viewable as memory.
+
+**New migrations**:
+- `Session.pending_recovery: JSONB | None` (new column).
+- `Campaign.status` enum extended with `ended_dead` if not already present (verify against Slice 5 migration).
+
+#### Build — Loot enhancements (extends Slice 3)
+
+- **Search narrative**: SceneNarrator's context builder always includes `dead_npcs_with_inventory: list[{name, inventory, currency}]` from a new query `npc_queries.list_dead_in_scene(scene_id)`. When player input is a search, LLM uses the data; otherwise ignored. No new intent class, no Scene Director extension. Authored chests/containers are out of scope (no schema for them in Slice 6); a later slice adds them.
+- **Pickpocket flow**:
+  - `CheckDecision` schema (in `agents/rules_lawyer.py`) grows `loot_intent: LootIntent | None` where `LootIntent = {npc_id: uuid, item_name: str}`.
+  - `CheckData` TypedDict in `cairn/types.py` grows the same field.
+  - RulesLawyer prompt updated: when player input is a steal/pickpocket attempt on an alive in-scene NPC, pick Sleight of Hand and emit `loot_intent`. NPC lookup via `npc_queries.find_by_name(campaign_id, name, scene_id=current_scene_id)`. (Fuzzy-match risk is the Slice 7 fix; not Slice 6's problem.)
+  - Resolve-check handler: on success with `loot_intent` set, call the existing loot service to move the item. On failure, call `npc_service.set_disposition(npc_id, "hostile")` **deterministically** — no LLM judgment for this outcome. Failed pickpocket = hostile, period.
+  - **No auto-combat from disposition flip.** NPC turning hostile does NOT trigger `combat_active`. The next turn's Scene Director may detect a combat trigger from the player's follow-up action (e.g., "I draw my sword") via the normal flow.
+- **Currency loot**:
+  - Existing `POST /v1/sessions/{id}/loot` route body extended:
+    ```json
+    {
+      "npc_id": "uuid",
+      "character_id": "uuid",
+      "item_name": "string (optional)",
+      "currency": {"gp": 0, "sp": 0, "cp": 0}  // optional
+    }
+    ```
+  - Validation: exactly one of `item_name` or `currency` per request.
+  - Service: new `loot_service.loot_currency(npc_id, character_id, currency)` alongside existing `loot_item`. Validates NPC has ≥ requested amounts; decrements NPC, increments Character.
+  - `Currency` type already exists on Character and NPC (verified) — just plumb.
+  - "Take all" UI (Slice 15) calls the route in a loop for items + once for currency.
+
+#### Build — Custom character onboarding
+
+- **Migration**: add `Character.created_from_premade_id: uuid | None` FK to `premade_characters.id`. Set by the appropriate creation service: premade-pick flow stamps it; custom-create flow leaves NULL.
+- **Detection (no agent, no graph node)**: `narrative_context.build_dm_context(db, session_id)` checks: if `campaign.turn_count < 3` AND `active_character.created_from_premade_id IS NULL`, set `intro_mode=true` in the SceneNarrator context dict.
+- **SceneNarrator prompt** gets a `{% if intro_mode %}` section: "the player is brand new to this world; weave in their backstory hook; place them deliberately; establish their reason to be here."
+- Pure context-layer feature. No transition event when intro mode fades — `turn_count >= 3` silently returns false on turn 3; DM settles into normal play.
+
+#### Fix — Combat polish
+
+- **Massive damage instant-kill** (`apply_damage`): after damage drops HP to 0, compute `excess = damage_taken - hp_before_damage`. If `excess >= max_hp`, mark instant death — skip death save sequence entirely. Emit `massive_damage_death` event. Applies to PC (mode-gated by death_mode: pacifist clamps first so it never fires for PC in pacifist), companion (always — overrides their death save sequence), monster/NPC (no visible behavior change since they die at 0 HP anyway; event still fires for log consistency).
+- **Subdue / knockout blow**: `apply_damage` tool grows `subdue: bool = False` parameter. When `subdue=True` and damage would drop target to 0:
+  - HP set to 0, target marked unconscious + stable (no death saves).
+  - PC/companion: `is_unconscious=True`, no death save sequence, no mode rules fire.
+  - Monster/NPC: unconscious, alive, not dead.
+  - Emit `combatant_knocked_out` event.
+  - PHB constraint (subdue only valid for melee attacks) honored via prompt instruction in Slice 6; mechanical enforcement deferred to Slice 9 with weapon-range awareness.
+- **Combatant cap fix**: replace `range(20)` in combat_resolver with `range(len(combat_state["combatants"]))`. One-liner.
+- **Combat resolver inner-loop failure** (Slice 11 owns the full fix; Slice 6 only adds the event): wrap the resolver tool loop in `try/except`. On any exception, emit `combat_step_failed` event with `last_successful_step`, `error_class`, `error_msg`; re-raise so the route layer can return 500 + partial state in the SSE stream. No transactional wrapping in Slice 6 — Slice 11 chooses rollback vs document.
+
+#### Routes — added, changed, removed
+
+- **Removed**: `POST /v1/sessions/{id}/combat/start`, `POST /v1/sessions/{id}/combat/end`. Delete cold — no deprecation period (no frontend consumes them yet; Slice 15 will use the natural-language path). Drop `CombatStartRequest` and `CombatEndRequest` schemas. Tests rewritten to drive the full graph (preferred) or call `combat_service.state.start/end` directly (unit-level coverage).
+- **Kept**: `GET /v1/sessions/{id}/combat` — needed by the Slice 15 combat tracker UI.
+- **Changed**: `POST /v1/sessions/{id}/turns/{turn_id}/resolve-check` body grows `use_inspiration: bool = False`. Existing behavior preserved when omitted.
+- **Changed**: `POST /v1/sessions/{id}/loot` body grows `currency` field; validation requires exactly one of `item_name` / `currency`.
+- **Middleware**: `require_active_campaign` wrapped around all mutating routes under `/v1/campaigns/{cid}/*` (and dependent session/turn/character/npc routes). Returns 409 / `campaign_ended_dead` if frozen.
+
+#### Schema changes (single migration revision)
+
+One Alembic migration covers all the changes; pre-launch nuke-and-reseed is acceptable.
+
+| Change | Reason |
+|---|---|
+| `ALTER turns.scene_id SET NOT NULL` (after `DELETE FROM turns; DELETE FROM sessions;`) | Scene Director owns scene creation; every turn belongs to a scene. |
+| `Character.concentration` String → JSONB | New shape `{spell_name, level, source_effect_id}`. |
+| `NPC.concentration` String → JSONB | Same. |
+| `Session.pending_transition` JSONB nullable (new) | Scene boundary detection-to-application handoff. |
+| `Session.pending_recovery` JSONB nullable (new) | Narrative-mode death recovery handoff. |
+| `Character.created_from_premade_id` UUID FK nullable (new) | Custom-vs-premade detection for intro_mode. |
+| `Campaign.status` enum verified to include `ended_dead` (extend if missing) | Hardcore mode freeze. |
+
+#### Files added / changed (concrete map)
+
+**New files**:
+- `agents/scene_director.py` (with `run_pre` and `run_post`)
+- `agents/scene_summarizer.py`
+- `prompts/scene_director_pre/v1.md`
+- `prompts/scene_director_post/v1.md`
+- `prompts/scene_summarizer/v1.md`
+- `domain/services/scene_director_context.py`
+- `domain/services/time.py`
+- `domain/services/death_mode.py`
+- `domain/services/inspiration.py`
+- `tools/inspiration.py` (grant only registered in tool registries)
+- `api/v1/middleware.py` (or extend existing) — `require_active_campaign`
+
+**Renamed**:
+- `agents/npc_dialogue.py` → `agents/dialogue.py`
+- `prompts/npc_dialogue/` → `prompts/dialogue/`
+
+**Substantially modified**:
+- `pipelines/turn_graph.py` — combat path inside graph; new nodes (`scene_director_pre`, `combat_entry`, `combat_terminus`, `scene_create`); routing rewrite; TurnState extended (new fields below).
+- `domain/services/turns.py::prepare()` — drop the `combat_active` bypass; run graph for every turn; schedule post-response Scene Director pass alongside LoreKeeper.
+- `domain/services/sessions.py::start()` — eagerly create the campaign's first Scene.
+- `domain/services/rests.py` — migrate onto `time.advance_time`.
+- `domain/services/combat/state.py::end_state` — call `death_mode.resolve_pc_death` for the PC at combat end.
+- `domain/services/combat/mutations.py::apply_damage` — concentration auto-save, massive damage instant-kill, subdue param.
+- `domain/services/resources.py` — `set_concentration`/`drop_concentration` JSONB shape.
+- `agents/rules_lawyer.py` — `CheckDecision.loot_intent` field.
+- `agents/scene_narrator.py` + `prompts/scene_narrator/v1.md` — DM persona rewrite, intro_mode/is_scene_entry/death_recovery/dead_npcs_with_inventory context.
+- `domain/services/narrative_context.py::build_dm_context` — intro_mode detection, dead NPCs query, recovery flag injection.
+- `llm/models.yaml` — entries for `scene_director_pre`, `scene_director_post`, `scene_summarizer`; rename `npc_dialogue` → `dialogue`.
+- `api/v1/routes/turns.py` — schedule post-response pass after stream completes; consume new TurnState fields for routing.
+- `api/v1/routes/combat.py` — delete POST routes; keep GET.
+- `api/v1/schemas/combat.py` — drop CombatStartRequest, CombatEndRequest.
+- `cairn/types.py` — CheckData.loot_intent, TurnState additions, ScenePreOutput, ScenePostOutput, DialogueEntity, NarrativeRecovery.
+- `db/queries/npcs.py` — `list_dead_in_scene(scene_id)`.
+- `db/queries/scenes.py` (likely new or extended) — scene CRUD for scene_create.
+- `db/queries/characters.py` — `find_companion_by_name`.
+
+**Tool registry** (`tools/__init__.py`):
+- Add: `grant_inspiration`, `cast_concentration_spell`.
+- `spend_inspiration` is intentionally **not** registered (request-handler only).
+- `start_combat` / `end_combat` stay registered (still called by combat_entry and combat_resolver respectively).
+
+**TurnState additions** (in `pipelines/turn_graph.py`):
+- `scene_pre_output: ScenePreOutput | None`
+- `is_scene_entry: bool`
+- `combat_just_started: bool`
+
+#### Punted from Slice 6 — destinations and what survives
+
+This slice intentionally cut several items the original roadmap placed here. Each survives as a schema slot or integration point so the destination slice doesn't have to refactor.
+
+| Cut item | Destination | What Slice 6 ships toward it |
+|---|---|---|
+| Passive perception (silent/surfaced on scene entry) | Slice 8 | `Campaign.settings.checks` shape documented (Slice 10 resolver wires defaults). `on_demand` mode already works via existing skill_check path. |
+| Pacing nudge (`beat_count`, `tension_level`, `mood` on Scene) | Slice 8 | `pacing_nudge` field stays in ScenePreOutput schema; Slice 6 prompt always returns null. |
+| Reaction bus infrastructure | Slice 9 | Nothing in Slice 6. Slice 9 designs alongside its first real consumer (OA on zone exit). Concentration auto-save does NOT use the bus — direct branch in apply_damage. |
+| Combat-path `use_inspiration` flag | Slice 15 (UI) | Service + tool + non-combat skill check path ship now. UI surfaces the toggle for combat. |
+| Scene transition pacing (tension-history "after 3 combat scenes push toward social") | Slice 8 | Depends on `tension_level` which is Slice 8. No Slice 6 work. |
+| `NPC.find_by_name` ranked match + scene-aware filter | Slice 7 | Needs the new profile schema to be meaningful. |
+| `NPC.disposition` → world bible on change | Slice 7 | Same — slated with profile work. |
+| `Character.classes` single-class validator | Lives in code-comment | Per Slice 5 deferred-deviation note: there's no API path to submit more than one class, so a runtime validator would be dead code. |
+| `tension_delta` and `mood` outputs on post-response pass | Slice 8 | Schema slot reserved when columns land. |
+
+#### Verify
+
+1. Player says "I attack the guard" on a turn with `combat_active=false`: Scene Director's pre-input pass returns `combat_trigger`, combat_entry inits state, route layer streams combat_resolver. No client REST call needed.
+2. Player says "I head to the tavern": pre-input pass sets `Session.pending_transition`. On the next turn, scene_create runs — old scene gets a summary via scene_summarizer, new Scene row created, current Turn.scene_id stamps the new scene, SceneNarrator narrates the arrival with `is_scene_entry=true`.
+3. DM narrates "...you walk out and head home" at the end of a turn: post-response pass sets `pending_transition`. Next turn applies it (same flow as #2).
+4. Player enters an unauthored location (no authored Scene): scene_create writes a thin Scene row; SceneNarrator falls back to Location.description + nearby NPCs + act premise.
+5. Concentrating wizard takes damage in combat: `apply_damage` auto-rolls CON save at DC `max(10, dmg//2)`. On fail, concentration drops + linked effect removed + `concentration_broken` event emitted. No LLM call required for the save.
+6. Monster casts Hold Person, then takes damage: monster's combat_state entry has `concentration`; auto-save fires; on fail, effect removed.
+7. DM grants inspiration during a roleplay moment: `grant_inspiration` tool call → `Character.has_inspiration=True`. Player POSTs to resolve-check with `use_inspiration=true` → spend service flips flag false, roll uses advantage.
+8. Pacifist-mode PC takes 1000 damage at HP=5: HP clamped to 1; no death save, no events for instant death.
+9. Hardcore-mode PC takes lethal damage and fails death saves: combat ends, `resolve_pc_death` sets `Campaign.status="ended_dead"`, `campaign_ended` event emitted. Next mutation request returns 409 / `campaign_ended_dead`. GET routes still work.
+10. Narrative-mode PC death: HP=1 at combat end, `pending_recovery` set, world bible consequence written. Next turn's SceneNarrator narrates the wake-up.
+11. Subdue attack on enemy with melee weapon: enemy unconscious + stable + alive; `combatant_knocked_out` event.
+12. Massive damage instant-kill: PC at HP=5 takes 60 damage (max_hp=50). HP=0, `excess=55 >= max_hp=50`, instant death, no save sequence (modulo death_mode in pacifist where clamp fires first).
+13. Failed pickpocket on alive NPC: resolve-check sets NPC.disposition=hostile deterministically; no auto-combat.
+14. Currency loot: `POST /loot` with `{"currency": {"gp": 5}}` moves 5 gp from NPC to character; insufficient balance returns 400.
+15. New campaign + custom character: first 3 turns render with `intro_mode=true` (SceneNarrator weaves in backstory); turn 4+ resumes normal play silently.
+16. Companion speaks via dialogue: player addresses companion by name, IntentRouter routes to npc_dialogue intent, _resolve_dialogue finds companion via fallback, dialogue agent responds.
+17. Combat-resolver tool failure mid-loop: `combat_step_failed` event emitted; 500 returned with partial state in SSE stream.
+18. Long rest happens, post-response pass tries to also advance time: `time_advanced` event already in `Turn.events` from rest service → post-response skips, logs.
+19. Time advancement: Scene Director only sets `time_advance_hours > 0` when also setting `scene_transition_push`. Mid-scene narration does not advance time.
+20. `POST /v1/sessions/{id}/combat/start` returns 404 (route deleted); `GET /v1/sessions/{id}/combat` still returns combat state for the Slice 15 tracker.
 
 ---
 
@@ -1040,6 +1354,11 @@ Heavy agent. Slow. Called when the DM moves the party somewhere new without an a
 - Scene Builder generates a tavern in an unauthored town. Atmosphere is sensory, NPCs have current beats, threads are in the air. Patron persists; party returns next session, patron remembers prior turn.
 - SceneNarrator never describes a hidden detail or secret that hasn't been unlocked.
 
+**Ideas (not scoped yet — think about when we get here):**
+
+- **Adaptive sliding window for "last N turns in scene"** — N tunable based on `beat_count`. Short scenes (≤5 turns) get the whole scene; long scenes get a smaller recent window so older turns compress into a mid-scene checkpoint.
+- **Mid-scene checkpoint summaries** — for scenes that run 30+ turns, write a rolling "scene midpoint" summary that compresses the first half. Prevents context bloat without waiting for scene close. Scene-aware compression layer between `recent_turns` and `Scene.summary`.
+
 ---
 
 ### Slice 9 — Tactical zones + AI movement
@@ -1178,6 +1497,10 @@ Players configure how much agency the AI gets. Per-campaign, set at creation, ed
 
 **Verify:** New campaign defaults to Narrative preset. Toggle to Tactical: companion combat turns now expect player input. Toggle death_mode hardcore: PC dies → campaign locks. Toggle passive_perception to surfaced: scene entry rolls visible to player. Override single field without losing preset (preset becomes "custom" or remains tagged + overrides logged).
 
+**Ideas (not scoped yet — think about when we get here):**
+
+- **Per-user LLM provider choice** — extend `settings` JSONB with `llm: {provider: "anthropic" | "openai" | "openrouter" | "ollama", model_overrides: {agent_name: model_id}}`. Per-agent overrides are essential (a user picking Ollama as default shouldn't have it drive `scene_narrator` — quality cliff). Preset resolver picks sensible per-provider defaults. BYOK key storage + Ollama localhost URL handling lands in Slice 14; UI in Slice 15.
+
 ---
 
 ### Slice 11 — Operational hardening
@@ -1198,6 +1521,10 @@ Single-purpose slice batching operational bugs and infra prep.
 - **Model fallbacks verified** — one test that fallback triggers on primary 429/503.
 
 **Verify:** 70-second model hang produces a 504 with `turn_failed` SSE event. Combat tool failure mid-loop fully rolled back OR fully committed (per chosen strategy). LoreKeeper retries 3× before giving up.
+
+**Ideas (not scoped yet — think about when we get here):**
+
+- **Per-prompt token budget tracking + clipping** — before sending any LLM call, estimate assembled context tokens. If over per-agent budget, log a warning AND clip the lowest-priority layer (recent turns first, then day summaries, then world bible RAG). Per-agent budgets: Scene Director (~4k), IntentRouter (~2k), SceneNarrator (~40k), CombatResolver (~30k). Prevents silent context-window blowouts as campaigns grow long.
 
 ---
 
@@ -1277,6 +1604,11 @@ _Depends on: nothing strict. Must be done before Slice 15._
 
 **Verify:** Unauthenticated request to non-SRD route → 401. User can't access another user's campaign. 31st turn in an hour → 429. `Turn.llm_cost_usd` totals match LiteLLM spend.
 
+**Ideas (not scoped yet — think about when we get here):**
+
+- **BYOK (bring-your-own-key) for per-user LLM provider choice** — encrypted per-user API key storage for the providers picked in Slice 10's `settings.llm`. Backend reads user's keys before LLM calls. For Ollama: user supplies their own localhost URL; backend needs outbound config + clear-warning UX about local-only networking.
+- **Per-provider cost tracking** — `Turn.llm_cost_usd` already populated from LiteLLM callbacks. Extend to also tag `Turn.llm_provider` so we can report cost per provider per user (matters for BYOK accounting and OpenRouter routing visibility).
+
 ---
 
 ### Slice 15 — Frontend
@@ -1310,6 +1642,10 @@ Implement the UI from the Claude Design handoff (`cairn-ui-light-reference` in r
 - Game UI: SSE rendering, character sheet, combat tracker (with zones), world bible panel, companion sheet (with approval band), settings tab, inventory, level-up flow.
 - Character creation form (race, class, background, abilities = standard array picker, skills, name/bio/alignment).
 - Death-mode and preset selection at campaign creation.
+
+**Ideas (not scoped yet — think about when we get here):**
+
+- **Model picker UI in settings** — surfaces Slice 10's `settings.llm` shape (provider + per-agent overrides) + Slice 14's BYOK key entry. Includes a quality-warning band when user assigns a weak model (e.g., Ollama 7B) to a frontier-tier agent (scene_narrator, combat_resolver): "This model may degrade narrative quality — recommended: frontier tier for storytelling agents."
 
 ---
 
