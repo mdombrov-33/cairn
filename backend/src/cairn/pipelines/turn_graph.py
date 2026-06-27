@@ -7,16 +7,16 @@ from typing import Any, TypedDict
 import structlog
 from langgraph.graph import END, START, StateGraph
 
+from cairn.agents import dialogue as dialogue_agent
 from cairn.agents import (
     intent_router,
     rules_lawyer,
 )
-from cairn.agents import npc_dialogue as npc_dialogue_agent
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.pipelines.checkpointer import get_checkpointer
-from cairn.types import CheckData, HelperRef
+from cairn.types import CheckData, DialogueEntity, HelperRef
 
 log = structlog.get_logger()
 
@@ -28,7 +28,7 @@ class TurnState(TypedDict):
     intent: str | None
     npc_name: str | None
     check: CheckData | None  # set by resolve_skill_check; consumed by route layer
-    npc_context: str | None  # set by resolve_npc_dialogue; consumed by route layer
+    npc_context: str | None  # set by resolve_dialogue; consumed by route layer
     rest_context: str | None  # set by resolve_rest; consumed by route layer
 
 
@@ -120,24 +120,38 @@ async def _resolve_rest(state: TurnState) -> dict[str, Any]:
     return {"rest_context": context}
 
 
-async def _resolve_npc_dialogue(state: TurnState) -> dict[str, Any]:
-
+async def _resolve_dialogue(state: TurnState) -> dict[str, Any]:
     campaign_id = uuid.UUID(state["campaign_id"])
-    npc_name = state["npc_name"] or ""
+    name = state["npc_name"] or ""
 
     async with db_client.get_session() as db:
-        npc = await npc_queries.find_by_name(db, campaign_id, npc_name)
-        if npc is None:
+        npc = await npc_queries.find_by_name(db, campaign_id, name)
+        if npc is not None:
+            entity: DialogueEntity = {
+                "name": npc.name,
+                "bio": npc.bio,
+                "personality": npc.personality,
+                "disposition": npc.disposition,
+            }
+            result = await dialogue_agent.run(state["player_input"], entity)
+            if result.disposition_change:
+                npc.disposition = result.disposition_change
+                await db.commit()
+            return {"npc_context": f'[{npc.name}]: "{result.dialogue}"'}
+
+        # Fallback: the player may be addressing a party companion (a Character, not an NPC).
+        companion = await character_queries.find_companion_by_name(db, campaign_id, name)
+        if companion is None:
             return {"npc_context": ""}
 
-        result = await npc_dialogue_agent.run(state["player_input"], npc)
-        npc_context = f'[{npc.name}]: "{result.dialogue}"'
-
-        if result.disposition_change:
-            npc.disposition = result.disposition_change
-            await db.commit()
-
-    return {"npc_context": npc_context}
+        entity = {
+            "name": companion.name,
+            "bio": companion.bio or "",
+            "personality": companion.personality or "",
+            "disposition": "friendly",
+        }
+        result = await dialogue_agent.run(state["player_input"], entity)
+        return {"npc_context": f'[{companion.name}]: "{result.dialogue}"'}
 
 
 def _pick_node(state: TurnState) -> str:
@@ -145,7 +159,7 @@ def _pick_node(state: TurnState) -> str:
     if intent == "skill_check":
         return "resolve_skill_check"
     if intent == "npc_dialogue":
-        return "resolve_npc_dialogue"
+        return "resolve_dialogue"
     if intent == "rest_action":
         return "resolve_rest"
     return END
@@ -156,13 +170,13 @@ def _get_graph() -> Any:
     builder: StateGraph = StateGraph(TurnState)
     builder.add_node("route_intent", _route_intent)
     builder.add_node("resolve_skill_check", _resolve_skill_check)
-    builder.add_node("resolve_npc_dialogue", _resolve_npc_dialogue)
+    builder.add_node("resolve_dialogue", _resolve_dialogue)
     builder.add_node("resolve_rest", _resolve_rest)
 
     builder.add_edge(START, "route_intent")
     builder.add_conditional_edges("route_intent", _pick_node)
     builder.add_edge("resolve_skill_check", END)
-    builder.add_edge("resolve_npc_dialogue", END)
+    builder.add_edge("resolve_dialogue", END)
     builder.add_edge("resolve_rest", END)
 
     return builder.compile(checkpointer=get_checkpointer())

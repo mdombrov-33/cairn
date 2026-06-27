@@ -15,3 +15,13 @@ async def create_location(db: AsyncSession, *, campaign_id: uuid.UUID, **kwargs:
 async def get_first_for_campaign(db: AsyncSession, campaign_id: uuid.UUID) -> Location | None:
     result = await db.execute(select(Location).where(Location.campaign_id == campaign_id).limit(1))
     return result.scalar_one_or_none()
+
+
+async def get_location(db: AsyncSession, location_id: uuid.UUID) -> Location | None:
+    result = await db.execute(select(Location).where(Location.id == location_id))
+    return result.scalar_one_or_none()
+
+
+async def list_by_campaign(db: AsyncSession, campaign_id: uuid.UUID) -> list[Location]:
+    result = await db.execute(select(Location).where(Location.campaign_id == campaign_id))
+    return list(result.scalars().all())
