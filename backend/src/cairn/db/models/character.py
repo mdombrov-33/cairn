@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from cairn.db.base import Base
 from cairn.types import (
     AbilityScores,
+    ConcentrationData,
     Currency,
     FeatEntry,
     FeatureEntry,
@@ -70,6 +71,12 @@ class Character(Base):
     is_companion: Mapped[bool] = mapped_column(default=False, server_default="false")
     status: Mapped[str] = mapped_column(default="active", server_default="active")
 
+    # Set when the character was created from a premade; NULL for custom-built PCs.
+    # Drives intro_mode onboarding for brand-new custom characters.
+    created_from_premade_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("premade_characters.id", ondelete="SET NULL")
+    )
+
     # System-enforced advantage flag. Granted by DM for good roleplay, spent for advantage.
     has_inspiration: Mapped[bool] = mapped_column(default=False, server_default="false")
 
@@ -83,7 +90,8 @@ class Character(Base):
 
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]
-    concentration: Mapped[str | None]  # name of currently concentrated spell, if any
+    # {spell_name, level, source_effect_id} — links to the effect this spell created.
+    concentration: Mapped[ConcentrationData | None] = mapped_column(JSONB, nullable=True)
     prepared_spells: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
 
     # class resources with limited uses (Action Surge, Ki, Rage, Superiority Dice, etc.)

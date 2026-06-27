@@ -15,9 +15,9 @@ class Turn(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
-    # TODO: Scene Director (next slice) creates Scene rows on transitions and stamps
-    # this column; backfill existing turns to the active scene then tighten to NOT NULL.
-    scene_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("scenes.id", ondelete="SET NULL"))
+    # Every turn belongs to a scene. Scene Director creates Scene rows on transitions and
+    # sessions.start() eagerly creates the first scene, so this is always populated.
+    scene_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("scenes.id", ondelete="CASCADE"), index=True)
     idx: Mapped[int]
     player_input: Mapped[str]
     dm_response: Mapped[str | None]

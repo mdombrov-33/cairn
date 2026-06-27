@@ -34,7 +34,7 @@ class CreatureBase(BaseModel):
     spellcasting_ability: str | None
     spell_slots: dict[str, Any] | None
     spells_known: list[Any]
-    concentration: str | None
+    concentration: dict[str, Any] | None
 
     # JSONB
     ability_scores: dict[str, Any]

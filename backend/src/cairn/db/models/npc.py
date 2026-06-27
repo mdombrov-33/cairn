@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from cairn.db.base import Base
 from cairn.types import (
     AbilityScores,
+    ConcentrationData,
     Currency,
     FeatEntry,
     FeatureEntry,
@@ -58,7 +59,8 @@ class NPC(Base):
     spellcasting_ability: Mapped[str | None]
     spell_slots: Mapped[SpellSlots | None] = mapped_column(JSONB)
     spells_known: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
-    concentration: Mapped[str | None]
+    # {spell_name, level, source_effect_id} — same shape as Character.concentration.
+    concentration: Mapped[ConcentrationData | None] = mapped_column(JSONB, nullable=True)
 
     # JSONB — typed shapes live in cairn/types.py
     ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")

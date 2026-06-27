@@ -8,6 +8,7 @@ from cairn.agents import lore_keeper
 from cairn.db import client as db_client
 from cairn.db.models.turn import Turn
 from cairn.db.queries import campaigns as campaign_queries
+from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
@@ -33,8 +34,14 @@ async def prepare(
     db_session = await session_queries.get_session(db, session_id)
     campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
 
+    scene = await scene_queries.get_current_scene(db, db_session.campaign_id)
+    if scene is None:
+        raise ConflictError("session has no active scene", code="no_active_scene")
+
     existing = await turn_queries.list_turns(db, session_id)
-    turn = await turn_queries.create_turn(db, session_id=session_id, idx=len(existing), player_input=player_input)
+    turn = await turn_queries.create_turn(
+        db, session_id=session_id, scene_id=scene.id, idx=len(existing), player_input=player_input
+    )
 
     if db_session.combat_active:
         state = TurnState(

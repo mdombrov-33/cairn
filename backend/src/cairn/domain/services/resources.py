@@ -100,14 +100,16 @@ async def set_concentration(
     *,
     character_id: uuid.UUID,
     spell_name: str,
+    level: int = 1,
+    source_effect_id: str | None = None,
 ) -> dict:
     char = await character_queries.get_character(db, character_id)
     previous = char.concentration
-    char.concentration = spell_name
+    char.concentration = {"spell_name": spell_name, "level": level, "source_effect_id": source_effect_id}
     await db.commit()
-    result: dict = {"character": char.name, "concentrating_on": spell_name}
+    result: dict = {"character": char.name, "concentrating_on": spell_name, "level": level}
     if previous:
-        result["dropped"] = previous
+        result["dropped"] = previous.get("spell_name")
     return result
 
 
@@ -117,12 +119,16 @@ async def drop_concentration(
     character_id: uuid.UUID,
 ) -> dict:
     char = await character_queries.get_character(db, character_id)
-    spell = char.concentration
-    if not spell:
-        return {"character": char.name, "note": "Not concentrating on anything."}
+    record = char.concentration
+    if not record:
+        return {"character": char.name, "note": "Not concentrating on anything.", "dropped": None}
     char.concentration = None
     await db.commit()
-    return {"character": char.name, "dropped_concentration": spell}
+    return {
+        "character": char.name,
+        "dropped_concentration": record.get("spell_name"),
+        "dropped": dict(record),
+    }
 
 
 async def roll_concentration_check(
@@ -134,13 +140,13 @@ async def roll_concentration_check(
     char = await character_queries.get_character(db, character_id)
     if not char.concentration:
         return {"character": char.name, "note": "Not concentrating — no check needed."}
+    spell = char.concentration.get("spell_name")
     dc = max(10, math.floor(damage_taken / 2))
     con = char.ability_scores.get("con", 10)
     con_mod = math.floor((con - 10) / 2)
     roll = random.randint(1, 20)
     total = roll + con_mod
     success = total >= dc
-    spell = char.concentration
     if not success:
         char.concentration = None
     await db.commit()

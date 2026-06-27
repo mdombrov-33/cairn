@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
-from cairn.types import CombatState
+from cairn.types import CombatState, NarrativeRecovery, PendingTransition
 
 
 class Session(Base):
@@ -22,6 +22,11 @@ class Session(Base):
     # Combat
     combat_active: Mapped[bool] = mapped_column(default=False, server_default="false")
     combat_state: Mapped[CombatState | None] = mapped_column(JSONB)
+
+    # Scene Director handoffs. pending_transition: a detected scene boundary applied on
+    # the next turn. pending_recovery: narrative-mode death recovery the next turn narrates.
+    pending_transition: Mapped[PendingTransition | None] = mapped_column(JSONB, nullable=True)
+    pending_recovery: Mapped[NarrativeRecovery | None] = mapped_column(JSONB, nullable=True)
 
     in_game_hours_elapsed: Mapped[int] = mapped_column(default=0, server_default="0")
     last_day_summarized: Mapped[int] = mapped_column(default=0, server_default="0")

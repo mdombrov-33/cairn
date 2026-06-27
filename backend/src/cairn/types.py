@@ -97,6 +97,11 @@ class HelperRef(TypedDict):
     name: str
 
 
+class LootIntent(TypedDict):
+    npc_id: str
+    item_name: str
+
+
 class CheckData(TypedDict):
     skill: Required[str]
     dc: Required[int]
@@ -108,6 +113,19 @@ class CheckData(TypedDict):
     roll: NotRequired[int]  # set on resolve
     total: NotRequired[int]  # set on resolve
     success: NotRequired[bool]  # set on resolve
+    loot_intent: NotRequired[LootIntent]  # set when input is a pickpocket attempt
+
+
+# Concentration
+# JSONB shape on Character.concentration / NPC.concentration, and on monster
+# entries inside combat_state. `source_effect_id` links to the CombatEffect this
+# spell created, so a broken concentration save can remove the right effect.
+
+
+class ConcentrationData(TypedDict):
+    spell_name: str
+    level: int
+    source_effect_id: NotRequired[str | None]
 
 
 # Combat state
@@ -223,3 +241,51 @@ class HitDieResult(TypedDict):
     hp_gained: int
     hp_new: int
     hit_dice_remaining: int
+
+
+# Scene Director — meta-routing outputs and session handoff state
+
+
+class CombatTrigger(TypedDict):
+    hostile_npc_ids: list[str]
+
+
+class SceneTransition(TypedDict):
+    to_location_id: str
+    reason: str
+
+
+class ScenePreOutput(TypedDict):
+    combat_trigger: CombatTrigger | None
+    scene_transition_pull: SceneTransition | None
+    pacing_nudge: str | None  # always None in this slice — schema slot for later
+
+
+class ScenePostOutput(TypedDict):
+    combat_ended: bool  # safety-net; combat_resolver is the primary authority
+    scene_transition_push: SceneTransition | None
+    time_advance_hours: int  # 0 unless scene_transition_push is also set
+    act_progress: bool  # true if the DM narrated a core_event resolution
+
+
+# Session.pending_transition — scene-boundary detection-to-application handoff.
+# Same shape as SceneTransition; named distinctly for the column's intent.
+PendingTransition = SceneTransition
+
+
+# Session.pending_recovery — narrative-mode death recovery handoff.
+
+
+class NarrativeRecovery(TypedDict):
+    reason: str
+    prior_events_summary: str
+
+
+# Dialogue — provisional entity view for NPCs and companions (rich profile lands later).
+
+
+class DialogueEntity(TypedDict):
+    name: str
+    bio: str
+    personality: str
+    disposition: str

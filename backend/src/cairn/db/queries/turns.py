@@ -12,13 +12,20 @@ async def create_turn(
     session: AsyncSession,
     *,
     session_id: uuid.UUID,
+    scene_id: uuid.UUID,
     idx: int,
     player_input: str,
 ) -> Turn:
-    turn = Turn(session_id=session_id, idx=idx, player_input=player_input)
+    turn = Turn(session_id=session_id, scene_id=scene_id, idx=idx, player_input=player_input)
     session.add(turn)
     await session.flush()
     return turn
+
+
+async def set_turn_scene(session: AsyncSession, turn_id: uuid.UUID, scene_id: uuid.UUID) -> None:
+    turn = await get_turn(session, turn_id)
+    turn.scene_id = scene_id
+    await session.flush()
 
 
 async def get_turn(session: AsyncSession, turn_id: uuid.UUID) -> Turn:
