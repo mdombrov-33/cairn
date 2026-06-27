@@ -75,6 +75,19 @@ async def get_party_for_session(session: AsyncSession, session_id: uuid.UUID) ->
     return list(result.scalars().all())
 
 
+async def find_companion_by_name(session: AsyncSession, campaign_id: uuid.UUID, name_hint: str) -> Character | None:
+    """Fuzzy match a companion by name — fallback path when an NPC lookup misses in dialogue."""
+    result = await session.execute(
+        select(Character).where(Character.campaign_id == campaign_id, Character.is_companion.is_(True))
+    )
+    hint = name_hint.lower()
+    for char in result.scalars().all():
+        char_lower = char.name.lower()
+        if hint in char_lower or char_lower in hint:
+            return char
+    return None
+
+
 async def delete_character(session: AsyncSession, character_id: uuid.UUID) -> None:
     character = await get_character(session, character_id)
     await session.delete(character)

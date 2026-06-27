@@ -11,6 +11,7 @@ from cairn.tools.combat import (
     apply_healing,
     apply_temp_hp,
     award_xp,
+    cast_concentration_spell,
     end_combat,
     remove_combatant,
     remove_condition,
@@ -33,6 +34,7 @@ from cairn.tools.game_state import (
     get_party,
     loot_item,
 )
+from cairn.tools.inspiration import grant_inspiration
 from cairn.tools.resources import (
     apply_long_rest,
     apply_short_rest,
@@ -108,9 +110,11 @@ ALL_TOOLS: list[BaseTool] = [
     advance_turn,
     apply_effect,
     remove_effect,
+    cast_concentration_spell,
     award_xp,
     add_exhaustion,
     remove_exhaustion,
+    grant_inspiration,
     # Resource & economy
     consume_spell_slot,
     restore_spell_slot,
@@ -156,10 +160,12 @@ COMBAT_TOOLS: list[BaseTool] = [
     advance_turn,
     add_exhaustion,
     remove_exhaustion,
+    grant_inspiration,
     end_combat,
     loot_item,
     apply_effect,
     remove_effect,
+    cast_concentration_spell,
     consume_spell_slot,
     restore_spell_slot,
     use_resource,

@@ -169,6 +169,7 @@ class MonsterCombatant(_CombatantBase):
     speed: NotRequired[int]
     actions: NotRequired[list[dict]]  # SRD action list
     special_abilities: NotRequired[list[dict]]
+    concentration: NotRequired[ConcentrationData | None]  # ephemeral — dies with combat_state
 
 
 Combatant = CharacterCombatant | NpcCombatant | MonsterCombatant

@@ -40,6 +40,7 @@ async def _route_intent(state: TurnState) -> dict[str, Any]:
 
 async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
     session_id = uuid.UUID(state["session_id"])
+    campaign_id = uuid.UUID(state["campaign_id"])
 
     async with db_client.get_session() as db:
         party = await character_queries.get_party_for_session(db, session_id)
@@ -80,6 +81,14 @@ async def _resolve_skill_check(state: TurnState) -> dict[str, Any]:
                 helper_id=check.helper.character_id,
                 party_ids=list(party_ids),
             )
+
+    if check.loot_intent:
+        async with db_client.get_session() as db:
+            npc = await npc_queries.find_by_name(db, campaign_id, check.loot_intent.npc_name)
+        if npc is not None:
+            check_dict["loot_intent"] = {"npc_id": str(npc.id), "item_name": check.loot_intent.item_name}
+        else:
+            log.warning("pickpocket_npc_not_found", npc_name=check.loot_intent.npc_name)
 
     return {"check": check_dict}
 

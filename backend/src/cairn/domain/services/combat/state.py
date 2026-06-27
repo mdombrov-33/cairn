@@ -4,11 +4,13 @@ from typing import cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
+from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
+from cairn.domain.services import death_mode
 from cairn.domain.services.combat.emitter import emit
 from cairn.domain.services.combat.rolls import dex_mod, parse_and_roll
 from cairn.domain.services.rng import session_rng
@@ -153,8 +155,21 @@ async def get_state(
     return {"combat_active": db_session.combat_active, "combat_state": db_session.combat_state}
 
 
+def _is_pc_dead(char: Character) -> bool:
+    """A PC who has fully failed death saves or been instant-killed. Pacifist PCs never qualify."""
+    return char.hp <= 0 and (char.death_save_failures >= 3 or char.status == "dead")
+
+
 async def end_state(db: AsyncSession, *, session_id: uuid.UUID) -> None:
-    """Clear combat state without ownership check — for tool-facing use."""
+    """Clear combat state without ownership check — for tool-facing use.
+
+    Death resolution happens here, at combat end — not per death-save failure.
+    """
+    session = await session_queries.get_session(db, session_id)
+    party = await character_queries.get_party_for_session(db, session_id)
+    for char in party:
+        if not char.is_companion and _is_pc_dead(char):
+            await death_mode.resolve_pc_death(db, session, char)
     await session_queries.update_combat_state(db, session_id, combat_state=None, combat_active=False)
     await db.commit()
 

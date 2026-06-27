@@ -1,8 +1,12 @@
+import math
+import random
 import uuid
 from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn import srd as rules
+from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
@@ -18,7 +22,48 @@ from cairn.domain.services.combat.rolls import (
     roll_d20,
     save_modifier,
 )
-from cairn.types import CombatEffect
+from cairn.types import CombatEffect, ConcentrationData
+
+
+async def _death_mode(db: AsyncSession, session_id: uuid.UUID) -> str:
+    session = await session_queries.get_session(db, session_id)
+    campaign = await campaign_queries.get_campaign(db, session.campaign_id)
+    return (campaign.settings or {}).get("death_mode", "narrative")
+
+
+async def _concentration_save(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    name: str,
+    rec: ConcentrationData,
+    con_score: int,
+    damage: int,
+    incapacitated: bool,
+) -> bool:
+    """Roll a damage-triggered concentration save. On failure, drop the linked effect and emit.
+
+    Returns True if concentration broke (caller clears the record on the entity).
+    """
+    dc = max(10, damage // 2)
+    if incapacitated:
+        broke = True
+        total = 0
+    else:
+        con_mod = math.floor((con_score - 10) / 2)
+        total = random.randint(1, 20) + con_mod
+        broke = total < dc
+    if not broke:
+        await emit(db, {"type": "concentration_check_passed", "combatant": name, "dc": dc, "total": total})
+        return False
+    effect_id = rec.get("source_effect_id")
+    if effect_id:
+        await remove_effect(db, session_id=session_id, effect_id=effect_id)
+    await emit(
+        db,
+        {"type": "concentration_broken", "combatant": name, "spell": rec.get("spell_name"), "dc": dc, "total": total},
+    )
+    return True
 
 
 async def apply_damage(
@@ -29,39 +74,100 @@ async def apply_damage(
     combatant_type: str,
     amount: int,
     damage_type: str = "untyped",
+    subdue: bool = False,
 ) -> dict:
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(combatant_id))
+        hp_before = char.hp
         effective = max(0, amount - char.temp_hp)
         char.temp_hp = max(0, char.temp_hp - amount)
-        char.hp = max(0, char.hp - effective)
+        new_hp = max(0, char.hp - effective)
+
+        pacifist = (not char.is_companion) and (await _death_mode(db, session_id)) == "pacifist"
+        knocked_out = instant_death = False
+        if new_hp == 0:
+            if pacifist:
+                new_hp = 1  # PC never drops in pacifist mode
+            elif subdue:
+                knocked_out = True
+            elif effective - hp_before >= char.max_hp:
+                instant_death = True
+        char.hp = new_hp
+
+        if instant_death:
+            char.status = "dead"
+            char.death_save_failures = 3
+        elif knocked_out:
+            char.death_save_successes = 0
+            char.death_save_failures = 0
+
         result = {
             "combatant": char.name,
             "damage_taken": effective,
             "temp_hp_absorbed": amount - effective,
             "hp": char.hp,
             "is_unconscious": char.hp == 0,
-            "is_dead": False,
+            "is_dead": instant_death,
         }
+        if knocked_out:
+            result["knocked_out"] = True
         await emit(db, {"type": "damage_applied", "combatant_type": "character", **result})
+        if instant_death:
+            await emit(db, {"type": "massive_damage_death", "combatant": char.name})
+        if knocked_out:
+            await emit(db, {"type": "combatant_knocked_out", "combatant": char.name})
+        if char.concentration and effective > 0:
+            broke = await _concentration_save(
+                db,
+                session_id=session_id,
+                name=char.name,
+                rec=char.concentration,
+                con_score=char.ability_scores.get("con", 10),
+                damage=effective,
+                incapacitated=char.hp == 0,
+            )
+            if broke:
+                char.concentration = None
         await db.commit()
         return result
 
     if combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(combatant_id))
+        hp_before = npc.hp
         effective = max(0, amount - npc.temp_hp)
         npc.temp_hp = max(0, npc.temp_hp - amount)
-        npc.hp = max(0, npc.hp - effective)
-        is_dead = npc.hp == 0
+        new_hp = max(0, npc.hp - effective)
+        knocked_out = subdue and new_hp == 0
+        instant_death = (not subdue) and new_hp == 0 and (effective - hp_before >= npc.max_hp)
+        npc.hp = new_hp
+        is_dead = new_hp == 0 and not knocked_out
         result = {
             "combatant": npc.name,
             "damage_taken": effective,
             "temp_hp_absorbed": amount - effective,
             "hp": npc.hp,
-            "is_unconscious": is_dead,
+            "is_unconscious": new_hp == 0,
             "is_dead": is_dead,
         }
+        if knocked_out:
+            result["knocked_out"] = True
         await emit(db, {"type": "damage_applied", "combatant_type": "npc", **result})
+        if instant_death:
+            await emit(db, {"type": "massive_damage_death", "combatant": npc.name})
+        if knocked_out:
+            await emit(db, {"type": "combatant_knocked_out", "combatant": npc.name})
+        if npc.concentration and effective > 0:
+            broke = await _concentration_save(
+                db,
+                session_id=session_id,
+                name=npc.name,
+                rec=npc.concentration,
+                con_score=npc.ability_scores.get("con", 10),
+                damage=effective,
+                incapacitated=new_hp == 0,
+            )
+            if broke:
+                npc.concentration = None
         await db.commit()
         return result
 
@@ -71,10 +177,14 @@ async def apply_damage(
         combatant = find_monster(state, combatant_id)
         if combatant is None:
             return {"error": f"Monster '{combatant_id}' not found in combat state."}
+        hp_before = combatant["hp"]
         effective = max(0, amount - combatant.get("temp_hp", 0))
-        combatant["hp"] = max(0, combatant["hp"] - effective)
-        combatant["is_alive"] = combatant["hp"] > 0
-        combatant["is_conscious"] = combatant["is_alive"]
+        new_hp = max(0, combatant["hp"] - effective)
+        knocked_out = subdue and new_hp == 0
+        instant_death = (not subdue) and new_hp == 0 and (effective - hp_before >= combatant["max_hp"])
+        combatant["hp"] = new_hp
+        combatant["is_alive"] = new_hp > 0 or knocked_out
+        combatant["is_conscious"] = new_hp > 0
         await session_queries.update_combat_state(
             db, session_id, combat_state=state, combat_active=session.combat_active
         )
@@ -85,7 +195,31 @@ async def apply_damage(
             "is_alive": combatant["is_alive"],
             "is_dead": not combatant["is_alive"],
         }
+        if knocked_out:
+            result["knocked_out"] = True
         await emit(db, {"type": "damage_applied", "combatant_type": "monster", **result})
+        if instant_death:
+            await emit(db, {"type": "massive_damage_death", "combatant": combatant["name"]})
+        if knocked_out:
+            await emit(db, {"type": "combatant_knocked_out", "combatant": combatant["name"]})
+        conc = combatant.get("concentration")
+        if conc and effective > 0:
+            monster_data = rules.get_monster(combatant["srd_index"])
+            con_score = monster_data.get("constitution", 10) if monster_data else 10
+            broke = await _concentration_save(
+                db,
+                session_id=session_id,
+                name=combatant["name"],
+                rec=cast(ConcentrationData, conc),
+                con_score=con_score,
+                damage=effective,
+                incapacitated=new_hp == 0,
+            )
+            if broke:
+                combatant["concentration"] = None
+                await session_queries.update_combat_state(
+                    db, session_id, combat_state=state, combat_active=session.combat_active
+                )
         await db.commit()
         return result
 
@@ -260,6 +394,75 @@ async def remove_effect(
     await emit(db, {"type": "effect_removed", "effect_name": removed["name"]})
     await db.commit()
     return {"effect_removed": True, "effect_name": removed["name"]}
+
+
+async def cast_concentration_spell(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    caster_id: str,
+    caster_type: str,
+    spell_name: str,
+    level: int,
+    target_id: str,
+    effect_name: str,
+    duration_rounds: int,
+    condition: str = "",
+    save_ability: str = "",
+    save_dc: int = 0,
+    tick: str = "",
+    damage: str = "",
+    damage_type: str = "",
+    mechanical_notes: str = "",
+) -> dict:
+    """Atomically apply a concentration effect and set the caster's concentration record.
+
+    Bundling prevents drift between the concentration record and its linked effect, so the
+    damage-triggered auto-save can remove the right effect when concentration breaks.
+    """
+    effect_result = await apply_effect(
+        db,
+        session_id=session_id,
+        target_id=target_id,
+        effect_name=effect_name,
+        duration_rounds=duration_rounds,
+        condition=condition,
+        save_ability=save_ability,
+        save_dc=save_dc,
+        tick=tick,
+        damage=damage,
+        damage_type=damage_type,
+        mechanical_notes=mechanical_notes,
+        source_id=caster_id,
+    )
+    effect_id = effect_result["effect"]["id"]
+    rec: ConcentrationData = {"spell_name": spell_name, "level": level, "source_effect_id": effect_id}
+
+    if caster_type == "character":
+        char = await character_queries.get_character(db, uuid.UUID(caster_id))
+        char.concentration = rec
+        name = char.name
+    elif caster_type == "npc":
+        npc = await npc_queries.get_npc(db, uuid.UUID(caster_id))
+        npc.concentration = rec
+        name = npc.name
+    elif caster_type == "monster":
+        session = await session_queries.get_session(db, session_id)
+        state = session.combat_state or empty_combat_state()
+        combatant = find_monster(state, caster_id)
+        if combatant is None:
+            return {"error": f"Monster '{caster_id}' not found in combat state."}
+        combatant["concentration"] = rec
+        name = combatant["name"]
+        await session_queries.update_combat_state(
+            db, session_id, combat_state=state, combat_active=session.combat_active
+        )
+    else:
+        return {"error": f"Unknown caster_type '{caster_type}'."}
+
+    await emit(db, {"type": "concentration_started", "combatant": name, "spell": spell_name})
+    await db.commit()
+    return {"concentrating_on": spell_name, "effect_id": effect_id, "effect": effect_result["effect"]}
 
 
 async def apply_aoe_damage(

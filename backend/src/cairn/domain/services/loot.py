@@ -8,7 +8,9 @@ from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import NotFoundError, ValidationError
 from cairn.domain.services.inventory import copy_inventory, find_item
-from cairn.types import InventoryItem
+from cairn.types import Currency, InventoryItem
+
+COIN_KEYS = ("gp", "sp", "cp")
 
 
 async def loot_item(
@@ -45,3 +47,45 @@ async def loot_item(
 
     await db.flush()
     return looted
+
+
+async def loot_currency(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    npc_id: uuid.UUID,
+    character_id: uuid.UUID,
+    currency: dict[str, int],
+) -> dict[str, int]:
+    """Move coins from an NPC to a character. Returns the character's new balance.
+
+    Validates the NPC holds at least the requested amount of each coin type.
+    """
+    db_session = await session_queries.get_session(db, session_id)
+    npc = await npc_queries.get_npc(db, npc_id)
+    char = await character_queries.get_character(db, character_id)
+
+    if npc.campaign_id != db_session.campaign_id:
+        raise ValidationError("npc does not belong to this session's campaign")
+    if char.campaign_id != db_session.campaign_id:
+        raise ValidationError("character does not belong to this session's campaign")
+
+    npc_cur: dict[str, int] = {**cast(dict[str, int], npc.currency or {})}
+    char_cur: dict[str, int] = {**cast(dict[str, int], char.currency or {})}
+    for coin, amount in currency.items():
+        if coin not in COIN_KEYS:
+            raise ValidationError(f"unknown coin type {coin!r}", code="invalid_currency")
+        if amount < 0:
+            raise ValidationError("currency amounts must be non-negative", code="invalid_currency")
+        if npc_cur.get(coin, 0) < amount:
+            raise ValidationError(f"npc has insufficient {coin}", code="insufficient_currency")
+
+    for coin, amount in currency.items():
+        if amount:
+            npc_cur[coin] = npc_cur.get(coin, 0) - amount
+            char_cur[coin] = char_cur.get(coin, 0) + amount
+
+    npc.currency = cast(Currency, npc_cur)
+    char.currency = cast(Currency, char_cur)
+    await db.flush()
+    return char_cur

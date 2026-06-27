@@ -159,12 +159,20 @@ class HelperInfo(BaseModel):
     name: str
 
 
+class LootIntentDecision(BaseModel):
+    """A steal/pickpocket attempt. npc_name is resolved to an id by the graph node."""
+
+    npc_name: str
+    item_name: str
+
+
 class CheckDecision(BaseModel):
     skill: str
     dc: int
     modifier: int
     roll_type: Literal["d20", "advantage", "disadvantage"]
     helper: HelperInfo | None = None
+    loot_intent: LootIntentDecision | None = None
 
 
 async def run(

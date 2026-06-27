@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.npc import NPC
+from cairn.db.models.scene import Scene
 from cairn.domain.exceptions import NotFoundError
 
 
@@ -37,6 +38,25 @@ async def find_by_name(session: AsyncSession, campaign_id: uuid.UUID, name_hint:
         if hint in npc_lower or npc_lower in hint:
             return npc
     return None
+
+
+async def list_by_location(session: AsyncSession, campaign_id: uuid.UUID, location_id: uuid.UUID) -> list[NPC]:
+    """Living NPCs at a location — the present cast for scene context."""
+    result = await session.execute(
+        select(NPC).where(NPC.campaign_id == campaign_id, NPC.location_id == location_id, NPC.hp > 0).order_by(NPC.name)
+    )
+    return list(result.scalars().all())
+
+
+async def list_dead_in_scene(session: AsyncSession, scene_id: uuid.UUID) -> list[NPC]:
+    """Dead NPCs (hp <= 0) at the scene's location — lootable corpses for search narration."""
+    result = await session.execute(
+        select(NPC)
+        .join(Scene, (Scene.location_id == NPC.location_id) & (Scene.campaign_id == NPC.campaign_id))
+        .where(Scene.id == scene_id, NPC.hp <= 0)
+        .order_by(NPC.name)
+    )
+    return list(result.scalars().all())
 
 
 async def update_disposition(session: AsyncSession, npc_id: uuid.UUID, disposition: str) -> NPC:

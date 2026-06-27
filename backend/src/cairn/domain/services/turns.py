@@ -5,17 +5,22 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.agents import lore_keeper
+from cairn.context import current_turn_id
 from cairn.db import client as db_client
+from cairn.db.models.character import Character
 from cairn.db.models.turn import Turn
 from cairn.db.queries import campaigns as campaign_queries
+from cairn.db.queries import characters as character_queries
+from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
+from cairn.domain.services import loot as loot_service
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
-from cairn.types import CheckData
+from cairn.types import CheckData, LootIntent
 
 log = structlog.get_logger()
 
@@ -42,6 +47,10 @@ async def prepare(
     turn = await turn_queries.create_turn(
         db, session_id=session_id, scene_id=scene.id, idx=len(existing), player_input=player_input
     )
+    # Commit the turn before any graph/streaming work so the combat emitter (which opens
+    # its own session) can append events to it. Set current_turn_id around the graph run so
+    # prepare-phase nodes (e.g. rest) record their events on this turn.
+    await db.commit()
 
     if db_session.combat_active:
         state = TurnState(
@@ -55,11 +64,15 @@ async def prepare(
             rest_context=None,
         )
     else:
-        state = await turn_graph.run(
-            player_input=player_input,
-            session_id=session_id,
-            campaign_id=db_session.campaign_id,
-        )
+        ctx_token = current_turn_id.set(turn.id)
+        try:
+            state = await turn_graph.run(
+                player_input=player_input,
+                session_id=session_id,
+                campaign_id=db_session.campaign_id,
+            )
+        finally:
+            current_turn_id.reset(ctx_token)
         if state["intent"] is None:
             raise AgentError("IntentRouter returned no intent")
 
@@ -168,6 +181,37 @@ async def save_resolved_check(
         "success": success,
     }
     await turn_queries.update_turn_check(db, turn_id, check_data=updated)
+
+
+async def get_active_character(db: AsyncSession, *, session_id: uuid.UUID) -> Character | None:
+    """The player's own character (first non-companion), or first party member as a fallback."""
+    party = await character_queries.get_party_for_session(db, session_id)
+    return next((c for c in party if not c.is_companion), party[0] if party else None)
+
+
+async def resolve_pickpocket(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    loot_intent: LootIntent,
+    character_id: uuid.UUID,
+    success: bool,
+) -> None:
+    """Apply the mechanical outcome of a pickpocket check. Failure flips the NPC hostile."""
+    npc_id = uuid.UUID(loot_intent["npc_id"])
+    if success:
+        try:
+            await loot_service.loot_item(
+                db,
+                session_id=session_id,
+                npc_id=npc_id,
+                item_name=loot_intent["item_name"],
+                character_id=character_id,
+            )
+        except NotFoundError:
+            log.warning("pickpocket_item_missing", npc_id=str(npc_id), item=loot_intent["item_name"])
+    else:
+        await npc_queries.update_disposition(db, npc_id, "hostile")
 
 
 async def prepare_resolve(

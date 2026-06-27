@@ -11,7 +11,7 @@ from cairn.db.models.session import Session
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
-from cairn.domain.services import day_roll
+from cairn.domain.services import time as time_service
 from cairn.domain.services.combat.helpers import exhaustion_level
 from cairn.types import CharacterRestResult, HitDieResult
 
@@ -144,8 +144,7 @@ async def apply_short_rest(
 
     results = [_reset_character_short_rest(char) for char in party]
 
-    session.in_game_hours_elapsed += 1  # short rest ~1 hour
-    await day_roll.maybe_roll_days(db, session)
+    await time_service.advance_time(db, session, hours=1, source="short_rest")  # short rest ~1 hour
     log.info("short_rest_applied", session_id=str(session_id), party_size=len(party))
     return {"rest_type": "short", "results": results}
 
@@ -166,8 +165,7 @@ async def apply_long_rest(
 
     results = [_reset_character_long_rest(char) for char in party]
 
-    session.in_game_hours_elapsed += 8  # long rest = 8 hours
-    await day_roll.maybe_roll_days(db, session)
+    await time_service.advance_time(db, session, hours=8, source="long_rest")  # long rest = 8 hours
     log.info("long_rest_applied", session_id=str(session_id), party_size=len(party))
 
     needs_spell_prep = [r["character_id"] for r in results if r["prepared_spells_cleared"]]

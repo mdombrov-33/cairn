@@ -11,6 +11,9 @@ class SubmitTurnRequest(BaseModel):
 
 class ResolveRequest(BaseModel):
     roll: int = Field(ge=1, le=20)
+    # Optional second d20 the client rolls when spending inspiration (advantage).
+    inspiration_roll: int | None = Field(default=None, ge=1, le=20)
+    use_inspiration: bool = False
 
 
 class TurnResponse(BaseModel):

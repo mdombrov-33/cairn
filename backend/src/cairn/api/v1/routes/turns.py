@@ -11,6 +11,8 @@ from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
 from cairn.context import current_turn_id
 from cairn.db.models.turn import Turn
+from cairn.domain.exceptions import ValidationError
+from cairn.domain.services import inspiration as inspiration_service
 from cairn.domain.services import narrative_context
 from cairn.domain.services import turns as service
 from cairn.sse.events import sse
@@ -125,15 +127,36 @@ async def resolve(
     turn, check = await service.prepare_resolve(db, session_id=session_id, turn_id=turn_id, owner_id=user_id)
     campaign_id, namespace = await service.get_campaign_info(db, session_id=session_id)
 
+    active = await service.get_active_character(db, session_id=session_id)
+
+    # Inspiration grants advantage: take the better of the two client-submitted d20s.
+    effective_roll = body.roll
+    advantage = False
+    if body.use_inspiration:
+        if active is None or not active.has_inspiration:
+            raise ValidationError("character has no inspiration to spend", code="no_inspiration")
+        await inspiration_service.spend(db, character_id=active.id)
+        effective_roll = max(body.roll, body.inspiration_roll or body.roll)
+        advantage = True
+
     async def generate() -> AsyncGenerator[str]:
-        total = body.roll + check["modifier"]
+        total = effective_roll + check["modifier"]
         success = total >= check["dc"]
 
-        roll_payload: dict = {"roll": body.roll, "total": total, "success": success}
+        roll_payload: dict = {"roll": effective_roll, "total": total, "success": success}
+        if advantage:
+            roll_payload["advantage"] = True
+            roll_payload["rolls"] = [body.roll, body.inspiration_roll or body.roll]
         helper = check.get("helper")
         if helper:
             roll_payload["helper"] = helper
         yield sse("roll_result", roll_payload)
+
+        loot_intent = check.get("loot_intent")
+        if loot_intent and active is not None:
+            await service.resolve_pickpocket(
+                db, session_id=session_id, loot_intent=loot_intent, character_id=active.id, success=success
+            )
 
         # setup_prose is written by save_check_setup before this resolve runs.
         setup_prose = check.get("setup_prose", "")

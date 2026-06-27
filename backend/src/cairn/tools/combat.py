@@ -50,10 +50,14 @@ async def apply_damage(
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
     amount: Annotated[int, "Raw damage amount before temp HP absorption."],
     damage_type: Annotated[str, 'Damage type for narrative purposes, e.g. "fire", "slashing".'] = "untyped",
+    subdue: Annotated[
+        bool, "True for a non-lethal knockout blow (melee only). Drops target to 0 HP, unconscious."
+    ] = False,
 ) -> dict:
     """Apply damage to a combatant, respecting temp HP.
 
     Monsters track HP in combat_state; characters and NPCs are persisted to DB.
+    Concentration saves auto-fire on damage. Set subdue=True to knock out instead of kill (melee only).
     """
     async with db_client.get_session() as db:
         return await combat_service.mutations.apply_damage(
@@ -63,6 +67,7 @@ async def apply_damage(
             combatant_type=combatant_type,
             amount=amount,
             damage_type=damage_type,
+            subdue=subdue,
         )
 
 
@@ -199,6 +204,49 @@ async def remove_effect(
             db,
             session_id=uuid.UUID(session_id),
             effect_id=effect_id,
+        )
+
+
+@tool
+async def cast_concentration_spell(
+    session_id: Annotated[str, "The session UUID."],
+    caster_id: Annotated[str, "The caster's combatant ID (UUID for character/npc, monster id for monsters)."],
+    caster_type: Annotated[str, '"character", "npc", or "monster".'],
+    spell_name: Annotated[str, 'The spell, e.g. "Hold Person".'],
+    level: Annotated[int, "The slot level the spell is cast at."],
+    target_id: Annotated[str, "Combatant ID the effect applies to."],
+    effect_name: Annotated[str, "Effect name, usually the spell name."],
+    duration_rounds: Annotated[int, "How many rounds the effect lasts."],
+    condition: Annotated[str, 'Condition imposed, e.g. "paralyzed". Empty if none.'] = "",
+    save_ability: Annotated[str, 'Ability for the repeating save, e.g. "wis". Empty if none.'] = "",
+    save_dc: Annotated[int, "DC for the repeating save. 0 if none."] = 0,
+    tick: Annotated[str, '"start_of_target_turn", "end_of_target_turn", or "" for passive.'] = "",
+    damage: Annotated[str, 'Tick damage dice, e.g. "1d6". Empty if none.'] = "",
+    damage_type: Annotated[str, "Damage type for tick damage."] = "",
+    mechanical_notes: Annotated[str, "Free-text notes on how to resolve ticks."] = "",
+) -> dict:
+    """Cast a concentration spell: apply its effect AND set the caster's concentration in one call.
+
+    Use this for any spell requiring concentration so the auto-save can drop the right effect.
+    """
+    async with db_client.get_session() as db:
+        return await combat_service.mutations.cast_concentration_spell(
+            db,
+            session_id=uuid.UUID(session_id),
+            caster_id=caster_id,
+            caster_type=caster_type,
+            spell_name=spell_name,
+            level=level,
+            target_id=target_id,
+            effect_name=effect_name,
+            duration_rounds=duration_rounds,
+            condition=condition,
+            save_ability=save_ability,
+            save_dc=save_dc,
+            tick=tick,
+            damage=damage,
+            damage_type=damage_type,
+            mechanical_notes=mechanical_notes,
         )
 
 
