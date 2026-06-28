@@ -5,7 +5,9 @@ from typing import Literal
 import structlog
 
 from cairn.agents import combat_ai, scene_narrator
+from cairn.db import client as db_client
 from cairn.domain.exceptions import AgentError
+from cairn.domain.services.combat.emitter import emit
 from cairn.llm.client import complete_with_tools
 from cairn.llm.router import agent_setup
 from cairn.tools import COMBAT_TOOLS, fetch_combat_context
@@ -26,8 +28,12 @@ async def run(
     """
     player_summary = await _resolve_mechanics(player_input, session_id, context)
 
+    # Safety cap: at most one ally/enemy turn per combatant before control returns to the player.
+    initial_state, _ = await fetch_combat_context(session_id)
+    cap = len(initial_state.get("combatants", [])) if initial_state else 0
+
     enemy_summaries: list[str] = []
-    for _ in range(20):  # safety cap — no encounter has 20 combatants
+    for _ in range(cap):
         combat_state, _ = await fetch_combat_context(session_id)
         if not combat_state:
             break  # combat ended (victory/defeat)
@@ -40,7 +46,14 @@ async def run(
         if current["type"] == "character" and not current.get("ai_controlled"):
             break  # player's own character — stop and wait for input
         role: Literal["ally", "enemy"] = "ally" if current.get("team") == "players" else "enemy"
-        summary = await combat_ai.run(session_id, role=role)
+        try:
+            summary = await combat_ai.run(session_id, role=role)
+        except Exception as exc:
+            log.error("combat_step_failed", error=str(exc), session_id=session_id)
+            async with db_client.get_session() as db:
+                await emit(db, {"type": "combat_step_failed", "error": str(exc)})
+                await db.commit()
+            raise
         enemy_summaries.append(summary)
 
     narrative_context = f"[PLAYER ACTION]\n{player_summary}"

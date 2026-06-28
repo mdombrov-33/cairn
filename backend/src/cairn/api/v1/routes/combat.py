@@ -1,35 +1,14 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter
 
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.combat import CombatEndRequest, CombatResponse, CombatStartRequest
+from cairn.api.v1.schemas.combat import CombatResponse
 from cairn.domain.services import combat as service
 
+# Combat is started and ended inside the turn graph (Scene Director → combat_entry) and by the
+# combat resolver's end_combat tool. This router exposes only the read endpoint for the UI tracker.
 router = APIRouter(prefix="/v1/sessions", tags=["combat"])
-
-
-@router.post("/{session_id}/combat/start", response_model=CombatResponse, status_code=status.HTTP_201_CREATED)
-async def start(
-    session_id: uuid.UUID,
-    body: CombatStartRequest,
-    user_id: CurrentUserId,
-    db: DBSession,
-) -> CombatResponse:
-    enemies = [e.model_dump() for e in body.enemies]
-    combat_state = await service.state.start(db, session_id=session_id, owner_id=user_id, enemies=enemies)
-    return CombatResponse(combat_active=True, combat_state=dict(combat_state))
-
-
-@router.post("/{session_id}/combat/end", response_model=CombatResponse)
-async def end(
-    session_id: uuid.UUID,
-    body: CombatEndRequest,
-    user_id: CurrentUserId,
-    db: DBSession,
-) -> CombatResponse:
-    await service.state.end(db, session_id=session_id, owner_id=user_id, outcome=body.outcome)
-    return CombatResponse(combat_active=False, combat_state=None)
 
 
 @router.get("/{session_id}/combat", response_model=CombatResponse)

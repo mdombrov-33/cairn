@@ -191,6 +191,25 @@ async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
     assert turn_start["data"]["intent"] == "combat_action"
 
 
+async def test_combat_start_route_removed_get_state_still_works(client: AsyncClient) -> None:
+    """Combat now starts inside the turn graph — the client-facing start route is gone, but the
+    read endpoint the UI tracker uses remains."""
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
+
+    started = await client.post(
+        f"/v1/sessions/{sess['id']}/combat/start",
+        headers={"X-User-Id": "user_a"},
+        json={"enemies": [{"type": "monster", "name": "goblin"}]},
+    )
+    assert started.status_code == 404
+
+    state = await client.get(f"/v1/sessions/{sess['id']}/combat", headers={"X-User-Id": "user_a"})
+    assert state.status_code == 200
+    assert state.json()["combat_active"] is False
+
+
 async def test_ally_npc_enrolled_with_players_team(client: AsyncClient) -> None:
     """An NPC enrolled with team='players' gets the correct team in combat state."""
     camp = await make_campaign(client)

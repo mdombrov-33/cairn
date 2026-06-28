@@ -63,8 +63,12 @@ async def submit(
     # Combat is resolved by the tool loop and rest has its own context block — neither
     # uses the layered DM context, so skip assembling it for those.
     dm_context = ""
+    intro_mode = False
+    death_recovery = False
     if intent not in ("combat_action", "rest_action"):
         dm_context = await narrative_context.build_dm_context(db, session_id)
+        intro_mode = await narrative_context.is_intro_mode(db, session_id)
+        death_recovery = await service.consume_death_recovery(db, session_id=session_id)
 
     async def generate() -> AsyncGenerator[str]:
         token = current_turn_id.set(turn.id)
@@ -81,7 +85,11 @@ async def submit(
                 assert check is not None
                 setup_chunks: list[str] = []
                 async for chunk in scene_narrator.run(
-                    body.player_input, context=dm_context, is_scene_entry=is_scene_entry
+                    body.player_input,
+                    context=dm_context,
+                    is_scene_entry=is_scene_entry,
+                    intro_mode=intro_mode,
+                    death_recovery=death_recovery,
                 ):
                     setup_chunks.append(chunk)
                     yield sse("token", {"text": chunk})
@@ -104,6 +112,8 @@ async def submit(
                     body.player_input,
                     context=_join_context(dm_context, npc_context),
                     is_scene_entry=is_scene_entry,
+                    intro_mode=intro_mode,
+                    death_recovery=death_recovery,
                 )
                 async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
@@ -116,7 +126,13 @@ async def submit(
                     yield event
 
             else:  # narrative_action
-                narrator = scene_narrator.run(body.player_input, context=dm_context, is_scene_entry=is_scene_entry)
+                narrator = scene_narrator.run(
+                    body.player_input,
+                    context=dm_context,
+                    is_scene_entry=is_scene_entry,
+                    intro_mode=intro_mode,
+                    death_recovery=death_recovery,
+                )
                 async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
         finally:

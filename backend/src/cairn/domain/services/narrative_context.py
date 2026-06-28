@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.queries import campaign_templates as template_queries
 from cairn.db.queries import campaigns as campaign_queries
+from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
@@ -13,6 +14,23 @@ from cairn.db.queries import worlds as world_queries
 # RAG over world lore + world bible (later slice) covers the long tail by relevance.
 RECENT_DAYS = 5
 RECENT_TURNS = 6
+
+# The opening turns of a fresh campaign weave in a custom PC's backstory before normal play.
+INTRO_TURNS = 3
+
+
+async def is_intro_mode(db: AsyncSession, session_id: uuid.UUID) -> bool:
+    """Whether the narrator should weave in backstory for the player's own custom character.
+
+    True only for the first INTRO_TURNS turns and only for a custom PC — a pre-made pick already
+    has its arc established, so it gets no onboarding.
+    """
+    turns = await turn_queries.list_turns(db, session_id)
+    if len(turns) > INTRO_TURNS:
+        return False
+    party = await character_queries.get_party_for_session(db, session_id)
+    active = next((c for c in party if not c.is_companion), None)
+    return active is not None and active.created_from_premade_id is None
 
 
 async def build_dm_context(db: AsyncSession, session_id: uuid.UUID) -> str:

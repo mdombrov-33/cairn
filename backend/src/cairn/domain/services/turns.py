@@ -8,6 +8,7 @@ from cairn.agents import lore_keeper, scene_director
 from cairn.context import current_turn_id
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
+from cairn.db.models.session import Session
 from cairn.db.models.turn import Turn
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
@@ -19,6 +20,7 @@ from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
 from cairn.domain.services import loot as loot_service
 from cairn.domain.services import scene_director_context
+from cairn.domain.services import time as time_service
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
 from cairn.types import CheckData, LootIntent
@@ -122,7 +124,8 @@ async def run_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> 
 
     Fire-and-forget, mirroring the LoreKeeper. A scene-transition push is recorded as
     Session.pending_transition (applied on the next turn's pre-pass); act progress advances
-    the campaign's act index. Time advancement is handled at the scene boundary, not here.
+    the campaign's act index. A DM-narrated time skip (only set alongside a push) advances the
+    clock here — unless this turn was a rest that already advanced time, to avoid double-counting.
     """
     try:
         async with db_client.get_sessionmaker()() as db:
@@ -139,13 +142,38 @@ async def run_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> 
             if post["act_progress"]:
                 campaign = await campaign_queries.get_campaign(db, session.campaign_id)
                 campaign.current_act_index += 1
+            if post["time_advance_hours"] > 0:
+                await _apply_director_time(db, session, turn_id, post["time_advance_hours"])
         log.info("scene_director_post_done", session_id=str(session_id))
     except Exception as exc:
         log.error("scene_director_post_failed", error=str(exc), session_id=str(session_id))
 
 
+async def _apply_director_time(db: AsyncSession, session: Session, turn_id: uuid.UUID, hours: int) -> None:
+    """Advance the clock for a DM-narrated time skip, guarding against double-counting a rest.
+
+    If this turn already advanced time (e.g. a rest emitted `time_advanced`), the Scene Director's
+    skip is a redundant restatement of the same passage of time, so we skip it.
+    """
+    turn = await turn_queries.get_turn(db, turn_id)
+    if any(e.get("type") == "time_advanced" for e in (turn.events or [])):
+        log.info("scene_director_time_skip_double_count", turn_id=str(turn_id), hours=hours)
+        return
+    # current_turn_id is unset in this background task; set it so advance_time's event lands on the turn.
+    token = current_turn_id.set(turn_id)
+    try:
+        await time_service.advance_time(db, session, hours=hours, source="scene_director")
+    finally:
+        current_turn_id.reset(token)
+
+
 def schedule_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
     asyncio.create_task(run_scene_director_post(session_id, turn_id), name="cairn-bg")
+
+
+async def consume_death_recovery(db: AsyncSession, *, session_id: uuid.UUID) -> bool:
+    """Whether this turn should narrate a narrative-mode death wake-up. Clears the handoff."""
+    return await session_queries.consume_pending_recovery(db, session_id)
 
 
 async def list_turns(db: AsyncSession, *, session_id: uuid.UUID, owner_id: str) -> list[Turn]:

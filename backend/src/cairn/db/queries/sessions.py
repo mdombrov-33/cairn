@@ -44,6 +44,20 @@ async def get_active_session(session: AsyncSession, campaign_id: uuid.UUID) -> S
     return result.scalar_one_or_none()
 
 
+async def consume_pending_recovery(session: AsyncSession, session_id: uuid.UUID) -> bool:
+    """Read and clear the narrative-death recovery handoff. Returns whether one was pending.
+
+    Set by death_mode when a narrative-mode PC survives at HP=1; the next turn's narrator reads
+    this to narrate the wake-up, then it's cleared so the beat fires exactly once.
+    """
+    db_session = await get_session(session, session_id)
+    if db_session.pending_recovery is None:
+        return False
+    db_session.pending_recovery = None
+    await session.flush()
+    return True
+
+
 async def update_combat_state(
     session: AsyncSession,
     session_id: uuid.UUID,

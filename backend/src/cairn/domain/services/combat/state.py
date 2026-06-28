@@ -115,35 +115,6 @@ async def init_state(
     return combat_state
 
 
-async def start(
-    db: AsyncSession,
-    *,
-    session_id: uuid.UUID,
-    owner_id: str,
-    enemies: list[dict],
-) -> CombatState:
-    db_session = await session_queries.get_session(db, session_id)
-    await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
-    return await init_state(db, session_id, enemies)
-
-
-async def end(
-    db: AsyncSession,
-    *,
-    session_id: uuid.UUID,
-    owner_id: str,
-    outcome: str,
-) -> None:
-    db_session = await session_queries.get_session(db, session_id)
-    await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
-
-    if not db_session.combat_active:
-        raise ConflictError("no active combat for this session", code="combat_not_active")
-
-    await session_queries.update_combat_state(db, session_id, combat_state=None, combat_active=False)
-    await db.commit()
-
-
 async def get_state(
     db: AsyncSession,
     *,
