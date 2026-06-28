@@ -20,6 +20,10 @@ async def _skill_check_run(player_input, session_id, campaign_id):
             "status": "pending",
         },
         "npc_context": None,
+        "rest_context": None,
+        "scene_pre_output": None,
+        "is_scene_entry": False,
+        "combat_just_started": False,
     }
 
 

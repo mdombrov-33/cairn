@@ -31,6 +31,7 @@ async def _narrate(
     narrator: AsyncIterator[str],
     turn: Turn,
     db: AsyncSession,
+    session_id: uuid.UUID,
     campaign_id: uuid.UUID,
     namespace: str,
 ) -> AsyncGenerator[str]:
@@ -43,6 +44,7 @@ async def _narrate(
     await service.save_turn_narrative(db, turn_id=turn.id, dm_response=dm_response)
     yield sse("turn_end", {"turn_id": str(turn.id)})
     service.schedule_lore_keeper(dm_response, campaign_id, namespace, turn.id)
+    service.schedule_scene_director_post(session_id, turn.id)
 
 
 @router.post("/{session_id}/turns")
@@ -57,6 +59,7 @@ async def submit(
     )
     campaign_id = uuid.UUID(state["campaign_id"])
     intent = state["intent"]
+    is_scene_entry = state["is_scene_entry"]
     # Combat is resolved by the tool loop and rest has its own context block — neither
     # uses the layered DM context, so skip assembling it for those.
     dm_context = ""
@@ -70,14 +73,16 @@ async def submit(
 
             if intent == "combat_action":
                 narrator = combat_resolver.run(body.player_input, str(session_id))
-                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
 
             elif intent == "skill_check":
                 check = state["check"]
                 assert check is not None
                 setup_chunks: list[str] = []
-                async for chunk in scene_narrator.run(body.player_input, context=dm_context):
+                async for chunk in scene_narrator.run(
+                    body.player_input, context=dm_context, is_scene_entry=is_scene_entry
+                ):
                     setup_chunks.append(chunk)
                     yield sse("token", {"text": chunk})
                 setup_prose = "".join(setup_chunks)
@@ -95,20 +100,24 @@ async def submit(
 
             elif intent == "npc_dialogue":
                 npc_context = state["npc_context"] or ""
-                narrator = scene_narrator.run(body.player_input, context=_join_context(dm_context, npc_context))
-                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                narrator = scene_narrator.run(
+                    body.player_input,
+                    context=_join_context(dm_context, npc_context),
+                    is_scene_entry=is_scene_entry,
+                )
+                async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
 
             elif intent == "rest_action":
                 # Rest context uses a special prefix the narrator keys on; keep it standalone.
                 rest_ctx = state["rest_context"] or ""
                 narrator = scene_narrator.run(body.player_input, context=rest_ctx)
-                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
 
             else:  # narrative_action
-                narrator = scene_narrator.run(body.player_input, context=dm_context)
-                async for event in _narrate(narrator, turn, db, campaign_id, namespace):
+                narrator = scene_narrator.run(body.player_input, context=dm_context, is_scene_entry=is_scene_entry)
+                async for event in _narrate(narrator, turn, db, session_id, campaign_id, namespace):
                     yield event
         finally:
             current_turn_id.reset(token)
@@ -184,6 +193,7 @@ async def resolve(
         )
         yield sse("turn_end", {"turn_id": str(turn.id)})
         service.schedule_lore_keeper(dm_response, campaign_id, namespace, turn.id)
+        service.schedule_scene_director_post(session_id, turn.id)
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
 

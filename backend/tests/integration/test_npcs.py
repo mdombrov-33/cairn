@@ -88,6 +88,10 @@ async def test_npc_dialogue_turn_emits_tokens(client: AsyncClient) -> None:
             "npc_name": npc_name,
             "check": None,
             "npc_context": f'[{npc_name}]: "Aye, what\'ll it be?"',
+            "rest_context": None,
+            "scene_pre_output": None,
+            "is_scene_entry": False,
+            "combat_just_started": False,
         }
 
     with patch("cairn.pipelines.turn_graph.run", side_effect=_npc_run):
@@ -124,6 +128,10 @@ async def test_npc_dialogue_persists_dm_response(client: AsyncClient) -> None:
             "npc_name": npc_name,
             "check": None,
             "npc_context": f'[{npc_name}]: "Hello there."',
+            "rest_context": None,
+            "scene_pre_output": None,
+            "is_scene_entry": False,
+            "combat_just_started": False,
         }
 
     with patch("cairn.pipelines.turn_graph.run", side_effect=_npc_run):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any, TypedDict
 
@@ -11,12 +12,23 @@ from cairn.agents import dialogue as dialogue_agent
 from cairn.agents import (
     intent_router,
     rules_lawyer,
+    scene_director,
+    scene_summarizer,
 )
+from cairn.context import current_turn_id
 from cairn.db import client as db_client
+from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
+from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
+from cairn.db.queries import scenes as scene_queries
+from cairn.db.queries import sessions as session_queries
+from cairn.db.queries import turns as turn_queries
+from cairn.domain.exceptions import NotFoundError
+from cairn.domain.services import scene_director_context
+from cairn.domain.services.combat import state as combat_state_service
 from cairn.pipelines.checkpointer import get_checkpointer
-from cairn.types import CheckData, DialogueEntity, HelperRef
+from cairn.types import CheckData, DialogueEntity, HelperRef, ScenePreOutput
 
 log = structlog.get_logger()
 
@@ -30,6 +42,9 @@ class TurnState(TypedDict):
     check: CheckData | None  # set by resolve_skill_check; consumed by route layer
     npc_context: str | None  # set by resolve_dialogue; consumed by route layer
     rest_context: str | None  # set by resolve_rest; consumed by route layer
+    scene_pre_output: ScenePreOutput | None  # set by scene_director_pre; None when combat already active
+    is_scene_entry: bool  # set by scene_create; consumed by route layer for narration
+    combat_just_started: bool  # set by combat_entry when init_state ran
 
 
 async def _route_intent(state: TurnState) -> dict[str, Any]:
@@ -154,6 +169,144 @@ async def _resolve_dialogue(state: TurnState) -> dict[str, Any]:
         return {"npc_context": f'[{companion.name}]: "{result.dialogue}"'}
 
 
+async def _scene_director_pre(state: TurnState) -> dict[str, Any]:
+    """Meta-routing pass that runs before every turn.
+
+    Skips the LLM call entirely when combat is already active (the director's pulls are
+    meaningless mid-combat). A pending scene transition from a prior post-pass push is
+    folded into this turn's pull so the routing conditional stays purely state-driven.
+    """
+    session_id = uuid.UUID(state["session_id"])
+    async with db_client.get_session() as db:
+        session = await session_queries.get_session(db, session_id)
+        if session.combat_active:
+            return {"scene_pre_output": None}
+        pending = session.pending_transition
+        context = await scene_director_context.build_pre_input_context(db, session_id, state["player_input"])
+
+    pre = await scene_director.run_pre(context)
+    if pre["scene_transition_pull"] is None and pending is not None:
+        pre = {
+            "combat_trigger": pre["combat_trigger"],
+            "scene_transition_pull": pending,
+            "pacing_nudge": pre["pacing_nudge"],
+        }
+    return {"scene_pre_output": pre}
+
+
+def _after_pre(state: TurnState) -> str:
+    pre = state["scene_pre_output"]
+    if pre is None:
+        return "combat_terminus"  # combat already active — straight to resolution
+    trigger = pre["combat_trigger"]
+    if trigger and trigger["hostile_npc_ids"]:
+        return "combat_entry"
+    if pre["scene_transition_pull"] is not None:
+        return "scene_create"
+    return "route_intent"
+
+
+async def _combat_entry(state: TurnState) -> dict[str, Any]:
+    """Initialize combat from the Scene Director's detected hostile NPCs.
+
+    Invalid or out-of-campaign ids are dropped; if nothing valid remains, the turn falls
+    through to normal intent routing instead of starting an empty combat.
+    """
+    pre = state["scene_pre_output"]
+    trigger = pre["combat_trigger"] if pre else None
+    session_id = uuid.UUID(state["session_id"])
+    campaign_id = uuid.UUID(state["campaign_id"])
+
+    enemies: list[dict] = []
+    async with db_client.get_session() as db:
+        for raw_id in trigger["hostile_npc_ids"] if trigger else []:
+            try:
+                npc = await npc_queries.get_npc(db, uuid.UUID(raw_id))
+            except NotFoundError, ValueError:
+                log.warning("combat_trigger_invalid_npc", npc_id=raw_id)
+                continue
+            if npc.campaign_id != campaign_id:
+                log.warning("combat_trigger_foreign_npc", npc_id=raw_id)
+                continue
+            enemies.append({"type": "npc", "id": str(npc.id)})
+
+        if not enemies:
+            return {"combat_just_started": False}
+        await combat_state_service.init_state(db, session_id, enemies)
+
+    log.info("combat_entered", session_id=state["session_id"], enemy_count=len(enemies))
+    return {"combat_just_started": True}
+
+
+def _after_combat_entry(state: TurnState) -> str:
+    return "combat_terminus" if state["combat_just_started"] else "route_intent"
+
+
+async def _combat_terminus(state: TurnState) -> dict[str, Any]:
+    """Terminal for combat turns — the route layer streams combat_resolver on this intent."""
+    return {"intent": "combat_action"}
+
+
+async def _scene_create(state: TurnState) -> dict[str, Any]:
+    """Apply a scene transition: summarize and close the old scene, open the new one.
+
+    The current turn is re-stamped onto the new scene so its narration is recorded there.
+    A transition to an unknown location is dropped (pending_transition cleared) rather than
+    stranding the session.
+    """
+    session_id = uuid.UUID(state["session_id"])
+    campaign_id = uuid.UUID(state["campaign_id"])
+    pre = state["scene_pre_output"]
+    transition = pre["scene_transition_pull"] if pre else None
+    if transition is None:
+        return {"is_scene_entry": False}
+
+    try:
+        target_location_id: uuid.UUID | None = uuid.UUID(transition["to_location_id"])
+    except ValueError, TypeError:
+        target_location_id = None
+
+    async with db_client.get_session() as db:
+        session = await session_queries.get_session(db, session_id)
+        location = await location_queries.get_location(db, target_location_id) if target_location_id else None
+        if location is None:
+            log.warning("scene_transition_invalid_location", to_location_id=transition["to_location_id"])
+            session.pending_transition = None
+            await db.commit()
+            return {"is_scene_entry": False}
+
+        old_scene = await scene_queries.get_current_scene(db, campaign_id)
+        if old_scene is not None:
+            old_loc_name = ""
+            if old_scene.location_id is not None:
+                old_loc = await location_queries.get_location(db, old_scene.location_id)
+                old_loc_name = old_loc.name if old_loc else ""
+            all_turns = await turn_queries.list_turns(db, session_id)
+            scene_turns = [
+                {"player_input": t.player_input, "dm_response": t.dm_response or ""}
+                for t in all_turns
+                if t.dm_response and t.scene_id == old_scene.id
+            ]
+            summary = await scene_summarizer.run(old_loc_name, old_scene.summary or "", scene_turns)
+            await scene_queries.close_scene(db, old_scene.id, summary=summary, ended_at=datetime.now(UTC))
+
+        campaign = await campaign_queries.get_campaign(db, campaign_id)
+        new_scene = await scene_queries.create_scene(
+            db,
+            campaign_id=campaign_id,
+            location_id=target_location_id,
+            act_index=campaign.current_act_index,
+        )
+        turn_id = current_turn_id.get()
+        if turn_id is not None:
+            await turn_queries.set_turn_scene(db, turn_id, new_scene.id)
+        session.pending_transition = None
+        await db.commit()
+
+    log.info("scene_created", session_id=state["session_id"], location=location.name)
+    return {"is_scene_entry": True}
+
+
 def _pick_node(state: TurnState) -> str:
     intent = state["intent"]
     if intent == "skill_check":
@@ -168,12 +321,24 @@ def _pick_node(state: TurnState) -> str:
 @lru_cache(maxsize=1)
 def _get_graph() -> Any:
     builder: StateGraph = StateGraph(TurnState)
+    builder.add_node("scene_director_pre", _scene_director_pre)
+    builder.add_node("combat_entry", _combat_entry)
+    builder.add_node("combat_terminus", _combat_terminus)
+    builder.add_node("scene_create", _scene_create)
     builder.add_node("route_intent", _route_intent)
     builder.add_node("resolve_skill_check", _resolve_skill_check)
     builder.add_node("resolve_dialogue", _resolve_dialogue)
     builder.add_node("resolve_rest", _resolve_rest)
 
-    builder.add_edge(START, "route_intent")
+    builder.add_edge(START, "scene_director_pre")
+    builder.add_conditional_edges(
+        "scene_director_pre",
+        _after_pre,
+        ["combat_terminus", "combat_entry", "scene_create", "route_intent"],
+    )
+    builder.add_conditional_edges("combat_entry", _after_combat_entry, ["combat_terminus", "route_intent"])
+    builder.add_edge("combat_terminus", END)
+    builder.add_edge("scene_create", "route_intent")
     builder.add_conditional_edges("route_intent", _pick_node)
     builder.add_edge("resolve_skill_check", END)
     builder.add_edge("resolve_dialogue", END)
@@ -199,6 +364,9 @@ async def run(
             check=None,
             npc_context=None,
             rest_context=None,
+            scene_pre_output=None,
+            is_scene_entry=False,
+            combat_just_started=False,
         ),
         config=config,
     )

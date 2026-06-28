@@ -4,7 +4,7 @@ import uuid
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.agents import lore_keeper
+from cairn.agents import lore_keeper, scene_director
 from cairn.context import current_turn_id
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
@@ -18,6 +18,7 @@ from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
 from cairn.domain.services import loot as loot_service
+from cairn.domain.services import scene_director_context
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
 from cairn.types import CheckData, LootIntent
@@ -49,32 +50,22 @@ async def prepare(
     )
     # Commit the turn before any graph/streaming work so the combat emitter (which opens
     # its own session) can append events to it. Set current_turn_id around the graph run so
-    # prepare-phase nodes (e.g. rest) record their events on this turn.
+    # prepare-phase nodes (e.g. rest, scene_create) record their work on this turn.
     await db.commit()
 
-    if db_session.combat_active:
-        state = TurnState(
-            session_id=str(session_id),
-            campaign_id=str(db_session.campaign_id),
+    # The graph runs for every turn now — the Scene Director's pre-pass decides whether the
+    # turn enters/continues combat, transitions scenes, or routes to a normal resolver.
+    ctx_token = current_turn_id.set(turn.id)
+    try:
+        state = await turn_graph.run(
             player_input=player_input,
-            intent="combat_action",
-            npc_name=None,
-            check=None,
-            npc_context=None,
-            rest_context=None,
+            session_id=session_id,
+            campaign_id=db_session.campaign_id,
         )
-    else:
-        ctx_token = current_turn_id.set(turn.id)
-        try:
-            state = await turn_graph.run(
-                player_input=player_input,
-                session_id=session_id,
-                campaign_id=db_session.campaign_id,
-            )
-        finally:
-            current_turn_id.reset(ctx_token)
-        if state["intent"] is None:
-            raise AgentError("IntentRouter returned no intent")
+    finally:
+        current_turn_id.reset(ctx_token)
+    if state["intent"] is None:
+        raise AgentError("IntentRouter returned no intent")
 
     log.info(
         "turn_prepared",
@@ -123,7 +114,38 @@ def schedule_lore_keeper(
     namespace: str,
     source_turn_id: uuid.UUID,
 ) -> None:
-    asyncio.create_task(run_lore_keeper(dm_response, campaign_id, namespace, source_turn_id))
+    asyncio.create_task(run_lore_keeper(dm_response, campaign_id, namespace, source_turn_id), name="cairn-bg")
+
+
+async def run_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
+    """Observe the completed turn and apply the Scene Director's post-pass decisions.
+
+    Fire-and-forget, mirroring the LoreKeeper. A scene-transition push is recorded as
+    Session.pending_transition (applied on the next turn's pre-pass); act progress advances
+    the campaign's act index. Time advancement is handled at the scene boundary, not here.
+    """
+    try:
+        async with db_client.get_sessionmaker()() as db:
+            context = await scene_director_context.build_post_response_context(db, session_id, turn_id)
+
+        post = await scene_director.run_post(context)
+        if post["scene_transition_push"] is None and not post["act_progress"]:
+            return
+
+        async with db_client.get_sessionmaker()() as db, db.begin():
+            session = await session_queries.get_session(db, session_id)
+            if post["scene_transition_push"] is not None:
+                session.pending_transition = post["scene_transition_push"]
+            if post["act_progress"]:
+                campaign = await campaign_queries.get_campaign(db, session.campaign_id)
+                campaign.current_act_index += 1
+        log.info("scene_director_post_done", session_id=str(session_id))
+    except Exception as exc:
+        log.error("scene_director_post_failed", error=str(exc), session_id=str(session_id))
+
+
+def schedule_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
+    asyncio.create_task(run_scene_director_post(session_id, turn_id), name="cairn-bg")
 
 
 async def list_turns(db: AsyncSession, *, session_id: uuid.UUID, owner_id: str) -> list[Turn]:

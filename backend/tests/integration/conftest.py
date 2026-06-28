@@ -22,14 +22,29 @@ _FAKE_LORE_JSON = '[{"type": "NPC", "key": "old_grim_bartender", "content": "Old
 
 
 async def _fake_turn_graph_run(player_input, session_id, campaign_id):
+    # Mirror the real graph's combat short-circuit: an active combat resolves as a
+    # combat_action. Everything else falls through to narrative_action (the Scene Director
+    # and intent router are exercised in unit tests, not through this integration fake).
+    import uuid
+
+    from cairn.db.queries import sessions as session_queries
+
+    async with db_client.get_session() as db:
+        db_session = await session_queries.get_session(db, uuid.UUID(str(session_id)))
+        intent = "combat_action" if db_session.combat_active else "narrative_action"
+
     return {
         "session_id": str(session_id),
         "campaign_id": str(campaign_id),
         "player_input": player_input,
-        "intent": "narrative_action",
+        "intent": intent,
         "npc_name": None,
         "check": None,
         "npc_context": None,
+        "rest_context": None,
+        "scene_pre_output": None,
+        "is_scene_entry": False,
+        "combat_just_started": False,
     }
 
 
@@ -90,6 +105,15 @@ def _postgres_and_migrate() -> Iterator[None]:
 @pytest_asyncio.fixture(autouse=True)
 async def _truncate_tables() -> AsyncIterator[None]:
     yield
+
+    # Drain fire-and-forget background tasks (lore_keeper, scene_director_post) before
+    # truncating — their in-flight queries otherwise deadlock against the TRUNCATE's
+    # exclusive lock. They're tagged "cairn-bg" so we wait only on ours, with a safety timeout.
+    import asyncio
+
+    bg = [t for t in asyncio.all_tasks() if t.get_name() == "cairn-bg"]
+    if bg:
+        await asyncio.wait(bg, timeout=5)
 
     engine = db_client.get_engine()
     async with engine.begin() as conn:
