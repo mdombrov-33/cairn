@@ -25,7 +25,7 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.domain.exceptions import NotFoundError
-from cairn.domain.services import scene_director_context
+from cairn.domain.services import campaign_view, scene_director_context
 from cairn.domain.services.combat import state as combat_state_service
 from cairn.pipelines.checkpointer import get_checkpointer
 from cairn.types import CheckData, DialogueEntity, HelperRef, ScenePreOutput
@@ -282,11 +282,7 @@ async def _scene_create(state: TurnState) -> dict[str, Any]:
                 old_loc = await location_queries.get_location(db, old_scene.location_id)
                 old_loc_name = old_loc.name if old_loc else ""
             all_turns = await turn_queries.list_turns(db, session_id)
-            scene_turns = [
-                {"player_input": t.player_input, "dm_response": t.dm_response or ""}
-                for t in all_turns
-                if t.dm_response and t.scene_id == old_scene.id
-            ]
+            scene_turns = campaign_view.scene_turn_views(all_turns, old_scene.id)
             summary = await scene_summarizer.run(old_loc_name, old_scene.summary or "", scene_turns)
             await scene_queries.close_scene(db, old_scene.id, summary=summary, ended_at=datetime.now(UTC))
 

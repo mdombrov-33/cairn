@@ -2,13 +2,12 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.db.queries import campaign_templates as template_queries
-from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.db.queries import worlds as world_queries
+from cairn.domain.services import campaign_view
 
 # How much verbatim recent history to include. Day summaries cover everything older;
 # RAG over world lore + world bible (later slice) covers the long tail by relevance.
@@ -46,9 +45,7 @@ async def build_dm_context(db: AsyncSession, session_id: uuid.UUID) -> str:
       7. Recent turns verbatim (last RECENT_TURNS completed).
     """
     session = await session_queries.get_session(db, session_id)
-    campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-    template = await template_queries.get(db, campaign.template_id)
-    world = await world_queries.get(db, template.world_id)
+    campaign, template, world = await campaign_view.world_chain(db, session.campaign_id)
 
     sections: list[str] = []
 
@@ -64,14 +61,12 @@ async def build_dm_context(db: AsyncSession, session_id: uuid.UUID) -> str:
         )
 
     # Layer 2 — current act.
-    acts = template.acts or []
-    if 0 <= campaign.current_act_index < len(acts):
-        act = acts[campaign.current_act_index]
-        core_events = act.get("core_events") or []
-        events_text = "\n".join(f"- {e}" for e in core_events)
+    act = campaign_view.act_at(template, campaign.current_act_index)
+    if act:
+        events_text = "\n".join(f"- {e}" for e in act["core_events"])
         sections.append(
-            f"## Current act: {act.get('title', '')}\n"
-            f"{act.get('premise', '')}\n" + (f"Core events:\n{events_text}" if events_text else "")
+            f"## Current act: {act['title']}\n"
+            f"{act['premise']}\n" + (f"Core events:\n{events_text}" if events_text else "")
         )
 
     # Layer 4 — recent day summaries.

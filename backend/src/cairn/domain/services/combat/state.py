@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
 from cairn.db.models.character import Character
+from cairn.db.models.npc import NPC
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
@@ -14,7 +15,70 @@ from cairn.domain.services import death_mode
 from cairn.domain.services.combat.emitter import emit
 from cairn.domain.services.combat.rolls import dex_mod, parse_and_roll
 from cairn.domain.services.rng import session_rng
-from cairn.types import Combatant, CombatantTeam, CombatEffect, CombatState
+from cairn.types import (
+    CharacterCombatant,
+    Combatant,
+    CombatantTeam,
+    CombatEffect,
+    CombatState,
+    MonsterCombatant,
+    NpcCombatant,
+)
+
+
+def _character_combatant(char: Character, initiative_roll: int) -> CharacterCombatant:
+    return {
+        "id": str(char.id),
+        "type": "character",
+        "team": "players",
+        "ai_controlled": char.is_companion,
+        "name": char.name,
+        "initiative_roll": initiative_roll,
+        "initiative_modifier": char.initiative,
+        "zone": None,
+        "conditions": list(char.conditions),
+        "is_alive": char.hp > 0,
+        "is_conscious": char.hp > 0,
+    }
+
+
+def _npc_combatant(npc: NPC, team: CombatantTeam, initiative_roll: int) -> NpcCombatant:
+    return {
+        "id": str(npc.id),
+        "type": "npc",
+        "team": team,
+        "name": npc.name,
+        "initiative_roll": initiative_roll,
+        "initiative_modifier": npc.initiative,
+        "zone": None,
+        "conditions": list(npc.conditions),
+        "is_alive": npc.hp > 0,
+        "is_conscious": npc.hp > 0,
+    }
+
+
+def _monster_combatant(
+    monster: dict, *, name: str, team: CombatantTeam, initiative_roll: int, max_hp: int
+) -> MonsterCombatant:
+    ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
+    return {
+        "id": f"monster-{uuid.uuid4()}",
+        "type": "monster",
+        "team": team,
+        "name": name,
+        "srd_index": monster["index"],
+        "initiative_roll": initiative_roll,
+        "initiative_modifier": dex_mod(monster.get("dexterity", 10)),
+        "zone": None,
+        "hp": max_hp,
+        "max_hp": max_hp,
+        "ac": ac,
+        "conditions": [],
+        "is_alive": True,
+        "is_conscious": True,
+        "actions": monster.get("actions", []),
+        "special_abilities": monster.get("special_abilities", []),
+    }
 
 
 async def init_state(
@@ -32,69 +96,29 @@ async def init_state(
 
     characters = await character_queries.get_party_for_session(db, session_id)
     for char in characters:
-        combatants.append(
-            {
-                "id": str(char.id),
-                "type": "character",
-                "team": "players",
-                "ai_controlled": char.is_companion,
-                "name": char.name,
-                "initiative_roll": rng.randint(1, 20) + char.initiative,
-                "initiative_modifier": char.initiative,
-                "zone": None,
-                "conditions": list(char.conditions),
-                "is_alive": char.hp > 0,
-                "is_conscious": char.hp > 0,
-            }
-        )
+        combatants.append(_character_combatant(char, rng.randint(1, 20) + char.initiative))
 
     for enemy in enemies:
         team = cast(CombatantTeam, enemy.get("team", "enemies"))
         if enemy["type"] == "npc":
             npc = await npc_queries.get_npc(db, uuid.UUID(str(enemy["id"])))
-            combatants.append(
-                {
-                    "id": str(npc.id),
-                    "type": "npc",
-                    "team": team,
-                    "name": npc.name,
-                    "initiative_roll": rng.randint(1, 20) + npc.initiative,
-                    "initiative_modifier": npc.initiative,
-                    "zone": None,
-                    "conditions": list(npc.conditions),
-                    "is_alive": npc.hp > 0,
-                    "is_conscious": npc.hp > 0,
-                }
-            )
+            combatants.append(_npc_combatant(npc, team, rng.randint(1, 20) + npc.initiative))
         elif enemy["type"] == "monster":
             monster = rules.get_monster(enemy["name"])
             if monster is None:
                 raise NotFoundError(f"monster '{enemy['name']}' not found in SRD", code="monster_not_found")
             dex = dex_mod(monster.get("dexterity", 10))
-            ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
             count = max(1, enemy.get("count", 1))
             for i in range(count):
-                max_hp = parse_and_roll(monster["hit_points_roll"], rng)
                 label = monster["name"] if count == 1 else f"{monster['name']} {i + 1}"
                 combatants.append(
-                    {
-                        "id": f"monster-{uuid.uuid4()}",
-                        "type": "monster",
-                        "team": "enemies",
-                        "name": label,
-                        "srd_index": monster["index"],
-                        "initiative_roll": rng.randint(1, 20) + dex,
-                        "initiative_modifier": dex,
-                        "zone": None,
-                        "hp": max_hp,
-                        "max_hp": max_hp,
-                        "ac": ac,
-                        "conditions": [],
-                        "is_alive": True,
-                        "is_conscious": True,
-                        "actions": monster.get("actions", []),
-                        "special_abilities": monster.get("special_abilities", []),
-                    }
+                    _monster_combatant(
+                        monster,
+                        name=label,
+                        team="enemies",
+                        initiative_roll=rng.randint(1, 20) + dex,
+                        max_hp=parse_and_roll(monster["hit_points_roll"], rng),
+                    )
                 )
 
     combatants.sort(
@@ -251,57 +275,21 @@ async def add_combatant(
 
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(name_or_id))
-        entry: Combatant = {
-            "id": str(char.id),
-            "type": "character",
-            "team": "players",
-            "ai_controlled": char.is_companion,
-            "name": char.name,
-            "initiative_roll": initiative_roll,
-            "initiative_modifier": char.initiative,
-            "zone": None,
-            "conditions": list(char.conditions),
-            "is_alive": char.hp > 0,
-            "is_conscious": char.hp > 0,
-        }
+        entry: Combatant = _character_combatant(char, initiative_roll)
     elif combatant_type == "npc":
         npc = await npc_queries.get_npc(db, uuid.UUID(name_or_id))
-        entry = {
-            "id": str(npc.id),
-            "type": "npc",
-            "team": team_t,
-            "name": npc.name,
-            "initiative_roll": initiative_roll,
-            "initiative_modifier": npc.initiative,
-            "zone": None,
-            "conditions": list(npc.conditions),
-            "is_alive": npc.hp > 0,
-            "is_conscious": npc.hp > 0,
-        }
+        entry = _npc_combatant(npc, team_t, initiative_roll)
     elif combatant_type == "monster":
         monster = rules.get_monster(name_or_id)
         if monster is None:
             return {"error": f"Monster '{name_or_id}' not found in SRD."}
-        max_hp = parse_and_roll(monster["hit_points_roll"])
-        ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
-        entry = {
-            "id": f"monster-{uuid.uuid4()}",
-            "type": "monster",
-            "team": team_t,
-            "name": monster["name"],
-            "srd_index": monster["index"],
-            "initiative_roll": initiative_roll,
-            "initiative_modifier": dex_mod(monster.get("dexterity", 10)),
-            "zone": None,
-            "hp": max_hp,
-            "max_hp": max_hp,
-            "ac": ac,
-            "conditions": [],
-            "is_alive": True,
-            "is_conscious": True,
-            "actions": monster.get("actions", []),
-            "special_abilities": monster.get("special_abilities", []),
-        }
+        entry = _monster_combatant(
+            monster,
+            name=monster["name"],
+            team=team_t,
+            initiative_roll=initiative_roll,
+            max_hp=parse_and_roll(monster["hit_points_roll"]),
+        )
     else:
         return {"error": f"Unknown combatant_type: {combatant_type!r}"}
 

@@ -10,14 +10,12 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.session import Session
-from cairn.db.queries import campaign_templates as template_queries
-from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
-from cairn.db.queries import worlds as world_queries
+from cairn.domain.services import campaign_view
 
 RECENT_TURNS_IN_SCENE = 5
 
@@ -39,9 +37,7 @@ _TIME_OF_DAY = (
 
 
 async def _time_label(db: AsyncSession, session: Session) -> str:
-    campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-    template = await template_queries.get(db, campaign.template_id)
-    world = await world_queries.get(db, template.world_id)
+    _, _, world = await campaign_view.world_chain(db, session.campaign_id)
     hours_per_day = int((world.calendar or {}).get("hours_per_day") or 24)
 
     day = session.in_game_hours_elapsed // hours_per_day + 1
@@ -51,17 +47,12 @@ async def _time_label(db: AsyncSession, session: Session) -> str:
 
 
 async def _current_act(db: AsyncSession, campaign_id: uuid.UUID) -> dict[str, Any]:
-    campaign = await campaign_queries.get_campaign(db, campaign_id)
-    template = await template_queries.get(db, campaign.template_id)
-    acts = template.acts or []
-    if 0 <= campaign.current_act_index < len(acts):
-        act = acts[campaign.current_act_index]
-        return {
-            "title": act.get("title", ""),
-            "premise": act.get("premise", ""),
-            "core_events": act.get("core_events") or [],
-        }
-    return {"title": "", "premise": "", "core_events": []}
+    campaign, template, _ = await campaign_view.world_chain(db, campaign_id)
+    return campaign_view.act_at(template, campaign.current_act_index) or {
+        "title": "",
+        "premise": "",
+        "core_events": [],
+    }
 
 
 def _reachable_locations(connections: dict[str, Any]) -> list[dict[str, str]]:
@@ -130,11 +121,7 @@ async def build_post_response_context(db: AsyncSession, session_id: uuid.UUID, t
             location_name = location.name
 
     all_turns = await turn_queries.list_turns(db, session_id)
-    scene_turns = [
-        {"player_input": t.player_input, "dm_response": t.dm_response or ""}
-        for t in all_turns
-        if t.dm_response and (scene is None or t.scene_id == scene.id)
-    ]
+    scene_turns = campaign_view.scene_turn_views(all_turns, scene.id if scene else None)
 
     combat_events = [e for e in (turn.events or []) if e.get("type") not in _NON_COMBAT_EVENTS]
 
