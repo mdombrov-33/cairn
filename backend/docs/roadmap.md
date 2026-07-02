@@ -204,7 +204,7 @@ These are the experience-level goals the code serves. Keep them in mind when sco
 
 **SRD is the source of truth for rules.** Features are string names; LLM queries SRD lookup tools at runtime.
 
-**Reactions are system-detected, not LLM-detected.** Reaction bus fires deterministically. (Slice 6.)
+**Reactions are engine-resolved, not LLM-invented.** v1 ships one reaction — opportunity attacks, resolved inline in `move_combatant` (Slice 9). The general reaction engine (Counterspell / Shield / readied / interrupts, settings-gated) is its own dedicated slice after zones; there is **no** reaction bus in v1.
 
 **Action economy is tool-enforced.** `use_action`, `use_bonus_action`, `use_reaction`, `spend_movement`.
 
@@ -239,12 +239,14 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 
 - ✅ **Slice 7** — reimagined & locked (see below).
 - ✅ **Slice 8** — reimagined & locked (scene depth + pacing; state via resolver + Scene Director passes, no mid-stream tools).
+- ✅ **Slice 9** — reimagined & locked (tactical zones + AI movement; feet-mapped movement on real Speed, hard range gate, OA inline; full reaction engine split out to its own slice).
 
 **Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
 
 **PHASE A — Core app + frontend (do now):**
 
 - Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): 8 (scene depth), 9 (zones), 10 (settings), 13 (RAG — Qdrant tool _or_ custom hybrid BM25+RRF+cross-encoder, decided).
+- **Reaction engine (new dedicated slice, after 9).** Split out of Slice 9 during grilling. Turn-interrupt + resume in `combat_ai`/`combat_resolver`, a per-creature reaction registry, Counterspell / Shield / Absorb Elements / readied actions / Sentinel, the SSE reaction-prompt round-trip (player reacts to an AI turn), settings-gated `ai`/`suggest`/`player`. Depends on Slice 9 (triggers are range/position-based). Generalizes Slice 9's inline OA into it. Grill separately.
 - **MCP integration** — fold into a core slice. OPEN: MCP *server* (expose Cairn's 50+ tools to external clients) vs *client* (pull external MCP tool servers into our agents via `langchain-mcp-adapters`) — opposite things, must decide.
 - **UI / frontend (dedicated slice).** Grill separately against the backend features (old Slice 15 is a 20-decision grab-bag). Enhance the design in `backend/docs/ui-temp-reference/` (primary: `project/Cairn App v2.html`) to fit *current* functionality — the mockups predate most features. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.**
 
@@ -890,7 +892,7 @@ Concentration was half-built before Slice 6 (`Character/NPC.concentration: Strin
   - PC/companion: `is_unconscious=True`, no death save sequence, no mode rules fire.
   - Monster/NPC: unconscious, alive, not dead.
   - Emit `combatant_knocked_out` event.
-  - PHB constraint (subdue only valid for melee attacks) honored via prompt instruction in Slice 6; mechanical enforcement deferred to Slice 9 with weapon-range awareness.
+  - PHB constraint (subdue only valid for melee attacks) honored via prompt instruction in Slice 6; mechanical enforcement lands in Slice 9 (`apply_damage(subdue=True)` requires the attacker in melee range of the target).
 - **Combatant cap fix**: replace `range(20)` in combat_resolver with `range(len(combat_state["combatants"]))`. One-liner.
 - **Combat resolver inner-loop failure** (Slice 11 owns the full fix; Slice 6 only adds the event): wrap the resolver tool loop in `try/except`. On any exception, emit `combat_step_failed` event with `last_successful_step`, `error_class`, `error_msg`; re-raise so the route layer can return 500 + partial state in the SSE stream. No transactional wrapping in Slice 6 — Slice 11 chooses rollback vs document.
 
@@ -978,7 +980,7 @@ This slice intentionally cut several items the original roadmap placed here. Eac
 | ------------------------------------------------------------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Passive perception (silent/surfaced on scene entry)                                  | Slice 8               | `Campaign.settings.checks` shape documented (Slice 10 resolver wires defaults). `on_demand` mode already works via existing skill_check path.                          |
 | Pacing nudge (`beat_count`, `tension_level`, `mood` on Scene)                        | Slice 8               | `pacing_nudge` field stays in ScenePreOutput schema; Slice 6 prompt always returns null.                                                                               |
-| Reaction bus infrastructure                                                          | Slice 9               | Nothing in Slice 6. Slice 9 designs alongside its first real consumer (OA on zone exit). Concentration auto-save does NOT use the bus — direct branch in apply_damage. |
+| Reaction bus infrastructure                                                          | Reaction-engine slice | Nothing in Slice 6. **No reaction bus in v1.** Slice 9 resolves OA on zone-exit inline in `move_combatant` (auto-taken); the general reaction engine (Counterspell/Shield/interrupts) is its own dedicated slice after zones and generalizes that OA. Concentration auto-save stays a direct branch in `apply_damage`. |
 | Combat-path `use_inspiration` flag                                                   | Slice 15 (UI)         | Service + tool + non-combat skill check path ship now. UI surfaces the toggle for combat.                                                                              |
 | Scene transition pacing (tension-history "after 3 combat scenes push toward social") | Slice 8               | Depends on `tension_level` which is Slice 8. No Slice 6 work.                                                                                                          |
 | `NPC.find_by_name` ranked match + scene-aware filter                                 | Slice 7               | Needs the new profile schema to be meaningful.                                                                                                                         |
@@ -1461,77 +1463,123 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 
 ### Slice 9 — Tactical zones + AI movement
 
-_Depends on: Slice 6 (combat polish), Slice 7 (companion profile for ally_ai prompt)._
+_Reimagined post-6 (grilled 2026-07). Depends on: Slice 6 (combat polish), Slice 7 (companion profile for ally_ai), Slice 8 (scene context feeds `zone_seeder`)._
 
-Zones are the bridge between theater-of-mind ("you're across the room") and grid combat. Zone state lives in `combat_state`. Movement is a tool. Combat AI gets zone context in its prompt. Spells/attacks use SRD ranges mapped to category.
+Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 **named regions** per combat, each combatant in one, distances as categories (`close` / `far` / `out_of_range`). Moving between zones is a tool that spends the mover's **real Speed**. Attack/spell range is a hard legality gate. This is a **node graph, not a grid** — the UI renders regions, not squares.
 
-**Build (zone state in `combat_state`):**
+**Design stance (locked): block the impossible, allow the unwise.** The engine knows range/position as fact and enforces *legality* — an out-of-range action is rejected with a plain reason and control returned, **never** "so move closer." It does not nanny tactics or protect informed-but-bad choices (a Fireball that also catches your ally resolves; the friendly fire lands). The **same** enforcement path serves the human player (via `combat_resolver`) and AI combatants (via `combat_ai`) — range lives in the tool layer, checked once.
 
-- Combat init augments state with:
+**Build — zone state in `combat_state`:**
+
+- Combat init augments state with a `zones` list:
   ```
   "zones": [
     {"id": "tavern_front", "name": "Tavern Front", "description": "near the door",
-     "cover": "none", "difficult_terrain": false, "hazard": null,
+     "cover": "none", "cover_ac_bonus": 0, "cover_save_bonus": 0,
+     "difficult_terrain": false, "hazard": null,
      "distances": {"behind_bar": "close", "stairs": "far"}},
     ...
   ]
   ```
-- Each combatant's `zone: str | None` set to a zone id when combat starts.
-- Zone data sourced from `Location.zones` (already in model). For ad-hoc scenes (e.g., LLM-generated tavern), Scene Director seeds 3–6 zones via a `define_zones` tool.
+- Each combatant's existing `zone: str | None` is filled at init (never left None — see placement).
+- `distances[other]` is a category (`close` / `far`); an absent entry ⇒ `out_of_range`. Feet cost of a hop: `close` = 30ft, `far` = 60ft (doubled if the destination has `difficult_terrain`).
 
-**Build (zone tools):**
+**Build — zone seeding (authored wins, else lazy LLM):**
 
-- `move_combatant(combatant_id, target_zone)` — checks: target zone exists, movement budget covers it (close = 30ft, far = 60ft+, depending on `distances`), no condition blocks movement (prone halves, grappled blocks). Updates combatant's zone, decrements movement budget, emits `combatant_moved` event.
-- `get_combatants_in_zone(zone_id)` — for AoE targeting; lists combatants currently in zone.
-- `get_zones_in_range(from_zone, range_category)` — returns zones at `close` or `far` from the source zone; used by spell/attack range checking.
-- `define_zones(session_id, zones: list[{name, description, ...}])` — Scene Director seeds zones when combat starts in a location without predefined zones.
+- At `start_combat`: if the scene's `Location.zones` is non-empty → use it (authored path).
+- Else fire ONE structured-output pass, **`zone_seeder`** (new agent), reading the current scene description (Slice 8 `authored` + narrative context) → returns 3–6 zones (distances / cover / terrain / hazard) **plus** a per-team starting placement.
+- Parse-safe: on `AgentError` / parse failure, fall back to a single `open_ground` zone. Combat never blocks on seeding.
+- Synchronous, before initiative. **No AI-callable `define_zones` tool** (dropped) — zones are seeded once at combat start and are otherwise immutable in v1.
 
-**Build (range mapping for spells/attacks):**
+**Build — initial placement:**
+
+- Deterministic default: all `players`-team combatants → `zones[0]`; all `enemies`-team → `zones[1]` (or `zones[0]` if only one zone exists).
+- If `zone_seeder` ran, its per-team placement overrides the default (it knows the fiction — ambush, standoff).
+- Hard guarantee: every combatant has a non-None `zone` after init.
+
+**Build — speed fix (folded in; latent bug today):**
+
+- `_character_combatant` / `_npc_combatant` / `_monster_combatant` now store `speed` (from `char.speed` / `npc.speed` / monster SRD `speed`).
+- `advance_turn` seeds `movement_remaining` from that combatant's `speed`, **not** the hardcoded `30` (`state.py:220`).
+- `spend_movement` / `spend_economy` defaults stop assuming 30 (seed from the combatant's stored speed).
+
+**Build — zone tools (register in `COMBAT_TOOLS`):**
+
+- `move_combatant(combatant_id, target_zone)`:
+  - validates the target zone exists and is reachable (a `distances` category is present).
+  - computes feet cost (`close` = 30 / `far` = 60, ×2 if destination `difficult_terrain`); rejects if `movement_remaining` can't cover it (factual reason — the player/AI re-decides: Dash, shorter hop, different action).
+  - condition gate: `grappled` / `restrained` block movement. Other movement-affecting conditions (prone crawl-cost, etc.) stay prompt-level in v1.
+  - **OA on exit (inline, auto-taken):** before leaving, for each ENEMY of the mover in the *current* zone with a melee weapon and an unused reaction → resolve an opportunity attack right there (roll to-hit, `apply_damage`, mark `reaction_used`, emit `opportunity_attack`). Auto-taken — a beneficial OA is ~always worth it. **This is the only reaction in v1.**
+  - on success: update `zone`, `spend_movement`, emit `combatant_moved`.
+- `get_combatants_in_zone(zone_id)` — occupants of a zone; for AoE targeting.
+- `get_zones_in_range(from_zone, range_category)` — zones at `close` / `far` from the source; read-only, for range self-check.
+
+**Build — range mapping + hard gate:**
 
 - `services/combat/range.py::srd_range_to_category(srd_range_str) -> "self" | "touch" | "close" | "far" | "out_of_range"`:
-  - `"Self"` → self.
-  - `"Touch"` or `"5 feet"` → touch (same zone, adjacent combatant).
-  - `"15 feet"` to `"30 feet"` → close (same zone or `close`-distance zone).
-  - `"60 feet"` to `"120 feet"` → far (any non-`out_of_range` zone).
-  - `> 120 feet` → far for v1 (no sniper-tier zones).
-- Attack tool (when added) validates `target_zone` reachable from `attacker_zone` by weapon range.
-- Spell-casting tool validates `target_zone` reachable from `caster_zone` by spell range.
+  - `"Self"` → self; `"Touch"` / `"5 feet"` → touch (same zone); `"10"–"30 feet"` → close; `"60"–"120 feet"` → far; `>120` → far (no sniper-tier zones in v1).
+- Effect tools gain **optional** range params; when present, the tool computes attacker/origin-zone → target-zone category and **rejects out-of-range** with a plain reason:
+  - `apply_damage` += `attacker_id`, `weapon_range_ft` (single-target attack). Omitted (environmental / DoT) ⇒ ungated.
+  - `apply_aoe_damage` += `origin_zone`, `spell_range_ft` (the AoE point must be within spell range of the caster; targets are `get_combatants_in_zone(origin_zone)`).
+  - `cast_concentration_spell` += `spell_range_ft` (already has `caster_id` + `target_id`).
+- **Subdue enforcement** (deferred from Slice 6): `apply_damage(subdue=True)` requires the attacker in melee range (same / touch zone) of the target.
 
-**Build (cover and terrain — minimal):**
+**Build — cover & terrain (minimal):**
 
-- `apply_damage`/saving-throw tools read target zone's `cover` and apply +2/+5 AC or `+2`/`+5` save bonus (`cover_ac_bonus`, `cover_save_bonus` already in seed).
-- `difficult_terrain` doubles movement cost when entering that zone.
-- `hazard` (lava, spikes) triggers DM narration (no auto-damage in v1 — DM decides when to trigger).
+- **Cover-AC is advisory** (there is no engine to-hit): the roller (`combat_ai` / `combat_resolver`) is *told* the target's `cover_ac_bonus` ("half cover, +2 AC") in the zone block and applies it in its narrated to-hit. Hard-enforcing it would require building engine to-hit — out of scope, consistent with the range stance (block illegal, don't compute the roll).
+- **Cover-save is hard**: `apply_aoe_damage` reads each target zone's `cover_save_bonus` and adds it to the save (it already rolls saves).
+- `difficult_terrain` → doubles the hop feet cost (in `move_combatant`).
+- `hazard` (lava / spikes) → DM-narrated only; no auto-damage in v1.
 
-**Build (combat AI prompt updates):**
+**Build — combat AI + resolver prompt updates:**
 
-- `ally_ai/v1.md` and `enemy_ai/v1.md` rewrites include zone context block:
+- `ally_ai/v1.md`, `enemy_ai/v1.md`, **and the `combat_resolver` prompt** (the human player's action path) get a zone-context block:
   ```
   ## Battle map
   You are at: tavern_front (cover: none)
   Allies at: behind_bar (close)
-  Enemies at: stairs (far, half cover)
+  Enemies at: stairs (far, half cover +2 AC)
+  Your reach: melee = same zone; longbow = far
   ```
-- AI uses zone language: "I move from tavern_front to behind_bar and shove the guard."
-- Spell-range checking is automatic — AI calls `cast_spell(target_zone=X)`, system rejects if out of range with a clear error message the AI can react to.
+- AI / resolver use zone language ("I move to behind_bar and shove the guard"); range rejections come back as tool errors they re-plan around.
 
-**Build (UI signal):**
+**Build — UI data contract (rendering deferred to the UI slice):**
 
-- `combat_state.zones` exposed in combat tracker (Slice 15). Player sees a zone list with combatant icons.
+- Slice 9's only UI obligation: expose `combat_state.zones` (all fields) + each combatant's `zone` as the source of truth for a battle map.
+- **Captured for the UI slice:** when `combat_active`, show a **zone-region map** — blobs / nodes with distance-labeled links and cover / hazard icons, with mini combatant avatars pinned per region. **Not a grid** (the backend isn't one). Open (UI slice): combat-only map vs. a persistent map; note an *exploration* map is a separate feature built from `Location.connections`, not zones.
 
 **Fix:**
 
-- **`Locations.zones` data unused** — currently set in seed (`cover`, `cover_ac_bonus`, etc.) but no code reads it. Wire it up.
-- **`combatant["zone"] = None`** — fix on combat init: assign a zone based on Scene Director context or fall back to a single default zone.
+- **`Location.zones` unused** — seed fields (`cover`, `cover_ac_bonus`, …) are read by nothing today. Wired up here.
+- **`combatant["zone"] = None`** — filled at init (placement above).
+- **Speed hardcoded to 30** (`state.py:220`, `resources.py` defaults) — use real per-combatant speed (above).
 
-**Decide:**
+**Decide (locked 2026-07):**
 
-- **Distance granularity** — `close` / `far` / `out_of_range` only (decided) vs. adding `medium` for 30–60ft. Stick with three categories for v1.
-- **Zone count limit** — soft cap 6 per combat. Beyond that the AI loses track.
-- **NPC scene movement (non-combat)** — does it also track zones? **No.** Zones are combat-only in v1; narrative movement is freeform.
-- **Opportunity attacks** — when a combatant moves out of an enemy zone, does it trigger an OA? **Yes** if the enemy has a melee weapon and a reaction available. Reaction bus handles via Slice 6 infrastructure.
+1. **Movement** — feet-mapped (not abstract hops), checked against real Speed.
+2. **Zone seeding** — authored `Location.zones` wins; else parse-safe `zone_seeder` pass; single-zone fallback.
+3. **Placement** — deterministic team-split, fiction override, never None.
+4. **Range** — hard-gate the existing effect tools; block the impossible, allow the unwise; **no** new `resolve_attack` tool.
+5. **OA** — inline in `move_combatant`, auto-taken. **The general reaction engine — Counterspell / Shield / Absorb Elements / readied actions / interrupts / player-prompt round-trip / settings-gated `ai`/`suggest`/`player` — is its own dedicated slice** (sequenced after zones, since most reaction triggers are range/position-based). OA is generalized into it when it lands. Slice 9 builds **no reaction bus**.
+6. **Cover** — AC advisory (surfaced to the roller), save hard (`apply_aoe_damage`).
+7. **Distance granularity** — `close` / `far` / `out_of_range` only (no `medium`).
+8. **Zone soft-cap** — 6 per combat.
 
-**Verify:** Combat in tavern initializes with 4 zones, each combatant in a zone. Wizard at `stairs` casts Fireball at `behind_bar` (far distance → in range). Wizard at `stairs` tries to cast Cure Wounds (touch range) on PC at `tavern_front` → tool rejects, AI moves to PC first. Companion in `tavern_front` with half cover takes ranged attack at +2 AC. Sentinel triggers when enemy moves out of melee zone.
+**Schema changes:** none new (`Location.zones` already exists; `combat_state` is JSONB). New agent `zone_seeder` needs `prompts/zone_seeder/v1.md` + a `llm/models.yaml` entry.
+
+**Files added / changed:**
+
+- `agents/zone_seeder.py` + `prompts/zone_seeder/v1.md` + `llm/models.yaml` entry (new).
+- `services/combat/range.py` (new) — `srd_range_to_category`.
+- `services/combat/zones.py` (new) — seeding, placement, hop-cost, reachability, OA-on-exit helper.
+- `services/combat/state.py` — store `speed` on combatants; seed `movement_remaining` from speed; fill `zone` at init.
+- `tools/combat.py` — `move_combatant`, `get_combatants_in_zone`, `get_zones_in_range`; range params on `apply_damage` / `apply_aoe_damage` / `cast_concentration_spell`; subdue melee check.
+- `tools/__init__.py` — register the three zone tools in `COMBAT_TOOLS`.
+- `prompts/ally_ai/v1.md`, `prompts/enemy_ai/v1.md`, `combat_resolver` prompt — zone-context block.
+
+**Verify:** Combat in a tavern seeds 4 zones (authored or `zone_seeder`); every combatant placed, none None. A 25ft dwarf can't reach a 30ft `close` zone without Dashing; a 35ft wood elf can. Wizard at `stairs` casts Fireball (150ft) at `behind_bar` → in range, hits everyone there via `get_combatants_in_zone`. Wizard tries Cure Wounds (touch) on a PC two zones away → tool rejects with a plain reason, no turn wasted. Rogue leaves a zone holding a goblin with a scimitar + free reaction → auto OA resolves, goblin's reaction marked used, `opportunity_attack` emitted. Companion in a half-cover zone: AoE save gets +2; the AI is *told* +2 AC for to-hit.
+
+**Deferred:** full reaction engine (own slice); OA-modifying feats (Sentinel); mid-combat zone edits; battle-map rendering + exploration map (UI slice).
 
 ---
 
