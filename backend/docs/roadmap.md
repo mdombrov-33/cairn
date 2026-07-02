@@ -229,6 +229,38 @@ Each slice is self-contained: **Build** (what we ship), **Decide** (questions th
 
 ---
 
+### Post-6 reimagining — agenda (in progress, started 2026-07)
+
+Slices 1–6 are **DONE** and are the fixed reference (the working engine). Everything after 6 is being **reimagined from scratch**: the original post-6 slices captured the core *intent* (iterated with an LLM), but the goal now is to **enhance them, lock exact implementation at Slice-6 fidelity, add slices the old doc never covered, and hunt logic flaws / cross-slice inconsistencies** so it all coheres into one production app. Constraints: **solo dev; hosting budget $5–15/mo** (rules out AWS managed stack — see Slice on deploy); LLM API spend is a separate axis, near-zero in dev via local Qwen.
+
+**Working method:** grill one slice → write it into this doc at full fidelity → compact → next. This doc is the shared source of truth across compactions. Plain-language framing for the user (not deep on all code internals).
+
+**Grilled + rewritten so far:**
+
+- ✅ **Slice 7** — reimagined & locked (see below).
+- ✅ **Slice 8** — reimagined & locked (scene depth + pacing; state via resolver + Scene Director passes, no mid-stream tools).
+
+**Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
+
+**PHASE A — Core app + frontend (do now):**
+
+- Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): 8 (scene depth), 9 (zones), 10 (settings), 13 (RAG — Qdrant tool _or_ custom hybrid BM25+RRF+cross-encoder, decided).
+- **MCP integration** — fold into a core slice. OPEN: MCP *server* (expose Cairn's 50+ tools to external clients) vs *client* (pull external MCP tool servers into our agents via `langchain-mcp-adapters`) — opposite things, must decide.
+- **UI / frontend (dedicated slice).** Grill separately against the backend features (old Slice 15 is a 20-decision grab-bag). Enhance the design in `backend/docs/ui-temp-reference/` (primary: `project/Cairn App v2.html`) to fit *current* functionality — the mockups predate most features. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.**
+
+**PHASE B — Production hardening (deferred until Phase A is playable locally):**
+
+- **Infra / deploy.** Minimal always-on box first (the fire-and-forget post-turn work needs a persistent process, which rules out scale-to-zero serverless as the primary target), then harden. Deploy arch OPEN (ADR pending): single VPS (Hetzner/Lightsail) + docker-compose vs GCP e2-micro free tier. Budget $5–15/mo hosting. **Read refs:** `Terraform — Zero to Hero Guide.md`, `AI Deployment — Ultimate Guide.md`.
+- **MLOps / observability.** Langfuse (decided) for tracing; cost/latency/error visibility; right-sized to free-tier SaaS, not a self-hosted Prometheus/Grafana stack. **Read ref:** `MLOps — Zero to Hero Guide.md`.
+- **Security.** Prompt-injection defense, jailbreak/abuse handling, PII/output filtering, secret management, rate/spend abuse. **Read ref:** `AI Security.md`.
+- **Auth + cost controls** (old Slice 14).
+- **Ops hardening + evals** (old Slices 11, 12).
+- **Sound / audio.** Ambient/scene audio, SFX — scope TBD.
+
+**Also pending / cross-cutting:** rewrite the stale day-1 intro ("What's running today" etc.) to reflect reality post-6; decide final slice numbering/ordering (lean: insert named slices, don't renumber, to preserve cross-references); the deploy-arch ADR (Phase B).
+
+---
+
 ### Slice 1 — Character CRUD + schema cleanup — DONE
 
 Schema rewrite, derivation logic, ownership/auth pattern. See git history.
@@ -631,7 +663,7 @@ session_time_label: str            # e.g. "Day 4 of Riftfall, late evening"
 
 Deliberately omitted: mood, beat_count, tension_level (Slice 8 columns); turn history (post-response's job); companion approval (Slice 7); world bible chunks (RAG = Slice 13); full NPC profiles (Slice 7 — disposition + name is enough to identify hostile targets).
 
-`npcs_present` source for Slice 6: `npc_queries.list_by_location(campaign_id, location_id)`. Slice 7 will introduce per-scene NPC presence and we will switch the source then.
+`npcs_present` source for Slice 6: `npc_queries.list_by_location(campaign_id, location_id)`. **Slice 8** introduces scene-level presence (`Scene.npcs_present` JSONB with in-scene state) and switches the source then. (Slice 7 kept NPCs at the location level; scene-level presence is a scene concern.)
 
 **Output** (`ScenePreOutput` TypedDict):
 
@@ -981,179 +1013,180 @@ This slice intentionally cut several items the original roadmap placed here. Eac
 
 ### Slice 7 — NPC + companion narrative depth
 
-_Depends on: Slice 5 (schema, scene model), Slice 6 (dialogue rename)._
+_Depends on: Slice 5 (schema, scene model), Slice 6 (dialogue rename, post-response pass slot)._
 
-Today an NPC has thin narrative fields (`bio`, `personality`, `disposition`) and a companion is a `Character` with `is_companion=True` and nothing else. This slice replaces both with one rich, prose-driven profile schema that applies uniformly to authored NPCs, builder-generated NPCs, and companions. **This is the foundation slice for narrative quality.** Without depth here, dialogue plays thin, companions feel like followers, and scenes have nothing to riff on.
+> **Reimagined post-6 (grilled 2026-07).** Supersedes the original Slice 7. Decisions locked in the "Decisions locked" block below.
 
-The mental model: every NPC and every companion is a **real person**. Authored ones are written as many-page documents. Builder-generated ones come out lighter but follow the same shape. The dialogue agent never sees a stat block — it sees a person.
+Today an NPC carries thin narrative columns (`bio`, `personality`, `voice_traits`, `disposition`) and a companion is a `Character` with `is_companion=True` and an empty `companion_meta`. This slice gives every NPC and companion a deep, prose-driven **profile** — who they are, how they talk, their history, goals, prejudices, and secrets — and rewires the dialogue/narrator/ally agents to roleplay from that profile instead of a stat block. **This is the foundation slice for narrative quality.** Without depth here, dialogue plays thin, companions feel like followers, and scenes have nothing to riff on.
 
-**Build (schema — `NarrativeProfile`):**
+The mental model: every NPC and every companion is a **real person**. Authored ones are many-page documents. Builder-generated ones come out lighter but follow the same shape. Tier determines depth, not shape.
 
-A `NarrativeProfile` is a JSONB blob attached to NPCs and (for `is_companion=True`) characters. Schema:
+#### Storage model — hybrid, not a monolith (locked)
+
+The rich prose lives in one JSONB blob; the mutable/queryable bits stay as columns so hot-path reads and frequent mutations don't rewrite the whole blob.
+
+- **`narrative_profile: JSONB`** on both `NPC` and `Character` — holds only prose-for-prompts fields (never filtered/queried). The existing `bio` / `personality` / `voice_traits` columns are **migrated into it and dropped**.
+- **`NPC.disposition`** — **stays a column.** Read on the hot path (Scene Director's `npcs_present`, combat targeting). Companions have no `disposition` (they're party members; their standing is approval).
+- **`NPC.tier: enum(major|recurring|background)`** — **new column.** Drives promotion + builder behavior; queryable.
+- **`Character.companion_meta: JSONB`** — **stays its own column** (already exists). Approval/mood mutate frequently and gate behavior; nesting them in the profile blob would force a full-blob rewrite on every +5 tick. This deliberately deviates from the original "companion_meta nested inside profile" plan.
+
+`NarrativeProfile` JSONB shape (same for premade, authored, and generated):
 
 ```yaml
 name: str
 race: str
 age: int
 profession: str
-
-physical: str # multi-paragraph: build, features, posture, scars, dress
-
-personality:
-  str # multi-paragraph: observed behaviors, not labels.
-  # "Watches before he speaks" not "introverted".
-
+physical: str            # multi-paragraph: build, features, posture, scars, dress
+personality: str         # observed behaviors, not labels ("watches before he speaks")
 voice:
   accent: str
   pace: str
   vocabulary: str
   speech_quirks: list[str]
-
-backstory:
-  str # multi-page prose: 5+ years of past, key events,
-  # losses, formative incidents
-
-goals:
-  immediate: str # what they're doing today / this week
-  midterm: str # this season, this year
-  life: str # the thing that drives them
-
-prejudices:
-  list[str] # specific, justified — "Distrusts wizards
-  # because a battlemage at Crown's Reach hesitated
-  # on a cast and the line broke."
-
-relationships: # named individuals — alive, dead, missing, estranged
-  - { name, relation, status, notes }
-
-private_facts:
-  list[str] # things they know but don't volunteer.
-  # NOT mechanically gated. LLM judges when to surface.
-
-disposition_toward_party: enum # mutates via play, recorded via LoreKeeper
-
-# For is_companion=True, layer on top:
-companion_meta:
-  approval: int # -100 to 100, starts at 0
-  mood: enum # content | happy | upset | scared | angry | inspired | dejected
-  personal_goal:
-    str # what this companion specifically wants from the
-    # journey — drives their behavior and reactions
-  secret: str | None # something they hold close. Surfaces in trust.
-  approval_log: list[{turn_id, delta, reason, total}] # last 20 entries
+backstory: str           # multi-page prose: 5+ years of past, key events, losses
+goals: { immediate: str, midterm: str, life: str }
+prejudices: list[str]    # specific, justified — the moral leanings the reflection pass reads
+relationships: list[{ name, relation, status, notes }]
+private_facts: list[str] # known but not volunteered. NOT mechanically gated; LLM judges.
 ```
 
-The schema is the same for premade and generated. Tier determines depth, not shape.
+`companion_meta` column shape (for `is_companion=True`):
 
-**Build (storage):**
-
-- `NPC.narrative_profile: JSONB` replaces the existing thin fields (or augments them — decide during build whether to migrate `bio`/`personality`/`disposition` data into the new shape and drop the columns, vs. keep them populated alongside). Lean toward migration + drop.
-- `Character.narrative_profile: JSONB` for `is_companion=True`. `companion_meta` lives inside it.
-- Schema validation at write time. Allow incomplete profiles (background NPCs) but enforce required top-level fields (`name`, `personality`, `voice`).
-
-**Build (NPC tier system):**
-
-- `NPC.tier: enum (major | recurring | background)`.
-- Authoring rule: authored NPCs are typically `major` or `recurring`. Generated ones default to `background`; promote to `recurring` once engaged in >2 dialogue turns. Promotion triggers an LLM pass to deepen the profile.
-
-**Build (NPC builder agent):**
-
-`agents/npc_builder.py` + `prompts/npc_builder/v1.md` — heavy agent, called rarely.
-
-```
-In:
-  - World lore relevant to the location
-  - Location (cultural context, factions present)
-  - Role in scene (innkeeper / patron / guard / informant / ...)
-  - Tier requested (background / recurring / major)
-  - Existing NPCs in the area (avoid duplicates and conflicts)
-  - Scene atmosphere
-
-Out:
-  - Full NarrativeProfile (depth scaled to tier — background NPCs get
-    a 3-sentence personality and a paragraph of backstory; recurring
-    NPCs get multi-paragraph everything; major is rare and basically
-    template-author territory)
-
-Persistence:
-  - LoreKeeper writes the new NPC to the world bible
-  - On re-encounter, prior interactions retrievable via RAG (Slice 13)
+```yaml
+approval: int            # -100..100, starts at 0
+mood: str                # derived (see derive_mood); content|happy|upset|scared|angry|inspired|dejected
+personal_goal: str       # what this companion wants from the journey
+secret: str | None
+approval_log: list[{ turn_id, delta, reason, total }]  # last 20 entries
 ```
 
-The builder is a slow, deliberate agent. Frontier tier model. Called once per new NPC, not per turn. Output is permanent.
+**Schema validation at write time:** required top-level profile fields are `name`, `personality`, `voice`. Background NPCs may otherwise be incomplete; authored/recurring should be full.
 
-**Build (dialogue agent rewrite — replaces the gated_share mistake):**
+#### Build — companion approval subsystem (LLM-driven, post-turn reflection)
 
-`prompts/dialogue/v1.md` is rewritten to consume `NarrativeProfile`. The prompt explicitly forbids the failure modes that gating was trying to prevent:
+Approval is **LLM-driven only in v1 — no hardcoded auto-triggers, no reaction bus** (the bus is combat infra that lands later; wiring deterministic triggers now would drag it in early and break slice isolation).
+
+- **Judged in-character.** The reflection pass weighs each action against *that companion's own* `personality` + `prejudices` + `personal_goal` — not an objective morality. A cruel companion approves of cruelty; a kind one recoils at the same act. This is the whole reason to go LLM-driven — a rule table can't do "Minthara approves of burning the village" without per-companion rules.
+- **Where it runs — post-turn reflection pass (locked).** The streaming narrator/dialogue agents never call approval tools mid-stream. Instead a fire-and-forget pass runs after each turn completes, in the **same slot as LoreKeeper + Scene Director post-response** (`turns.service` schedules it via `asyncio.create_task`). Uniform across narrative *and* combat turns (it reads the turn's events either way). Only fires when ≥1 companion is present.
+  - `agents/companion_reflector.py` + `prompts/companion_reflector/v1.md` (fast/mid tier) + `llm/models.yaml` entry.
+  - **Structured output, not a tool loop** (cheaper/deterministic): input = `{player_input, dm_response, turn.events, companions_present: [{id, name, personality, prejudices, personal_goal, approval, mood}]}`; output = `list[{companion_id, delta, reason}]`.
+  - The route/service applies each delta via the service below. No LLM-callable `adjust_approval` tool in v1 (an inline DM-grant tool can be added later if wanted).
+  - *Optimization note:* `companion_reflector` and `lore_keeper` both re-read the completed turn — they may be merged into one post-turn extraction call later if prod cost demands; kept separate now for single-responsibility + eval-ability.
+- **`services/companions.py`:**
+  - `adjust_approval(db, *, character_id, delta, reason, turn_id) -> {approval, mood, crossed_thresholds}` — clamps to [-100, 100], appends to `approval_log` (trim to last 20), recomputes mood via `derive_mood`.
+  - `derive_mood(approval, recent_deltas) -> mood` — deterministic: approval band sets the baseline mood; a recent large-magnitude delta transiently overrides (e.g. a −25 hit → `angry`/`dejected` regardless of band).
+- **Magnitude guidance (in the reflector prompt):** minor beats ±2–5; major moral moments ±15–30. Total clamps to [-100, 100].
+- **Player-facing surfacing (locked):** the player sees **vague bands only** ("cold" / "warming up" / "loyal"), never the raw number. The number + `approval_log` live in the companion profile drawer's **Approval** section, rendered as colored lines — **green for delta > 0, red for delta < 0** — each with its reason string ("Burned the village down"). This is a Slice-7 API/data guarantee; the frontend slice just renders it.
+
+#### Build — NPC tier + promotion
+
+- **Tiers:** `major` (authored, multi-page), `recurring` (medium depth), `background` (walk-on).
+- **Auto-promotion (locked):** a `background` NPC promotes to `recurring` automatically once the player has genuinely engaged it — **≥3 dialogue exchanges** with that NPC. Promotion fires a *one-time* builder deepen-pass that extends the existing profile in place (same name/facts, fleshed out — continuity preserved).
+- Promotion counter: track dialogue-exchange count per NPC (small counter column or derive from turn/scene history — decide during build; lean a `dialogue_exchange_count` column on NPC for cheap reads).
+
+#### Build — NPC builder agent (lazy, tier-to-value cost)
+
+`agents/npc_builder.py` + `prompts/npc_builder/v1.md`. **The builder never generates `major`** — that's authored-only ("authoring is the foundation").
+
+- **Lazy / on-demand firing (locked):** generate only when the player actually addresses an NPC who doesn't exist. `_resolve_dialogue` calls `npc_queries.find_by_name`; on miss (and no companion match), the dialogue path invokes the builder to create a `background` NPC, then answers. Only NPCs that get talked to are ever paid for.
+- **Model tiered to value (locked):** `background` generation uses the **fast/cheap tier** (~1–2s, barely noticeable before dialogue streams). The **promotion-to-`recurring`** deepen-pass uses a **stronger tier** (rarer, earns the spend). Drops the original "always frontier builder." (Locally both map to Qwen via `models.yaml`, so dev is free.)
+- **Authored-scene NPCs are the exception:** NPCs a scene explicitly declares (Slice 8 scene schema) are built when the scene is created — the author declared they matter.
+- **Canon-consistency at build time (pre-RAG):** inject `{location context, factions present, existing NPCs in the area, always_on lore chunks, key-matched world bible entries for referenced names}` so a generated NPC doesn't contradict canon. RAG-quality retrieval swaps in when it lands (Slice 13); key-match is the v1 mechanism.
 
 ```
-The character below is a real person. You have their full profile —
-backstory, prejudices, relationships, private facts. Roleplay them.
-
-RULES:
-- Stay in character. Behavior is your roleplay output.
-- Do not list facts. Reveal through behavior, partial answers,
-  deflections, body language, silences.
-- Surface private_facts only when the player has earned it in the
-  scene — through trust, persistence, leverage, or shared vulnerability.
-  Use your judgment. Some scenes warrant disclosure quickly; most don't.
-- Never invent facts not in the profile. If asked something not in
-  your knowledge, say so or evade in character.
-- Pursue your goals. NPCs don't just answer questions — they have
-  their own conversation goals. Push them.
-- Honor your prejudices. They shape your reactions.
-- Companion-specific: your approval and mood color every reaction.
-  Low approval → curt, withdrawn, sarcastic. High approval → open,
-  protective, supportive.
+In:  location (culture, factions), role in scene, tier, existing area NPCs, atmosphere, canon context
+Out: NarrativeProfile scaled to tier
+     - background ≈ tight paragraph (personality + a few facts, required fields only)
+     - recurring  ≈ several paragraphs (real backstory, goals, 1-2 relationships)
+     - major = authored only (builder never emits this)
+Persist: LoreKeeper writes the new NPC to the world bible; re-encounters retrievable (RAG, Slice 13)
 ```
 
-The dialogue agent receives the full `NarrativeProfile` of the entity speaking, plus the active PC's profile for context, plus the last N turns of the current scene.
+#### Build — dialogue agent rewrite
 
-**Build (`adjust_approval` tool + service):**
+`prompts/dialogue/v1.md` rewritten to consume `NarrativeProfile`. No mechanical fact-gating — the LLM holds the facts in prose and reveals them through behavior. Prompt rules:
 
-- `services/companions.py::adjust_approval(db, *, character_id, delta, reason, turn_id)` — clamps to [-100, 100], appends to log, recomputes mood via `derive_mood(approval, recent_events)`.
-- `adjust_approval(character_id, delta, reason)` tool — DM-callable. Returns new approval, new mood, threshold crossings.
+```
+The character below is a real person. Roleplay them.
+- Stay in character. Behavior is your output.
+- Do not list facts. Reveal through behavior, partial answers, deflections, silences.
+- Surface private_facts only when earned in the scene (trust, persistence, leverage,
+  vulnerability). Your judgment — most scenes don't warrant disclosure.
+- Never invent facts not in the profile. If asked something you don't know, say so or evade
+  in character.
+- Pursue your goals. Push your own conversation agenda; ask back; deflect.
+- Honor your prejudices.
+- Companion-specific: your approval and mood color every reaction. Low approval → curt,
+  withdrawn, sarcastic. High approval → open, protective, supportive.
+```
 
-**Build (`scene_narrator` and `ally_ai` integration):**
+Receives: full profile of the speaking entity + active PC's profile for context + last N turns in the current scene + key-matched world bible entries for the entity (no RAG until Slice 13). Companion lookup fallback already exists (Slice 6: `find_by_name` → `find_companion_by_name`).
 
-- `scene_narrator/v1.md` rewrite — receives profiles of all NPCs and companions in scene. Drops companion reactions (1–2 sentences) in narrative turns when their approval/mood/personal_goal/prejudices are touched by the moment. Sparingly, but meaningfully.
-- `ally_ai/v1.md` rewrite — receives companion's full profile + current approval/mood. Low-approval companions in combat hesitate, refuse risky support, drop sarcasm. High-approval companions take risks for the PC. Behavior emerges from profile, not from `if approval < 0: refuse_help`.
+#### Build — scene_narrator + ally_ai integration
 
-**Build (templates — authoring discipline):**
+- `scene_narrator/v1.md` — receives profiles of all NPCs and companions in scene. Drops 1–2 sentence companion reactions in narrative turns when their approval/mood/personal_goal/prejudices are touched. Sparingly, meaningfully.
+- `ally_ai/v1.md` — receives the companion's full profile + current approval/mood. Behavior emerges from profile (low approval → hesitates, refuses risky support, sarcastic; high approval → takes risks for the PC), never `if approval < 0: refuse`.
 
-- `seed/templates/tavern_v1/npcs/old_grim.yaml` — fully authored, many-page profile as the bar. Edrik, Anneth, Maren, Captain Vell, Tomas the smith all referenced. Backstory written as continuous prose, not bulleted facts.
-- All other tavern_v1 NPCs upgraded to at least `recurring` tier depth.
-- `seed/templates/tavern_v1/companions/<name>.yaml` for each premade companion at the same authoring bar.
+#### Build — templates (authoring discipline)
 
-**Fix:**
+- `seed/templates/tavern_v1/npcs/old_grim.yaml` — fully authored, many-page profile as the bar (Edrik, Anneth, Maren, Captain Vell, Tomas referenced; backstory as continuous prose).
+- All other tavern_v1 NPCs upgraded to at least `recurring` depth.
+- `seed/templates/tavern_v1/companions/<name>.yaml` for each premade companion at the same bar.
 
-- **`NPC.find_by_name` fuzzy match risk** — first alphabetical match by substring. Replace with ranked match + scene-aware filter (current scene's NPCs first). Was on Slice 6 list; fits better here once profiles exist.
-- **`NPC.disposition` writes to world bible on change** — captured via LoreKeeper. "old_grim_disposition: neutral → hostile after party refused payment." Was on Slice 6 list; lands here.
+#### Fix
 
-**Decide:**
+- **`NPC.find_by_name` fuzzy-match risk** — currently first alphabetical substring match. Replace with ranked match + scene-aware filter (current scene's NPCs first).
+- **`NPC.disposition` → world bible on change** — captured via LoreKeeper ("old_grim disposition: neutral → hostile after party refused payment").
 
-- **Migration strategy** — drop `bio`/`personality`/`disposition` columns vs. keep alongside `narrative_profile` for transition? Lean drop + migration script; cleaner long term.
-- **Approval scope** — PC-to-companion axis only in v1 (decided). Inter-companion matrix = v2.
-- **Auto-triggered approval changes** — codify ~5 obvious ones (PC heals companion → +5; PC violates companion's stated value → -10) that fire via reaction bus. Rest is LLM judgment via tool. Confirm the 5.
-- **Approval surfaced to player** — vague band UI ("very upset" / "warming up" / "loyal"), not numbers. Confirm.
-- **Builder tier depth caps** — exactly how long is a `background` profile vs. `recurring` vs. `major`? Set rough word-count targets so the builder doesn't drift. Lean: background ≈ 200 words, recurring ≈ 800, major = authored only (>2000).
-- **Generated NPC promotion** — exact trigger for `background → recurring` (>2 dialogue turns)? Or DM-judged? Lean trigger-based for predictability.
-- **Backstory consistency across builder calls** — when builder generates an NPC, it should not contradict world bible. Inject relevant bible entries at build time. Spec the retrieval here.
+#### Schema changes (single migration)
 
-**Verify:**
+| Change | Reason |
+| --- | --- |
+| `NPC.narrative_profile` JSONB (new); drop `NPC.bio`, `NPC.personality`, `NPC.voice_traits` | Prose moves into the blob; migrate existing values in. |
+| `NPC.tier` enum `major\|recurring\|background` (new, default `background`, server_default) | Promotion + builder behavior. |
+| `NPC.dialogue_exchange_count` int (new, default 0) | Cheap promotion trigger. |
+| `Character.narrative_profile` JSONB (new); drop `Character.bio`, `Character.personality`, `Character.voice_traits` | Same, for companions. |
+| `Character.companion_meta` — no change (already exists) | Approval/mood/goal/secret/log live here. |
+| `NPC.disposition` — no change (stays a column) | Hot-path read. |
 
-- Authored Old Grim, when played, behaves consistently: refuses to volunteer about Maren on first ask, may share after the player demonstrates earned trust within the scene. Speech matches voice profile. Reacts to mage characters with measured distrust.
-- A scene with one NPC and a quiet PC produces 3–5 turns of natural conversation before resolution — the NPC pushes their agenda, asks back, deflects.
-- Builder generates a `background` tier patron when the party enters an unauthored tavern. Patron is persisted; party returns next session, patron remembers prior conversation.
-- Companion with approval -40 in combat refuses to spend their daily ability on the PC. Same companion at +60 volunteers it.
-- Approval log shows last 20 changes with reasons.
-- No dialogue agent response ever lists facts as bullets or exposition dumps.
+Pre-launch nuke-and-reseed acceptable (no production data).
+
+#### Files added / changed
+
+- **New:** `agents/npc_builder.py`, `prompts/npc_builder/v1.md`, `agents/companion_reflector.py`, `prompts/companion_reflector/v1.md`, `domain/services/companions.py`, `db/queries/companions.py` (or extend `characters.py`).
+- **Changed:** `db/models/npc.py`, `db/models/character.py` (profile/tier/counter columns); `db/queries/npcs.py` (`find_by_name` ranked + scene-aware, tier/promotion helpers); `agents/dialogue.py` + `prompts/dialogue/v1.md`; `agents/scene_narrator.py` + `prompts/scene_narrator/v1.md`; `agents/combat_ai.py` + `prompts/ally_ai/v1.md`; `domain/services/turns.py` (schedule `companion_reflector` in the post-response slot); `domain/services/narrative_context.py` + `scene_director_context.py` (inject profiles); `agents/lore_keeper.py` (disposition-change entries); `llm/models.yaml` (`npc_builder`, `companion_reflector`); `cairn/types.py` (`NarrativeProfile`, `CompanionMeta`, `ApprovalDelta`, `NpcTier`).
+- **Tool registry:** no new LLM-callable tools (approval is service-applied from reflector structured output).
+
+#### Decisions locked (grilled 2026-07)
+
+1. **Storage** — hybrid: `narrative_profile` JSONB for prose; `disposition`, `tier`, `companion_meta` stay columns. (Not the original monolith.)
+2. **Approval mechanism** — LLM-driven only; **no reaction bus / no hardcoded auto-triggers in v1**; judged in-character against the companion's own values.
+3. **Approval placement** — fire-and-forget **post-turn reflection pass** (`companion_reflector`), structured output, uniform across narrative + combat, fires only when companions present. No inline approval tool in v1.
+4. **Magnitude** — ±2–5 minor, ±15–30 major; clamp [-100, 100].
+5. **Surfacing** — vague bands to the player; raw number + green/red `approval_log` in the companion drawer.
+6. **Tiers** — auto-promote background→recurring at **≥3 dialogue exchanges**; builder caps at `recurring`; `major` authored-only.
+7. **Builder** — **lazy on-demand**; cheap/fast model for `background`, stronger model only on promotion; canon context injected at build time (key-match pre-RAG).
+8. **Approval scope** — PC↔companion only in v1; inter-companion matrix = v2.
+
+#### Verify
+
+- Authored Old Grim behaves consistently: refuses to volunteer about Maren on first ask, may share after earned trust within the scene; speech matches his voice profile; reacts to mage PCs with measured distrust.
+- One NPC + a quiet PC still produces 3–5 turns of natural conversation — the NPC pushes an agenda, asks back, deflects.
+- Player addresses an unscripted "bartender": builder lazily creates a `background` NPC (fast tier), dialogue answers; NPC persists; return next session, it remembers.
+- Same NPC after ≥3 exchanges is promoted to `recurring`; a deepen-pass (stronger tier) extends the profile without changing established facts.
+- A cruel companion's approval rises on a ruthless act; a kind companion's falls on the same act — both via the post-turn reflection pass, both logged with reasons.
+- Companion at approval −40 in combat refuses to spend a daily ability on the PC; at +60 volunteers it (ally_ai reads profile + approval, no hardcoded threshold).
+- Approval drawer shows the last 20 changes, green/red, each with a reason; the player never sees a raw number elsewhere.
+- No dialogue response ever lists facts as bullets or dumps exposition.
 
 ---
 
 ### Slice 8 — Scene depth + pacing
 
 _Depends on: Slice 5 (Scene model), Slice 6 (Scene Director, DM persona), Slice 7 (rich NPCs to populate scenes)._
+
+> **Reimagined post-6 (grilled 2026-07).** Supersedes the original Slice 8. State is written through the seams that already exist — the skill-check resolver and the two Scene Director structured-output passes — with **no mid-stream tools**. Decisions locked in the block below.
 
 A scene is a **situation**, not a description. This slice makes scenes feel like real D&D moments — a single room can hold 30 turns of play without rushing, because the scene has layers, NPCs have agendas, and the SceneNarrator paces with discipline.
 
@@ -1230,32 +1263,54 @@ scene:
     hooded_man: "Wait for his contact. Leave if anyone gets too close."
 ```
 
-This is illustrative. Real authored scenes are bigger — atmosphere is many paragraphs, every NPC has a current beat, threads are richer, hooks branch deeper. **Authoring discipline is the contract.**
+This is illustrative. Real authored scenes are bigger — atmosphere is many paragraphs, every NPC has a current beat, threads are richer, hooks branch deeper. **Authoring discipline is the contract.** The authored `npcs_present` + `npc_agendas_in_scene` are parsed and **merged** into the runtime `npcs_present` shape (`{npc_id, doing, attentive_to, agenda}`) at scene birth.
 
-**Build (scene runtime state):**
+**Build (scene runtime state + storage):**
 
-On the `Scene` table:
+Hybrid storage on the `Scene` table — same pattern as Slice 7's NPC profile (hot/queryable fields as columns, structured payloads as JSONB):
 
 ```python
-discovered_facts: list[str]     # what the party has actually learned
-                                # in this scene. SceneNarrator MUST NOT
-                                # describe anything outside this list as
-                                # known to the party.
-unresolved_threads: list[str]   # threads_in_air that haven't been resolved
-                                # — locked drawer, evasive NPC, missing smith
-beat_count: int                 # number of player turns spent in this scene
-tension_level: int              # 0-10, escalates with conflict, decompresses
-                                # with rest and resolution
-mood: enum                      # quiet | charged | hostile | intimate
-last_revelation_at_turn: int    # for pacing — when did something new happen?
+# Authored content — JSONB, parsed from the scene YAML, read-mostly:
+authored: JSONB              # atmosphere, surface_details, hidden[],
+                             # secrets[], threads_in_air[], hooks_out[]
+
+# Runtime state — columns (hot-path, queryable):
+beat_count: int              # default 0 — mechanical +1 per turn, no LLM
+tension_level: int           # default 0, range 0-10
+mood: SceneMood              # quiet | charged | hostile | intimate (default quiet)
+last_revelation_at_turn: int # nullable — turn index of the last new discovery
+
+# Runtime lists — JSONB (mutated per turn, never queried by value):
+discovered_facts: JSONB      # list[str], default [] — the party's single
+                             # source of truth for "what is known"
+unresolved_threads: JSONB    # list[str], default []
+npcs_present: JSONB          # list[{npc_id, doing, attentive_to, agenda}]
+scene_progress_summary: text # nullable — mid-scene compression (below)
 ```
 
-Updated by tools called by SceneNarrator and Scene Director:
+**How state is written — no mid-stream tools.** The SceneNarrator only *reads* state and narrates; it never mutates. Writes flow through seams that already exist:
 
-- `mark_discovered(fact)` — append to discovered_facts, update last_revelation_at_turn
-- `add_thread(thread)`, `resolve_thread(thread)` — mutate unresolved_threads
-- `set_tension(value, reason)` — Scene Director sets based on events
-- `set_mood(mood)` — DM-callable
+| State | Written by | When |
+| --- | --- | --- |
+| `beat_count` | mechanical `+1` in the turn service | every turn in the scene |
+| `discovered_facts` — check-gated `hidden` reveal | the **skill-check resolver** (runs before streaming) | the moment the check passes |
+| `discovered_facts` — free-form (noticed without a roll) | **Scene Director post-pass** structured output | after the turn |
+| `tension_level`, `mood` | **Scene Director post-pass** (`_PostDecision` gains `tension_delta` + `mood`) | after the turn |
+| `unresolved_threads` add/resolve | **Scene Director post-pass** | after the turn |
+| `npcs_present` mutations (NPC leaves/arrives, agenda shifts) | **Scene Director post-pass** | after the turn |
+| `pacing_nudge` → SceneNarrator | **Scene Director pre-pass** (`_PreDecision.pacing_nudge`, already stubbed) | before streaming |
+
+Free-form discoveries and tension/mood land one turn later (written after the turn, visible next turn) — imperceptible for pacing/memory. Check-gated discoveries are **not** delayed (the resolver writes them before narration). All writes are service-applied via `db/queries/scenes.py` helpers called from the resolver/post-pass — **not** LLM-callable tools.
+
+**Scene-level NPC presence.** `npcs_present` is the subset of the location roster actually in *this* scene, plus each NPC's in-the-moment state (`doing`, `attentive_to`, in-scene `agenda`). Seeded from the authored YAML, or from the scene_builder, or — for a thin/unauthored scene — from `npc_queries.list_by_location`. Identity and depth of each NPC still come from Slice 7 (`narrative_profile`, `tier`, `find_by_name`); presence only references NPCs by id and layers situational state on top. **This closes the orphaned Slice 6 forward-reference** — scene-level presence is a Slice 8 concern, not Slice 7 (which kept NPCs at the location level).
+
+**Narrator context assembly (leak-proof).** `scene_director_context.py` splits authored content into three buckets before injecting into the SceneNarrator:
+
+- **Known** (`discovered_facts`, `atmosphere`, `surface_details`, present NPCs + agendas) → injected in full; narrate freely.
+- **Hidden** → injected as a **stub only** — location + check hint ("something discoverable at the writing desk, Investigation"), **never the reveal text**. Lets the narrator foreshadow toward a check without being able to spoil it.
+- **Secrets** → **not injected at all** until their unlock condition is in `discovered_facts`. The narrator cannot leak data it was never given.
+
+When a check passes, the resolver moves that hidden detail's full reveal text into the known bucket and the narrator describes the discovery moment.
 
 **Build (SceneNarrator pacing rewrite):**
 
@@ -1271,18 +1326,18 @@ PACING RULES:
 - If the player input is broad ("I look around"), respond atmospherically.
   Surface specific details only when they probe a specific feature.
 - Hidden details MUST NOT appear in narrative unless the corresponding
-  check has been passed (use the discovered_facts list as source of truth).
+  check has been passed (they only reach you once surfaced into
+  discovered_facts — you are never given un-surfaced reveal text).
 - Secrets MUST NOT appear unless their unlock condition is in
-  discovered_facts.
+  discovered_facts (you are never given locked secret content).
 
 WITHHOLDING:
-- You are given the full scene authoring. You MUST NOT describe what
-  the party has not yet engaged with or perceived. Use discovered_facts
-  as your single source of truth for what the party knows.
+- Use discovered_facts as your single source of truth for what the party
+  knows. Do not describe what they have not yet engaged with or perceived.
 
 NPC PRESENCE:
-- NPCs in scene have an agenda (npc_agendas_in_scene). They push their
-  own interest. They ask questions back. They deflect on sensitive topics.
+- NPCs in scene have an agenda (npcs_present). They push their own
+  interest. They ask questions back. They deflect on sensitive topics.
 - A scene with one NPC and a quiet PC should still produce 3-5 turns
   of natural conversation before resolution.
 
@@ -1302,12 +1357,13 @@ WHAT NOT TO DO:
 
 **Build (Scene Director pacing hooks):**
 
-Scene Director (built in Slice 6) reads `beat_count` and `tension_level` and injects pacing nudges into the SceneNarrator context:
+The **pre-pass** (`run_pre`, before streaming) fills the existing `pacing_nudge` slot from `beat_count` + `tension_level` + turns-since-`last_revelation_at_turn`, and injects it into the SceneNarrator as **soft guidance the narrator may ignore**. It is never shown to the player and never forces an outcome. Nudge ladder:
 
-- `beat_count < 5` and exploration mode → "stay descriptive, let them probe"
-- `beat_count > 15` with no new discoveries since `last_revelation_at_turn` → "this scene needs a beat — drop a hook, advance an NPC's agenda, or let a hidden detail surface through environmental cue"
-- `tension_level > 7` → "escalation point; consider combat trigger, NPC turn hostile, or major revelation"
-- Tension and beat soft-nudges only; never force resolution. Player owns scene length.
+- `beat_count < 5`, exploration → "stay descriptive, let them probe."
+- `beat_count > 15` **and no discovery since `last_revelation_at_turn`** (keyed on *stalling*, not raw turn count — 15 engaged turns get no nudge) → "this scene's stalling — surface a hidden detail via environmental cue, advance an NPC's agenda, or drop a hook."
+- `tension_level > 7` → "escalation point available — an NPC could turn, a threat could land, a revelation could break. Offer it; don't force it."
+
+**Hard rule: nudges are always soft.** Only the player — or a genuine in-world consequence the player triggered — ends or escalates a scene. No hard beat cap; the player owns scene length. The **post-pass** (`run_post`) writes the resulting `tension_delta`, `mood`, thread, and `npcs_present` changes (see the state table above).
 
 **Build (scene builder agent):**
 
@@ -1320,16 +1376,26 @@ In:
   - Recent events (last N world bible entries)
   - NPCs known to inhabit this location (or generate via npc_builder)
   - Time of day, weather, atmosphere hints
-  - Tier (light fill / fuller fill — most are light)
 
 Out:
-  - Full authored-shape scene YAML (lighter than a major authored scene
-    but with all required keys: atmosphere, npcs_present with doing/
-    attentive_to, surface_details, threads_in_air, hooks_out, npc_agendas)
-  - Persisted as a Scene row, can be returned to
+  - Full authored-shape scene (all required keys: atmosphere,
+    npcs_present with doing/attentive_to/agenda, surface_details,
+    hidden[], secrets[], threads_in_air, hooks_out)
+  - Persisted as a Scene row, returnable
 ```
 
-Heavy agent. Slow. Called when the DM moves the party somewhere new without an authored scene. Output is permanent — once a generated scene exists, future returns use the same scene with mutated state.
+**Timing (locked):** runs **synchronously in the scene-transition resolver, before narration streams** — the player waits once, like loading a new area. Uses the **stronger model tier** (generation quality shows here) but fires **only on first entry to a brand-new location**. Output is **permanent**: every return is instant and re-enters with mutated runtime state, no regeneration.
+
+**Rejected (locked):** no LLM quality-review pass before persisting (doubles hot-path latency; a thin scene is a prompt-tuning signal, not a runtime gate); no speculative pre-generation of adjacent locations (burns tokens on places the party may never visit). Generate on actual entry, full stop.
+
+**Build (mid-scene compression):**
+
+Long scenes (30+ turns) would bloat the prompt if every turn rode along verbatim. Minimal, threshold-based:
+
+- `beat_count ≤ 8`: feed all scene turns verbatim.
+- `beat_count > 8`: feed the last ~6 turns verbatim **+** the `scene_progress_summary` string.
+- The summary reuses the existing `scene_summarizer` (Slice 5/6), fired **mid-scene** instead of only at close: when `beat_count` crosses 8 and every ~N turns after, it regenerates `scene_progress_summary` from the turns falling out of the recent window. **Fire-and-forget in the post-turn slot** (same pattern as LoreKeeper — zero added turn latency).
+- Sits in the memory hierarchy between `recent_turns` (verbatim) and `Scene.summary` (written at close). Fixed thresholds (8 / 6) for v1.
 
 **Build (LoreKeeper extension for scene events):**
 
@@ -1343,29 +1409,53 @@ Heavy agent. Slow. Called when the DM moves the party somewhere new without an a
 - `seed/templates/tavern_v1/scenes/back_room_with_grim.yaml` — fully layered scene at the authoring bar. Many paragraphs of atmosphere, several hidden details with distinct DCs, multiple secrets with branching unlock conditions, NPCs with active beats and agendas, multiple hooks out.
 - Tutorial section in the template authoring guide: "what a layered scene looks like."
 
-**Decide:**
+#### Schema changes (single migration)
 
-- **Where scene state lives** — direct columns on `Scene` table vs. `Scene.runtime: JSONB`. Lean direct columns for queryability and migration discipline.
-- **Beat count hard cap?** — if a player spends 50 turns in one room, does Scene Director start forcing escalation, or trust the player? Lean soft nudges, never hard limits. Player owns scene length.
-- **Scene builder output review** — generated scenes get LLM-reviewed for quality before persisting? Or trust the builder? Lean trust + flag for player feedback ("this scene felt thin" → log for prompt-tuning).
-- **discovered_facts granularity** — one entry per discovered detail, or grouped? Lean one entry per detail, free-text content. Easier to dedupe and reference.
-- **Authored vs generated scene quality gap** — how do we keep generated scenes from feeling shallow vs. authored? Honest answer: they will be shallower. Builder prompt should be tuned to maximize layering, but a scene authored over 3 hours of human effort will always beat one generated in 30 seconds. v1 accepts this; major scenes are authored.
+| Change | Reason |
+| --- | --- |
+| `Scene.authored` JSONB (new) | Parsed authored scene content (atmosphere, hidden, secrets, threads, hooks). |
+| `Scene.beat_count` int (new, default 0, server_default) | Mechanical pacing counter. |
+| `Scene.tension_level` int (new, default 0, server_default) | Pacing / escalation signal. |
+| `Scene.mood` enum `quiet\|charged\|hostile\|intimate` (new, default `quiet`, server_default) | Hot-path pacing read. |
+| `Scene.last_revelation_at_turn` int (new, nullable) | Stalling detection. |
+| `Scene.discovered_facts` JSONB (new, default `[]`) | Party's known-facts source of truth. |
+| `Scene.unresolved_threads` JSONB (new, default `[]`) | Open threads. |
+| `Scene.npcs_present` JSONB (new, default `[]`) | Scene-level NPC presence + in-scene state. |
+| `Scene.scene_progress_summary` text (new, nullable) | Mid-scene compression. |
+
+Pre-launch nuke-and-reseed acceptable (no production data).
+
+#### Files added / changed
+
+- **New:** `agents/scene_builder.py`, `prompts/scene_builder/v1.md`; `seed/templates/tavern_v1/scenes/back_room_with_grim.yaml` (the authored bar).
+- **Changed:** `db/models/scene.py` (the columns above); `db/queries/scenes.py` (state read/write helpers — `mark_discovered`, thread/tension/mood/presence mutators called from the resolver + post-pass, **not** LLM tools); `agents/scene_director.py` (`_PreDecision.pacing_nudge` activated; `_PostDecision` gains `tension_delta`, `mood`, discovered/thread/presence deltas); `prompts/scene_director_pre/v1.md` + `scene_director_post/v1.md`; `agents/scene_narrator.py` + `prompts/scene_narrator/v1.md` (pacing rules + three-bucket context); `domain/services/scene_director_context.py` (known/hidden-stub/secrets bucketing, `npcs_present` assembly, mid-scene window + `scene_progress_summary`); `domain/services/turns.py` (mechanical `beat_count`; schedule mid-scene `scene_summarizer` in the post-turn slot); the skill-check resolver (write check-gated discoveries); `agents/scene_summarizer.py` (mid-scene invocation); `agents/lore_keeper.py` (scene-event entries); `cairn/types.py` (`SceneMood`, `NpcPresence`, authored-scene shapes).
+- **Tool registry:** no new LLM-callable tools (all scene-state writes are service-applied from the resolver / structured output).
+
+#### Decisions locked (grilled 2026-07)
+
+1. **State-writing** — no mid-stream tools; `beat_count` mechanical, check-gated discoveries via the skill-check resolver, everything else via the two Scene Director structured-output passes. SceneNarrator only reads.
+2. **Storage** — hybrid: `beat_count`/`tension_level`/`mood`/`last_revelation_at_turn` as columns; `authored` + `discovered_facts` + `unresolved_threads` + `npcs_present` (+ `scene_progress_summary`) as JSONB/text.
+3. **Narrator context** — known-in-full / hidden-as-stub / secrets-withheld. Structurally leak-proof; keeps the prompt lean.
+4. **Scene-level NPC presence** — owned by Slice 8 as `npcs_present` JSONB on the Scene (closes the stale Slice 6 forward-reference); seeded from author/builder/location roster, mutated by the post-pass.
+5. **Scene builder** — synchronous full build on first entry (stronger tier), permanent thereafter; **no** review pass, **no** speculative pre-gen.
+6. **Pacing** — mechanical beat_count, soft-only nudges, no hard cap (player owns scene length), stalling-keyed nudge ladder; one free-text entry per discovered fact.
+7. **Mid-scene compression** — minimal threshold-based (verbatim ≤8 turns; last ~6 + `scene_progress_summary` after), reusing `scene_summarizer` fire-and-forget; adaptive/semantic windowing deferred.
+
+**Authored vs generated quality gap (accepted):** generated scenes are shallower than hand-authored ones — a scene authored over hours beats one generated in seconds. The builder prompt maximizes layering; v1 accepts the gap and reserves depth for authored major scenes.
 
 **Verify:**
 
 - Player enters Old Grim's back room. First response is atmospheric (smell, light, sound, mood). At most 2-3 specific details. Not a feature dump.
 - Player asks Grim about his son. Grim deflects in-character — does not list facts about Maren even though they're in his profile. Conversation continues.
 - Player rolls Insight, succeeds. SceneNarrator surfaces a partial read on Grim's deflection (hint, not full content). LoreKeeper records the insight.
-- Player investigates the writing desk. Rolls Investigation 14. False drawer surfaced and added to discovered_facts. SceneNarrator describes the moment of discovery, not bullet-points.
+- Player investigates the writing desk. Rolls Investigation 14. The **resolver** writes the false drawer to `discovered_facts` before narration; SceneNarrator describes the moment of discovery, not bullet-points.
+- The SceneNarrator was **never given** the secret letter's content until `false_drawer_found` entered `discovered_facts` — verify the prompt payload, not just the output.
 - Companion makes one quiet contextual comment about Grim's mood mid-scene. Not every turn.
-- 15+ turns elapse in the scene. Beat count tracked. Scene Director hasn't forced a resolution. Pacing nudges fired twice based on state.
-- Scene Builder generates a tavern in an unauthored town. Atmosphere is sensory, NPCs have current beats, threads are in the air. Patron persists; party returns next session, patron remembers prior turn.
-- SceneNarrator never describes a hidden detail or secret that hasn't been unlocked.
+- 15+ engaged turns elapse; no pacing nudge fires. Then the scene stalls (no discovery for several turns) and a nudge fires; Scene Director never forces resolution.
+- Scene Builder generates a tavern in an unauthored town **synchronously on first entry**; the wait is a one-time area-load. Patron persists; party returns next session — instant, patron remembers prior turn.
+- A scene crosses `beat_count` 8; `scene_progress_summary` is written fire-and-forget; subsequent turns feed last ~6 verbatim + the summary.
 
-**Ideas (not scoped yet — think about when we get here):**
-
-- **Adaptive sliding window for "last N turns in scene"** — N tunable based on `beat_count`. Short scenes (≤5 turns) get the whole scene; long scenes get a smaller recent window so older turns compress into a mid-scene checkpoint.
-- **Mid-scene checkpoint summaries** — for scenes that run 30+ turns, write a rolling "scene midpoint" summary that compresses the first half. Prevents context bloat without waiting for scene close. Scene-aware compression layer between `recent_turns` and `Scene.summary`.
+**Deferred to a later context-management pass:** adaptive/semantic windowing (window size as a function of tension/beat, embedding-based turn selection). The minimal fixed-threshold compression above is the v1; revisit only if a long scene actually feels like it lost the thread.
 
 ---
 
