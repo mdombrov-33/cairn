@@ -240,12 +240,14 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - ✅ **Slice 7** — reimagined & locked (see below).
 - ✅ **Slice 8** — reimagined & locked (scene depth + pacing; state via resolver + Scene Director passes, no mid-stream tools).
 - ✅ **Slice 9** — reimagined & locked (tactical zones + AI movement; feet-mapped movement on real Speed, hard range gate, OA inline; full reaction engine split out to its own slice).
+- ✅ **Slice 10** — reimagined & locked (per-campaign settings; two orthogonal dials — agency preset + model tier — plus gameplay knobs; `settings.llm` contract + per-agent model-override mechanism ships now, BYOK/providers stay Slice 14; content lines/veils + narration verbosity added).
+- ✅ **Slice 13** — reimagined & locked (world-bible RAG; **pgvector-in-Postgres, no Qdrant, no GraphRAG** — corpus is small + hand-authored + tagged; hybrid dense + Postgres FTS + tag boost fused with RRF, local FastEmbed embedder + cross-encoder reranker (`RERANK_ENABLED`), two concurrent retrievals with scene-scoped lore cache; cross-campaign echoes deferred).
 
 **Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
 
 **PHASE A — Core app + frontend (do now):**
 
-- Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): 8 (scene depth), 9 (zones), 10 (settings), 13 (RAG — Qdrant tool _or_ custom hybrid BM25+RRF+cross-encoder, decided).
+- Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): ✅ 8 (scene depth), ✅ 9 (zones), ✅ 10 (settings), ✅ 13 (RAG — pgvector hybrid dense + FTS + tags + RRF + local reranker). **All gameplay slices grilled.**
 - **Reaction engine (new dedicated slice, after 9).** Split out of Slice 9 during grilling. Turn-interrupt + resume in `combat_ai`/`combat_resolver`, a per-creature reaction registry, Counterspell / Shield / Absorb Elements / readied actions / Sentinel, the SSE reaction-prompt round-trip (player reacts to an AI turn), settings-gated `ai`/`suggest`/`player`. Depends on Slice 9 (triggers are range/position-based). Generalizes Slice 9's inline OA into it. Grill separately.
 - **MCP integration** — fold into a core slice. OPEN: MCP *server* (expose Cairn's 50+ tools to external clients) vs *client* (pull external MCP tool servers into our agents via `langchain-mcp-adapters`) — opposite things, must decide.
 - **UI / frontend (dedicated slice).** Grill separately against the backend features (old Slice 15 is a 20-decision grab-bag). Enhance the design in `backend/docs/ui-temp-reference/` (primary: `project/Cairn App v2.html`) to fit *current* functionality — the mockups predate most features. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.**
@@ -1585,67 +1587,142 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 
 ### Slice 10 — Per-campaign settings + agency presets
 
-_Depends on: Slice 7 (companion depth used by sliders), Slice 9 (combat behavior of sliders)._
+_Reimagined post-6 (grilled 2026-07). Depends on: Slice 5 (`Campaign.settings` JSONB column), Slice 7 (companion depth used by the sliders), Slice 9 (combat behaviour of the companion-combat slider)._
 
-Players configure how much agency the AI gets. Per-campaign, set at creation, editable mid-campaign.
+Per-campaign configuration, set at creation and editable mid-campaign, **resolved once per turn**. Three groups, two of them independent dials:
 
-**Build (schema is done in Slice 5):**
+1. **Agency** — who controls what (AI vs player): the preset + override system.
+2. **Model tier** — how much LLM quality/cost the campaign spends. **Orthogonal to agency** — picking "Tactical" says nothing about which models run.
+3. **Gameplay knobs** — death mode, passive checks, content/safety, narration verbosity.
 
-- `Campaign.settings: JSONB`:
-  ```json
-  {
-    "preset": "narrative" | "balanced" | "tactical",
-    "companion": {
-      "combat":    "ai" | "suggest" | "player",
-      "dialogue":  "ai" | "suggest" | "player",
-      "equipment": "ai" | "player",
-      "leveling":  "ai" | "player",
-      "checks":    "ai" | "player"
-    },
-    "checks": {
-      "passive_perception": "silent" | "surfaced" | "on_demand",
-      "passive_insight":    "silent" | "surfaced" | "on_demand"
-    },
-    "death_mode": "hardcore" | "narrative" | "pacifist"
-  }
-  ```
+**Design stance — settings are a merge, presets are never mutated.** A named preset supplies defaults; a **sparse override layer** sits on top; `resolve_settings` produces the effective dict everything reads. The preset tag stays put and overrides are stored separately (UI shows "Balanced · 3 custom") — there is no magic "custom" preset value. Agents/tools read only the *resolved* dict, never the raw stored one.
 
-**Build (preset resolver):**
+**Build — stored `Campaign.settings` JSONB (sparse):**
 
-- `services/settings.py::resolve_settings(campaign) -> dict` — applies preset defaults, then per-system overrides.
-- Presets:
-  - **Narrative (default)**: companion = AI everything, checks = silent, death_mode = narrative.
-  - **Balanced**: companion combat = suggest, dialogue = ai, equipment/leveling = ai, checks = ai. Checks = surfaced. death_mode = narrative.
-  - **Tactical**: companion combat = player, dialogue = ai, equipment = player, leveling = player, checks = player. Checks = surfaced. death_mode = hardcore.
+```json
+{
+  "preset": "narrative" | "balanced" | "tactical",
+  "overrides": { ... any subset of the resolved shape below ... }
+}
+```
 
-**Build (routes):**
+Example stored value: `{"preset": "balanced", "overrides": {"companion": {"combat": "player"}, "llm": {"tier": "premium"}}}`.
 
-- `GET /v1/campaigns/{cid}/settings` — returns resolved settings.
-- `PATCH /v1/campaigns/{cid}/settings` — accepts preset OR per-system overrides; merges with current.
+**Build — resolved shape (what `resolve_settings` returns, what agents read):**
 
-**Build (wire into agents/tools):**
+```json
+{
+  "preset": "balanced",
+  "companion": {
+    "combat":    "ai" | "suggest" | "player",
+    "dialogue":  "ai" | "suggest" | "player",
+    "equipment": "ai" | "player",
+    "leveling":  "ai" | "player",
+    "checks":    "ai" | "player"
+  },
+  "checks": {
+    "passive_perception": "silent" | "surfaced" | "on_demand",
+    "passive_insight":    "silent" | "surfaced" | "on_demand"
+  },
+  "death_mode": "hardcore" | "narrative" | "pacifist",
+  "llm": {
+    "tier": "local" | "balanced" | "premium",
+    "model_overrides": { "<agent_name>": "<model_id>" }
+  },
+  "content": {
+    "violence":   "off" | "fade" | "on",
+    "gore":       "off" | "fade" | "on",
+    "sexual":     "off" | "fade" | "on",
+    "romance":    "off" | "fade" | "on",
+    "horror":     "off" | "fade" | "on",
+    "substances": "off" | "fade" | "on",
+    "lines":      ["<hard no-gos the categories don't cover>"],
+    "tone_note":  "<freeform flavor, e.g. 'heroic, hopeful, occasional levity'>"
+  },
+  "narration": { "verbosity": "terse" | "normal" | "lush" }
+}
+```
 
-- `combat_ai` is only invoked for companion turns when `settings.companion.combat == "ai"`. If `suggest`, server emits `companion_action_proposed` SSE event; player confirms or overrides via existing combat resolver path. If `player`, treats companion as a player-controlled combatant.
-- `dialogue` agent invoked for companion only when `settings.companion.dialogue == "ai"`. Else player types companion's lines.
-- `passive_perception` setting controls SceneNarrator behavior (Slice 6).
-- `death_mode` setting controls `apply_damage` death-path branch (Slice 6).
-- `companion.leveling` setting decides who submits level-up choices (Slice 4 hook).
-- `companion.equipment` setting decides who can call equip/unequip tools on a companion (defer to Slice 15 if UI not ready).
+**Build — preset resolver (`services/settings.py`):**
 
-**Build (UI — Slice 15 dependency):**
+- `resolve_settings(campaign) -> dict` — start from base defaults for **all** blocks, overlay the preset (agency + death_mode + passive checks only), then apply `overrides` (sparse, deep-merged). Returns the resolved shape.
+- **The preset only steers agency + `death_mode` + `checks`.** `llm`, `content`, `narration` default **independently** of the preset and change only by explicit override — this is what keeps the model tier orthogonal.
+- Agency presets:
+  - **Narrative (default):** companion = AI everything; checks = silent; death_mode = narrative.
+  - **Balanced:** companion combat = suggest, dialogue/equipment/leveling/checks = ai; checks = surfaced; death_mode = narrative.
+  - **Tactical:** companion combat = player, dialogue = ai, equipment/leveling/checks = player; checks = surfaced; death_mode = hardcore.
+- Independent defaults (all presets): `llm.tier` = **env-driven** (`dev` → `local`, else `balanced`); `content` = every category `fade`, `lines: []`, `tone_note: ""`; `narration.verbosity` = `normal`.
+- `validate_overrides(overrides) -> None | raises` — enum-checks every field; for `llm`, checks `tier` is defined and every `model_overrides` value is in the **server-available model registry** (models the backend actually has creds for + local Ollama, read from `models.yaml`/env). Unknown model or tier → `422`.
 
-- Settings tab in campaign view. Preset radio buttons + collapsible advanced overrides. Slider model per the UI reference in repo.
+**Build — model tier (the "mechanism now" work):**
 
-**Decide:**
+- `llm/models.yaml` gains a `tiers:` section mapping `tier → {agent_name: model_id}`. Bundles are **cross-provider and task-tuned** — latency-critical agents (`intent_router`, combat tool-loop, passive-check rolls) get fast models (Flash / mini class); quality-critical agents (`scene_narrator`, `dialogue`, `lore_keeper`) get stronger-but-responsive models. **Not** reflexively the biggest — no Opus-class default (latency cost outweighs prose gain). `local` = all Ollama/Qwen (free).
+- `resolve_settings` picks the `tier` bundle, then applies the sparse `model_overrides` on top → an effective `{agent_name: model_id}` map inside the resolved dict.
+- `llm/router.py::agent_setup(name, settings=...)` and `llm/client.py` read the per-agent model from the resolved map instead of the static env default. **Only the mechanism ships here; only server-configured models are selectable.** BYOK / per-user provider / new providers = Slice 14.
 
-- **Mid-campaign change consequences** — if player switches from `narrative` to `hardcore` mid-campaign and PC is at 0 HP, what happens? **Pragmatic:** changes apply going forward; current state unchanged. Document this.
-- **Suggest mode UX** — server sends companion's proposed action; client renders "Companion proposes: X. Confirm / Override." Define the SSE event shape now.
+**Build — resolve once, thread through the turn:**
 
-**Verify:** New campaign defaults to Narrative preset. Toggle to Tactical: companion combat turns now expect player input. Toggle death_mode hardcore: PC dies → campaign locks. Toggle passive_perception to surfaced: scene entry rolls visible to player. Override single field without losing preset (preset becomes "custom" or remains tagged + overrides logged).
+- `turns.service.prepare()` (and graph nodes that open their own session) call `resolve_settings(campaign)` once at turn start; the resolved dict rides in the turn context so every agent/tool/graph node reads the same snapshot (no re-resolving mid-turn, no drift if the row changes underneath).
 
-**Ideas (not scoped yet — think about when we get here):**
+**Build — routes:**
 
-- **Per-user LLM provider choice** — extend `settings` JSONB with `llm: {provider: "anthropic" | "openai" | "openrouter" | "ollama", model_overrides: {agent_name: model_id}}`. Per-agent overrides are essential (a user picking Ollama as default shouldn't have it drive `scene_narrator` — quality cliff). Preset resolver picks sensible per-provider defaults. BYOK key storage + Ollama localhost URL handling lands in Slice 14; UI in Slice 15.
+- `GET /v1/campaigns/{cid}/settings` — returns the **resolved** dict (plus the preset tag + the raw overrides so the UI can render "Balanced · N custom").
+- `PATCH /v1/campaigns/{cid}/settings` — accepts a new `preset` and/or a sparse `overrides` patch; `validate_overrides` runs; deep-merges into stored `overrides`; returns the new resolved dict. Setting `preset` alone keeps existing overrides.
+
+**Build — wire into agents/tools:**
+
+- `combat_ai` runs a companion turn only when `companion.combat == "ai"`. `suggest` → server emits `companion_action_proposed` and waits for the player to confirm/override via the combat resolver path. `player` → companion is treated as a player-controlled combatant. (Enemy turns are unaffected — this slider is companion-only.)
+- `dialogue` agent voices a companion only when `companion.dialogue == "ai"`; else the player types the companion's lines.
+- `checks.passive_perception` / `passive_insight` control SceneNarrator's silent/surfaced/on-demand behaviour (Slice 8).
+- `death_mode` controls the `apply_damage` death-path branch (Slice 6).
+- `companion.leveling` decides who submits level-up choices (Slice 4 hook — resolves the orphaned forward-ref at roadmap line ~370).
+- `companion.equipment` decides who may call equip/unequip tools on a companion.
+- `content` block → injected into `scene_narrator` + `dialogue` prompts as an explicit instruction block (`off` = never, `fade` = off-screen only, `on` = allowed; `lines` verbatim; `tone_note` verbatim). **Prompt-level enforcement, not engine-hard** — an LLM can't be mechanically censored; clear `off`/`fade`/`on` phrasing is reliable in practice.
+- `narration.verbosity` → `scene_narrator` prompt instruction **plus** a soft `max_tokens` hint per level (terse < normal < lush).
+
+**Build — SSE event (define now):**
+
+```
+event: companion_action_proposed
+data: { "combatant_id": "...", "proposed": {"tool": "...", "args": {...}, "narration": "..."} }
+```
+
+Client renders "Companion proposes: X — Confirm / Override." Confirm → execute `proposed` via the resolver path; Override → normal resolver input.
+
+**Build — UI (rendering deferred to the UI slice):**
+
+- Slice 10's UI obligation: expose resolved settings + preset tag + raw overrides via the routes above. **Captured for the UI slice:** a settings tab — preset radios, a model-tier picker, per-category content toggles (`off`/`fade`/`on`) + a `lines`/`tone_note` box, verbosity selector, collapsible **advanced** section for per-agent `model_overrides` and per-companion agency sliders.
+
+**Decide (locked 2026-07):**
+
+1. **Model scope** — `settings.llm` contract + per-agent override *mechanism* ships now; only server-configured models selectable; BYOK/providers → Slice 14.
+2. **Model UX** — player-facing **quality tier** (curated, cross-provider, task-tuned bundle in `models.yaml`) + advanced per-agent `model_overrides`. No single-global-model, no raw-map-only.
+3. **Tier is orthogonal** to the agency preset; defaults env-driven (`local` in dev, `balanced` in prod).
+4. **Extra settings in v1** — content/safety + narration verbosity. Rules-strictness and a separate global roll-visibility toggle **deferred**.
+5. **Content shape** — rich structured categories (`off`/`fade`/`on`) + `lines` escape hatch + `tone_note`. Prompt-level enforcement.
+6. **Storage** — preset tag + sparse override layer; never a "custom" preset. `resolve_settings` = base + preset overlay + overrides.
+7. **Validation** — `PATCH` enum-checks all fields and validates `llm` against the server-available model registry (→ `422`).
+8. **Mid-campaign changes apply going forward**, current state untouched (switch to hardcore at 0 HP does not retro-kill; the next death locks).
+
+**Schema changes:** none (`Campaign.settings` JSONB exists from Slice 5). `models.yaml` gains a `tiers:` section (config, not migration).
+
+**Files added / changed:**
+
+- `services/settings.py` (new) — `resolve_settings`, preset tables, base defaults, `validate_overrides`, server-available model registry.
+- `api/v1/routes/campaigns.py` (or new `settings.py`) — `GET`/`PATCH` settings routes.
+- `llm/models.yaml` — new `tiers:` section (cross-provider, task-tuned bundles).
+- `llm/router.py`, `llm/client.py` — `agent_setup`/`complete*` read the per-agent model from the resolved settings map.
+- `pipelines/turn_graph.py`, `domain/services/turns/service.py` — resolve settings once per turn, thread into context.
+- `prompts/scene_narrator/v1.md`, `prompts/dialogue/v1.md` — content block + verbosity instruction.
+- Combat/companion wiring (`combat_ai` invocation gate, companion dialogue gate, leveling/equipment gates).
+
+**Verify:** New campaign → Narrative preset resolves (companion all-AI, checks silent, `llm.tier` = env default). `PATCH {"overrides": {"companion": {"combat": "player"}}}` → resolved companion.combat = player, preset still "balanced", `GET` shows "Balanced · 1 custom". Toggle Tactical → companion combat turns expect player input. `PATCH` an `llm.model_overrides` value the server has no key for → `422`. Switch `llm.tier` premium → next turn's `scene_narrator` uses the premium bundle's model, `intent_router` still uses its fast model. Set `content.gore = "off"` + `lines: ["self-harm"]` → narrator prompt carries the block; gore stays out of the fiction. Set `narration.verbosity = "terse"` → shorter narration + lower token cap. Switch to hardcore while PC at 0 HP → no retro-death; next lethal hit locks the campaign.
+
+**Deferred:** BYOK + per-user provider selection + new providers (Slice 14); rules-strictness knob; content categories beyond the fixed set (the `lines` escape hatch covers the gap); settings-tab rendering (UI slice).
+
+**Ideas (later):**
+
+- **BYOK** — encrypted per-user API keys unlock providers beyond the server's own (OpenAI/OpenRouter/Anthropic/user-hosted Ollama URL). Extends the same `settings.llm` contract; needs user identity to hang keys on → Slice 14, UI in the frontend slice.
 
 ---
 
@@ -1702,27 +1779,86 @@ LLM-as-judge evals block merges on regression.
 
 ### Slice 13 — World bible retrieval (RAG)
 
-_Depends on: Slice 5 (embedding column + scene bounds), Slice 12 (eval baseline)._
+_Reimagined post-6 (grilled 2026-07). Depends on: Slice 5 (embedding columns + chunked lore + scene bounds), Slice 12 (eval baseline for tuning top-k / rerank)._
 
-**Decide first:**
+Wires the two RAG-shaped layers of the DM context that Slice 5 stubbed: **layer 1** (relevant world lore) and **layer 3 / 5** (relevant campaign memory — world-bible entries + older day summaries past the recent-N window). Retrieval runs **before `SceneNarrator`, in the turn hot path, every turn**.
 
-- Top-k value — tune against evals.
-- Embedding model version — add `embedding_model_version` column on `WorldBibleEntry`.
-- Lore search endpoint — `GET /v1/campaigns/{cid}/lore?q=guild` for frontend lore panel. Useful in Slice 15.
+**Design stance (locked): this is a small, hand-authored, structured corpus — not a big-document RAG problem.** `WorldLoreChunk` rows are chunked *at authoring time*, each already self-contained with a `title`, `category`, and `tags`. That authored `title + tags` **is** the "contextual header" that Anthropic's Contextual Retrieval adds with an LLM — so **no ingestion-time LLM contextualization** and **no fancy chunking** are needed; the corpus is already dressed for retrieval. A campaign's `WorldBibleEntry` set grows but stays small (hundreds of rows for a long campaign). Consequences that shaped every decision below:
 
-**Build:**
+- **No Qdrant, no separate vector service.** pgvector in the existing Postgres — Slice 5 already added the `embedding` columns. A whole extra service on a 1–2 GB VPS is unjustified for a corpus that fits in a table (deploy budget). Reference implementation for the mechanics is the user's own `doc-research-agent` (hybrid + RRF + cross-encoder), **ported down** to pgvector and scaled to this corpus.
+- **No GraphRAG.** The build-a-graph rule (≥30% of retrieval *failures* are multi-hop across documents sharing no surface text) can't even be evaluated yet — no retrieval shipped, no failure data. Its real cost is a maintenance tail on a hobby budget. Cairn already has a **cheap manual graph** — `RELATIONSHIP` bible entries + faction/NPC links + `tags` — used as structured filter/boost signal, not an LLM-extracted graph. Escape hatch if evals later show multi-hop failures: the **graph-as-reranker** pattern (expand entities from top-k, 1–2 hops) — deferred, not built.
+- **Linear RAG, not agentic RAG.** Retrieval is deterministic context-assembly, not a ReAct loop deciding *when* to retrieve. No re-retrieval, no tool-call loop — latency budget forbids it (`doc-research-agent`'s agentic loop exists because it answers arbitrary user questions; Cairn assembles a prompt).
 
-- Embedder — sentence-transformers locally, SageMaker in prod.
-- Populate `WorldBibleEntry.embedding` on every LoreKeeper write.
-- Populate `WorldLoreChunk.embedding` once per chunk (one-shot at seed time and on edit).
-- Vector store — pgvector in Postgres locally, S3 Vectors in prod.
-- Retrieval before `SceneNarrator` — **two separate retrievals** stitched into the same prompt:
-  1. **World lore retrieval** — query = current location + NPCs in scene + active threads; pulls relevant `WorldLoreChunk` rows (faction, region, deity, figure, history). Filters out chunks unrelated to the scenario. Combined with the template's `always_on_lore_keys`.
-  2. **World bible retrieval** — query = player input + recent turns; pulls relevant `WorldBibleEntry` rows (campaign-specific NPCs, events, quests, day summaries past the recent-N window). The campaign's own memory.
-- Both retrievals tagged in the prompt under distinct headers ("Background lore", "Campaign memory") so the LLM treats them differently — lore is reference, bible is history.
-- World echoes — `CAMPAIGN_CONCLUDED` entries from other campaigns retrievable as world history (cross-campaign retrieval, opt-in via setting).
+**Build — storage & indexing (pgvector, all in Postgres):**
 
-**Verify:** SceneNarrator prompt includes only lore relevant to the current scene (not the full world). DM references a campaign-specific fact from 20+ turns ago. Lore chunks for unrelated regions/factions are absent from the prompt. Prompt discipline holds — DM doesn't force-fit world lore into unrelated scenes.
+- Migration (Alembic): pin `WorldBibleEntry.embedding` and `WorldLoreChunk.embedding` to `vector(384)`; add `embedding_model_version: str | None` to both (stamp on write so we can bulk re-embed on a model swap); add a generated `tsvector` column (over `title` + `content`) with a **GIN** index for full-text; add an **HNSW** index on each `embedding` (cosine). No new SQL by hand — Alembic-generated, pgvector/tsvector DDL in the migration body.
+- All vector + FTS access lives in `db/queries/` (hard rule) — a candidate-fetch function per table doing the pgvector `<=>` cosine query and the `tsvector @@` query, scoped by `world_id` (lore) / `campaign_id` (memory).
+
+**Build — embedder (local, both envs — corrects the stale "SageMaker/S3 Vectors in prod"):**
+
+- **FastEmbed `BAAI/bge-small-en-v1.5`, 384-dim, ONNX** — same library family as the reranker (no PyTorch; small image; fast on the VPS). Runs in **dev and prod** on the same box. `uv add fastembed`.
+- Warm the model at startup (like the reranker) so the first turn doesn't pay the load.
+- **When embeddings are computed:** `WorldLoreChunk` — embedded at **seed time** (one-shot in the seed loader) and **on edit**. `WorldBibleEntry` — embedded **inline inside the LoreKeeper fire-and-forget task** (already async/off the hot path, so the embed is free latency-wise). Every write stamps `embedding_model_version`.
+
+**Build — hybrid search + RRF (`services/retrieval/`):**
+
+- `hybrid_search(query, scope, top_k)`:
+  1. **Dense** — embed the query (FastEmbed), pgvector cosine over the scoped rows → wide candidate pool (`fetch_k = min(top_k × multiplier, cap)`, mirroring `doc-research-agent`).
+  2. **Lexical** — Postgres `tsvector` FTS over the same scope → its own ranked list. **Tags** (authored faction/place/NPC names) feed the lexical/boost side — this is where exact proper nouns ("Kaelen", "the Ashen Vow") get caught that dense misses.
+  3. **RRF fusion** — merge the dense and lexical ranked lists (`score = Σ 1/(k + rank)`, `k=60`) into one candidate ordering.
+- **No hard relevance pre-filter** beyond the mandatory scope (`world_id` / `campaign_id`): hybrid + RRF + rerank do the ranking. Avoids the "untagged ⇒ invisible" failure. `always_on_lore_keys` chunks are injected **unconditionally** (they bypass retrieval) and de-duped against retrieved hits.
+
+**Build — reranker (`RERANK_ENABLED`, default ON):**
+
+- Port `doc-research-agent`'s cross-encoder (FastEmbed `TextCrossEncoder`, local ONNX, warmed at startup). Re-scores the RRF candidate pool against the query, keeps `top_k`. Behind a config flag (`RERANK_ENABLED`, default **ON**); Slice 12 evals validate it earns its latency, flip off if not. Disabled ⇒ `fetch_k == top_k`, rerank is a no-op trim.
+
+**Build — the two retrievals + hot-path orchestration (`services/retrieval/lore_retrieval.py`):**
+
+- **(1) World-lore retrieval** — query text = **current location + NPCs in scene + active threads**; scope = `world_id`; returns `WorldLoreChunk` rows (faction/region/deity/figure/history), plus the template's `always_on_lore_keys` chunks.
+- **(2) Campaign-memory retrieval** — query text = **player input + recent-turns window + active quest/thread titles** (richer query ⇒ old events tied to a running quest resurface even when the player doesn't name them — the continuity goal; the reranker trims the added noise); scope = `campaign_id`; returns `WorldBibleEntry` rows (campaign NPCs/events/quests + day summaries past the recent-N window).
+- **Concurrency + caching (hot path):** run both retrievals **concurrently** (`asyncio.gather`). **Cache the world-lore result at scene scope** — in-memory, keyed by `scene_id` + NPC-roster hash; recompute only on scene change or roster shift (its query inputs are stable within a scene). The campaign-memory retrieval runs **every turn** (query changes each turn). ⇒ most turns pay for one live retrieval, not two.
+- **Failure/latency guard (mirrors Slice 9's "combat never blocks on seeding"):** the whole retrieval is wrapped with a timeout + `try/except`; on error or timeout, **degrade gracefully** to `always_on_lore` + recent turns and narrate anyway. Retrieval never blocks the turn.
+- **Cold start:** campaign turn 1 has no bible → memory retrieval returns empty, lore-only. Fine.
+
+**Build — prompt stitching (`services/narrative_context.py::build_dm_context`):**
+
+- Fill the layer-1 and layer-3/5 stubs. Stitch the two result sets under **distinct headers** so the LLM treats them differently:
+  - `## Background lore` — reference only; **prompt discipline line**: "background reference; do not steer the scene toward these elements" (the context-pollution guard — chunked + retrieved precisely so the DM sees only what's relevant, and is told not to force-fit it).
+  - `## Campaign memory` — history; things that actually happened, safe to reference and build on.
+
+**Build — lore search endpoint (frontend lore panel):**
+
+- `GET /v1/campaigns/{cid}/lore?q=guild` — reuses `hybrid_search` over the campaign's revealed lore/bible, **player-visibility filtered** by `revealed_at_turn_id` (Slice 5). For the UI lore-book; the no-`q` list endpoint already exists.
+
+**Decide (locked 2026-07):**
+
+1. **Vector store** — pgvector in the existing Postgres. No Qdrant, no separate service (budget). No GraphRAG.
+2. **Hybrid shape** — pgvector dense + Postgres `tsvector` FTS + authored `tags` boost, fused with **RRF**. All inside Postgres.
+3. **Reranker** — FastEmbed cross-encoder (local ONNX, warmed), `RERANK_ENABLED` flag, **default ON**, eval-validated.
+4. **Embedder** — FastEmbed `bge-small-en-v1.5`, 384-dim ONNX, local in **both** dev and prod; `embedding_model_version` stamped.
+5. **Hot path** — two retrievals concurrent; world-lore cached at scene scope (in-memory, `scene_id` + roster hash); campaign-memory every turn.
+6. **Memory query** — player input + recent-turns window + active thread/quest titles (max continuity recall; reranker cleans noise).
+7. **World echoes** — **deferred.** Ship isolated: (this world's lore) + (this campaign's memory) only. Cross-campaign `CAMPAIGN_CONCLUDED` retrieval is a later, setting-gated add (needs concluded campaigns to exist; complicates isolation).
+8. **top-k** — start lore=4 / memory=4, `fetch_k` = `top_k × multiplier` capped; **tune against Slice 12 evals**.
+
+**Schema changes:** pin both `embedding` columns to `vector(384)`; add `embedding_model_version` on `WorldBibleEntry` + `WorldLoreChunk`; add generated `tsvector` column + GIN index (both tables); add HNSW cosine index on both `embedding` columns. All Alembic-generated.
+
+**Files added / changed:**
+
+- `services/retrieval/` (new package): `embedder.py` (FastEmbed dense embed + warmup), `search.py` (hybrid dense + FTS + tag boost, RRF fuse, wide fetch), `rerank.py` (cross-encoder, `RERANK_ENABLED`, warmup — ported from `doc-research-agent`), `lore_retrieval.py` (the two retrieval entry points, scene cache, concurrent orchestration, failure guard).
+- `db/queries/` — pgvector cosine + `tsvector` candidate-fetch functions, scoped by `world_id` / `campaign_id` (all DB access through here).
+- `db/migrations/` — one Alembic revision: pin `vector(384)`, add `embedding_model_version`, generated `tsvector` + GIN, HNSW indexes.
+- `agents/lore_keeper.py` — embed + stamp version on write (inside the existing fire-and-forget task).
+- `services/narrative_context.py` — `build_dm_context` wires layers 1 + 3/5 (currently stubbed); stitches the two headers with the prompt-discipline line.
+- `seed/` loader — embed `WorldLoreChunk`s at seed time (+ on edit).
+- `api/v1/routes/campaigns.py` — `GET /{cid}/lore?q=` search variant (visibility-filtered).
+- config — `RERANK_ENABLED`, `top_k` (lore/memory), `fetch_k` multiplier + cap, embedding model name + version.
+- startup — warm embedder + reranker.
+- `pyproject.toml` via `uv add fastembed`.
+
+**Verify:** `SceneNarrator` prompt includes only lore relevant to the current scene (not the full world); lore chunks for unrelated regions/factions are absent. Exact proper-noun recall works — a query naming an NPC/faction that dense alone would miss is caught by the FTS+tag side. DM references a campaign-specific fact from 20+ turns ago (memory retrieval surfaces it via the enriched query). Prompt discipline holds — DM doesn't force-fit background lore into unrelated scenes. Within one scene, the lore retrieval is served from cache (not re-embedded every turn); it recomputes when the party moves scenes. Retrieval timeout/error ⇒ turn still narrates on `always_on` + recent turns. `RERANK_ENABLED=false` ⇒ pipeline still returns `top_k`, just RRF-ordered.
+
+**Deferred:** cross-campaign world echoes (setting-gated, later); graph-as-reranker multi-hop (only if evals show graph-shaped failures); LLM contextual retrieval / HyDE / query-expansion (unneeded for an authored corpus — revisit only if eval recall stalls); prod vector-store swap (stays pgvector — no S3 Vectors / SageMaker).
 
 ---
 
