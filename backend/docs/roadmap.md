@@ -204,7 +204,7 @@ These are the experience-level goals the code serves. Keep them in mind when sco
 
 **SRD is the source of truth for rules.** Features are string names; LLM queries SRD lookup tools at runtime.
 
-**Reactions are engine-resolved, not LLM-invented.** v1 ships one reaction — opportunity attacks, resolved inline in `move_combatant` (Slice 9). The general reaction engine (Counterspell / Shield / readied / interrupts, settings-gated) is its own dedicated slice after zones; there is **no** reaction bus in v1.
+**Reactions are engine-resolved, not LLM-invented.** OA shipped inline in `move_combatant` (Slice 9); the general reaction engine — bus + registry, Shield / Absorb Elements / Counterspell / readied / Sentinel, plan-then-execute combat, engine to-hit, settings-gated player round-trip — is **locked as Slice 10.5** and generalizes that OA. No reaction bus before then.
 
 **Action economy is tool-enforced.** `use_action`, `use_bonus_action`, `use_reaction`, `spend_movement`.
 
@@ -241,6 +241,8 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - ✅ **Slice 8** — reimagined & locked (scene depth + pacing; state via resolver + Scene Director passes, no mid-stream tools).
 - ✅ **Slice 9** — reimagined & locked (tactical zones + AI movement; feet-mapped movement on real Speed, hard range gate, OA inline; full reaction engine split out to its own slice).
 - ✅ **Slice 10** — reimagined & locked (per-campaign settings; two orthogonal dials — agency preset + model tier — plus gameplay knobs; `settings.llm` contract + per-agent model-override mechanism ships now, BYOK/providers stay Slice 14; content lines/veils + narration verbosity added).
+- ✅ **Slice 10.5** — reimagined & locked (reaction engine; full scope OA + Shield + Absorb + Counterspell + readied + Sentinel; **engine now owns to-hit** via `roll_attack`, revising Slice 9 cover-AC to hard; reaction bus + registry; **plan-then-execute combat** — deterministic/replayable; deterministic AI heuristics; `reaction_control` suggest/player/ai via Slice 10; player round-trip via `reaction_prompt` SSE + `POST /reactions`; full nesting LIFO depth-4 economy-bounded; readied actions parsed once to structured triggers).
+- ✅ **Slice 10.7** — reimagined & locked (MCP server + tool registry; **server** direction only — expose the stateful engine outward; tools are already MCP-shaped (context-by-param, own DB session); tagged **auto-discovery registry** (`@register(tags=…)`) replaces the fragile hand-maintained `ALL_TOOLS`/`COMBAT_TOOLS` — subsets are tag-derived, a guard test forbids unregistered tools; symmetric-pair **consolidation** ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp` on FastAPI, single process; **one `@tool` def → two projections**, no `mcp/` folder, no internal dogfooding; **no auth** in Phase A behind `MCP_ENABLED`, auth+internet exposure gated to Phase B).
 - ✅ **Slice 13** — reimagined & locked (world-bible RAG; **pgvector-in-Postgres, no Qdrant, no GraphRAG** — corpus is small + hand-authored + tagged; hybrid dense + Postgres FTS + tag boost fused with RRF, local FastEmbed embedder + cross-encoder reranker (`RERANK_ENABLED`), two concurrent retrievals with scene-scoped lore cache; cross-campaign echoes deferred).
 
 **Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
@@ -248,8 +250,8 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 **PHASE A — Core app + frontend (do now):**
 
 - Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): ✅ 8 (scene depth), ✅ 9 (zones), ✅ 10 (settings), ✅ 13 (RAG — pgvector hybrid dense + FTS + tags + RRF + local reranker). **All gameplay slices grilled.**
-- **Reaction engine (new dedicated slice, after 9).** Split out of Slice 9 during grilling. Turn-interrupt + resume in `combat_ai`/`combat_resolver`, a per-creature reaction registry, Counterspell / Shield / Absorb Elements / readied actions / Sentinel, the SSE reaction-prompt round-trip (player reacts to an AI turn), settings-gated `ai`/`suggest`/`player`. Depends on Slice 9 (triggers are range/position-based). Generalizes Slice 9's inline OA into it. Grill separately.
-- **MCP integration** — fold into a core slice. OPEN: MCP *server* (expose Cairn's 50+ tools to external clients) vs *client* (pull external MCP tool servers into our agents via `langchain-mcp-adapters`) — opposite things, must decide.
+- ✅ **Reaction engine — reimagined & locked as Slice 10.5** (grilled 2026-07). Full scope (OA + Shield + Absorb + Counterspell + readied + Sentinel); **engine now owns to-hit** (`roll_attack`, revises Slice 9 cover-AC to hard); reaction bus + registry; **plan-then-execute combat** (deterministic/replayable); deterministic AI heuristics; `reaction_control` = suggest/player/ai via Slice 10; player round-trip via `reaction_prompt` SSE + `POST /reactions`; full nesting (LIFO, depth 4, economy-bounded); readied actions parsed once to structured triggers.
+- ✅ **MCP integration — reimagined & locked as Slice 10.7** (grilled 2026-07). **Server** direction chosen (expose the stateful engine; client deferred — nothing external to consume yet). Tagged auto-discovery **registry** replaces the hand-maintained tool lists (fixes the `ALL_TOOLS`-rot / forget-to-append smell) + symmetric-pair consolidation ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp`; one `@tool` def → two projections (no `mcp/` folder, no internal dogfooding); no auth in Phase A behind `MCP_ENABLED`, auth gated to Phase B.
 - **UI / frontend (dedicated slice).** Grill separately against the backend features (old Slice 15 is a 20-decision grab-bag). Enhance the design in `backend/docs/ui-temp-reference/` (primary: `project/Cairn App v2.html`) to fit *current* functionality — the mockups predate most features. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.**
 
 **PHASE B — Production hardening (deferred until Phase A is playable locally):**
@@ -1726,6 +1728,187 @@ Client renders "Companion proposes: X — Confirm / Override." Confirm → execu
 
 ---
 
+### Slice 10.5 — Reaction engine
+
+_Reimagined post-6 (grilled 2026-07). Depends on: Slice 9 (range/position triggers, the zone-exit OA it generalizes), Slice 10 (the `reaction_control` agency preset). **Revises Slice 9:** promotes cover-AC from advisory to a hard to-hit modifier (see engine to-hit)._
+
+Generalizes Slice 9's single inline reaction (opportunity attack) into a real **reaction bus**: trigger detection, a per-creature reaction economy, deterministic AI decisions, and an interactive player round-trip. A reaction is an out-of-turn action fired by a specific event on someone else's turn — OA on movement, Shield on an incoming hit, Absorb Elements on elemental damage, Counterspell on a spell being cast, a readied action on a declared condition. One reaction per creature per round.
+
+**Design stance (locked): engine-resolved, deterministic, interruptible.** Reactions are resolved by the engine — never invented by the narrating LLM. AI reaction decisions are deterministic heuristics (no extra LLM calls in an already-sequential combat loop). The human player's own reactions are interactive (settings-gated), reusing the skill-check pause/resume precedent. Consistent with **block the impossible, allow the unwise** — the engine offers the legal reaction and states the trigger as fact; it does not nag or auto-protect. [[feedback-engine-doesnt-nanny]]
+
+**The pivotal enabler — engine owns to-hit (revises Slice 9):**
+
+- New `roll_attack(attacker_id, target_id, to_hit_bonus, …)` in the combat engine: d20 (+ adv/disadv from conditions/flanking) + attacker bonus vs target AC → hit/miss, nat-20 crit. Attacks become deterministic like saves already are.
+- Target AC sources: character AC (Slice 2.5 derivation), npc/monster AC, **plus the zone's `cover_ac_bonus` as a hard modifier** — Slice 9's advisory cover-AC is now enforced here.
+- This is what makes Shield mechanically real: Shield's +5 AC recomputes hit→miss against a *known* attack roll. Attacks that previously let the LLM narrate the hit now go through `roll_attack`; narration describes the engine's result.
+
+**Plan-then-execute combat (the major refactor):**
+
+- `combat_ai` and `combat_resolver` become **planners**: the LLM emits an ordered **plan** — a list of typed engine operations (`move`, `attack`, `cast`, `apply_condition`, …) via structured output — instead of calling mutation tools directly in a live loop.
+- A shared **executor** (`services/combat/executor.py`) runs the plan operation-by-operation, deterministically. Because no LLM sits in the execution loop, execution can pause cleanly and resume.
+- Bonus: combat becomes deterministic, testable, and replayable from `combat_state` + plans.
+
+**The reaction bus (`services/combat/reactions.py`):**
+
+- A **registry** of reaction definitions. Each: `{ name, trigger predicate, eligibility (registered on the creature + unused reaction + resource available + valid range), should_react heuristic, resolver }`.
+- v1 definitions: **opportunity_attack** (moved out of `move_combatant` into the registry), **shield**, **absorb_elements**, **counterspell**, **readied_action**, and **sentinel** (an OA modifier).
+- The executor fires trigger events at defined **interception points**:
+  - `move` op → on zone-exit: movement trigger → OA / Sentinel / readied(enters-zone / within-reach).
+  - `attack` op → **attack-declared** trigger *before* hit/miss is finalized → Shield (defender bumps AC, then `roll_attack` computes).
+  - `apply_damage` with a damage type → **damage-type** trigger → Absorb Elements (halve typed damage).
+  - `cast` op → **spell-cast** trigger *before* the spell resolves → Counterspell.
+  - after every op/event → re-check pending **readied** conditions.
+- For each opportunity the dispatcher collects eligible reactors, then:
+  - **AI reactors** (enemies + companions, always auto): run the deterministic `should_react` heuristic; if yes, resolve immediately.
+  - **The human's own character:** governed by `reaction_control` (below). Under `suggest`/`player`, **suspend** and round-trip.
+
+**AI reaction heuristics (deterministic, per definition):**
+
+- OA → always take it (a free attack is ~always worth it); Sentinel rider drops the target's speed to 0 and fires even on Disengage.
+- Shield → only if the attack would land *and* the damage matters.
+- Absorb Elements → only above a damage threshold.
+- Counterspell → only against spells at/above a threat threshold (level / AoE / control).
+- Thresholds are tunable; any definition can later be upgraded to consult the AI.
+
+**Control model — `reaction_control` (Slice 10 agency preset, per-player):**
+
+- `suggest` (**default**): AI reactions auto; for the player's own reactions, suspend **only** when a reaction is available *and* `should_react` says it plausibly changes the outcome — show a prompt with a recommendation. Timeout auto-applies the recommendation.
+- `player`: always prompt for the player's own reactions, even marginal ones.
+- `ai`: engine decides the player's reactions too (auto-pilot) using the same heuristics — no round-trip.
+
+**Player round-trip (mirrors the skill-check precedent):**
+
+- On a player suspension the executor persists a **checkpoint** in `session.combat_state` (JSONB, no migration): `pending_reaction = { trigger, terse description, eligible options, recommendation, plan_queue, execution_cursor, reaction_stack, depth }`.
+- Emit a **`reaction_prompt`** SSE event carrying the options + recommendation + countdown + a **terse, templated** trigger description (e.g. "Orc archer attacks you: to-hit 17 vs AC 15 — would hit. Cast Shield?") — deterministic, *not* LLM narration (mechanics aren't narrated until the round completes).
+- The stream ends. Client resumes via **`POST /v1/sessions/{id}/reactions`** `{ decision, chosen_reaction }`. On **timeout**, the client auto-POSTs the recommendation so the round never blocks.
+- Resume applies the decision and continues the executor from `execution_cursor`. A single round may suspend/resume **multiple times** (Shield on enemy 3, Counterspell on enemy 5) — falls out of the executor loop.
+- Narration is unchanged: the whole round narrates at completion (after all round-trips), exactly as combat does today — reaction prompts are pre-narration mechanical interrupts like `check_required`.
+
+**Nesting & simultaneity:**
+
+- Full nesting via a **LIFO stack**: resolving a reaction is itself an operation that fires its own triggers (player Counterspell → enemy Counterspells it). Depth-capped at **4** as a safety valve.
+- The **reaction economy** (one reaction per creature per round) naturally terminates chains — each nested reaction spends a reactor's only reaction.
+- Simultaneous eligible reactors to one event resolve in **initiative order**.
+
+**Readied actions (parse-once, match deterministically):**
+
+- On the player's turn, declaring a readied action ("hold my attack until the goblin steps through the door") consumes the action and arms a pending reaction.
+- New **`readied_parser`** structured-output agent: one LLM pass converts the sentence → a **structured trigger** (`creature`, `event` ∈ {enters-zone, casts-spell, moves-within-reach, attacks}, optional `zone`/`target`) mapped onto the **same event stream** the bus already emits. Stored structured in `combat_state`; matched **deterministically** on every event thereafter — zero extra LLM calls at runtime.
+- One-shot economy; expires at the start of the readier's next turn. If the sentence can't map to a known trigger, **reject with a plain reason** (re-phrase or pick another action) — no fuzzy runtime guessing. [[feedback-engine-doesnt-nanny]]
+
+**Economy & resources:**
+
+- `reaction_used` (already on combatants) gates one reaction/round; refreshes at the start of the creature's turn.
+- Spellcaster reactions consume their **resource** (Shield/Absorb 1st-level slot, Counterspell 3rd) via existing resource tracking; feat reactions (Sentinel) gate on the feat. Eligibility **fails closed** if the resource is unavailable.
+
+**Decide (locked 2026-07):**
+
+1. **Scope** — full: OA + Shield + Absorb Elements + Counterspell + readied actions + Sentinel.
+2. **Engine to-hit** — introduce `roll_attack`; attacks deterministic like saves; **revises Slice 9** (cover-AC advisory → hard).
+3. **Architecture** — central reaction bus + registry; OA moved into it (no more inline in `move_combatant`).
+4. **AI decisions** — deterministic `should_react` heuristics, no LLM in the loop.
+5. **Combat loop** — plan-then-execute; planners (LLM) + shared deterministic executor; combat becomes replayable.
+6. **Control** — `reaction_control` = `suggest` (default) / `player` / `ai`, per-player via Slice 10; governs the human's own character; AI combatants always auto.
+7. **Round-trip** — checkpoint in `combat_state`; `reaction_prompt` SSE + `POST /reactions` resume; timeout auto-applies recommendation; multiple suspends/round.
+8. **Nesting** — full LIFO stack, depth cap 4, economy-bounded, initiative-ordered for simultaneous.
+9. **Readied** — parse-once to a structured trigger (`readied_parser`), deterministic runtime match, reject-if-unmappable.
+
+**Schema changes:** none new. `pending_reaction` + readied actions live in `session.combat_state` (JSONB); `reaction_control` lives in `campaign.settings` (JSONB, Slice 10). New agent `readied_parser` + the planner reshaping of `combat_ai`/`combat_resolver` need prompts + `llm/models.yaml` entries.
+
+**Files added / changed:**
+
+- `services/combat/reactions.py` (new) — dispatcher, registry, the six reaction definitions, `should_react` heuristics.
+- `services/combat/executor.py` (new) — plan executor, interception points, checkpoint/suspend/resume, nesting stack.
+- `services/combat/plan.py` (new) — typed combat-operation plan schema.
+- `services/combat/rolls.py` — add `roll_attack` (d20 vs AC + cover, adv/disadv, crit).
+- `agents/combat_ai.py`, `agents/combat_resolver.py` + prompts — become **planners** (emit a structured plan, not a live tool loop).
+- `agents/readied_parser.py` + `prompts/readied_parser/v1.md` + `llm/models.yaml` entry (new).
+- `tools/combat.py` — OA logic removed from `move_combatant` (now a reaction definition); `apply_damage`/attack path routed through `roll_attack`.
+- `domain/services/turns.py` — combat path handles executor suspension; new `resume_reaction` streaming path.
+- `api/v1/routes/turns.py` — `POST /v1/sessions/{id}/reactions` resume endpoint; `reaction_prompt` SSE event.
+- `sse/events.py` — `reaction_prompt` event type.
+- Slice 10 settings — register `reaction_control` (`ai`/`suggest`/`player`) as an agency preset.
+
+**Verify:** Wizard (Shield prepared, slot free) is targeted by an orc's arrow: `roll_attack` = 17 vs AC 15 (would hit) → under `suggest`, `reaction_prompt` fires with the terse trigger + recommendation; player accepts → AC 20, the 17 misses, slot + reaction consumed. Player casts Fireball → enemy mage auto-Counterspells (deterministic, above threshold) → player Counterspells the counter (nested, LIFO, depth 2) → resolves correctly, both reactions + slots spent. Rogue readies "attack when the goblin enters the doorway" → `readied_parser` → `{creature: goblin, event: enters-zone, zone: doorway}`; two turns later the goblin enters → readied attack fires as a reaction, arm cleared. Fighter with Sentinel: enemy Disengages and leaves reach → OA still fires, enemy speed → 0. Player under `ai` preset: same orc arrow → engine auto-declines Shield (damage below threshold), no prompt, round doesn't pause. Timeout on a `reaction_prompt` → client auto-applies the recommendation, round completes. Combat round with no reactions → identical narration to today (plan-execute is transparent when nothing triggers).
+
+**Deferred:** reactions beyond the v1 six (Hellish Rebuke, Riposte, Cutting Words, … — each is now just a registry entry + heuristic); LLM-judged readied conditions (structured parse covers combat triggers; flavor-only conditions rejected); per-reaction "save my reaction for a bigger threat" AI lookahead; server-side timeout timer (client-driven countdown for v1); battle-map rendering of reaction prompts (UI slice).
+
+---
+
+### Slice 10.7 — MCP server + tool registry
+
+_Reimagined post-6 (grilled 2026-07). Depends on: Slice 9 + Slice 10.5 (the combat tool surface — incl. `roll_attack` and the plan-then-execute tools — should be final before we consolidate + register it). Foundational: replaces the two hand-maintained `ALL_TOOLS` / `COMBAT_TOOLS` lists._
+
+**Design stance (locked): two problems, one foundation.** Today the tool layer has (1) two hand-curated lists — fragile (forget to append and a tool silently doesn't exist), and `ALL_TOOLS` has already rotted to **zero consumers** — and (2) no MCP surface at all, despite ~58 tools. A single **tagged auto-discovery registry** fixes both *and* feeds the MCP server. **MCP is a thin projection of internal tools, never a second definition.** The engine tools already take `session_id` / entity-UUIDs as params and open their own DB session per call — they are **already MCP-shaped** (context-by-param, self-contained transaction), which is why exposing them is cheap. **No internal dogfooding:** our agents keep calling tools directly in-process (a direct `await`); MCP is the *cross-process* boundary only — routing the hot combat loop through JSON-RPC would tax latency and add a failure surface for zero gain. Tools stay in `tools/` — **there is no `mcp/` tool folder** (CLAUDE.md preserved); the MCP code is a small surface in `api/mcp.py`.
+
+**Build — the registry (`tools/registry.py`, new):**
+
+- A decorator replaces bare `@tool`:
+  ```python
+  @register(tags=["combat", "mutation"], mcp=True)
+  async def apply_damage(session_id: Annotated[str, "..."], ...): ...
+  ```
+  `register(*, tags, mcp=True)` applies LangChain's `tool()` to the fn and records `RegisteredTool(tool, tags: set[str], mcp: bool)` in a module-level `_REGISTRY`. Adding a tool = decorate it. No list to edit, ever.
+- Accessors: `all() -> list[BaseTool]`; `select(include: set[str], exclude: set[str] = set()) -> list[BaseTool]` (tags ⊇ include, tags ∩ exclude = ∅); `mcp_tools() -> list[RegisteredTool]` (the `mcp=True` subset).
+- **Auto-discovery:** `tools/__init__.py` imports each tool module for side effects (explicit import list — deterministic, no import-order surprises; the modules are few and stable), then derives the public names **from the registry** instead of hand-listing:
+  - `ALL_TOOLS = registry.all()`
+  - `COMBAT_TOOLS = registry.select(include={"combat"}, ...)` (or a union of the combat-relevant tags) — **derived, not hand-listed**
+  - back-compat: the names `ALL_TOOLS` / `COMBAT_TOOLS` stay, so `combat_ai` / `combat_resolver` imports don't change.
+- **Guard test** (`tests/test_tool_registry.py`) — asserts every `@tool`/`@register` callable found under `tools/` is present in the registry. This is the safety net that replaces "remember to edit the list": an unregistered tool fails CI.
+- **Tag taxonomy (v1):** `dice`, `srd`, `readonly`, `combat`, `resource`, `rest`, `state`, `mutation`, `narrative`. `mcp` flag defaults `True` (default: expose the engine — the stateful surface *is* the differentiator per the scope decision).
+
+**Build — consolidation (symmetric pairs only):**
+
+- **Rule: collapse a pair only when the two share the same argument shape modulo a sign/bool.** Asymmetric pairs stay (see below). This keeps consolidation low-risk — consistent with the "surgical" restructure decision.
+- Collapses (symmetric):
+  - `use_action` / `use_bonus_action` / `use_reaction` → `use_economy(economy_type)`
+  - `consume_spell_slot` / `restore_spell_slot` → `adjust_spell_slot(level, delta)`
+  - `use_resource` / `restore_resource` → `adjust_resource(name, delta)`
+  - `apply_condition` / `remove_condition` → `set_condition(condition, active)`
+  - `add_exhaustion` / `remove_exhaustion` → `adjust_exhaustion(delta)`
+- **Left as-is (asymmetric — collapsing would worsen them):** `apply_effect` / `remove_effect` (apply needs the full effect, remove needs an id); `set_concentration` / `drop_concentration` (set needs a target, drop takes none); `apply_damage` / `apply_healing` / `apply_temp_hp` (distinct semantics).
+- Net: ~58 → ~40. Combat-agent prompts (`ally_ai`, `enemy_ai`, `combat_resolver`) reviewed for any **hardcoded tool names** touched by a merge; the existing combat integration tests are the gate.
+
+**Build — the MCP server (`api/mcp.py`, new + mount):**
+
+- `uv add "mcp[cli]"` (official SDK; FastMCP v2 merged upstream).
+- `build_mcp_server() -> FastMCP`: `mcp = FastMCP("cairn")`; for each `rt` in `registry.mcp_tools()`: `mcp.add_tool(rt.tool.coroutine, name=rt.tool.name, description=rt.tool.description)`. LangChain's `.coroutine` is the original async fn with its `Annotated[...]` hints intact, so FastMCP builds the input schema straight from what already exists. ~15 lines. **One definition, two projections** (LangChain internal, MCP external — guaranteed no drift).
+- **Mount:** in the app factory, `app.mount("/mcp", mcp.streamable_http_app())`. **The one integration subtlety:** the streamable-HTTP session manager needs its lifespan wired into the app lifespan (`async with mcp.session_manager.run(): yield` combined into the existing FastAPI lifespan) — miss this and the endpoint 500s on connect. Called out here so it isn't rediscovered painfully.
+- **`MCP_ENABLED`** config flag (default on in dev). `MCP_ENABLED=false` → not mounted, internal agents unaffected.
+- **No auth in Phase A** (single-user local). A prominent banner in `api/mcp.py` + this slice: **do not expose `/mcp` to the internet without Slice 14 auth** — a stateful engine open unauthenticated is a security hole. Gated to Phase B.
+- **Known concurrency risk (flagged, not fixed):** an external MCP client and the internal agent can both mutate the same `session.combat_state` JSONB → lost update. Acceptable in single-user Phase A; the real fix (row lock / optimistic version on `combat_state`) is deferred to Phase B hardening.
+
+**Decide (locked 2026-07):**
+
+1. **Direction** — **server only**. Client (consume external MCP servers via `langchain-mcp-adapters`) is deferred: we have a complete engine and no concrete external server to eat; it's a few lines to add the day one is chosen.
+2. **No internal dogfooding** — agents call tools directly in-process; MCP is the cross-process boundary only (hot-loop latency + failure surface).
+3. **Scope** — full **stateful** engine; context via `session_id` / entity-UUID per call (already the tool contract); **no auth** (Phase A local) behind `MCP_ENABLED`; auth + internet exposure gated to Phase B / Slice 14.
+4. **Framework** — **FastMCP** (`mcp` SDK), streamable-HTTP, **mounted at `/mcp`** on the FastAPI app; single process / container (fits the $5–15/mo budget).
+5. **Parity** — one `@tool` def → two projections via the registry; **no `mcp/` tool folder**, tools stay in `tools/`.
+6. **Registry** — `@register(tags=…, mcp=…)` auto-discovery replaces the hand lists; `ALL_TOOLS` / `COMBAT_TOOLS` become tag-derived; guard test forbids an unregistered tool.
+7. **Consolidation** — symmetric pairs only (same arg shape ± sign/bool); asymmetric pairs stay; combat prompts reviewed, existing combat tests are the gate.
+8. **Concurrency** — external+internal concurrent `combat_state` writes are a known lost-update risk; acceptable single-user Phase A; row-lock/version fix deferred to Phase B.
+
+**Schema changes:** none (no DB changes; `MCP_ENABLED` is env/config).
+
+**Files added / changed:**
+
+- `tools/registry.py` (new) — `register` decorator, `_REGISTRY`, `all()`, `select()`, `mcp_tools()`.
+- `tools/__init__.py` — import tool modules for side effects; derive `ALL_TOOLS` / `COMBAT_TOOLS` from the registry; drop the hand lists.
+- `tools/combat.py`, `tools/resources.py`, `tools/srd.py`, `tools/dice.py`, `tools/game_state.py`, `tools/inspiration.py` — swap `@tool` → `@register(tags=[…])`; apply the symmetric-pair consolidations.
+- `api/mcp.py` (new) — `build_mcp_server()` + the registry→FastMCP adapter + the no-auth banner.
+- app factory (`main.py` / app setup) — mount `/mcp`, wire the session-manager lifespan, `MCP_ENABLED` gate.
+- `prompts/ally_ai/v1.md`, `prompts/enemy_ai/v1.md`, `combat_resolver` prompt — update any hardcoded names for consolidated tools.
+- config / settings — `MCP_ENABLED`.
+- `pyproject.toml` — via `uv add "mcp[cli]"`.
+- `tests/test_tool_registry.py` (new), `tests/test_mcp_server.py` (new).
+
+**Verify:** A new `@register`-decorated tool appears in `ALL_TOOLS`, its tag subset, and (if `mcp=True`) the MCP server **with no list edit**; leaving a tool unregistered fails the guard test. `COMBAT_TOOLS` count drops after consolidation and the combat integration suite still passes. Boot the API → `/mcp` serves an MCP endpoint; an MCP client (the `mcp` CLI / Claude Desktop via URL / an in-process test client) lists Cairn's tools, calls `lookup_spell("Fireball")` (stateless) and a stateful `apply_damage(session_id=…, …)` that actually mutates `combat_state` in Postgres. `MCP_ENABLED=false` → `/mcp` absent, internal combat unaffected.
+
+**Deferred:** MCP **client** (consume external servers) — add when a concrete server is chosen; **auth + internet exposure** of `/mcp` — Phase B / Slice 14; **combat_state concurrency hardening** (row lock / optimistic version) — Phase B; **narrator tool-use** (a read-only `NARRATOR_TOOLS` subset — the scene narrator currently binds no tools; `ALL_TOOLS` was dead) — optional gameplay follow-on, flagged not forced; **stdio transport** for local Claude Desktop — trivial to add later (`mcp.run(transport="stdio")`).
+
+---
+
 ### Slice 11 — Operational hardening
 
 _Depends on: nothing strict. Run before Slice 12 (events for evals); before Slice 15 (SSE for frontend); before Slice 16 (cost controls in prod)._
@@ -1971,7 +2154,7 @@ _Depends on: Slice 15._
 - **Save slots** — multiple manual saves per campaign. v1 has implicit auto-save (session persists in DB).
 - **Portrait generation** — Replicate / Bedrock image gen. `portrait_url` field exists.
 - **True multiplayer** — shared live consequences in one campaign. Schema is multi-ready (`Campaign.member_ids`); routing + concurrency design deferred.
-- **Mobile / Unity / Discord clients** — v1 is web-only. Backend is shaped to allow MCP-server wrap when a second client lands.
+- **Mobile / Unity / Discord clients** — v1 is web-only. The MCP server (Slice 10.7) already exposes the engine, so a second client can drive Cairn over MCP without new backend surface.
 - **Go rules-engine port** — defer until v1 is stable + a non-Python client is committed. Python is the source of truth for v1.
 - **Standalone / Go seeding CLI** — the current seed runner (`cli/seed.py`, run via `make seed`) lives in the backend and reuses the Python ORM models and `db/queries`, which is why it's cheap. A separate CLI (Go or otherwise, outside `backend/`) only makes sense once authoring is exposed as an HTTP admin API — then any client can drive it without duplicating schema knowledge or talking to Postgres directly. Sequence: build the authoring admin endpoints first (likely alongside the admin UI), then a thin external CLI becomes trivial. Until then, keep seeding in Python where the schema lives.
 - **Lore book search and visualization** — basic lore listing in v1; rich graph visualization later.
@@ -2012,7 +2195,7 @@ Log of design questions that were open before this revision, with the resolution
 | 20  | Companion depth in v1?                                  | Merged into NPC narrative depth: companions use the same rich `NarrativeProfile` schema, plus a `companion_meta` layer (approval / mood / personal_goal / secret). `adjust_approval` tool, injected into dialogue and ally_ai. Inter-companion relationships, romance = v2.                           | Slice 7.                                    |
 | 21  | Ability score generation?                               | Standard array only for v1. Point-buy / rolled = v2.                                                                                                                                                                                                                                                  | Locked.                                     |
 | 22  | Ship template?                                          | Future content; tracked in template ideas roadmap, not a code slice.                                                                                                                                                                                                                                  | —                                           |
-| 23  | Go / MCP port?                                          | Stay Python through v1. Revisit when v1 ships + Unity/mobile commits.                                                                                                                                                                                                                                 | —                                           |
+| 23  | Go / MCP port?                                          | **MCP resolved** → server locked as Slice 10.7 (FastMCP, `/mcp` on FastAPI, registry-driven). **Go** port stays deferred through v1 — revisit when v1 ships + a non-Python client commits.                                                                                                             | Slice 10.7 (MCP); Go —                       |
 | 24  | Pre-commit hooks?                                       | Slice 11 (operational hardening).                                                                                                                                                                                                                                                                     | Slice 11.                                   |
 | 25  | RulesLawyer combat vs non-combat — same agent?          | Non-combat only. Combat uses `roll_skill_check` / `roll_saving_throw` tools directly; no agent. No separate prompts needed.                                                                                                                                                                           | Slice 3 clarifies.                          |
 | 26  | Passive Perception scope — PC only, or party?           | Eligibility-based per noticing event. DM agent receives full party perception profile (passives, languages, profs, backstory tags) and decides who can perceive what. Some things universal (highest passive wins), some class/race/knowledge gated, some PC-only. No blind whole-party-max.          | Slice 6.                                    |
