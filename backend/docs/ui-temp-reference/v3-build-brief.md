@@ -8,17 +8,19 @@
 
 ## Design tokens (EXACT — from Slice 15 Decision 2)
 
-**Palette**
-| token | hex | use |
-|---|---|---|
-| bg (slate ink) | `#141A1E` | app background |
-| panel | `#1B2329` | cards, rail, drawers |
-| line | `#2E3A40` | borders, dividers, contour lines |
-| paper (warm survey) | `#E7E2D4` | primary text / prose |
-| **signal (vermilion)** | `#D6552B` | "you are here", current waypoint, primary action, danger deltas |
-| lichen (trail green) | `#7E8F6E` | trail, positive/known, secondary accent |
+**Palette = 5 handcrafted themes, one kit** (decided post-review). Only the light changes between themes; structure/type/signature are constant. Two-accent semantics everywhere: **signal** (you-are-here / primary action / danger) and **trail** (known / positive / done). Implemented as CSS-variable swaps on `body[data-theme]` (default = slate, no attribute).
 
-Derive muted variants (e.g. paper at 60% for secondary text) — don't introduce new hues. Vermilion is the ONE bold accent; spend it only on "you are here" + primary action + critical beats.
+| theme | bg | panel | line | text | signal | trail |
+|---|---|---|---|---|---|---|
+| **Slate survey** (default) | `#141A1E` | `#1B2329` | `#2E3A40` | `#E7E2D4` | `#D6552B` | `#7E8F6E` |
+| **Lamplight** | `#191510` | `#211B13` | `#3C3122` | `#EAE2CB` | `#D6552B` | `#8A9166` |
+| **Blackwood** | `#121813` | `#19221B` | `#2E3C31` | `#E5E4D0` | `#D6552B` | `#94A47D` |
+| **Gilt** (v2 homage) | `#14100A` | `#1C1610` | `#3A2F1C` | `#E9DFC4` | `#D6552B` | `#C9A04C` (gold = trail role, never signal) |
+| **Daylight** (light) | `#E8E3D2` | `#EFEBDC` | `#C8C0A8` | `#262218` ink | `#BC4720` | `#5C6B47` |
+
+Derive muted variants (text at 70/45/28/12%) — don't introduce new hues. Signal is the ONE bold accent; spend it only on "you are here" + primary action + critical beats.
+
+**Theme switch placement:** canonical = **Account → Appearance** swatch row; duplicate compact row at the bottom of the in-campaign **Settings tab** under a "this device, not this table" divider. Client-side preference (localStorage → Phase-B user profile); never part of campaign settings.
 
 **Type**
 - **Space Grotesk** — labels, UI, nav, buttons, data headers.

@@ -36,6 +36,57 @@
   --contour:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640' viewBox='0 0 640 640'%3E%3Cg fill='none' stroke='%23E7E2D4' stroke-opacity='0.045' stroke-width='1'%3E%3Cpath d='M-20 90 Q120 30 300 85 T660 70'/%3E%3Cpath d='M-20 150 Q160 95 320 150 T660 135'/%3E%3Cpath d='M-20 215 Q140 170 340 210 T660 200'/%3E%3Cpath d='M-20 330 Q200 270 380 330 T660 315'/%3E%3Cpath d='M-20 395 Q180 350 360 400 T660 385'/%3E%3Cpath d='M-20 520 Q160 460 340 515 T660 500'/%3E%3Cpath d='M-20 585 Q200 540 380 590 T660 575'/%3E%3C/g%3E%3C/svg%3E");
 }
 
+/* ══ THEMES — five handcrafted palettes, one kit ══════════════
+   Structure, type, and the signature never change; only the light.
+   Signal (vermilion) is constant except Daylight, where it deepens
+   for contrast. The second accent is the "trail" color.        */
+body[data-theme="lamplight"]{      /* field journal by lamplight */
+  --bg:#191510;--panel:#211B13;--panel-2:#282016;
+  --line:#3C3122;--line-soft:rgba(60,49,34,.6);
+  --paper:#EAE2CB;--paper-70:rgba(234,226,203,.70);--paper-45:rgba(234,226,203,.45);
+  --paper-28:rgba(234,226,203,.28);--paper-12:rgba(234,226,203,.12);
+  --lichen:#8A9166;--lichen-14:rgba(138,145,102,.16);--lichen-40:rgba(138,145,102,.40);
+}
+body[data-theme="blackwood"]{      /* night camp under the firs   */
+  --bg:#121813;--panel:#19221B;--panel-2:#1F2920;
+  --line:#2E3C31;--line-soft:rgba(46,60,49,.6);
+  --paper:#E5E4D0;--paper-70:rgba(229,228,208,.70);--paper-45:rgba(229,228,208,.45);
+  --paper-28:rgba(229,228,208,.28);--paper-12:rgba(229,228,208,.12);
+  --lichen:#94A47D;--lichen-14:rgba(148,164,125,.16);--lichen-40:rgba(148,164,125,.40);
+}
+body[data-theme="gilt"]{           /* the v2 homage — old gold trail */
+  --bg:#14100A;--panel:#1C1610;--panel-2:#231C13;
+  --line:#3A2F1C;--line-soft:rgba(58,47,28,.6);
+  --paper:#E9DFC4;--paper-70:rgba(233,223,196,.70);--paper-45:rgba(233,223,196,.45);
+  --paper-28:rgba(233,223,196,.28);--paper-12:rgba(233,223,196,.12);
+  --lichen:#C9A04C;--lichen-14:rgba(201,160,76,.14);--lichen-40:rgba(201,160,76,.40);
+}
+body[data-theme="daylight"]{       /* survey paper, ink, open sky  */
+  --bg:#E8E3D2;--panel:#EFEBDC;--panel-2:#F4F1E6;
+  --line:#C8C0A8;--line-soft:rgba(200,192,168,.6);
+  --paper:#262218;--paper-70:rgba(38,34,24,.72);--paper-45:rgba(38,34,24,.48);
+  --paper-28:rgba(38,34,24,.30);--paper-12:rgba(38,34,24,.10);
+  --verm:#BC4720;--verm-hi:#A93E1B;--verm-14:rgba(188,71,32,.12);--verm-30:rgba(188,71,32,.34);
+  --lichen:#5C6B47;--lichen-14:rgba(92,107,71,.14);--lichen-40:rgba(92,107,71,.40);
+  --contour:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640' viewBox='0 0 640 640'%3E%3Cg fill='none' stroke='%23262218' stroke-opacity='0.05' stroke-width='1'%3E%3Cpath d='M-20 90 Q120 30 300 85 T660 70'/%3E%3Cpath d='M-20 150 Q160 95 320 150 T660 135'/%3E%3Cpath d='M-20 215 Q140 170 340 210 T660 200'/%3E%3Cpath d='M-20 330 Q200 270 380 330 T660 315'/%3E%3Cpath d='M-20 395 Q180 350 360 400 T660 385'/%3E%3Cpath d='M-20 520 Q160 460 340 515 T660 500'/%3E%3Cpath d='M-20 585 Q200 540 380 590 T660 575'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* inline SVGs (logo, d20, map sublabels) follow the theme */
+svg [fill="#E7E2D4"]{fill:var(--paper)}
+svg [stroke="#E7E2D4"]{stroke:var(--paper)}
+svg [fill="#D6552B"]{fill:var(--verm)}
+svg [stroke="#D6552B"]{stroke:var(--verm)}
+/* dev strip stays dark in every theme — pin its vars */
+.switcher{--paper:#E7E2D4;--paper-45:rgba(231,226,212,.45);--paper-28:rgba(231,226,212,.28);
+  --paper-12:rgba(231,226,212,.12);--verm-hi:#E86A3E;--verm-14:rgba(214,85,43,.14);--line:#2E3A40}
+/* theme swatch picker (Account + Settings) */
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:6px;
+  padding:8px 13px;background:var(--panel);font-size:12px;font-weight:600;color:var(--paper-70)}
+.swatch:hover{border-color:var(--paper-45)}
+.swatch.cur{border-color:var(--verm);color:var(--paper)}
+.swatch .dots{display:flex;gap:3px}
+.swatch .d{width:10px;height:10px;border-radius:50%;border:1px solid rgba(128,128,128,.35)}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg)}
 body{font-family:var(--ui);color:var(--paper);font-size:14px;line-height:1.5;overflow:hidden;
@@ -253,6 +304,8 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <button class="sw-btn" data-s="s18">18 map</button>
   <button class="sw-btn" data-s="s19">19 settings</button>
   <button class="sw-btn" data-s="s20">20 recap</button>
+  <span class="sw-lab">·</span>
+  <button class="sw-btn" id="themebtn" style="border:1px solid var(--line)">◐ slate</button>
 </nav>
 
 <div class="app">
@@ -420,6 +473,17 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
         <div style="flex:1"><input value="Maximus" aria-label="display name"/></div>
       </div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--paper-45);margin-top:12px">maximator16@gmail.com</div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <span class="eyebrow">Appearance</span>
+      <div class="swatches" style="margin-top:14px">
+        <button class="swatch cur" data-settheme="slate"><span class="dots"><span class="d" style="background:#141A1E"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#7E8F6E"></span></span>Slate survey</button>
+        <button class="swatch" data-settheme="lamplight"><span class="dots"><span class="d" style="background:#191510"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#8A9166"></span></span>Lamplight</button>
+        <button class="swatch" data-settheme="blackwood"><span class="dots"><span class="d" style="background:#121813"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#94A47D"></span></span>Blackwood</button>
+        <button class="swatch" data-settheme="gilt"><span class="dots"><span class="d" style="background:#14100A"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#C9A04C"></span></span>Gilt</button>
+        <button class="swatch" data-settheme="daylight"><span class="dots"><span class="d" style="background:#E8E3D2"></span><span class="d" style="background:#BC4720"></span><span class="d" style="background:#5C6B47"></span></span>Daylight</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:12px;letter-spacing:.06em">SAME KIT, DIFFERENT LIGHT — SAVED TO THIS DEVICE, NOT TO ANY CAMPAIGN</div>
     </div>
     <div class="card" style="margin-bottom:16px">
       <span class="eyebrow">Session</span>
@@ -1471,6 +1535,17 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
         <span style="font-family:var(--mono)">▾</span>
       </button>
     </div>
+    <hr class="hr"/>
+    <div class="setsec">
+      <span class="eyebrow">Appearance — this device, not this table</span>
+      <div class="swatches">
+        <button class="swatch cur" data-settheme="slate"><span class="dots"><span class="d" style="background:#141A1E"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#7E8F6E"></span></span>Slate survey</button>
+        <button class="swatch" data-settheme="lamplight"><span class="dots"><span class="d" style="background:#191510"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#8A9166"></span></span>Lamplight</button>
+        <button class="swatch" data-settheme="blackwood"><span class="dots"><span class="d" style="background:#121813"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#94A47D"></span></span>Blackwood</button>
+        <button class="swatch" data-settheme="gilt"><span class="dots"><span class="d" style="background:#14100A"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#C9A04C"></span></span>Gilt</button>
+        <button class="swatch" data-settheme="daylight"><span class="dots"><span class="d" style="background:#E8E3D2"></span><span class="d" style="background:#BC4720"></span><span class="d" style="background:#5C6B47"></span></span>Daylight</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1537,6 +1612,27 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   }
 
   btns.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.s); }); });
+
+  var THEMES = ['slate','lamplight','blackwood','gilt','daylight'];
+  var themeBtn = document.getElementById('themebtn');
+  function setTheme(name){
+    if (THEMES.indexOf(name) < 0) name = 'slate';
+    if (name === 'slate') document.body.removeAttribute('data-theme');
+    else document.body.setAttribute('data-theme', name);
+    themeBtn.textContent = '◐ ' + name;
+    Array.prototype.slice.call(document.querySelectorAll('[data-settheme]')).forEach(function(s){
+      s.classList.toggle('cur', s.dataset.settheme === name);
+    });
+    try { localStorage.setItem('cairn-v3-theme', name); } catch(e){}
+  }
+  themeBtn.addEventListener('click', function(){
+    var cur = document.body.getAttribute('data-theme') || 'slate';
+    setTheme(THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length]);
+  });
+  Array.prototype.slice.call(document.querySelectorAll('[data-settheme]')).forEach(function(s){
+    s.addEventListener('click', function(){ setTheme(s.dataset.settheme); });
+  });
+  try { setTheme(localStorage.getItem('cairn-v3-theme') || 'slate'); } catch(e){}
 
   document.addEventListener('keydown', function(e){
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;

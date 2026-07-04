@@ -2103,9 +2103,19 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. All forks resolved; ready to build `C
 1. **Scope — full ground-up rebuild.** New layouts *and* new visual language. The v2 "grimoire" direction is discarded. Every screen redesigned.
 
 2. **Visual direction — "Cartographer's Table."** The app is a surveyor's kit for a world that remembers ("a cairn marks the trail; the world remembers, the trail extends"). Deliberately avoids the three AI-design tells (cream+terracotta serif / black+acid-green / broadsheet hairlines).
-   - **Palette:** bg `#141A1E` (slate ink) · panel `#1B2329` · line `#2E3A40` · paper `#E7E2D4` (warm survey) · **signal `#D6552B`** (vermilion "you are here") · lichen `#7E8F6E` (trail green).
-   - **Type:** **Space Grotesk** (labels/UI) · **Newsreader** (DM prose) · **Space Mono** (coords/data).
-   - **Signature:** the campaign *is* a waymarked trail — cairns/waypoints down a contour-lined spine, topographic texture, vermilion "you are here."
+   - **Palette = 5 handcrafted themes, one kit** (decided 2026-07, after v3 mockup review). Structure, type, and the signature never change between themes — only the light. Every theme keeps the same two-accent semantics: **signal** (you-are-here / primary action / danger) and **trail** (known / positive / done). Signal is vermilion `#D6552B` in all dark themes; Daylight deepens it for contrast. All implemented as CSS-variable swaps (~15 vars).
+
+     | theme | bg | panel | line | text | signal | trail | mood |
+     |---|---|---|---|---|---|---|---|
+     | **Slate survey** (default) | `#141A1E` | `#1B2329` | `#2E3A40` | `#E7E2D4` | `#D6552B` | `#7E8F6E` | moonlit, cool |
+     | **Lamplight** | `#191510` | `#211B13` | `#3C3122` | `#EAE2CB` | `#D6552B` | `#8A9166` | field journal by lamplight |
+     | **Blackwood** | `#121813` | `#19221B` | `#2E3C31` | `#E5E4D0` | `#D6552B` | `#94A47D` | night camp under firs |
+     | **Gilt** | `#14100A` | `#1C1610` | `#3A2F1C` | `#E9DFC4` | `#D6552B` | `#C9A04C` | v2 homage — gold takes the *trail* role, never the signal |
+     | **Daylight** | `#E8E3D2` | `#EFEBDC` | `#C8C0A8` | `#262218` (ink) | `#BC4720` | `#5C6B47` | survey paper, light mode |
+
+   - **Theme switch placement:** canonical picker = **Account → Appearance** (swatch row). A duplicate compact swatch row sits at the bottom of the in-campaign **Settings tab under an explicit "this device, not this table" divider** — themes are a client-side per-device preference (localStorage now, user profile in Phase B), **never** part of campaign settings / the Slice 10 settings payload.
+   - **Type:** **Space Grotesk** (labels/UI) · **Newsreader** (DM prose) · **Space Mono** (coords/data). Identical across all themes.
+   - **Signature:** the campaign *is* a waymarked trail — cairns/waypoints down a contour-lined spine, topographic texture, signal-colored "you are here." Identical across all themes.
 
 3. **Global shell — "Waymarked rail."** The left nav *is* the trail (signature == navigation). Top of rail = live campaign trail (acts → scenes as waypoints, current scene = vermilion "you are here"); campaign tabs (Character · Party · Lore · Map · …) dock below. Pre-campaign the rail shows top-level destinations (Campaigns · Codex · Account).
 
