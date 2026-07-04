@@ -313,6 +313,8 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <button class="sw-btn" data-s="s21">21 level-up</button>
   <button class="sw-btn" data-s="s22">22 epilogue</button>
   <button class="sw-btn" data-s="s23">23 loot</button>
+  <button class="sw-btn" data-s="s24">24 spell-prep</button>
+  <button class="sw-btn" data-s="s25">25 reaction</button>
   <span class="sw-lab">·</span>
   <button class="sw-btn" id="themebtn" style="border:1px solid var(--line)">◐ slate</button>
 </nav>
@@ -931,9 +933,10 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       <hr class="hr"/>
       <p class="prose" style="font-size:16.5px">Twenty years holding the toll bridge taught Aldric two things: everyone pays eventually, and the river never forgets a debt. He wore the ford's colors until the night the garrison pulled out and left the town to fend for itself — he stayed, and the shame of the ones who didn't sits on him like a second hauberk.</p>
       <p class="prose" style="font-size:16.5px;margin-top:12px">He speaks slowly, swears in old toll-house slang, and counts his coppers twice. Not because he's greedy — because a ledger kept honest is the only magic he trusts.</p>
-      <div style="display:flex;gap:12px;margin-top:26px">
+      <div style="display:flex;gap:12px;margin-top:26px;align-items:center">
         <button class="btn primary big" data-go="s10">Take this one →</button>
         <button class="btn" data-go="s07">Back to the row</button>
+        <span class="tag" style="margin-left:auto">caster dossiers add a spell block — subclass, cantrips, the day-one list</span>
       </div>
     </div>
   </div>
@@ -947,58 +950,102 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <div class="forge">
     <div class="steps">
       <button class="step done" data-fstep="race">Race<span class="sv">human</span></button>
+      <button class="step" data-fstep="subrace" style="opacity:.55">Subrace<span class="sv">— human carries none</span></button>
       <button class="step done" data-fstep="class">Class<span class="sv">fighter</span></button>
+      <button class="step" data-fstep="subclass" style="opacity:.55">Subclass<span class="sv">— fighters choose at 3</span></button>
       <button class="step done" data-fstep="background">Background<span class="sv">soldier</span></button>
       <button class="step done" data-fstep="alignment">Alignment<span class="sv">neutral good</span></button>
       <button class="step now" data-fstep="abilities">Abilities</button>
       <button class="step" data-fstep="skills">Skills</button>
+      <button class="step" data-fstep="spells" style="opacity:.55">Spells<span class="sv">— casters only</span></button>
       <button class="step" data-fstep="identity">Identity</button>
       <button class="step" data-fstep="portrait">Portrait</button>
-      <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.08em;line-height:1.7;padding:18px 14px 0 0">EVERY NUMBERED STEP IS A LOCKED SRD PICKER · IDENTITY ALONE IS FREE TEXT · CLICK THE TRAIL TO WANDER</div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.08em;line-height:1.7;padding:18px 14px 0 0">EVERY SOLID STEP IS A LOCKED SRD PICKER · DIM STEPS WAKE WHEN THE ROAD CALLS — SUBRACE, SUBCLASS AT 1, SPELLS · IDENTITY ALONE IS FREE TEXT · CLICK THE TRAIL TO WANDER</div>
     </div>
     <div class="forge-main">
 
       <div class="fstep" data-fpanel="race">
-        <span class="eyebrow verm">Step 1 of 8 — Race</span>
+        <span class="eyebrow verm">Race</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">What blood walks the trail?</h2>
-        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">SRD races, validated live — subraces follow where a race carries them.</p>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All nine SRD races, validated live — where a race branches, the subrace step wakes next.</p>
         <div class="pickgrid">
           <button class="pick sel"><span class="pkn">Human</span><span class="pkm">+1 TO EVERYTHING · 30 FT</span><span class="pkd">Nobody's chosen people. Everywhere anyway.</span></button>
           <button class="pick"><span class="pkn">Elf</span><span class="pkm">+2 DEX · DARKVISION · TRANCE</span><span class="pkd">Old enough to remember what the river was called before.</span></button>
           <button class="pick"><span class="pkn">Dwarf</span><span class="pkm">+2 CON · DARKVISION · RESILIENCE</span><span class="pkd">Stone remembers. So do they.</span></button>
           <button class="pick"><span class="pkn">Halfling</span><span class="pkm">+2 DEX · LUCKY · BRAVE</span><span class="pkd">Small enough to be overlooked. Rarely an accident.</span></button>
+          <button class="pick"><span class="pkn">Gnome</span><span class="pkm">+2 INT · DARKVISION · CUNNING</span><span class="pkd">Small hands, enormous questions.</span></button>
+          <button class="pick"><span class="pkn">Half-elf</span><span class="pkm">+2 CHA · TWO SKILLS · FEY ANCESTRY</span><span class="pkd">Welcome at every table. Home at none.</span></button>
           <button class="pick"><span class="pkn">Half-orc</span><span class="pkm">+2 STR · ENDURANCE · MENACE</span><span class="pkd">Doors open slowly for them, so they stopped knocking.</span></button>
+          <button class="pick"><span class="pkn">Dragonborn</span><span class="pkm">+2 STR · BREATH WEAPON</span><span class="pkd">A dragon's pride on a foot soldier's pay.</span></button>
           <button class="pick"><span class="pkn">Tiefling</span><span class="pkm">+2 CHA · DARKVISION · FIRE RES.</span><span class="pkd">The debt was a great-grandmother's. The interest is theirs.</span></button>
         </div>
       </div>
 
+      <div class="fstep" data-fpanel="subrace">
+        <span class="eyebrow verm">Subrace — wakes when the blood branches</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Which river of the old blood?</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Humans carry no subrace — the trail walks past this step. Shown for an elf, for the spec.</p>
+        <div class="pickgrid">
+          <button class="pick sel"><span class="pkn">High elf</span><span class="pkm">+1 INT · ONE WIZARD CANTRIP</span><span class="pkd">Raised where the libraries outlived the wars.</span></button>
+          <button class="pick"><span class="pkn">Wood elf</span><span class="pkm">+1 WIS · 35 FT · MASK OF THE WILD</span><span class="pkd">The forest closes behind them like a door.</span></button>
+          <button class="pick"><span class="pkn">Drow</span><span class="pkm">+1 CHA · SUPERIOR DARKVISION · SUNLIGHT SENSITIVITY</span><span class="pkd">The surface is the foreign country.</span></button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">DWARVES, HALFLINGS AND GNOMES BRANCH THE SAME WAY · LIST FROM /v1/srd/subraces</div>
+      </div>
+
       <div class="fstep" data-fpanel="class">
-        <span class="eyebrow verm">Step 2 of 8 — Class</span>
+        <span class="eyebrow verm">Class</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">How do you meet trouble?</h2>
-        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Subclass is chosen later, at the level the SRD grants it.</p>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All twelve, validated live. Clerics, sorcerers and warlocks meet their subclass right here at level 1 — the engine refuses the sheet without it. Wizards and druids choose at 2, everyone else at 3.</p>
         <div class="pickgrid">
           <button class="pick sel"><span class="pkn">Fighter</span><span class="pkm">d10 · STR/CON SAVES · ALL ARMOR</span><span class="pkd">The line that holds when the rest of the line doesn't.</span></button>
-          <button class="pick"><span class="pkn">Cleric</span><span class="pkm">d8 · WIS/CHA SAVES · DIVINE</span><span class="pkd">Someone upstairs owes them a favor. They collect.</span></button>
-          <button class="pick"><span class="pkn">Wizard</span><span class="pkm">d6 · INT/WIS SAVES · SPELLBOOK</span><span class="pkd">Read the fine print of reality. Annotates it.</span></button>
-          <button class="pick"><span class="pkn">Rogue</span><span class="pkm">d8 · DEX/INT SAVES · SNEAK ATTACK</span><span class="pkd">Believes every lock is a rhetorical question.</span></button>
+          <button class="pick"><span class="pkn">Barbarian</span><span class="pkm">d12 · STR/CON SAVES · RAGE</span><span class="pkd">The argument the enemy loses.</span></button>
+          <button class="pick"><span class="pkn">Paladin</span><span class="pkm">d10 · WIS/CHA SAVES · OATH</span><span class="pkd">A promise wearing plate.</span></button>
           <button class="pick"><span class="pkn">Ranger</span><span class="pkm">d10 · STR/DEX SAVES · WILDS</span><span class="pkd">The wilderness kept them. They keep it back.</span></button>
+          <button class="pick"><span class="pkn">Rogue</span><span class="pkm">d8 · DEX/INT SAVES · SNEAK ATTACK</span><span class="pkd">Believes every lock is a rhetorical question.</span></button>
+          <button class="pick"><span class="pkn">Monk</span><span class="pkm">d8 · STR/DEX SAVES · KI</span><span class="pkd">A weapon that got tired of being carried.</span></button>
+          <button class="pick"><span class="pkn">Cleric</span><span class="pkm">d8 · WIS/CHA SAVES · SUBCLASS AT 1</span><span class="pkd">Someone upstairs owes them a favor. They collect.</span></button>
+          <button class="pick"><span class="pkn">Druid</span><span class="pkm">d8 · INT/WIS SAVES · WILD SHAPE</span><span class="pkd">The wild's memory, walking.</span></button>
+          <button class="pick"><span class="pkn">Wizard</span><span class="pkm">d6 · INT/WIS SAVES · SPELLBOOK</span><span class="pkd">Read the fine print of reality. Annotates it.</span></button>
+          <button class="pick"><span class="pkn">Sorcerer</span><span class="pkm">d6 · CON/CHA SAVES · SUBCLASS AT 1</span><span class="pkd">The magic came first. The person is catching up.</span></button>
+          <button class="pick"><span class="pkn">Warlock</span><span class="pkm">d8 · WIS/CHA SAVES · SUBCLASS AT 1</span><span class="pkd">Read the fine print. Signed anyway.</span></button>
           <button class="pick"><span class="pkn">Bard</span><span class="pkm">d8 · DEX/CHA SAVES · INSPIRATION</span><span class="pkd">Wrong about many things, but never boring about them.</span></button>
         </div>
       </div>
 
+      <div class="fstep" data-fpanel="subclass">
+        <span class="eyebrow verm">Subclass — wakes when the class chooses at 1</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">The shape the calling takes</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Fighters choose theirs at level 3, in the level-up flow — this step sleeps for them. Shown for a cleric, for the spec.</p>
+        <div class="pickgrid">
+          <button class="pick sel"><span class="pkn">Life Domain</span><span class="pkm">HEAVY ARMOR · DISCIPLE OF LIFE</span><span class="pkd">Every wound is an argument. She wins them.</span></button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">THE SRD CARRIES ONE SUBCLASS PER CLASS · MORE ARRIVE WITH CONTENT, NOT CODE · /v1/srd/classes/{index} NAMES THE LEVEL</div>
+      </div>
+
       <div class="fstep" data-fpanel="background">
-        <span class="eyebrow verm">Step 3 of 8 — Background</span>
+        <span class="eyebrow verm">Background</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Before the trail, there was a life</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All thirteen the SRD knows.</p>
         <div class="pickgrid">
           <button class="pick sel"><span class="pkn">Soldier</span><span class="pkm">ATHLETICS · INTIMIDATION · RANK</span><span class="pkd">You held a post once. Some part of you never left it.</span></button>
           <button class="pick"><span class="pkn">Acolyte</span><span class="pkm">INSIGHT · RELIGION · SHELTER</span><span class="pkd">Raised in the smell of incense and other people's confessions.</span></button>
+          <button class="pick"><span class="pkn">Criminal</span><span class="pkm">DECEPTION · STEALTH · CONTACTS</span><span class="pkd">The law and you agreed to disagree.</span></button>
+          <button class="pick"><span class="pkn">Charlatan</span><span class="pkm">DECEPTION · SLEIGHT · FALSE PAPERS</span><span class="pkd">You sold the bridge twice. It wasn't yours either time.</span></button>
+          <button class="pick"><span class="pkn">Entertainer</span><span class="pkm">ACROBATICS · PERFORMANCE · ENCORE</span><span class="pkd">Applause is a meal you learned to live on.</span></button>
+          <button class="pick"><span class="pkn">Folk hero</span><span class="pkm">ANIMAL HANDLING · SURVIVAL</span><span class="pkd">One good day, retold until it fit.</span></button>
+          <button class="pick"><span class="pkn">Guild artisan</span><span class="pkm">INSIGHT · PERSUASION · GUILD SEAL</span><span class="pkd">Made things worth their price. Kept the receipts.</span></button>
+          <button class="pick"><span class="pkn">Hermit</span><span class="pkm">MEDICINE · RELIGION · DISCOVERY</span><span class="pkd">The silence finally said something.</span></button>
+          <button class="pick"><span class="pkn">Noble</span><span class="pkm">HISTORY · PERSUASION · PEDIGREE</span><span class="pkd">The name opens doors. The debts walk in behind it.</span></button>
           <button class="pick"><span class="pkn">Outlander</span><span class="pkm">ATHLETICS · SURVIVAL · WANDERER</span><span class="pkd">Maps are a rumor you've stopped arguing with.</span></button>
+          <button class="pick"><span class="pkn">Sage</span><span class="pkm">ARCANA · HISTORY · RESEARCH</span><span class="pkd">Most answers are in a book. The rest are expensive.</span></button>
+          <button class="pick"><span class="pkn">Sailor</span><span class="pkm">ATHLETICS · PERCEPTION · PASSAGE</span><span class="pkd">The sea kept none of its promises. You went back anyway.</span></button>
           <button class="pick"><span class="pkn">Urchin</span><span class="pkm">SLEIGHT · STEALTH · CITY SECRETS</span><span class="pkd">The city fed you last. You remember exactly when.</span></button>
         </div>
       </div>
 
       <div class="fstep" data-fpanel="alignment">
-        <span class="eyebrow verm">Step 4 of 8 — Alignment</span>
+        <span class="eyebrow verm">Alignment</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Where does your needle point?</h2>
         <p style="font-size:13px;color:var(--paper-45);max-width:56ch">A starting bearing, not a cage — the DM reads it, never enforces it.</p>
         <div class="aligngrid">
@@ -1009,7 +1056,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       </div>
 
       <div class="fstep on" data-fpanel="abilities">
-        <span class="eyebrow verm">Step 5 of 8 — Abilities</span>
+        <span class="eyebrow verm">Abilities</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Place the standard array</h2>
         <p style="font-size:13px;color:var(--paper-45);max-width:52ch">The numbers are fixed — <span style="font-family:var(--mono)">15 · 14 · 13 · 12 · 10 · 8</span> — no point-buy, no rolling. Where they go is yours.</p>
         <div class="pool">
@@ -1027,7 +1074,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       </div>
 
       <div class="fstep" data-fpanel="skills">
-        <span class="eyebrow verm">Step 6 of 8 — Skills</span>
+        <span class="eyebrow verm">Skills</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Choose two — the fighter's list</h2>
         <div style="display:flex;gap:9px;flex-wrap:wrap;max-width:620px;margin-top:16px">
           <button class="skc sel">Athletics</button>
@@ -1042,10 +1089,37 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
         <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">2 OF 8 CHOSEN · LIST COMES FROM /v1/srd — THE ENGINE REJECTS WHAT THE CLASS CAN'T LEARN</div>
       </div>
 
+      <div class="fstep" data-fpanel="spells">
+        <span class="eyebrow verm">Spells — casters only</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">What the book holds on day one</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Fighters march past this step. Shown for a wizard, for the spec.</p>
+        <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:16px 0 8px">CANTRIPS — CHOOSE 3</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;max-width:620px">
+          <button class="skc sel">Fire Bolt</button>
+          <button class="skc sel">Mage Hand</button>
+          <button class="skc sel">Light</button>
+          <button class="skc">Prestidigitation</button>
+          <button class="skc">Ray of Frost</button>
+          <button class="skc">Minor Illusion</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:18px 0 8px">FOR THE SPELLBOOK — SIX AT 1ST LEVEL</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;max-width:620px">
+          <button class="skc sel">Mage Armor</button>
+          <button class="skc sel">Sleep</button>
+          <button class="skc sel">Shield</button>
+          <button class="skc sel">Detect Magic</button>
+          <button class="skc sel">Magic Missile</button>
+          <button class="skc sel">Feather Fall</button>
+          <button class="skc">Charm Person</button>
+          <button class="skc">Identify</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">LIST FROM /v1/srd/spells FILTERED BY CLASS · RIDES THE SAME POST AS THE REST — spell_choices</div>
+      </div>
+
       <div class="fstep" data-fpanel="identity">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;max-width:640px">
           <div>
-            <span class="eyebrow verm">Step 7 of 8 — Identity (free text)</span>
+            <span class="eyebrow verm">Identity (free text)</span>
             <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Numbers are rules; identity is yours</h2>
             <p style="font-size:12px;color:var(--paper-45);margin-top:4px;max-width:46ch">Name, story, manner, voice — write them, or hand the DM a seed.</p>
           </div>
@@ -1063,7 +1137,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       </div>
 
       <div class="fstep" data-fpanel="portrait">
-        <span class="eyebrow verm">Step 8 of 8 — Portrait</span>
+        <span class="eyebrow verm">Portrait — the last step</span>
         <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">A face for the dossier</h2>
         <div style="display:flex;gap:20px;margin-top:12px;max-width:640px;align-items:flex-start">
           <div class="pframe">+</div>
@@ -1275,8 +1349,8 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
         <text class="zdist" x="262" y="108" text-anchor="middle">CLOSE · 30FT</text>
         <path class="zedge" d="M282 165 L318 190"/>
         <text class="zdist" x="302" y="164" text-anchor="middle">CLOSE · 30FT</text>
-        <path class="zedge" d="M262 52 L338 60" opacity=".5"/>
-        <text class="zdist" x="300" y="44" text-anchor="middle" opacity=".6">FAR · 60FT</text>
+        <path class="zedge" d="M262 52 L338 60"/>
+        <text class="zdist" x="300" y="44" text-anchor="middle">FAR · 60FT</text>
         <!-- Nave — you are here -->
         <g class="zg here">
           <path class="zr" d="M52 232 C 44 200, 66 182, 104 178 C 146 174, 168 196, 164 232 C 160 266, 132 284, 94 280 C 64 277, 58 258, 52 232 Z"/>
@@ -1305,11 +1379,12 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
           <text class="zocc" x="364" y="217" text-anchor="middle">EMPTY</text>
           <text class="zattr haz" x="364" y="231" text-anchor="middle">⚠ HAZARD — ROTTEN BEAM</text>
         </g>
-        <!-- beyond — unseeded -->
-        <g class="zg" opacity=".55">
-          <path class="zr" style="stroke-dasharray:4 5" d="M342 76 C 338 58, 350 46, 372 44 C 394 42, 408 52, 408 68 C 408 84, 394 92, 372 92 C 354 92, 346 88, 342 76 Z"/>
-          <text class="zname" x="374" y="66" text-anchor="middle" style="fill:var(--paper-45);font-weight:400">???</text>
-          <text class="zattr" x="374" y="80" text-anchor="middle">THE BELLS</text>
+        <!-- Belfry — seeded like the rest; zones are all known at combat start -->
+        <g class="zg">
+          <path class="zr" d="M342 76 C 338 58, 350 46, 372 44 C 394 42, 408 52, 408 68 C 408 84, 394 92, 372 92 C 354 92, 346 88, 342 76 Z"/>
+          <text class="zname" x="374" y="62" text-anchor="middle">Belfry</text>
+          <text class="zocc" x="374" y="76" text-anchor="middle">EMPTY</text>
+          <text class="zattr" x="374" y="88" text-anchor="middle">OUT OF RANGE FROM THE NAVE</text>
         </g>
       </svg>
       <div class="zonecap">
@@ -1333,6 +1408,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       <span style="color:var(--paper-70)">MOVE 30/30 FT</span>
     </span>
     <span class="hints">
+      <button class="hint" style="border-style:solid;border-color:var(--verm-30);color:var(--verm-hi)" title="use_inspiration rides the turn — advantage on its roll">◈ spend inspiration</button>
       <button class="hint">⌁ attack the warden</button>
       <button class="hint">⌁ move to the chancel</button>
       <button class="hint">⌁ dash</button>
@@ -1368,6 +1444,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       <div class="note"><span class="t">00:05</span>Second Wind — recharged</div>
       <div class="note"><span class="t">00:05</span>Casimir — channel divinity restored</div>
       <div class="note"><span class="t">00:05</span>a long rest would reopen the prayer book — prepared casters choose their spells again</div>
+      <div class="note"><span class="t">·</span>in a hostile scene the same click comes back rest_blocked — the DM says why · a risky one asks "are you sure?" first</div>
       <div class="note dm"><span class="t">now</span>the fire settles<span class="dots"></span></div>
     </aside>
   </div>
@@ -1521,7 +1598,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       <div style="flex:1;min-width:0">
         <span class="eyebrow">Character · The Silent Ford</span>
         <h1>Ser Aldric of Bracken Ford</h1>
-        <div class="dline">HUMAN · FIGHTER 3 · SOLDIER · LAWFUL GOOD · XP 940 / 2700</div>
+        <div class="dline">HUMAN · FIGHTER 3 · SOLDIER · LAWFUL GOOD · XP 2890 / 2700 — THRESHOLD CROSSED</div>
         <p class="dbio">Twenty years holding the toll bridge. Stayed when the garrison ran. Speaks slowly, swears in toll-house slang, counts his coppers twice — a ledger kept honest is the only magic he trusts.</p>
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
           <span class="chip warn">Exhaustion 1</span>
@@ -1724,6 +1801,8 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
     <button class="cdx-tab">Places<span class="cnt">4</span></button>
     <button class="cdx-tab">Factions<span class="cnt">2</span></button>
     <button class="cdx-tab">History<span class="cnt">0</span></button>
+    <button class="cdx-tab">Days<span class="cnt">14</span></button>
+    <input placeholder="search what you know…" aria-label="search the codex" style="margin-left:auto;width:220px;align-self:center;padding:7px 12px;font-size:12px"/>
   </div>
   <div class="pad" style="padding-top:24px">
     <div class="cdx-grid">
@@ -1751,6 +1830,18 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
     <div style="margin-top:30px;max-width:520px">
       <span class="eyebrow">History — nothing recorded yet</span>
       <p class="prose" style="font-size:15px;font-style:italic;color:var(--paper-45);margin-top:8px">The town's past keeps its own counsel. Dig, and this page will fill.</p>
+    </div>
+    <div class="card" style="margin-top:30px;max-width:560px;padding:18px 22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span class="eyebrow">The Days tab — the trail's ledger</span>
+        <span class="tag">one entry per in-game day · click a day, read its summary</span>
+      </div>
+      <div style="margin-top:10px">
+        <div class="kv" style="border-top:none"><span><b style="font-family:var(--mono);font-size:10px;color:var(--verm-hi);margin-right:10px">DAY 14</b>The chapel, the ledger, the counting dark</span></div>
+        <div class="kv"><span><b style="font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-right:10px">DAY 13</b>Miller's Rise burns its fields against the fog</span></div>
+        <div class="kv"><span><b style="font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-right:10px">DAY 12</b>Ilse Marrow names her price for the chapel key</span></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">GET …/calendar — DAY SUMMARIES IN ORDER · WRITTEN WHEN A DAY TURNS, NEVER REWRITTEN</div>
     </div>
   </div>
 </section>
@@ -1860,11 +1951,11 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
     </div>
     <div class="setsec">
       <span class="eyebrow">Narration</span>
-      <span class="seg"><button>Terse</button><button class="on">Standard</button><button>Rich</button></span>
+      <span class="seg"><button>Terse</button><button class="on">Normal</button><button>Lush</button></span>
     </div>
     <div class="setsec">
       <button class="adv">
-        <span><b style="color:var(--paper)">Advanced</b> — per-agent model overrides · companion agency · passive checks</span>
+        <span><b style="color:var(--paper)">Advanced</b> — per-agent model overrides · companion agency · your reactions (ai / suggest / player) · passive checks</span>
         <span style="font-family:var(--mono)">▾</span>
       </button>
     </div>
@@ -1936,7 +2027,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
 <!-- ─── 21 · LEVEL-UP — level_up_pending → choices ─── -->
 <section class="screen scroll" id="s21" data-rail="camp" data-tab="character">
   <div class="screen-head">
-    <div><span class="eyebrow verm">The threshold is crossed · XP 940 → level 4</span><h1>Ser Aldric sharpens</h1></div>
+    <div><span class="eyebrow verm">The threshold is crossed · XP 2890 · level 4 waits at 2700</span><h1>Ser Aldric sharpens</h1></div>
     <span class="tag">allowed mid-combat — the rules say so, the fiction copes</span>
   </div>
   <div class="pad settle">
@@ -1962,8 +2053,24 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
         <button class="radio"><span class="rn">A feat</span><span class="rd">Sentinel · Tough · Great Weapon Master — SRD list, engine-validated.</span></button>
       </div>
     </div>
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span class="eyebrow">When a caster crosses — shown from Isolde's wizard 2 → 3</span>
+        <span class="tag">casters only — extra knobs appear</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:14px 0 8px">NEW SPELLS — CHOOSE 2</div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="skc sel">Misty Step</button>
+        <button class="skc sel">Web</button>
+        <button class="skc">Knock</button>
+        <button class="skc">Levitate</button>
+        <button class="skc">Invisibility</button>
+      </div>
+      <p style="font-size:12px;color:var(--paper-45);margin-top:12px;max-width:60ch">Isolde met her school at level 2 — when a level asks for a subclass, that choice appears here too (clerics, sorcerers and warlocks already chose at creation; most classes choose at 3).</p>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">THE PREVIEW NAMES THE ASKS — spells_to_choose · available_subclasses · available_feats</div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:24px">
-      <span style="font-family:var(--mono);font-size:9px;color:var(--paper-28);letter-spacing:.06em">POST …/level-up · {hp_method, hp_roll?, asi | feat}</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--paper-28);letter-spacing:.06em">POST …/level-up · {hp_method, hp_roll?, asi | feat, new_spells?, subclass?} · UNDER TACTICAL AGENCY, COMPANIONS LEVEL THROUGH THIS SAME DOOR</span>
       <button class="btn primary big" data-go="s15">Seal it — Fighter 4 →</button>
     </div>
   </div>
@@ -2026,6 +2133,70 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       </div>
       <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);margin-top:14px;letter-spacing:.06em;line-height:1.7">
         SURFACES ONLY WHILE A FALLEN FOE LIES IN THE SCENE · EACH TAKE — POST …/loot · TAKE ALL LOOPS ITEMS + CURRENCY</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 24 · SPELL PREP — the long rest reopens the book ─── -->
+<section class="screen" id="s24" data-rail="camp" data-tab="play" style="position:relative">
+  <div class="skel" aria-hidden="true">
+    <div class="sl" style="width:68%"></div><div class="sl" style="width:72%"></div>
+    <div class="sl" style="width:55%"></div><div class="sl" style="width:44%"></div>
+    <div class="sl" style="width:70%;margin-top:30px"></div><div class="sl" style="width:58%"></div>
+  </div>
+  <div class="veil">
+    <div class="dicecard" style="width:440px;text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span class="eyebrow verm">The long rest is done</span>
+        <span class="tag">prepared casters only — shown for Isolde</span>
+      </div>
+      <h2 style="font-size:19px;font-weight:600;margin:10px 0 4px">The book reopens</h2>
+      <p style="font-family:var(--prose);font-style:italic;font-size:14px;color:var(--paper-70)">Morning finds the pages blank of intention. Choose what today's road will need.</p>
+      <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:16px 0 4px">PREPARE 5 — INT MOD + WIZARD LEVEL</div>
+      <div style="margin-top:6px">
+        <div class="sprow prepped" style="border-top:none"><span class="spn">Mage Armor</span><span style="color:var(--paper-45)">1st</span><span class="spm">8 HOURS · SELF</span></div>
+        <div class="sprow prepped"><span class="spn">Sleep</span><span style="color:var(--paper-45)">1st</span><span class="spm">5d8 HP OF CREATURES</span></div>
+        <div class="sprow prepped"><span class="spn">Shield</span><span style="color:var(--paper-45)">1st</span><span class="spm">REACTION · +5 AC</span></div>
+        <div class="sprow prepped"><span class="spn">Misty Step</span><span style="color:var(--paper-45)">2nd</span><span class="spm">BONUS · 30 FT</span></div>
+        <div class="sprow prepped"><span class="spn">Web</span><span style="color:var(--paper-45)">2nd</span><span class="spm">CONCENTRATION</span></div>
+        <div class="sprow"><span class="spn" style="color:var(--paper-45);font-weight:400">Detect Magic — in the book, resting</span><span class="spm">RITUAL</span></div>
+        <div class="sprow"><span class="spn" style="color:var(--paper-45);font-weight:400">Feather Fall — in the book, resting</span><span class="spm">REACTION</span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn primary" style="flex:1" data-go="s10">Seal the day's prayers</button>
+        <button class="btn quiet" data-go="s10">Keep yesterday's</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);margin-top:14px;letter-spacing:.06em;line-height:1.7">
+        THE LONG REST CLEARS THE PREPARED LIST AND THIS PROMPT OPENS · POST …/prepare-spells — COUNT AND CLASS-LEGALITY CHECKED · KNOWN-SPELL CASTERS NEVER SEE IT</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 25 · REACTION — the round holds its breath ─── -->
+<section class="screen" id="s25" data-rail="camp" data-tab="play" style="position:relative">
+  <div class="skel" aria-hidden="true">
+    <div class="sl" style="width:64%"></div><div class="sl" style="width:70%"></div>
+    <div class="sl" style="width:52%"></div><div class="sl" style="width:42%"></div>
+    <div class="sl" style="width:67%;margin-top:30px"></div><div class="sl" style="width:50%"></div>
+  </div>
+  <div class="veil">
+    <div class="dicecard" style="width:420px;text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span class="eyebrow verm">Round 3 — the round holds its breath</span>
+        <span class="tag dep">reaction engine — planned; AI allies and foes decide for themselves</span>
+      </div>
+      <h2 style="font-size:19px;font-weight:600;margin:10px 0 4px">The warden leaves your reach</h2>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--paper-70);letter-spacing:.04em;line-height:1.7;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:12px 0 14px;background:var(--bg)">THRALL-WARDEN MOVES — FLOODED AISLE → BELL TOWER STAIR.<br/>YOUR LONGSWORD CAN CATCH IT ON THE WAY OUT.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span class="chip good">RECOMMENDED — TAKE THE SWING</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-left:auto">⏱ 6s — SILENCE TAKES THE RECOMMENDATION</span>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn primary" style="flex:1" data-go="s12">Take the opportunity attack</button>
+        <button class="btn quiet" data-go="s12">Let it go</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);margin-top:14px;letter-spacing:.06em;line-height:1.7">
+        A TERSE MECHANICAL INTERRUPT, NEVER NARRATION — THE ROUND'S PROSE LANDS AFTER IT RESOLVES · reaction_prompt SSE → POST …/reactions · MAY FIRE MORE THAN ONCE A ROUND · YOUR SETTING — ai / suggest / player — DECIDES HOW OFTEN YOU'RE ASKED</div>
     </div>
   </div>
 </section>

@@ -335,12 +335,12 @@ Ship rest mechanics and the level-up flow. Services exist (Slice 2); this slice 
 
 - `apply_short_rest(session_id)` tool — reset resources where `resets_on == "short_rest"`.
 - `roll_hit_die(char_id)` tool — spend one HD, roll d{hit_die_size} + CON mod (min 1), heal.
-- `POST /v1/sessions/{id}/short_rest` route.
+- `POST /v1/sessions/{id}/short-rest` route (shipped name — hyphenated).
 
 **Build (long rest):**
 
 - `apply_long_rest(session_id)` tool — full HP, all slots, all resources, half max HD restored, exhaustion -1, **re-prepare spells** (for prepared casters), advance `in_game_datetime` by 8 hours.
-- `POST /v1/sessions/{id}/long_rest` route.
+- `POST /v1/sessions/{id}/long-rest` route (shipped name — hyphenated).
 
 **Build (rest safety check — new):**
 
@@ -372,7 +372,7 @@ Ship rest mechanics and the level-up flow. Services exist (Slice 2); this slice 
 **Decide:**
 
 - **Companion leveling** — auto vs player choice. Resolved by Slice 10: depends on `settings.companion.leveling`. `ai` → server picks balanced choices; `player` → player submits choices same as their PC.
-- **Short rest hit dice** — PHB allows multiple HD per short rest. Keep one-at-a-time via repeated `roll_hit_die` calls; player decides when to stop.
+- **Short rest hit dice** — PHB allows multiple HD per short rest. ~~Keep one-at-a-time via repeated `roll_hit_die` calls; player decides when to stop.~~ **Superseded (Slice 15 resolution + shipped route):** the rest is one click, the route takes no body, and hit-dice spend is automatic inside `apply_short_rest`; `roll_hit_die` remains an internal tool, not a player-driven loop.
 
 **Verify:** Defeat enemy → XP awarded → threshold crossed → `level_up_pending` event → preview returns correct features → submit choices → Character updated. Short rest restores Action Surge but not Hit Dice on the same trigger. Long rest re-prep prompts wizard; sorcerer skipped. Rest in active combat is rejected. Mid-combat level-up works.
 
@@ -814,7 +814,7 @@ Slice 6 additions:
   - `spend_inspiration(character_id)` — registered in **neither** registry. Only called from request handlers, never by LLMs.
 - **Granters (prompts updated)**: `scene_narrator` and `combat_resolver` both get a one-paragraph addition on when to call `grant_inspiration` — genuinely clever play, dramatic RP. Not for routine actions. `scene_director` and `dialogue` do NOT have it — Scene Director is meta (doesn't watch behavior) and NPCs/companions don't grant inspiration in 5e.
 - **Spend mechanism (Slice 6 scope = non-combat skill checks)**:
-  - `POST /v1/sessions/{id}/turns/{turn_id}/resolve-check` body grows `use_inspiration: bool = False`.
+  - `POST /v1/sessions/{id}/turns/{turn_id}/resolve` (shipped name) body grows `use_inspiration: bool = False`.
   - When true: handler validates `Character.has_inspiration`, calls `inspiration.spend`, sets advantage on the roll, returns the resolved check.
   - If `has_inspiration=False` and `use_inspiration=true`: 400.
 - **Combat-path use_inspiration is punted to Slice 15** (frontend UI). Until Slice 15, players can spend inspiration only on non-combat skill checks via the API. Document this in the slice notes for Slice 15.
@@ -904,7 +904,7 @@ Concentration was half-built before Slice 6 (`Character/NPC.concentration: Strin
 
 - **Removed**: `POST /v1/sessions/{id}/combat/start`, `POST /v1/sessions/{id}/combat/end`. Delete cold — no deprecation period (no frontend consumes them yet; Slice 15 will use the natural-language path). Drop `CombatStartRequest` and `CombatEndRequest` schemas. Tests rewritten to drive the full graph (preferred) or call `combat_service.state.start/end` directly (unit-level coverage).
 - **Kept**: `GET /v1/sessions/{id}/combat` — needed by the Slice 15 combat tracker UI.
-- **Changed**: `POST /v1/sessions/{id}/turns/{turn_id}/resolve-check` body grows `use_inspiration: bool = False`. Existing behavior preserved when omitted.
+- **Changed**: `POST /v1/sessions/{id}/turns/{turn_id}/resolve` (shipped name) body grows `use_inspiration: bool = False`. Existing behavior preserved when omitted.
 - **Changed**: `POST /v1/sessions/{id}/loot` body grows `currency` field; validation requires exactly one of `item_name` / `currency`.
 - **Middleware**: `require_active_campaign` wrapped around all mutating routes under `/v1/campaigns/{cid}/*` (and dependent session/turn/character/npc routes). Returns 409 / `campaign_ended_dead` if frozen.
 
@@ -1000,13 +1000,13 @@ This slice intentionally cut several items the original roadmap placed here. Eac
 4. Player enters an unauthored location (no authored Scene): scene_create writes a thin Scene row; SceneNarrator falls back to Location.description + nearby NPCs + act premise.
 5. Concentrating wizard takes damage in combat: `apply_damage` auto-rolls CON save at DC `max(10, dmg//2)`. On fail, concentration drops + linked effect removed + `concentration_broken` event emitted. No LLM call required for the save.
 6. Monster casts Hold Person, then takes damage: monster's combat_state entry has `concentration`; auto-save fires; on fail, effect removed.
-7. DM grants inspiration during a roleplay moment: `grant_inspiration` tool call → `Character.has_inspiration=True`. Player POSTs to resolve-check with `use_inspiration=true` → spend service flips flag false, roll uses advantage.
+7. DM grants inspiration during a roleplay moment: `grant_inspiration` tool call → `Character.has_inspiration=True`. Player POSTs to the resolve endpoint with `use_inspiration=true` → spend service flips flag false, roll uses advantage.
 8. Pacifist-mode PC takes 1000 damage at HP=5: HP clamped to 1; no death save, no events for instant death.
 9. Hardcore-mode PC takes lethal damage and fails death saves: combat ends, `resolve_pc_death` sets `Campaign.status="ended_dead"`, `campaign_ended` event emitted. Next mutation request returns 409 / `campaign_ended_dead`. GET routes still work.
 10. Narrative-mode PC death: HP=1 at combat end, `pending_recovery` set, world bible consequence written. Next turn's SceneNarrator narrates the wake-up.
 11. Subdue attack on enemy with melee weapon: enemy unconscious + stable + alive; `combatant_knocked_out` event.
 12. Massive damage instant-kill: PC at HP=5 takes 60 damage (max_hp=50). HP=0, `excess=55 >= max_hp=50`, instant death, no save sequence (modulo death_mode in pacifist where clamp fires first).
-13. Failed pickpocket on alive NPC: resolve-check sets NPC.disposition=hostile deterministically; no auto-combat.
+13. Failed pickpocket on alive NPC: the resolve handler sets NPC.disposition=hostile deterministically; no auto-combat.
 14. Currency loot: `POST /loot` with `{"currency": {"gp": 5}}` moves 5 gp from NPC to character; insufficient balance returns 400.
 15. New campaign + custom character: first 3 turns render with `intro_mode=true` (SceneNarrator weaves in backstory); turn 4+ resumes normal play silently.
 16. Companion speaks via dialogue: player addresses companion by name, IntentRouter routes to npc_dialogue intent, \_resolve_dialogue finds companion via fallback, dialogue agent responds.
@@ -1170,7 +1170,7 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 2. **Approval mechanism** — LLM-driven only; **no reaction bus / no hardcoded auto-triggers in v1**; judged in-character against the companion's own values.
 3. **Approval placement** — fire-and-forget **post-turn reflection pass** (`companion_reflector`), structured output, uniform across narrative + combat, fires only when companions present. No inline approval tool in v1.
 4. **Magnitude** — ±2–5 minor, ±15–30 major; clamp [-100, 100].
-5. **Surfacing** — vague bands to the player; raw number + green/red `approval_log` in the companion drawer.
+5. **Surfacing** — vague bands to the player; green/red `approval_log` reason lines in the companion drawer **without numeric deltas or the running total** — the raw integer never reaches the player (see the resolved-contradiction paragraph above; a stale "raw number in the drawer" phrasing here was corrected 2026-07).
 6. **Tiers** — auto-promote background→recurring at **≥3 dialogue exchanges**; builder caps at `recurring`; `major` authored-only.
 7. **Builder** — **lazy on-demand**; cheap/fast model for `background`, stronger model only on promotion; canon context injected at build time (key-match pre-RAG).
 8. **Approval scope** — PC↔companion only in v1; inter-companion matrix = v2.
@@ -2078,7 +2078,7 @@ _Depends on: nothing strict. Must be done before Slice 15._
 
 ### Slice 15 — Frontend (UI reference rebuild)
 
-_Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v3.html` BUILT + revised after user review (see Decision 9).** → **Self-contained build brief (tokens + flow map + 24-screen inventory + build order): `docs/ui-temp-reference/v3-build-brief.md` — open that first to build.** Phase A (core). Depends on: the playable engine (Slices 1–10.7). **Auth is NOT a hard dep** — Phase A is single-user (`X-User-Id` header); the login/tiers screens are drawn **visual-only**, real auth + billing land in Phase B / Slice 14._
+_Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v3.html` BUILT + revised after user review (Decision 9) + backend/roadmap consistency audit (Decision 10).** → **Self-contained build brief (tokens + flow map + 26-screen inventory + build order): `docs/ui-temp-reference/v3-build-brief.md` — open that first to build.** Phase A (core). Depends on: the playable engine (Slices 1–10.7). **Auth is NOT a hard dep** — Phase A is single-user (`X-User-Id` header); the login/tiers screens are drawn **visual-only**, real auth + billing land in Phase B / Slice 14._
 
 **⚠️ Backend deps this slice surfaced (not pure-UI; track separately):**
 1. **Weave agent** — concept prompt → structured `bio`/`personality`/`voice_traits` for the custom-forge identity step (new agent + prompt + `models.yaml` entry).
@@ -2086,6 +2086,7 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v3.html` BUILT + revised a
 3. **Portrait image-gen (later / Phase B)** — no image-gen exists; "Generate" is a flagged affordance. Earmarked provider: Replicate FLUX-schnell (~$0.003/img).
 4. **Template-browse endpoint** — `GET /v1/campaigns/templates` (premise · length · premades · teaser lore) for the home/browser; already in the retained surface checklist. Should return **worlds with scenarios nested** — the browser is two-level (Decision 9).
 5. **Equipment slot taxonomy** (added 2026-07 review) — equipment today is a flat list + equipped flag; the redesigned sheet's drag-to-slot inventory (body / main hand / off hand / …) needs slot names on items. Supersedes the checklist line "simple list with equipped badge; drag-and-drop v2."
+6. **`GET /v1/srd/alignments`** (added 2026-07 audit) — `srd/alignments.json` exists but no route serves it; the forge's alignment picker expects it alongside the other `/v1/srd/*` lists. Trivial.
 
 **Goal / deliverable.** Grill the *design*, then **rewrite the temp reference mockup itself** — `docs/ui-temp-reference/project/Cairn App v2.html` → a new **`Cairn App v3.html`** (keep v2 as history). The rewritten mockup is the **replicable visual spec** any coder (human or LLM) builds from later. We are **NOT** grilling frameworks — which library it's finally built in (React SPA / Next / etc.) is a build/deploy concern, deferred out of this slice. The **functional analysis** below (SSE events, screens, Phase-B cuts) is aesthetic-independent and holds regardless.
 
@@ -2149,10 +2150,10 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v3.html` BUILT + revised a
    [  Grim's blade..    |   Aldric          Guard     ]
    [                    |     (half cover +2)         ]
    [--------------------+-----------------------------]
-   [ YOU: [Attack][Move][Dash]   A / B / R    30ft    ]
+   [ YOU: ○A ○B ●R  MOVE 30/30FT   ⌁hint ⌁hint       ]
    [ [ input ....................................... ]]
    ```
-   Initiative strip on top · compressed prose log left · **zone node-map** center-right (**node graph, not a grid** — Slice 9) · action-economy action bar on the bottom. Biggest build in the slice; **the zone map is gated on Slice 9.**
+   Initiative strip on top · compressed prose log left · **zone node-map** center-right (**node graph, not a grid** — Slice 9) · **read-only economy readout** on the bottom (no action selectors, no End Turn — see Decision 9; this sketch originally drew `[Attack][Move][Dash]` buttons and was corrected 2026-07). Biggest build in the slice; **the zone map is gated on Slice 9.**
 
 8. **Character creation — BOTH: premade fast-path + custom forge.** A choice screen: **left = pre-built**, **right = build your own.** _(Sub-forks grilled & LOCKED 2026-07.)_
 
@@ -2176,6 +2177,16 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v3.html` BUILT + revised a
    - **Character sheet redesigned as "the dossier, grown up"** — big portrait + bio prose header, **slot-based inventory** (carried-on-the-body slots + pack grid, drag-to-equip; dep #5) + **spellcasting section for casters** (slot pips, prepared rows, long-rest re-prep). Party cards/drawer got the same soul pass (epithets in prose, reason-log leads, voice line; numbers demoted).
    - **Forge mocks all 8 steps** as clickable panels (race/class/background = flavor-prose pickers, alignment 3×3, abilities array, skills chips, identity + Weave, portrait).
    - **New "moments" screens for already-planned engine features that had no UI:** **level-up** (21 — `level_up_pending` → band chip → HP roll/average + ASI/feat, `POST …/level-up`), **epilogue** (22 — `campaign_ended` / completed-card entry; record stays open read-only; hardcore `ended_dead` variant), **loot** (23 — veil overlay, per-item `POST …/loot` + take-all loop). These render Slice 4/6 features — no new backend scope beyond deps #4–5.
+
+10. **Consistency audit (2026-07, second review round — every screen re-diffed against the backend code + the grilled slices).** Gaps found and fixed in the mockup + brief:
+   - **Casters were unbuildable.** The forge now carries three **conditional steps** (dimmed on the trail until the road calls): **Subrace** (9 SRD subraces), **Subclass** — the creation service *hard-rejects* a cleric/sorcerer/warlock without one (`SUBCLASS_LEVEL` = 1; wizard/druid 2, rest 3; SRD ships one subclass per class), and **Spells** (`spell_choices` — cantrips + day-one list). The old "subclass is chosen later" copy was factually wrong for three classes.
+   - **Pickers are SRD-complete:** 9 races / 12 classes / 13 backgrounds (were 6/6/4 samples).
+   - **Spell-prep overlay (new screen 24)** — the long-rest re-prep prompt (`POST …/prepare-spells`) Slice 4 promised; known-spell casters never see it.
+   - **Reaction prompt (new screen 25)** — renders the planned reaction engine's interactive round-trip (`reaction_prompt` SSE → recommendation + countdown → `POST …/reactions`, timeout auto-applies); `reaction_control` (ai/suggest/player) added to the Settings Advanced list.
+   - **Codex gained the Days tab** (the `GET …/calendar` "calendar sidebar" this slice owed) **+ a search field** (`GET …/lore?q=`).
+   - **Combat gained the inspiration-spend chip** (the combat-path `use_inspiration` toggle Slice 6 explicitly punted to this slice); level-up gained the **caster knobs** (new spells + subclass-at-level); rest screen notes the **`rest_blocked` / risky-gate** states.
+   - **Sample-data + contract fixes:** XP corrected to 2890/2700 (940 couldn't trigger `level_up_pending`); the combat sketch's "???" blob became a seeded zone (zones are all known at init — `???` stubs belong to the exploration map only); verbosity labels aligned to `terse|normal|lush`.
+   - New backend dep **#6: `GET /v1/srd/alignments`**. Doc fixes landed in the same pass: Slice 7 locked-decision #5 (stale "raw number in drawer"), Slice 4 short-rest hit-dice bullet (superseded by the one-click auto rest), the Decision-7 ASCII action bar (predates Decision 9), and route-name drift (`/short-rest`, `/long-rest`, `/resolve`).
 
 #### Forks — ALL RESOLVED 2026-07 ✅ (grill complete; v3 built + review round applied — see Decision 9)
 
