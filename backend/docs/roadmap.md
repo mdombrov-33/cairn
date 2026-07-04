@@ -252,7 +252,7 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - Existing gameplay slices to grill/enhance (keep core intent, lock implementation, find flaws): ✅ 8 (scene depth), ✅ 9 (zones), ✅ 10 (settings), ✅ 13 (RAG — pgvector hybrid dense + FTS + tags + RRF + local reranker). **All gameplay slices grilled.**
 - ✅ **Reaction engine — reimagined & locked as Slice 10.5** (grilled 2026-07). Full scope (OA + Shield + Absorb + Counterspell + readied + Sentinel); **engine now owns to-hit** (`roll_attack`, revises Slice 9 cover-AC to hard); reaction bus + registry; **plan-then-execute combat** (deterministic/replayable); deterministic AI heuristics; `reaction_control` = suggest/player/ai via Slice 10; player round-trip via `reaction_prompt` SSE + `POST /reactions`; full nesting (LIFO, depth 4, economy-bounded); readied actions parsed once to structured triggers.
 - ✅ **MCP integration — reimagined & locked as Slice 10.7** (grilled 2026-07). **Server** direction chosen (expose the stateful engine; client deferred — nothing external to consume yet). Tagged auto-discovery **registry** replaces the hand-maintained tool lists (fixes the `ALL_TOOLS`-rot / forget-to-append smell) + symmetric-pair consolidation ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp`; one `@tool` def → two projections (no `mcp/` folder, no internal dogfooding); no auth in Phase A behind `MCP_ENABLED`, auth gated to Phase B.
-- **UI / frontend (dedicated slice).** Grill separately against the backend features (old Slice 15 is a 20-decision grab-bag). Enhance the design in `backend/docs/ui-temp-reference/` (primary: `project/Cairn App v2.html`) to fit *current* functionality — the mockups predate most features. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.**
+- ✅ **UI / frontend — GRILL COMPLETE, locked as Slice 15** (grilled 2026-07). **Full ground-up rebuild** of the temp reference (`Cairn App v2.html` → new `Cairn App v3.html`) into an accurate, replicable visual spec — *not* grilling frameworks. Direction locked: **"Cartographer's Table"** (waymarked-trail shell; reading-column + field-notes-margin play screen; pure-prose w/ margin ticks; modal dice; combat mode-switch w/ zone map; premade dossier + custom-forge creation; **discovered-locations node-map** as the signature; diegetic DM "thinking"; approval bands w/ no raw number; full Phase-B visual-only account/billing screens). Four backend deps surfaced (Weave agent, player-rolled death saves, portrait image-gen, template-browse endpoint). Full detail in Slice 15. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.** Next step: build `Cairn App v3.html`.
 
 **PHASE B — Production hardening (deferred until Phase A is playable locally):**
 
@@ -1083,7 +1083,7 @@ Approval is **LLM-driven only in v1 — no hardcoded auto-triggers, no reaction 
   - `adjust_approval(db, *, character_id, delta, reason, turn_id) -> {approval, mood, crossed_thresholds}` — clamps to [-100, 100], appends to `approval_log` (trim to last 20), recomputes mood via `derive_mood`.
   - `derive_mood(approval, recent_deltas) -> mood` — deterministic: approval band sets the baseline mood; a recent large-magnitude delta transiently overrides (e.g. a −25 hit → `angry`/`dejected` regardless of band).
 - **Magnitude guidance (in the reflector prompt):** minor beats ±2–5; major moral moments ±15–30. Total clamps to [-100, 100].
-- **Player-facing surfacing (locked):** the player sees **vague bands only** ("cold" / "warming up" / "loyal"), never the raw number. The number + `approval_log` live in the companion profile drawer's **Approval** section, rendered as colored lines — **green for delta > 0, red for delta < 0** — each with its reason string ("Burned the village down"). This is a Slice-7 API/data guarantee; the frontend slice just renders it.
+- **Player-facing surfacing (locked; contradiction resolved 2026-07):** the player sees **vague bands only** ("cold" / "warming up" / "loyal") — **the raw −100..100 integer is never surfaced to the player** (it's meta-info; a DM shows behavior + consequence, not a meter — consistent with *think-like-a-D&D-player* + *engine-doesn't-nanny*). The band **and the `approval_log`** are what render in the companion profile drawer's **Approval** section: the log as colored lines — **green for delta > 0, red for delta < 0** — each with its reason string ("Burned the village down"), but **without the numeric deltas or running total**. The integer + deltas stay server-side (drive `derive_mood`, band thresholds); the API may return them but the frontend does not display them. This is a Slice-7 API/data guarantee; the frontend slice just renders band + reason strings.
 
 #### Build — NPC tier + promotion
 
@@ -2076,9 +2076,111 @@ _Depends on: nothing strict. Must be done before Slice 15._
 
 ---
 
-### Slice 15 — Frontend
+### Slice 15 — Frontend (UI reference rebuild)
 
-_Depends on: Slices 1–10 (game loop + narrative depth + settings), Slice 14 (auth)._
+_Grilled 2026-07 — **GRILL COMPLETE ✅. All forks resolved; ready to build `Cairn App v3.html`.** → **Self-contained build brief (tokens + 20-screen inventory + build order): `docs/ui-temp-reference/v3-build-brief.md` — open that first to build.** Phase A (core). Depends on: the playable engine (Slices 1–10.7). **Auth is NOT a hard dep** — Phase A is single-user (`X-User-Id` header); the login/tiers screens are drawn **visual-only**, real auth + billing land in Phase B / Slice 14._
+
+**⚠️ Backend deps this slice surfaced (not pure-UI; track separately):**
+1. **Weave agent** — concept prompt → structured `bio`/`personality`/`voice_traits` for the custom-forge identity step (new agent + prompt + `models.yaml` entry).
+2. **Player-rolled death saves** — change `roll_death_save` (`domain/services/combat/rolls.py:65`) from server-side `rng.randint(1,20)` to the client-roll → `/resolve` pattern used by skill checks.
+3. **Portrait image-gen (later / Phase B)** — no image-gen exists; "Generate" is a flagged affordance. Earmarked provider: Replicate FLUX-schnell (~$0.003/img).
+4. **Template-browse endpoint** — `GET /v1/campaigns/templates` (premise · length · premades · teaser lore) for the home/browser; already in the retained surface checklist.
+
+**Goal / deliverable.** Grill the *design*, then **rewrite the temp reference mockup itself** — `docs/ui-temp-reference/project/Cairn App v2.html` → a new **`Cairn App v3.html`** (keep v2 as history). The rewritten mockup is the **replicable visual spec** any coder (human or LLM) builds from later. We are **NOT** grilling frameworks — which library it's finally built in (React SPA / Next / etc.) is a build/deploy concern, deferred out of this slice. The **functional analysis** below (SSE events, screens, Phase-B cuts) is aesthetic-independent and holds regardless.
+
+**Why a rebuild:** v2 is a ~Slice-2 snapshot. It predates combat (6), zones (9), companions (7), death/recovery, inspiration, rests, the worlds/templates restructure, and the ~30-event SSE stream. The screens are beautiful shells whose *data contracts and interactions* no longer match the engine.
+
+#### Engine grounding (facts the rebuild is derived from)
+
+- **Hierarchy:** `World` (setting + its lore = the "Codex"; `world_bible_entry` + `world_lore_chunk` RAG) → `CampaignTemplate` (published scenario in a world, with `premade_characters` attached) → `Campaign` (owner's playthrough; `current_act_index`, `settings`, `member_ids`) → `Character` → `Session` → `Scene` (Act/Scene structure).
+- **Turn interaction:** `POST /v1/sessions/{id}/turns` → **SSE stream**; skill checks come back as a `check_required` event → player rolls client-side → `POST /v1/sessions/{id}/turns/{turn_id}/resolve` with the submitted d20 (+ `inspiration_roll` for advantage = take max). Rests: `POST …/short-rest`, `…/long-rest`. Combat state: `GET …/combat`.
+- **SSE event vocabulary (~30) the play screen must render:** `token`, `turn_start`, `turn_end`, `turn_advanced`, `check_required`, `roll_result`, `combat_started`, `combatant_added|removed|knocked_out`, `damage_applied`, `healing_applied`, `condition_applied|removed`, `effect_applied|removed`, `concentration_started|broken|check_passed`, `death_save_rolled`, `massive_damage_death`, `pc_death_recovered`, `campaign_ended`, `inspiration_granted|spent`, `time_advanced`, `character|monster|npc` (entity snapshots).
+- **Auth reality:** just an `X-User-Id` header today. Real auth (Clerk/JWT), tiers, billing = Phase B / Slice 14. The reference still *draws* login/tiers as visual-only.
+- **Zone dependency:** `combatant_moved` / `opportunity_attack` / `zones` events **do not exist yet** — Slice 9 (tactical zones) is reimagined-but-unbuilt. The **zone battle-map component depends on Slice 9 landing.** Until then, combat renders initiative + action economy + enemy states without positioning.
+
+#### LOCKED design decisions (grilled 2026-07)
+
+1. **Scope — full ground-up rebuild.** New layouts *and* new visual language. The v2 "grimoire" direction is discarded. Every screen redesigned.
+
+2. **Visual direction — "Cartographer's Table."** The app is a surveyor's kit for a world that remembers ("a cairn marks the trail; the world remembers, the trail extends"). Deliberately avoids the three AI-design tells (cream+terracotta serif / black+acid-green / broadsheet hairlines).
+   - **Palette:** bg `#141A1E` (slate ink) · panel `#1B2329` · line `#2E3A40` · paper `#E7E2D4` (warm survey) · **signal `#D6552B`** (vermilion "you are here") · lichen `#7E8F6E` (trail green).
+   - **Type:** **Space Grotesk** (labels/UI) · **Newsreader** (DM prose) · **Space Mono** (coords/data).
+   - **Signature:** the campaign *is* a waymarked trail — cairns/waypoints down a contour-lined spine, topographic texture, vermilion "you are here."
+
+3. **Global shell — "Waymarked rail."** The left nav *is* the trail (signature == navigation). Top of rail = live campaign trail (acts → scenes as waypoints, current scene = vermilion "you are here"); campaign tabs (Character · Party · Lore · Map · …) dock below. Pre-campaign the rail shows top-level destinations (Campaigns · Codex · Account).
+
+4. **Play screen (the hero) — "Reading column + field-notes margin."**
+
+   ```
+   [ trail | Aldric  HP 24/32  AC 16  (vitals strip) ]
+   [ rail  |------------------+----------------------]
+   [       |  DM prose,       |  FIELD NOTES         ]
+   [   |   |  centered        |   - Present -        ]
+   [   *   |  reading measure |   Old Grim           ]
+   [   |   |                  |   The Stranger       ]
+   [       |  > your action   |   - Known -          ]
+   [ tabs  |                  |   Kael - Mill Rd     ]
+   [       | [ input ........]|  (combat: fills rich)]
+   ```
+   DM prose is centered at a real reading measure; the persistent right **field-notes margin** (surveyor's marginalia) holds live state and **goes rich in combat**.
+
+5. **Event rendering (exploration) — "Pure prose, mechanics to the margin."** The reading column stays *pure prose* (immersion). The ~30 mechanical events **tick in the field-notes margin** (HP deltas, conditions, concentration, time). **Baked-in refinements (not re-grilled):** (a) the margin **pulses subtly on change** so an off-to-the-side beat isn't missed; (b) **narratively-pivotal** events (`death_save_rolled`, PC `combatant_knocked_out`, `massive_damage_death`, `campaign_ended`) *also* get a brief **inline announcement** in the column — those are story, not bookkeeping.
+
+6. **Dice / skill checks — "Modal moment."** `check_required` pops a single focused overlay (die · DC · mod) — the one sanctioned break from the quiet prose. **Inspiration** offered as "spend for advantage = roll two, take higher" (maps to `resolve` with `inspiration_roll`). Client animates/submits the roll; result logs to the margin, outcome streams in prose.
+
+7. **Combat — "Mode-switch; map takes center-right."** On `combat_active` the screen re-proportions (mirroring the engine's own hard mode-switch):
+
+   ```
+   [ INIT: Aldric > Stranger > Guard          Round 1 ]
+   [--------------------+-----------------------------]
+   [  prose log         |   ZONE MAP  (Tavern Front)  ]
+   [  (compressed)      |     o -----far----- o       ]
+   [  Grim's blade..    |   Aldric          Guard     ]
+   [                    |     (half cover +2)         ]
+   [--------------------+-----------------------------]
+   [ YOU: [Attack][Move][Dash]   A / B / R    30ft    ]
+   [ [ input ....................................... ]]
+   ```
+   Initiative strip on top · compressed prose log left · **zone node-map** center-right (**node graph, not a grid** — Slice 9) · action-economy action bar on the bottom. Biggest build in the slice; **the zone map is gated on Slice 9.**
+
+8. **Character creation — BOTH: premade fast-path + custom forge.** A choice screen: **left = pre-built**, **right = build your own.** _(Sub-forks grilled & LOCKED 2026-07.)_
+
+   **The determinism line is already half-drawn by the backend schema** (`CharacterCreate` in `api/v1/schemas/characters.py`):
+   - **Deterministic / engine-validated (the numbers):** `ability_scores` are **hard-locked to the standard array `[15,14,13,12,10,8]`** — the validator *rejects* anything else, so **no point-buy and no dice-rolling for stats in v1** (BG3 allows both; we do not — the UI must reflect standard-array-only). `race`/`subrace`, `character_class`/`subclass`, `background`, `skill_choices`, `spell_choices`, `alignment` are discrete picks validated against the live SRD endpoints (`/v1/srd/*`).
+   - **Free-text (the story):** `name`, `bio`, `personality`, `voice_traits` are loose text columns, no validation.
+   - **Portrait:** `portrait_url` exists on the model but is **not** in `CharacterCreate` — set *after* creation. **No image-gen anywhere in the backend today.**
+
+   **LOCKED — Premade fast-path:** 4–5 character cards in a row (from the template's `premade_characters`; each `sheet` is a full `CharacterCreate` shape + bio prose — real content: name, race/class/background, alignment, ability scores, skills, personality, voice, bio). Interaction: **expand-in-place dossier** — click a card and it grows into a full field-dossier (portrait · stat block · bio prose) while the others shrink to a **thumbnail rail** down the side; click any thumbnail to swap the open dossier; **"Take this one"** confirms (clones the sheet into a `Character`, stamps `created_from_premade_id`).
+
+   **LOCKED — Custom forge (deep, "Baldur's-Gate-3-grade"):** full video-game-quality flow — race, class, subclass, background, **alignment**, abilities (standard-array assignment), skills — everything choosable/trackable via the SRD endpoints. The numbers are **locked pickers**; the identity fields are **free text + optional AI assist**:
+   - **"Weave from a prompt"** — the player writes a short concept (*"grizzled ex-soldier, haunted by a siege"*); an LLM fills `bio` + `personality` + `voice_traits`; the player **edits the result**. Mechanics are never touched by the Weave. → **NEW backend dependency: a "Weave" agent** (concept prompt → structured `bio`/`personality`/`voice_traits`). Player may also just type the fields themselves; AI assist is optional, not mandatory.
+
+   **LOCKED — Portrait slot:** the frame shows three affordances — **Gallery** (curated art pack) and **Upload** (your own image) both **work in v1**; a **"Generate portrait"** button is **designed but flagged** as a later capability. _Earmarked cheap path when enabled:_ **Replicate FLUX-schnell (~$0.003/img)** (vs. OpenAI `gpt-image-1` ~$0.04/img; local SD needs a GPU → kills the cheap-VPS plan). Generation itself is a **from-scratch backend capability** (new provider + key + image agent) and stays out of v1 build to protect the $5–15/mo cap.
+
+#### Forks — ALL RESOLVED 2026-07 ✅ (grill complete; next step is building `Cairn App v3.html`)
+
+- ~~**Character creation**~~ — **RESOLVED 2026-07** (see Decision 8): premade = expand-in-place dossier + thumbnail rail; custom = locked-picker numbers + free-text identity with optional "Weave from prompt" agent; portrait = gallery+upload in v1, Generate flagged (FLUX-schnell). New backend deps recorded: Weave agent + (later) image-gen provider.
+- ~~**Death / recovery / rests / concentration**~~ — **RESOLVED 2026-07.** Persistent character state lives in a **slim character band** (thin always-visible strip at the reading column's edge: portrait · HP bar · condition chips · inspiration token · concentration chip · **Rest** button). Rests are **one-click narrated streams** (`rest_applied`/`rest_blocked` mechanical event → SceneNarrator prose → `rest_end`; short-rest takes no body, hit-dice spend auto). Concentration = a persistent chip in the band ("holding Bless"), `concentration_broken` also surfaces inline (pivotal). **Downed state takes over the band** with the 3-successes / 3-failures death-save track; `massive_damage_death` = instant, no track. Death/recovery beats are pivotal → inline prose + band takeover.
+  - ⚠️ **BACKEND TWEAK NEEDED (player-rolled death saves):** death saves must be **player-rolled**, not auto-rolled. Today `roll_death_save` (`domain/services/combat/rolls.py:65`) rolls server-side via `rng.randint(1,20)`. Change it to route through the **same client-roll → `/resolve` pattern as skill checks**: emit a `check_required`-style prompt for the death save, the client rolls the d20 in the dice modal (or a band affordance) and submits it, the server applies the submitted roll to the 3/3 track. Keep the same outcome logic (≥10 success, nat 20 → 1 HP, nat 1 → 2 failures). _Tracked as an engine tweak this slice surfaces — not a pure-UI change._
+- ~~**Pre-play screens**~~ — **RESOLVED 2026-07.**
+  - **Codex = in-play discovery journal.** Keyed off the existing `GET /v1/campaigns/{id}/lore` (WorldBibleEntry, filterable by type: people/places/factions/history). Starts sparse, fills as LoreKeeper writes entries for what the player actually encounters — **spoiler-safe by construction**. **No new endpoint.** Pre-play, a template card shows only a **short authored teaser blurb**, never the full lore. (Honors discovery + no-context-pollution ethos.)
+  - **Home / browser:** `GET /v1/campaigns` lists your playthroughs; starting a new one needs a **template-browse endpoint** (`GET /v1/campaigns/templates` — still to build; already in the retained surface checklist). Template detail shows premise · length · premades · teaser lore.
+  - **Campaign creation — foregrounded framing vs. Settings-tab.** Slice 10 makes **all** settings editable anytime (`PATCH …/settings`, resolved-per-turn merge) — nothing is technically locked at creation. The create flow is `POST /campaigns` (name+template) → immediately `PATCH …/settings` with the chosen framing values (no new endpoint). The **creation screen foregrounds three framing choices** (all still editable later in Settings): **① Agency preset** (Narrative/Balanced/Tactical) · **② Death mode** (pacifist/narrative/hardcore) · **③ Content & tone** (violence/gore/sexual/romance/horror/substances off·fade·on + hard-no `lines` + `tone_note`). **Model tier, per-agent overrides, passive-check modes, and narration verbosity are NOT on the create screen** — they live only in the Settings tab (model tier especially is an explicit *anytime* swap per the user). See Settings-tab fork below.
+- ~~**Party / companions**~~ (Slice 7) — **RESOLVED 2026-07.**
+  - **Approval surfacing:** vague **bands only** at a glance ("cold"/"warming up"/"loyal"); **the raw integer is never shown** (meta-info — decided with the user, resolving the Slice-7 line-1086 contradiction). Drawer's Approval section = band + the **colored reason-log** (green delta>0 / red delta<0, each with its reason string like "Burned the village down") **without numeric deltas/total**. Integer stays server-side.
+  - **Party at a glance:** companions ride in the **slim character band** (the Decision-8/vitals band) as mini-avatars — mood-tinted, vague band label under each — beside the PC. Mirrors how combat's initiative strip already lists them.
+  - **Companion drawer** (click an avatar): full sheet (companions are real `Character` rows, `is_companion=True`) + Approval section (above) + `mood` + `personal_goal`. **`secret` is never shown to the player.**
+- ~~**Settings tab**~~ (Slice 10) — **RESOLVED 2026-07** (fully specified by Slice 10 line ~1696; UI just renders it). One tab, editable anytime, backed by `GET/PATCH /v1/campaigns/{cid}/settings`: **agency preset radios** (Narrative/Balanced/Tactical) · **death-mode** · **content toggles** (per-category off/fade/on) + `lines`/`tone_note` box · **model-tier picker** (the anytime model swap) · **narration verbosity** · a collapsible **Advanced** section for per-agent `model_overrides` + per-companion agency sliders + passive-check modes. Header shows the merge state as **"Balanced · N custom"** (preset tag + count of sparse overrides — never a magic "custom" preset). The three creation framing knobs (agency/death/content) reappear here as the canonical home; the create screen is just an up-front subset.
+- ~~**Session summary · cheatsheet · exploration map**~~ — **RESOLVED 2026-07.**
+  - **Recap** — "previously on…" on resume, from `Session.summary` + `/calendar` day-summaries. Render existing data, no new endpoint.
+  - **Cheatsheet** — UI-side "current state at a glance" aggregation: active threads (Scene `unresolved_threads`, Slice 8), current objective, reachable exits. Composed from data already on the wire.
+  - **Exploration map (signature payoff of "Cartographer's Table"):** an **auto-laid-out node graph of *discovered* locations** — nodes = places visited, edges from `Location.connections` (adjacency-only, **no coordinates** → frontend lays it out), current location highlighted, unvisited-but-known exits shown as `???` stubs; click a node to inspect / travel. **Reuses the same node-graph visual language as the combat zone-map** (Decision 7) for consistency — the two maps are the visual through-line of the whole direction. Grows as you explore. This is the thematic core, not just polish; it earns the "Cartographer's Table" name. _(Real layout work — the biggest non-combat component; a force-directed / dagre-style auto-layout over the adjacency graph.)_
+- ~~**Phase-B visual-only**~~ — **RESOLVED 2026-07: draw the full set** (login · account/security · **tiers/billing**), all in the Cartographer's Table language, **clearly flagged "Phase B — not wired."** Purely design-language completeness; **no commercial model is committed** (auth = Slice 14; today the app runs on `X-User-Id` only; the $5–15/mo cap may never need billing). To keep it coherent, the billing tiers **map to Slice 10's model tiers** — Free → `local` (Ollama), paid tiers → `balanced` / `premium`. Names/prices are placeholder. These screens sit outside the playable path and are the last thing built.
+- ~~**Deliverable mechanics**~~ — **RESOLVED 2026-07.** Deliverable = a new **`Cairn App v3.html`** in `docs/ui-temp-reference/project/`, keeping `Cairn App v2.html` alongside as history. **DM "thinking" = diegetic only:** during agent latency the field-notes margin shows an in-world shimmer ("the DM considers…", quill/dice motifs) with **no agent names and no pipeline exposed** — the v2 "DM Thinking" agent-status panel is **dropped**. The machinery stays invisible; the margin is field notes, not a debug console. (No dev-trace toggle in v3; not a Slice-10 setting.)
+
+---
+
+**Below: the pre-grill surface checklist (retained).** Still valid as *what* each screen must expose (API surface / data contracts); the locked design above governs *how* it looks and lays out. The original `_Depends on: … Slice 14 (auth)_` framing is superseded by the Phase-A framing above.
 
 Implement the UI from the Claude Design handoff (`cairn-ui-light-reference` in repo root).
 
