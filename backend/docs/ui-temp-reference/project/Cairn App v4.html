@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cairn v4 — Cartographer's Table — visual spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ════════════════════════════════════════════════════════════
+   TOKENS — Cartographer's Table (Slice 15, Decision 2 — EXACT)
+   ════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#141A1E;            /* slate ink — app background      */
+  --panel:#1B2329;         /* cards, rail, drawers            */
+  --panel-2:#20292F;       /* raised panel variant (derived)  */
+  --line:#2E3A40;          /* borders, dividers, contours     */
+  --line-soft:rgba(46,58,64,.55);
+  --paper:#E7E2D4;         /* warm survey paper — primary text*/
+  --paper-70:rgba(231,226,212,.70);
+  --paper-45:rgba(231,226,212,.45);
+  --paper-28:rgba(231,226,212,.28);
+  --paper-12:rgba(231,226,212,.12);
+  --verm:#D6552B;          /* signal — you-are-here, primary  */
+  --verm-hi:#E86A3E;
+  --verm-14:rgba(214,85,43,.14);
+  --verm-30:rgba(214,85,43,.30);
+  --lichen:#7E8F6E;        /* trail green — known, positive   */
+  --lichen-14:rgba(126,143,110,.16);
+  --lichen-40:rgba(126,143,110,.40);
+  --ui:'Space Grotesk',sans-serif;
+  --prose:'Newsreader',serif;
+  --mono:'Space Mono',monospace;
+  --sw-h:44px;
+  --contour:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640' viewBox='0 0 640 640'%3E%3Cg fill='none' stroke='%23E7E2D4' stroke-opacity='0.045' stroke-width='1'%3E%3Cpath d='M-20 90 Q120 30 300 85 T660 70'/%3E%3Cpath d='M-20 150 Q160 95 320 150 T660 135'/%3E%3Cpath d='M-20 215 Q140 170 340 210 T660 200'/%3E%3Cpath d='M-20 330 Q200 270 380 330 T660 315'/%3E%3Cpath d='M-20 395 Q180 350 360 400 T660 385'/%3E%3Cpath d='M-20 520 Q160 460 340 515 T660 500'/%3E%3Cpath d='M-20 585 Q200 540 380 590 T660 575'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ══ THEMES — five handcrafted palettes, one kit ══════════════
+   Structure, type, and the signature never change; only the light.
+   Signal (vermilion) is constant except Daylight, where it deepens
+   for contrast. The second accent is the "trail" color.        */
+body[data-theme="lamplight"]{      /* field journal by lamplight */
+  --bg:#191510;--panel:#211B13;--panel-2:#282016;
+  --line:#3C3122;--line-soft:rgba(60,49,34,.6);
+  --paper:#EAE2CB;--paper-70:rgba(234,226,203,.70);--paper-45:rgba(234,226,203,.45);
+  --paper-28:rgba(234,226,203,.28);--paper-12:rgba(234,226,203,.12);
+  --lichen:#8A9166;--lichen-14:rgba(138,145,102,.16);--lichen-40:rgba(138,145,102,.40);
+}
+body[data-theme="blackwood"]{      /* night camp under the firs   */
+  --bg:#121813;--panel:#19221B;--panel-2:#1F2920;
+  --line:#2E3C31;--line-soft:rgba(46,60,49,.6);
+  --paper:#E5E4D0;--paper-70:rgba(229,228,208,.70);--paper-45:rgba(229,228,208,.45);
+  --paper-28:rgba(229,228,208,.28);--paper-12:rgba(229,228,208,.12);
+  --lichen:#94A47D;--lichen-14:rgba(148,164,125,.16);--lichen-40:rgba(148,164,125,.40);
+}
+body[data-theme="gilt"]{           /* the v2 homage — old gold trail */
+  --bg:#14100A;--panel:#1C1610;--panel-2:#231C13;
+  --line:#3A2F1C;--line-soft:rgba(58,47,28,.6);
+  --paper:#E9DFC4;--paper-70:rgba(233,223,196,.70);--paper-45:rgba(233,223,196,.45);
+  --paper-28:rgba(233,223,196,.28);--paper-12:rgba(233,223,196,.12);
+  --lichen:#C9A04C;--lichen-14:rgba(201,160,76,.14);--lichen-40:rgba(201,160,76,.40);
+}
+body[data-theme="daylight"]{       /* survey paper, ink, open sky  */
+  --bg:#E8E3D2;--panel:#EFEBDC;--panel-2:#F4F1E6;
+  --line:#C8C0A8;--line-soft:rgba(200,192,168,.6);
+  --paper:#262218;--paper-70:rgba(38,34,24,.72);--paper-45:rgba(38,34,24,.48);
+  --paper-28:rgba(38,34,24,.30);--paper-12:rgba(38,34,24,.10);
+  --verm:#BC4720;--verm-hi:#A93E1B;--verm-14:rgba(188,71,32,.12);--verm-30:rgba(188,71,32,.34);
+  --lichen:#5C6B47;--lichen-14:rgba(92,107,71,.14);--lichen-40:rgba(92,107,71,.40);
+  --contour:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640' viewBox='0 0 640 640'%3E%3Cg fill='none' stroke='%23262218' stroke-opacity='0.05' stroke-width='1'%3E%3Cpath d='M-20 90 Q120 30 300 85 T660 70'/%3E%3Cpath d='M-20 150 Q160 95 320 150 T660 135'/%3E%3Cpath d='M-20 215 Q140 170 340 210 T660 200'/%3E%3Cpath d='M-20 330 Q200 270 380 330 T660 315'/%3E%3Cpath d='M-20 395 Q180 350 360 400 T660 385'/%3E%3Cpath d='M-20 520 Q160 460 340 515 T660 500'/%3E%3Cpath d='M-20 585 Q200 540 380 590 T660 575'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* inline SVGs (logo, d20, map sublabels) follow the theme */
+svg [fill="#E7E2D4"]{fill:var(--paper)}
+svg [stroke="#E7E2D4"]{stroke:var(--paper)}
+svg [fill="#D6552B"]{fill:var(--verm)}
+svg [stroke="#D6552B"]{stroke:var(--verm)}
+/* dev strip stays dark in every theme — pin its vars */
+.switcher{--paper:#E7E2D4;--paper-45:rgba(231,226,212,.45);--paper-28:rgba(231,226,212,.28);
+  --paper-12:rgba(231,226,212,.12);--verm-hi:#E86A3E;--verm-14:rgba(214,85,43,.14);--line:#2E3A40}
+/* theme swatch picker (Account + Settings) */
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:6px;
+  padding:8px 13px;background:var(--panel);font-size:12px;font-weight:600;color:var(--paper-70)}
+.swatch:hover{border-color:var(--paper-45)}
+.swatch.cur{border-color:var(--verm);color:var(--paper)}
+.swatch .dots{display:flex;gap:3px}
+.swatch .d{width:10px;height:10px;border-radius:50%;border:1px solid rgba(128,128,128,.35)}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg)}
+body{font-family:var(--ui);color:var(--paper);font-size:14px;line-height:1.5;overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:var(--ui);color:inherit;background:none;border:none}
+input,textarea,select{font-family:var(--ui);color:var(--paper);background:var(--bg);
+  border:1px solid var(--line);border-radius:4px;padding:9px 12px;font-size:13.5px;width:100%}
+input::placeholder,textarea::placeholder{color:var(--paper-28)}
+:focus-visible{outline:2px solid var(--verm);outline-offset:2px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ── spec switcher (dev chrome, not part of the app) ─────── */
+.switcher{position:fixed;top:0;left:0;right:0;height:var(--sw-h);z-index:200;
+  display:flex;align-items:center;gap:2px;padding:0 12px;overflow-x:auto;
+  background:#0D1114;border-bottom:1px solid var(--line);font-family:var(--mono)}
+.sw-lab{font-size:9px;letter-spacing:.14em;color:var(--paper-28);padding:0 8px 0 14px;white-space:nowrap;flex-shrink:0}
+.sw-btn{font-family:var(--mono);font-size:10.5px;color:var(--paper-45);padding:5px 8px;
+  border-radius:3px;white-space:nowrap;flex-shrink:0}
+.sw-btn:hover{color:var(--paper);background:var(--paper-12)}
+.sw-btn.active{color:var(--verm-hi);background:var(--verm-14)}
+
+/* ── app frame ───────────────────────────────────────────── */
+.app{display:flex;height:100vh;padding-top:var(--sw-h)}
+.stage{flex:1;min-width:0;position:relative}
+.screen{display:none;height:calc(100vh - var(--sw-h))}
+.screen.active{display:flex;flex-direction:column}
+.screen.scroll{overflow-y:auto;display:none}
+.screen.scroll.active{display:block}
+
+/* ── the waymarked rail — signature == navigation ────────── */
+.rail{width:236px;flex-shrink:0;background:var(--panel) var(--contour);border-right:1px solid var(--line);
+  display:none;flex-direction:column;overflow-y:auto}
+.rail.show{display:flex}
+.rail-brand{display:flex;align-items:center;gap:10px;padding:18px 18px 14px}
+.rail-brand .word{font-weight:700;font-size:15px;letter-spacing:.24em}
+.rail-camp{padding:0 18px 6px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  color:var(--paper-45);text-transform:uppercase}
+.trail{padding:14px 0 18px 18px;border-top:1px solid var(--line-soft)}
+.act{margin-bottom:4px}
+.act-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--paper-45);padding:8px 0 6px}
+.act-h .st{margin-left:6px}
+.act-h .st.done{color:var(--lichen)}
+.act-h.locked{color:var(--paper-28)}
+.wps{border-left:1px dashed var(--line);margin-left:4px;padding-left:14px}
+.wp{position:relative;padding:5px 0;font-size:12.5px;color:var(--paper-70)}
+.wp::before{content:"";position:absolute;left:-18.5px;top:11px;width:8px;height:8px;border-radius:50%;
+  background:var(--panel);border:1.5px solid var(--paper-28)}
+.wp.done{color:var(--paper-45)}
+.wp.done::before{border-color:var(--lichen);background:var(--lichen)}
+.wp.here{color:var(--paper);font-weight:600}
+.wp.here::before{border-color:var(--verm);background:var(--verm);
+  box-shadow:0 0 0 3px var(--verm-14);animation:herepulse 2.6s ease-in-out infinite}
+.wp.next{color:var(--paper-28)}
+.wp.next::before{border-style:dashed}
+.wp .yah{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;color:var(--verm-hi)}
+@keyframes herepulse{0%,100%{box-shadow:0 0 0 3px var(--verm-14)}50%{box-shadow:0 0 0 7px rgba(214,85,43,.06)}}
+
+.rail-tabs{margin-top:auto;border-top:1px solid var(--line-soft);padding:10px}
+.tab{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:5px;
+  font-size:13px;color:var(--paper-70);text-align:left}
+.tab:hover{background:var(--paper-12);color:var(--paper)}
+.tab.on{background:var(--verm-14);color:var(--verm-hi);font-weight:600}
+.tab .tico{width:16px;text-align:center;font-family:var(--mono);font-size:11px;opacity:.8}
+.rail-foot{padding:12px 18px 16px;border-top:1px solid var(--line-soft);display:flex;align-items:center;gap:10px}
+.rail-foot .fmeta{font-family:var(--mono);font-size:10px;color:var(--paper-45);line-height:1.6}
+.livedot{width:6px;height:6px;border-radius:50%;background:var(--lichen);display:inline-block;margin-right:5px}
+
+/* ── shared atoms ────────────────────────────────────────── */
+.glyph{flex-shrink:0}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-45)}
+.eyebrow.verm{color:var(--verm-hi)}
+.eyebrow.lich{color:var(--lichen)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;
+  border:1px solid var(--line);color:var(--paper-45)}
+.tag.phaseb{border-color:var(--verm-30);color:var(--verm-hi)}
+.tag.dep{border-color:var(--lichen-40);color:var(--lichen)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13px;font-weight:600;padding:9px 18px;border-radius:5px;
+  border:1px solid var(--line);color:var(--paper);background:transparent;
+  transition:background .15s,border-color .15s}
+.btn:hover{background:var(--paper-12)}
+.btn.primary{background:var(--verm);border-color:var(--verm);color:#16110D}
+.btn.primary:hover{background:var(--verm-hi);border-color:var(--verm-hi)}
+.btn.quiet{border-color:transparent;color:var(--paper-45)}
+.btn.quiet:hover{color:var(--paper);background:var(--paper-12)}
+.btn.dis{opacity:.4;cursor:not-allowed}
+.btn.big{padding:12px 26px;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;
+  padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--paper-70);background:var(--panel)}
+.chip.warn{border-color:var(--verm-30);color:var(--verm-hi)}
+.chip.good{border-color:var(--lichen-40);color:var(--lichen)}
+/* every rules noun is inspectable — hover or focus any spell, item, or condition */
+.pop{position:relative;cursor:help}
+.pop:hover .popcard,.pop:focus-within .popcard{display:block}
+.popcard{display:none;position:absolute;z-index:80;bottom:calc(100% + 10px);left:0;width:280px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:13px 15px;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);text-align:left;cursor:default;white-space:normal;text-transform:none}
+.popcard .ph{font-family:var(--ui);font-weight:600;font-size:13px;letter-spacing:0;color:var(--paper);display:block}
+.popcard .pm{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--paper-45);display:block;margin:2px 0 8px}
+.popcard .pb{font-family:var(--ui);font-size:12px;font-weight:400;line-height:1.55;letter-spacing:0;color:var(--paper-70);display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px}
+.hr{height:1px;background:var(--line-soft);border:none;margin:18px 0}
+
+.screen-head{padding:34px 44px 20px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.screen-head h1{font-size:24px;font-weight:600;letter-spacing:-.01em;margin-top:6px}
+.pad{padding:0 44px 44px}
+
+/* ── prose / reading column ──────────────────────────────── */
+.prose{font-family:var(--prose);font-size:18.5px;line-height:1.72;color:var(--paper);max-width:60ch}
+.prose p{margin-bottom:1.1em}
+.prose p:last-child{margin-bottom:0}
+.prose em{color:var(--paper-70)}
+.prose .you{font-family:var(--ui);font-size:12.5px;color:var(--paper-45);letter-spacing:.02em;
+  border-left:2px solid var(--line);padding:2px 0 2px 14px;margin:1.6em 0}
+.prose .you b{color:var(--paper-70);font-weight:600}
+.pivot{display:flex;align-items:center;gap:14px;margin:2em 0;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.22em;text-transform:uppercase}
+.pivot::before,.pivot::after{content:"";flex:1;height:1px;background:var(--line)}
+.pivot.verm{color:var(--verm-hi)}.pivot.verm::before,.pivot.verm::after{background:var(--verm-30)}
+.pivot.lich{color:var(--lichen)}.pivot.lich::before,.pivot.lich::after{background:var(--lichen-40)}
+
+/* ── field-notes margin ──────────────────────────────────── */
+.fieldnotes{width:296px;flex-shrink:0;border-left:1px solid var(--line);overflow-y:auto;
+  padding:22px 20px;background:linear-gradient(180deg,rgba(27,35,41,.5),rgba(20,26,30,0) 30%)}
+.fn-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--paper-45);
+  text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.fn-h::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.note{font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--paper-70);
+  padding:7px 0 7px 12px;border-left:1px solid var(--line-soft)}
+.note .t{color:var(--paper-28);font-size:9.5px;display:block}
+.note.good{border-left-color:var(--lichen);color:var(--lichen)}
+.note.bad{border-left-color:var(--verm);color:var(--verm-hi)}
+.note.fresh{animation:notepulse 2.4s ease-out 1}
+@keyframes notepulse{0%{background:var(--verm-14)}100%{background:transparent}}
+.note.dm{border-left-color:var(--paper-28);color:var(--paper-45);font-style:italic}
+.note.dm .dots::after{content:"…";animation:think 1.6s steps(4,end) infinite}
+@keyframes think{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"…"}}
+
+/* ── play chrome: vitals · band · input ──────────────────── */
+.vitals{display:flex;align-items:center;gap:18px;padding:12px 26px;border-bottom:1px solid var(--line);
+  background:var(--panel) var(--contour)}
+.vitals .loc{font-weight:600;font-size:14.5px}
+.vitals .vmeta{font-family:var(--mono);font-size:10.5px;color:var(--paper-45);letter-spacing:.06em}
+.vitals .right{margin-left:auto;display:flex;gap:14px;align-items:center}
+.playbody{flex:1;display:flex;min-height:0}
+.prosecol{flex:1;overflow-y:auto;padding:42px 52px;min-width:0}
+.prosecol .prose{margin:0 auto}
+.band{display:flex;align-items:center;gap:14px;padding:10px 22px;border-top:1px solid var(--line);
+  background:var(--panel)}
+.band .sep{width:1px;height:26px;background:var(--line-soft);flex-shrink:0}
+.lvlchip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;
+  padding:4px 11px;border-radius:20px;border:1px solid var(--verm-30);color:var(--verm-hi);background:var(--verm-14)}
+.lvlchip:hover{border-color:var(--verm)}
+.avatar{width:38px;height:38px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;background:var(--panel-2) var(--contour);border:1px solid var(--line);color:var(--paper-70)}
+.band .who{line-height:1.25}
+.band .who .nm{font-weight:600;font-size:13px}
+.band .who .cl{font-family:var(--mono);font-size:9.5px;color:var(--paper-45)}
+.hpwrap{width:170px}
+.hpline{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-bottom:3px}
+.hpline b{color:var(--paper)}
+.hpbar{height:6px;border-radius:3px;background:var(--paper-12);overflow:hidden}
+.hpbar i{display:block;height:100%;border-radius:3px;background:var(--lichen)}
+.hpbar i.hurt{background:var(--verm)}
+.insp{width:18px;height:18px;transform:rotate(45deg);border-radius:3px;background:var(--verm);
+  box-shadow:0 0 10px var(--verm-30);flex-shrink:0}
+.insp.spent{background:transparent;border:1.5px solid var(--paper-28);box-shadow:none}
+.mini{position:relative;text-align:center;width:44px}
+.mini .avatar{width:30px;height:30px;font-size:11px;margin:0 auto;border-radius:50%}
+.mini.warm .avatar{border-color:var(--lichen);box-shadow:0 0 0 2px var(--lichen-14)}
+.mini.guarded .avatar{border-color:var(--paper-45)}
+.mini.hostile .avatar{border-color:var(--verm);box-shadow:0 0 0 2px var(--verm-14)}
+.mini .mood{font-family:var(--mono);font-size:8px;letter-spacing:.08em;color:var(--paper-45);
+  text-transform:uppercase;display:block;margin-top:3px}
+.inputbar{display:flex;gap:10px;padding:12px 22px 16px;border-top:1px solid var(--line-soft);background:var(--bg)}
+.inputbar input{flex:1;background:var(--panel);font-size:14px;padding:11px 16px}
+.sendbtn{width:42px;border-radius:5px;background:var(--verm);color:#16110D;font-weight:700;font-size:16px;flex-shrink:0}
+.sendbtn:hover{background:var(--verm-hi)}
+
+/* ── node-graph vocabulary (shared: zones + world map) ───── */
+.ng-edge{stroke:var(--line);stroke-width:1.5;fill:none}
+.ng-edge.dash{stroke-dasharray:3 6;stroke:var(--paper-28)}
+.ng-node .disc{fill:var(--panel-2);stroke:var(--paper-45);stroke-width:1.5}
+.ng-node.visited .disc{stroke:var(--lichen)}
+.ng-node.here .disc{fill:var(--verm-14);stroke:var(--verm);stroke-width:2}
+.ng-node.stub .disc{stroke:var(--paper-28);stroke-dasharray:3 4;fill:var(--bg)}
+.ng-lab{font-family:'Space Grotesk';font-size:12px;font-weight:600;fill:var(--paper)}
+.ng-lab.dim{fill:var(--paper-45);font-weight:400}
+.ng-sub{font-family:'Space Mono';font-size:8.5px;letter-spacing:.14em;fill:var(--verm-hi)}
+.ng-dot{r:4}
+.ng-dot.pc{fill:var(--verm)}
+.ng-dot.ally{fill:var(--lichen)}
+.ng-dot.foe{fill:none;stroke:var(--paper-70);stroke-width:1.5}
+@keyframes ngpulse{0%,100%{stroke-opacity:.5;r:16}50%{stroke-opacity:.1;r:20}}
+.ng-pulse{fill:none;stroke:var(--verm);animation:ngpulse 2.8s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- ═══ SPEC SWITCHER (dev chrome — not part of the app) ═══ -->
+<nav class="switcher" id="switcher" aria-label="screen switcher">
+  <span class="sw-lab">A·SHELL</span>
+  <button class="sw-btn" data-s="s00">00 landing</button>
+  <button class="sw-btn" data-s="s01">01 login</button>
+  <button class="sw-btn" data-s="s02">02 account</button>
+  <button class="sw-btn" data-s="s03">03 billing</button>
+  <button class="sw-btn" data-s="s04">04 home</button>
+  <button class="sw-btn" data-s="s05">05 worlds</button>
+  <button class="sw-btn" data-s="s06">06 new-campaign</button>
+  <span class="sw-lab">B·CREATE</span>
+  <button class="sw-btn" data-s="s07">07 choice</button>
+  <button class="sw-btn" data-s="s08">08 premade</button>
+  <button class="sw-btn" data-s="s09">09 forge</button>
+  <span class="sw-lab">C·PLAY</span>
+  <button class="sw-btn" data-s="s10">10 play</button>
+  <button class="sw-btn" data-s="s11">11 dice</button>
+  <button class="sw-btn" data-s="s26">12a into-combat</button>
+  <button class="sw-btn" data-s="s12">12 combat</button>
+  <button class="sw-btn" data-s="s13">13 rest</button>
+  <button class="sw-btn" data-s="s14">14 downed</button>
+  <span class="sw-lab">D·PANELS</span>
+  <button class="sw-btn" data-s="s15">15 sheet</button>
+  <button class="sw-btn" data-s="s16">16 party</button>
+  <button class="sw-btn" data-s="s17">17 codex</button>
+  <button class="sw-btn" data-s="s18">18 map</button>
+  <button class="sw-btn" data-s="s19">19 settings</button>
+  <button class="sw-btn" data-s="s20">20 recap</button>
+  <span class="sw-lab">E·MOMENTS</span>
+  <button class="sw-btn" data-s="s21">21 level-up</button>
+  <button class="sw-btn" data-s="s22">22 epilogue</button>
+  <button class="sw-btn" data-s="s23">23 loot</button>
+  <button class="sw-btn" data-s="s24">24 spell-prep</button>
+  <button class="sw-btn" data-s="s25">25 reaction</button>
+  <span class="sw-lab">·</span>
+  <button class="sw-btn" id="themebtn" style="border:1px solid var(--line)">◐ slate</button>
+</nav>
+
+<div class="app">
+
+<!-- ═══ RAIL — pre-campaign variant ═══ -->
+<aside class="rail" id="rail-pre">
+  <div class="rail-brand">
+    <svg class="glyph" width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
+      <rect x="7" y="1"  width="8"  height="4" rx="2" fill="#D6552B"/>
+      <rect x="4.5" y="8"  width="13" height="4.5" rx="2.2" fill="#E7E2D4" opacity=".85"/>
+      <rect x="2" y="15.5" width="18" height="5" rx="2.5" fill="#E7E2D4" opacity=".55"/>
+    </svg>
+    <span class="word">CAIRN</span>
+  </div>
+  <div class="rail-camp">a world that remembers</div>
+  <nav class="rail-tabs" style="margin-top:18px;border-top:1px solid var(--line-soft)">
+    <button class="tab" data-tab="campaigns"><span class="tico">▲</span>Campaigns</button>
+    <button class="tab" data-tab="account"><span class="tico">◍</span>Account</button>
+  </nav>
+  <div style="padding:14px 18px;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--paper-28);line-height:1.7">THE CODEX IS CAMPAIGN MEMORY — IT LIVES INSIDE A CAMPAIGN, NEVER OUT HERE</div>
+  <div class="rail-foot" style="margin-top:auto">
+    <span class="fmeta">v4 · visual spec<br/>cartographer's table</span>
+  </div>
+</aside>
+
+<!-- ═══ RAIL — in-campaign variant: the trail IS the nav ═══ -->
+<aside class="rail" id="rail-camp">
+  <div class="rail-brand">
+    <svg class="glyph" width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
+      <rect x="7" y="1"  width="8"  height="4" rx="2" fill="#D6552B"/>
+      <rect x="4.5" y="8"  width="13" height="4.5" rx="2.2" fill="#E7E2D4" opacity=".85"/>
+      <rect x="2" y="15.5" width="18" height="5" rx="2.5" fill="#E7E2D4" opacity=".55"/>
+    </svg>
+    <span class="word">CAIRN</span>
+  </div>
+  <div class="rail-camp">The Silent Ford</div>
+
+  <div class="trail">
+    <div class="act">
+      <div class="act-h">Act I — The Crossing <span class="st done">✓</span></div>
+    </div>
+    <div class="act">
+      <div class="act-h" style="color:var(--paper-70)">Act II — What the River Keeps</div>
+      <div class="wps">
+        <div class="wp done">The toll ledger</div>
+        <div class="wp done">Miller's Rise by night</div>
+        <div class="wp here">The Drowned Chapel<span class="yah">YOU ARE HERE</span></div>
+        <div class="wp next">···</div>
+      </div>
+    </div>
+    <div class="act">
+      <div class="act-h locked">Act III — The Weir&nbsp;&nbsp;◇</div>
+    </div>
+  </div>
+
+  <nav class="rail-tabs">
+    <button class="tab" data-tab="play"><span class="tico">▶</span>Play</button>
+    <button class="tab" data-tab="character"><span class="tico">✚</span>Character</button>
+    <button class="tab" data-tab="party"><span class="tico">⁂</span>Party</button>
+    <button class="tab" data-tab="codex"><span class="tico">✦</span>Codex</button>
+    <button class="tab" data-tab="map"><span class="tico">▲</span>Map</button>
+    <button class="tab" data-tab="settings"><span class="tico">≡</span>Settings</button>
+  </nav>
+  <div class="rail-foot">
+    <div class="avatar" style="width:30px;height:30px;font-size:12px;border-radius:50%">A</div>
+    <span class="fmeta"><span class="livedot"></span>Ser Aldric · Day 14<br/>session live · turn 62</span>
+  </div>
+</aside>
+
+<main class="stage" id="stage">
+
+<!-- ═══════════════════ A · SHELL / PRE-PLAY ═══════════════════ -->
+<style>
+/* s01 login */
+.login{align-items:center;justify-content:center;background:var(--bg) var(--contour)}
+.login-box{width:340px;text-align:center}
+.login-box .word{font-weight:700;font-size:22px;letter-spacing:.34em;margin:16px 0 6px;padding-left:.34em}
+.login-box .tagline{font-family:var(--prose);font-style:italic;font-size:15px;color:var(--paper-45);margin-bottom:30px}
+.login-box input{margin-bottom:10px;text-align:left}
+/* s02-s06 shared */
+.settle{max-width:720px}
+.cardrow{display:flex;gap:16px;flex-wrap:wrap}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:860px}
+.tier .price{font-family:var(--mono);font-size:26px;margin:10px 0 2px}
+.tier .per{font-family:var(--mono);font-size:10px;color:var(--paper-45)}
+.tier ul{list-style:none;margin-top:14px}
+.tier li{font-size:12.5px;color:var(--paper-70);padding:5px 0;border-top:1px solid var(--line-soft)}
+.tier.current{border-color:var(--lichen)}
+.campcard{width:300px;position:relative}
+.campcard .cname{font-size:16px;font-weight:600;margin:2px 0 4px}
+.campcard .cmeta{font-family:var(--mono);font-size:10px;color:var(--paper-45);line-height:1.7}
+.minitrail{display:flex;align-items:center;gap:0;margin:14px 0 4px}
+.minitrail .md{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--paper-28);flex-shrink:0}
+.minitrail .md.done{background:var(--lichen);border-color:var(--lichen)}
+.minitrail .md.here{background:var(--verm);border-color:var(--verm);box-shadow:0 0 0 3px var(--verm-14)}
+.minitrail .ml{flex:1;height:1px;background:var(--line);min-width:14px}
+.minitrail .ml.done{background:var(--lichen-40)}
+.newcard{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;color:var(--paper-45);min-height:150px;background:transparent}
+.newcard:hover{color:var(--paper);border-color:var(--paper-45)}
+/* s05 worlds → scenarios */
+.worldrow{display:flex;gap:14px;margin-bottom:26px;flex-wrap:wrap}
+.wcard{flex:1;min-width:260px;max-width:380px;text-align:left;border:1px solid var(--line);border-radius:9px;
+  padding:18px 20px;background:var(--panel) var(--contour)}
+.wcard .wn{font-family:var(--prose);font-size:19px;font-weight:600;display:block;margin:4px 0 6px}
+.wcard .wd{font-size:12px;color:var(--paper-45);line-height:1.5;display:block}
+.wcard .wm{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--paper-28);display:block;margin-top:12px}
+.wcard.sel{border-color:var(--verm)}
+.wcard.sel .wn{color:var(--paper)}
+.acttrail{display:flex;flex-direction:column;gap:0;margin:14px 0 4px}
+.atw{display:flex;align-items:baseline;gap:12px;padding:7px 0;border-top:1px solid var(--line-soft);font-size:13px}
+.atw .an{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--paper-45);width:44px;flex-shrink:0}
+.atw .at{font-weight:600}
+.atw .ad{font-size:11.5px;color:var(--paper-45);margin-left:auto;text-align:right}
+.atw.veiled .at,.atw.veiled .ad{color:var(--paper-28);font-weight:400}
+.figrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tpl-split{display:flex;gap:26px;align-items:flex-start}
+.tpl-list{width:250px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.tpl-item{text-align:left;border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:var(--panel)}
+.tpl-item .tn{font-weight:600;font-size:14px}
+.tpl-item .tm{font-family:var(--mono);font-size:9.5px;color:var(--paper-45);margin-top:3px;display:block}
+.tpl-item.sel{border-color:var(--verm);background:var(--verm-14)}
+.tpl-detail{flex:1;min-width:0}
+.lorequote{border-left:2px solid var(--lichen);padding:4px 0 4px 18px;margin:18px 0;
+  font-family:var(--prose);font-style:italic;font-size:16px;line-height:1.65;color:var(--paper-70)}
+.premades{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.pchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:20px;
+  padding:4px 14px 4px 4px;background:var(--panel);font-size:12px}
+.pchip .avatar{width:26px;height:26px;font-size:10px;border-radius:50%}
+/* s06 knobs */
+.knob{margin-bottom:26px}
+.knob-h{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.knob-h .n{font-family:var(--mono);font-size:10px;color:var(--verm-hi)}
+.knob-h .t{font-weight:600;font-size:14px}
+.radios{display:flex;gap:10px;flex-wrap:wrap}
+.radio{flex:1;min-width:170px;text-align:left;border:1px solid var(--line);border-radius:7px;
+  padding:12px 14px;background:var(--panel)}
+.radio .rn{font-weight:600;font-size:13px;display:block;margin-bottom:3px}
+.radio .rd{font-size:11.5px;color:var(--paper-45);line-height:1.45;display:block}
+.radio.sel{border-color:var(--verm);background:var(--verm-14)}
+.radio.sel .rn{color:var(--verm-hi)}
+.trirow{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line-soft)}
+.trirow .tn{flex:1;font-size:13px;text-transform:capitalize}
+.tri{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.tri button{font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:5px 12px;color:var(--paper-45)}
+.tri button+button{border-left:1px solid var(--line)}
+.tri .on{background:var(--verm-14);color:var(--verm-hi)}
+.tri .lich-on{background:var(--lichen-14);color:var(--lichen)}
+</style>
+
+<style>
+/* s00 landing — a scrollable trail; every waypoint is a real product moment */
+.landing{background:var(--bg) var(--contour)}
+.land-hero{min-height:calc(100vh - var(--sw-h));display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:60px 30px 80px;position:relative}
+.landing .word{font-weight:700;font-size:26px;letter-spacing:.4em;padding-left:.4em;margin:18px 0 10px}
+.landing h1{font-family:var(--prose);font-weight:500;font-size:46px;line-height:1.15;letter-spacing:-.01em;margin:6px 0 14px}
+.landing h1 em{font-style:italic;color:var(--verm-hi)}
+.landing .sub{font-size:15.5px;color:var(--paper-70);max-width:52ch;margin:0 auto 34px;line-height:1.65}
+.scrollcue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-family:var(--mono);
+  font-size:9px;letter-spacing:.22em;color:var(--paper-28);animation:cuedrift 2.8s ease-in-out infinite}
+@keyframes cuedrift{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
+/* the trail spine — a dashed line walking down the page, inked section by section */
+.land-way{max-width:880px;margin:0 auto;padding:0 30px 30px;position:relative}
+.land-way::before{content:"";position:absolute;left:50px;top:0;bottom:0;border-left:1.5px dashed var(--line)}
+.wayp{position:relative;padding:54px 0 54px 62px}
+.wayp::before{content:"";position:absolute;left:44.5px;top:66px;width:12px;height:12px;border-radius:50%;
+  background:var(--lichen);border:2px solid var(--bg);box-shadow:0 0 0 1.5px var(--lichen)}
+.wayp.here::before{background:var(--verm);box-shadow:0 0 0 1.5px var(--verm),0 0 0 6px var(--verm-14)}
+.wayp .wno{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--verm-hi);display:block;margin-bottom:8px}
+.wayp h2{font-family:var(--prose);font-size:28px;font-weight:600;letter-spacing:-.01em;margin-bottom:10px}
+.wayp .wlede{font-size:14px;color:var(--paper-70);line-height:1.65;max-width:58ch;margin-bottom:22px}
+/* the sample turn — the honest artifact */
+.turnsample{border:1px solid var(--line);border-radius:10px;background:var(--panel) var(--contour);
+  padding:26px 30px;max-width:640px}
+.turnsample .prose{font-size:16px;max-width:none}
+.tokens{display:inline}
+.tokens i{font-style:normal;opacity:0;animation:tok .01s forwards}
+@keyframes tok{to{opacity:1}}
+.samplenotes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+/* memory row: codex card + mini map, side by side */
+.memrow{display:flex;gap:16px;flex-wrap:wrap;align-items:stretch}
+.memrow .card{flex:1;min-width:250px}
+/* rules-of-the-table mini knobs */
+.tablerow{display:flex;gap:12px;flex-wrap:wrap;max-width:640px}
+.tablecard{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:16px 18px}
+.tablecard .ct{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--verm-hi);display:block;margin-bottom:7px}
+.tablecard .cb{font-size:12.5px;color:var(--paper-45);line-height:1.55}
+.land-cta{text-align:center;padding:30px 30px 90px}
+.land-cta h2{font-family:var(--prose);font-size:30px;font-weight:600;margin-bottom:18px}
+.landfoot{border-top:1px solid var(--line-soft);padding:20px 30px 26px;text-align:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--paper-28)}
+</style>
+
+<!-- ─── 00 · LANDING — the public face, a trail you scroll ─── -->
+<section class="screen scroll landing" id="s00" data-rail="none">
+  <div class="land-hero">
+    <svg width="40" height="44" viewBox="0 0 22 24" fill="none" aria-hidden="true" style="margin:0 auto;display:block">
+      <rect x="7" y="1" width="8" height="4" rx="2" fill="#D6552B"/>
+      <rect x="4.5" y="8" width="13" height="4.5" rx="2.2" fill="#E7E2D4" opacity=".85"/>
+      <rect x="2" y="15.5" width="18" height="5" rx="2.5" fill="#E7E2D4" opacity=".55"/>
+    </svg>
+    <div class="word">CAIRN</div>
+    <h1>Play D&amp;D with a DM<br/>who <em>never forgets.</em></h1>
+    <p class="sub">An AI Dungeon Master that keeps the ledger — every name you ask about, every debt you leave unpaid, every bridge you burn. Type what you do. Roll your own dice. The world remembers the rest.</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn primary big" data-go="s01">Start your expedition</button>
+      <button class="btn big" data-go="s01">Sign in</button>
+    </div>
+    <span class="scrollcue">▾ THE TRAIL CONTINUES</span>
+  </div>
+
+  <div class="land-way">
+    <div class="wayp">
+      <span class="wno">WAYPOINT — THE TABLE</span>
+      <h2>You write a turn. The DM answers.</h2>
+      <p class="wlede">No menus, no verb buttons. You say what you do, in your own words, and the Dungeon Master narrates what the world does back — live, token by token. This is a real exchange, exactly as it renders in play:</p>
+      <div class="turnsample">
+        <div class="prose">
+          <div class="you"><b>YOU</b> — I wade toward the altar and pull the waterlogged ledger out from under the cloth.</div>
+          <p>The ledger comes free with a sound like a held breath let go. Its pages should be pulp — they are dry. Ink crisp as the day it was set down, and the last three entries are written in a hand you recognize, <span class="tokens"><i style="animation-delay:.2s">because </i><i style="animation-delay:.45s">it </i><i style="animation-delay:.7s">is </i><i style="animation-delay:1s">yours.</i></span></p>
+        </div>
+        <div class="samplenotes">
+          <span class="chip good">perception 17 vs DC 13 ✓</span>
+          <span class="chip">gained · waterlogged ledger</span>
+          <span class="chip">codex · The Drowned Chapel — updated</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wayp">
+      <span class="wno">WAYPOINT — THE LEDGER</span>
+      <h2>The world writes down what you did.</h2>
+      <p class="wlede">Every person you meet, every place you reach, every day that turns becomes a page you can return to. Not a save file — a memory. Ask about someone from twelve sessions ago and the DM knows exactly what you owe each other.</p>
+      <div class="memrow">
+        <div class="card">
+          <span class="eyebrow">From a codex, mid-campaign</span>
+          <div style="font-weight:600;font-size:14.5px;margin:10px 0 5px">Warden Ilse Marrow</div>
+          <div style="font-family:var(--prose);font-size:14.5px;line-height:1.55;color:var(--paper-70)">Keeps the toll bridge and the ledger, and prices things that shouldn't have prices. Knows more about the chapel key than she has said.</div>
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28);display:block;margin-top:10px">FIRST MET — DAY 3 · NOTHING HERE YOU HAVEN'T EARNED</span>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <span class="eyebrow">The map draws itself</span>
+          <svg viewBox="0 0 300 130" style="flex:1;margin-top:8px" aria-hidden="true">
+            <path class="ng-edge" d="M40 100 C 90 85, 130 75, 165 60"/>
+            <path class="ng-edge dash" d="M165 60 C 210 42, 245 38, 272 30"/>
+            <g class="ng-node visited"><circle class="disc" cx="40" cy="100" r="10"/><text class="ng-lab" style="font-size:10px" x="40" y="122" text-anchor="middle">Bracken Ford</text></g>
+            <g class="ng-node here"><circle class="disc" cx="165" cy="60" r="10"/><text class="ng-lab" style="font-size:10px" x="165" y="84" text-anchor="middle">The Chapel</text></g>
+            <g class="ng-node stub"><circle class="disc" cx="272" cy="30" r="8"/><text class="ng-lab dim" style="font-size:10px" x="272" y="52" text-anchor="middle">???</text></g>
+          </svg>
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28)">ONLY WHERE YOU'VE BEEN · RUMORS STAY DASHED</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wayp">
+      <span class="wno">WAYPOINT — YOUR RULES</span>
+      <h2>Set the table once. Change it any evening.</h2>
+      <p class="wlede">Death, tone, content lines, how loud the dice are, how much rope your companions get — the table runs your way, and every knob turns mid-campaign.</p>
+      <div class="tablerow">
+        <div class="tablecard"><span class="ct">DICE YOU ROLL YOURSELF</span><span class="cb">The DM calls for the save. The d20 is yours. The outcome is the story's.</span></div>
+        <div class="tablecard"><span class="ct">DEATH MEANS WHAT YOU SAY</span><span class="cb">Pacifist, narrative, or dead-is-dead. The trail keeps your cairn either way.</span></div>
+        <div class="tablecard"><span class="ct">HARD LINES HOLD</span><span class="cb">Content the DM will never cross — written once, honored every scene.</span></div>
+      </div>
+    </div>
+
+    <div class="wayp here">
+      <span class="wno" style="color:var(--verm-hi)">YOU ARE HERE</span>
+      <h2>The ford is waiting.</h2>
+      <p class="wlede">Pick a world, frame the telling, forge a character — or take up a ready blade and be playing in five minutes.</p>
+      <div style="display:flex;gap:12px">
+        <button class="btn primary big" data-go="s01">Start your expedition</button>
+        <button class="btn big" data-go="s01">Sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="landfoot">CAIRN · A WORLD THAT REMEMBERS</div>
+</section>
+
+<!-- ─── 01 · LOGIN (Phase B, visual only) ─── -->
+<section class="screen login" id="s01" data-rail="none">
+  <div class="login-box">
+    <svg width="44" height="48" viewBox="0 0 22 24" fill="none" aria-hidden="true" style="margin:0 auto">
+      <rect x="7" y="1" width="8" height="4" rx="2" fill="#D6552B"/>
+      <rect x="4.5" y="8" width="13" height="4.5" rx="2.2" fill="#E7E2D4" opacity=".85"/>
+      <rect x="2" y="15.5" width="18" height="5" rx="2.5" fill="#E7E2D4" opacity=".55"/>
+    </svg>
+    <div class="word">CAIRN</div>
+    <div class="tagline">A world that remembers.</div>
+    <input type="email" placeholder="email" aria-label="email"/>
+    <input type="password" placeholder="password" aria-label="password"/>
+    <button class="btn primary big" style="width:100%;margin:6px 0 10px" data-go="s04">Sign in</button>
+    <button class="btn" style="width:100%" data-go="s04">Continue with Google</button>
+    <div style="margin-top:26px"><span class="tag phaseb">Phase B · visual only — auth not wired</span></div>
+  </div>
+</section>
+
+<!-- ─── 02 · ACCOUNT (Phase B, visual only) ─── -->
+<section class="screen scroll" id="s02" data-rail="pre" data-tab="account">
+  <div class="screen-head">
+    <div><span class="eyebrow">Account</span><h1>Your details</h1></div>
+    <span class="tag phaseb">Phase B · visual only</span>
+  </div>
+  <div class="pad settle">
+    <div class="card" style="margin-bottom:16px">
+      <span class="eyebrow">Profile</span>
+      <div style="display:flex;gap:14px;margin-top:14px;align-items:center">
+        <div class="avatar" style="width:48px;height:48px;font-size:18px">M</div>
+        <div style="flex:1"><input value="Maximus" aria-label="display name"/></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--paper-45);margin-top:12px">maximator16@gmail.com</div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <span class="eyebrow">Appearance</span>
+      <div class="swatches" style="margin-top:14px">
+        <button class="swatch cur" data-settheme="slate"><span class="dots"><span class="d" style="background:#141A1E"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#7E8F6E"></span></span>Slate survey</button>
+        <button class="swatch" data-settheme="lamplight"><span class="dots"><span class="d" style="background:#191510"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#8A9166"></span></span>Lamplight</button>
+        <button class="swatch" data-settheme="blackwood"><span class="dots"><span class="d" style="background:#121813"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#94A47D"></span></span>Blackwood</button>
+        <button class="swatch" data-settheme="gilt"><span class="dots"><span class="d" style="background:#14100A"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#C9A04C"></span></span>Gilt</button>
+        <button class="swatch" data-settheme="daylight"><span class="dots"><span class="d" style="background:#E8E3D2"></span><span class="d" style="background:#BC4720"></span><span class="d" style="background:#5C6B47"></span></span>Daylight</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:12px;letter-spacing:.06em">SAME KIT, DIFFERENT LIGHT — SAVED TO THIS DEVICE, NOT TO ANY CAMPAIGN</div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <span class="eyebrow">Plan</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span style="font-size:13px;color:var(--paper-70)">Wanderer — free · local model tier</span>
+        <button class="btn" data-go="s03">Manage plan →</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <span class="eyebrow">Session</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span style="font-size:13px;color:var(--paper-70)">Signed in on this device</span>
+        <button class="btn" data-go="s00">Sign out</button>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--verm-30)">
+      <span class="eyebrow verm">Danger zone</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:20px">
+        <span style="font-size:12.5px;color:var(--paper-45)">Delete account and every campaign in it. The world forgets. This cannot be undone.</span>
+        <button class="btn" style="border-color:var(--verm-30);color:var(--verm-hi);flex-shrink:0">Delete account</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 03 · BILLING (Phase B, speculative) ─── -->
+<section class="screen scroll" id="s03" data-rail="pre" data-tab="account">
+  <div class="screen-head">
+    <div><span class="eyebrow">Billing</span><h1>Choose your kit</h1></div>
+    <span class="tag phaseb">Phase B · speculative — placeholder names &amp; prices</span>
+  </div>
+  <div class="pad">
+    <div class="tiers">
+      <div class="card tier current">
+        <span class="eyebrow lich">Wanderer — current</span>
+        <div class="price">$0</div><div class="per">forever</div>
+        <ul>
+          <li>Local model (Ollama) — <span style="font-family:var(--mono);font-size:10px">llm.tier: local</span></li>
+          <li>1 campaign at a time</li>
+          <li>The trail at your own pace</li>
+        </ul>
+      </div>
+      <div class="card tier">
+        <span class="eyebrow">Pathfinder</span>
+        <div class="price">$8</div><div class="per">per month</div>
+        <ul>
+          <li>Balanced model tier — <span style="font-family:var(--mono);font-size:10px">llm.tier: balanced</span></li>
+          <li>Unlimited campaigns</li>
+          <li>Portrait generation</li>
+        </ul>
+        <button class="btn primary" style="width:100%;margin-top:16px">Upgrade</button>
+      </div>
+      <div class="card tier">
+        <span class="eyebrow">Cartographer</span>
+        <div class="price">$20</div><div class="per">per month</div>
+        <ul>
+          <li>Premium model tier — <span style="font-family:var(--mono);font-size:10px">llm.tier: premium</span></li>
+          <li>Everything in Pathfinder</li>
+          <li>Longest memory, richest prose</li>
+        </ul>
+        <button class="btn" style="width:100%;margin-top:16px">Upgrade</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 04 · HOME / CAMPAIGN BROWSER ─── -->
+<section class="screen scroll" id="s04" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head">
+    <div><span class="eyebrow">Campaigns</span><h1>Your expeditions</h1></div>
+  </div>
+  <div class="pad">
+    <div class="cardrow">
+      <div class="card campcard">
+        <span class="eyebrow">The Silent Ford</span>
+        <div class="cname">Ser Aldric's road</div>
+        <div class="minitrail">
+          <span class="md done"></span><span class="ml done"></span>
+          <span class="md done"></span><span class="ml done"></span>
+          <span class="md here"></span><span class="ml"></span>
+          <span class="md"></span><span class="ml"></span><span class="md"></span>
+        </div>
+        <div class="cmeta">Act II · Day 14 · The Drowned Chapel<br/>last played 2 days ago</div>
+        <button class="btn primary" style="width:100%;margin-top:16px" data-go="s20">Continue →</button>
+      </div>
+      <div class="card campcard" style="opacity:.75">
+        <span class="eyebrow lich">The Hollow Vigil — completed ✓</span>
+        <div class="cname">Isolde's watch</div>
+        <div class="minitrail">
+          <span class="md done"></span><span class="ml done"></span>
+          <span class="md done"></span><span class="ml done"></span>
+          <span class="md done"></span><span class="ml done"></span><span class="md done"></span>
+        </div>
+        <div class="cmeta">3 acts · 41 days · ended in the high tower<br/>finished in May</div>
+        <button class="btn" style="width:100%;margin-top:16px" data-go="s22">Read the record</button>
+      </div>
+      <button class="card campcard newcard" data-go="s05">
+        <span style="font-size:26px;font-weight:300">+</span>
+        <span style="font-size:13px;font-weight:600">Begin a new expedition</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 05 · WORLDS → SCENARIOS (World → CampaignTemplate hierarchy) ─── -->
+<section class="screen scroll" id="s05" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head">
+    <div><span class="eyebrow">New expedition · 1 of 3</span><h1>Where does the story live?</h1></div>
+    <span class="tag dep">backend dep · GET /v1/campaigns/templates</span>
+  </div>
+  <div class="pad">
+    <div class="worldrow">
+      <button class="wcard sel">
+        <span class="eyebrow verm">World</span>
+        <span class="wn">The Riverlands</span>
+        <span class="wd">Toll towns and drowned parishes along a river that keeps its own ledger. Low magic, long memory, debts that outlive the debtors.</span>
+        <span class="wm">3 SCENARIOS · 214 CANON ENTRIES · GODS: THE WEIGHER, THE PATIENT ONE</span>
+      </button>
+      <button class="wcard">
+        <span class="eyebrow">World</span>
+        <span class="wn">The Ashen Reach</span>
+        <span class="wd">A frontier under a sky that burned once and might again. High sorcery, ruined roads, everything worth having is buried.</span>
+        <span class="wm">2 SCENARIOS · 178 CANON ENTRIES · GODS: THE KILN-MOTHER, THE LAST LIGHT</span>
+      </button>
+    </div>
+    <div class="tpl-split">
+      <div class="tpl-list">
+        <span class="eyebrow" style="padding:0 2px 4px">Scenarios in the Riverlands</span>
+        <button class="tpl-item sel"><span class="tn">The Silent Ford</span><span class="tm">mystery · 3 acts · ~12 sessions</span></button>
+        <button class="tpl-item"><span class="tn">The Hollow Vigil</span><span class="tm">siege · 3 acts · ~10 sessions</span></button>
+        <button class="tpl-item"><span class="tn">Salt &amp; Cinder</span><span class="tm">voyage · 4 acts · ~16 sessions</span></button>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);padding:6px 2px;letter-spacing:.06em;line-height:1.6">SAME WORLD, SAME CANON — TWO PLAYERS ON ONE SCENARIO START IDENTICAL AND DIVERGE</div>
+      </div>
+      <div class="tpl-detail card" style="padding:28px">
+        <span class="eyebrow">The Riverlands · scenario</span>
+        <h2 style="font-family:var(--prose);font-size:26px;font-weight:600;margin:6px 0 10px">The Silent Ford</h2>
+        <p class="prose" style="font-size:17px">A river-crossing town where the dead don't stay buried. Bracken Ford has kept its toll bridge for two hundred years — and kept its ledger longer. Lately the river gives back what it took, and the town pretends not to notice.</p>
+        <p class="prose" style="font-size:15.5px;margin-top:10px;color:var(--paper-70)">You arrive with the autumn rains, one more traveler with a reason to cross. The reasons are the story: the ford has a way of holding on to people whose business is unfinished, and nobody's business is ever quite finished here.</p>
+        <div class="lorequote">"Pay the toll going over, they say. Coming back, the river names its own price." — heard at the Lantern &amp; Eel</div>
+        <div style="display:flex;gap:26px;margin:18px 0 6px;font-family:var(--mono);font-size:10.5px;color:var(--paper-45)">
+          <span>3 ACTS</span><span>~12 SESSIONS</span><span>LEVELS 1–5</span><span>TONE — SLOW DREAD, WET BOOTS</span>
+        </div>
+        <hr class="hr"/>
+        <span class="eyebrow">The shape of it — the trail knows, you don't yet</span>
+        <div class="acttrail">
+          <div class="atw" style="border-top:none"><span class="an">ACT I</span><span class="at">The Crossing</span><span class="ad">a toll is paid; a door opens that shouldn't</span></div>
+          <div class="atw veiled"><span class="an">ACT II</span><span class="at">— — —</span><span class="ad">what the river keeps</span></div>
+          <div class="atw veiled"><span class="an">ACT III</span><span class="at">— — —</span><span class="ad">···</span></div>
+        </div>
+        <hr class="hr"/>
+        <span class="eyebrow">Names you may hear — world canon</span>
+        <div class="figrow">
+          <span class="chip">The Weigher — god of tolls</span><span class="chip">Warden Ilse Marrow</span><span class="chip">The Ferryman</span><span class="chip">The flood of '31</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">A TEASER, NEVER THE LORE — THE CODEX FILLS ONLY WITH WHAT YOU EARN AT THE TABLE</div>
+        <hr class="hr"/>
+        <span class="eyebrow">Ready-made characters</span>
+        <div class="premades">
+          <span class="pchip"><span class="avatar">A</span>Ser Aldric — Fighter</span>
+          <span class="pchip"><span class="avatar">M</span>Maera — Ranger</span>
+          <span class="pchip"><span class="avatar">D</span>Dorn — Cleric</span>
+          <span class="pchip"><span class="avatar">I</span>Isolde — Wizard</span>
+        </div>
+        <button class="btn primary big" style="margin-top:24px" data-go="s06">Begin here →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 06 · NEW CAMPAIGN — three framing knobs ─── -->
+<section class="screen scroll" id="s06" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head">
+    <div><span class="eyebrow">New expedition · 2 of 3 — The Silent Ford</span><h1>Frame the telling</h1></div>
+  </div>
+  <div class="pad settle">
+    <div class="knob">
+      <div class="knob-h"><span class="n">—</span><span class="t">Name this campaign</span></div>
+      <input value="Ser Aldric's road" aria-label="campaign name"/>
+    </div>
+    <div class="knob">
+      <div class="knob-h"><span class="n">①</span><span class="t">How much do you want the dice in view?</span></div>
+      <div class="radios">
+        <button class="radio"><span class="rn">Narrative</span><span class="rd">The story leads. Checks stay behind the curtain where they can.</span></button>
+        <button class="radio sel"><span class="rn">Balanced</span><span class="rd">Dice when it matters, prose when it doesn't. The table default.</span></button>
+        <button class="radio"><span class="rn">Tactical</span><span class="rd">Every roll on the table. Full mechanical weather.</span></button>
+      </div>
+    </div>
+    <div class="knob">
+      <div class="knob-h"><span class="n">②</span><span class="t">What does death mean here?</span></div>
+      <div class="radios">
+        <button class="radio"><span class="rn">Pacifist</span><span class="rd">You can lose, but you can't die. Defeat writes its own scene.</span></button>
+        <button class="radio sel"><span class="rn">Narrative</span><span class="rd">Death saves, last words, consequences. Dying is a story beat.</span></button>
+        <button class="radio"><span class="rn">Hardcore</span><span class="rd">Dead is dead. The trail keeps your cairn.</span></button>
+      </div>
+    </div>
+    <div class="knob">
+      <div class="knob-h"><span class="n">③</span><span class="t">Content &amp; tone</span></div>
+      <div class="card" style="padding:6px 20px 16px">
+        <div class="trirow" style="border-top:none"><span class="tn">violence</span><span class="tri"><button>off</button><button>fade</button><button class="on">on</button></span></div>
+        <div class="trirow"><span class="tn">gore</span><span class="tri"><button>off</button><button class="on">fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">sexual content</span><span class="tri"><button class="on">off</button><button>fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">romance</span><span class="tri"><button>off</button><button class="lich-on">fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">horror</span><span class="tri"><button>off</button><button>fade</button><button class="on">on</button></span></div>
+        <div class="trirow"><span class="tn">substances</span><span class="tri"><button>off</button><button class="lich-on">fade</button><button>on</button></span></div>
+        <div style="margin-top:14px">
+          <span class="eyebrow">Hard lines — the DM will never cross these</span>
+          <textarea rows="2" style="margin-top:8px" placeholder="e.g. nothing bad happens to animals">no harm to children</textarea>
+        </div>
+        <div style="margin-top:12px">
+          <span class="eyebrow">Tone note</span>
+          <input style="margin-top:8px" placeholder="one line the DM keeps in mind" value="melancholy, but the jokes still land"/>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:20px">
+      <span style="font-size:12px;color:var(--paper-45)">All of this can be changed later, any time, in Settings.</span>
+      <button class="btn primary big" data-go="s07">Create campaign →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ B · CHARACTER CREATION ═══════════════════ -->
+<style>
+/* s07 choice */
+.choice{flex:1;display:flex;gap:0}
+.choice-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;padding:40px;text-align:center;border:none;background:transparent;transition:background .2s}
+.choice-half:hover{background:var(--paper-12)}
+.choice-half+.choice-half{border-left:1px solid var(--line)}
+.choice-half h2{font-size:21px;font-weight:600}
+.choice-half .cd{font-family:var(--prose);font-style:italic;font-size:15px;color:var(--paper-45);max-width:34ch}
+.fan{position:relative;width:150px;height:110px}
+.fan .fc{position:absolute;width:78px;height:104px;border-radius:6px;background:var(--panel-2) var(--contour);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:20px;color:var(--paper-45)}
+.blankframe{width:86px;height:110px;border-radius:6px;border:1.5px dashed var(--paper-28);
+  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:300;color:var(--paper-28)}
+/* s08 premade dossier */
+.dossier-wrap{flex:1;display:flex;gap:22px;padding:28px 40px;min-height:0}
+.thumbrail{width:120px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.thumb{border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:10px 8px;
+  text-align:center;color:var(--paper-45)}
+.thumb:hover{border-color:var(--paper-45);color:var(--paper)}
+.thumb .avatar{width:40px;height:40px;margin:0 auto 6px;font-size:15px}
+.thumb .tn{font-size:11px;font-weight:600;display:block}
+.thumb .tc{font-family:var(--mono);font-size:8.5px;display:block;margin-top:1px}
+.dossier{flex:1;min-width:0;overflow-y:auto;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel) var(--contour);padding:32px 36px}
+.dos-head{display:flex;gap:22px;align-items:flex-start;margin-bottom:20px}
+.portrait{width:110px;height:130px;border-radius:8px;flex-shrink:0;background:var(--panel-2) var(--contour);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-weight:700;color:var(--paper-28)}
+.dos-head h2{font-size:26px;font-weight:600;margin:2px 0 4px}
+.statrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.stat{border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:7px 0;width:64px;text-align:center}
+.stat .sl{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--paper-45);display:block}
+.stat .sv{font-family:var(--mono);font-size:17px;font-weight:700;display:block}
+.stat .sm{font-family:var(--mono);font-size:9.5px;color:var(--lichen);display:block}
+.vitline{display:flex;gap:22px;margin:16px 0 4px;font-family:var(--mono);font-size:11px;color:var(--paper-70)}
+.vitline b{color:var(--paper);font-size:14px}
+/* s09 forge */
+.forge{flex:1;display:flex;min-height:0}
+.steps{width:200px;flex-shrink:0;border-right:1px solid var(--line);padding:26px 0 26px 26px;overflow-y:auto}
+.step{position:relative;padding:8px 0 8px 18px;font-size:13px;color:var(--paper-45);border-left:1px dashed var(--line);
+  display:block;width:100%;text-align:left}
+.step::before{content:"";position:absolute;left:-4.5px;top:13px;width:8px;height:8px;border-radius:50%;
+  background:var(--panel);border:1.5px solid var(--paper-28)}
+.step.done{color:var(--paper-45)}
+.step.done::before{background:var(--lichen);border-color:var(--lichen)}
+.step.now{color:var(--paper);font-weight:600}
+.step.now::before{background:var(--verm);border-color:var(--verm);box-shadow:0 0 0 3px var(--verm-14)}
+.step .sv{display:block;font-family:var(--mono);font-size:9.5px;color:var(--paper-28);font-weight:400}
+.forge-main{flex:1;overflow-y:auto;padding:32px 40px;min-width:0}
+.pool{display:flex;gap:8px;margin:12px 0 20px}
+.pool .pv{font-family:var(--mono);font-size:15px;font-weight:700;border:1px solid var(--line);
+  border-radius:6px;padding:8px 13px;background:var(--panel)}
+.pool .pv.used{opacity:.25;text-decoration:line-through}
+.assign{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;max-width:640px}
+.as{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:12px 0;text-align:center}
+.as .al{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--paper-45);display:block}
+.as .av{font-family:var(--mono);font-size:22px;font-weight:700;display:block;margin:4px 0 1px}
+.as .am{font-family:var(--mono);font-size:10px;color:var(--lichen);display:block}
+.as.empty .av{color:var(--paper-28)}
+.as.sel{border-color:var(--verm);background:var(--verm-14)}
+.weave{border:1px solid var(--verm-30);border-radius:6px;color:var(--verm-hi);padding:8px 16px;
+  font-size:12.5px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+.weave:hover{background:var(--verm-14)}
+.pframe{width:130px;height:150px;border-radius:8px;border:1.5px dashed var(--paper-28);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:var(--paper-28);font-size:34px}
+/* forge step panels */
+.fstep{display:none}
+.fstep.on{display:block}
+/* pickers are a list + a reading pane — terse rows to scan, a full page to understand */
+.fsplit{display:flex;gap:22px;margin-top:16px;align-items:flex-start;max-width:900px}
+.flist{width:236px;flex-shrink:0;display:flex;flex-direction:column;gap:2px;max-height:56vh;overflow-y:auto;padding-right:4px}
+.fli{text-align:left;padding:8px 12px;border:1px solid transparent;border-radius:6px;
+  display:flex;align-items:baseline;gap:10px}
+.fli:hover{background:var(--paper-12)}
+.fli .fn2{font-weight:600;font-size:13.5px}
+.fli .fm2{font-family:var(--mono);font-size:8.5px;color:var(--paper-45);letter-spacing:.06em;margin-left:auto;text-align:right;flex-shrink:0}
+.fli.sel{border-color:var(--verm);background:var(--verm-14)}
+.fli.sel .fn2{color:var(--verm-hi)}
+.fdetail{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel) var(--contour);padding:24px 28px}
+.fdetail h3{font-family:var(--prose);font-size:24px;font-weight:600;margin:2px 0 6px}
+.fdetail .flav{font-family:var(--prose);font-style:italic;font-size:15px;color:var(--paper-70);margin-bottom:12px}
+.fdetail .srd{font-size:13px;color:var(--paper-70);line-height:1.65;max-width:58ch}
+.asks{border:1px solid var(--verm-30);border-radius:7px;background:var(--verm-14);padding:10px 14px;
+  margin-top:16px;font-size:12px;color:var(--paper);line-height:1.6;max-width:58ch}
+.asks .ah{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;color:var(--verm-hi);display:block;margin-bottom:4px}
+.aligngrid{display:grid;grid-template-columns:repeat(3,120px);gap:8px;margin-top:16px}
+.al9{border:1px solid var(--line);border-radius:6px;padding:13px 0;text-align:center;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.06em;color:var(--paper-45);background:var(--panel)}
+.al9.sel{border-color:var(--verm);color:var(--verm-hi);background:var(--verm-14)}
+.skc{font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:20px;padding:7px 16px;color:var(--paper-45)}
+.skc.sel{border-color:var(--verm);color:var(--verm-hi);background:var(--verm-14)}
+</style>
+
+<!-- ─── 07 · CREATION CHOICE ─── -->
+<section class="screen" id="s07" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head" style="padding-bottom:8px">
+    <div><span class="eyebrow">New expedition · 3 of 3 — The Silent Ford</span><h1>Who walks the trail?</h1></div>
+  </div>
+  <div class="choice">
+    <button class="choice-half" data-go="s08">
+      <div class="fan">
+        <div class="fc" style="left:0;top:6px;transform:rotate(-8deg)">M</div>
+        <div class="fc" style="left:38px;top:0">A</div>
+        <div class="fc" style="left:76px;top:6px;transform:rotate(8deg)">D</div>
+      </div>
+      <h2>Take up a ready blade</h2>
+      <span class="cd">Four souls already stand at the ford, packed and provisioned. Pick one and be playing in a minute.</span>
+      <span class="btn">Meet them →</span>
+    </button>
+    <button class="choice-half" data-go="s09">
+      <div class="blankframe">+</div>
+      <h2>Forge your own</h2>
+      <span class="cd">Race, class, history, voice — built piece by piece, or woven from a single sentence.</span>
+      <span class="btn primary">Begin the forge →</span>
+    </button>
+  </div>
+</section>
+
+<!-- ─── 08 · PREMADE — expand-in-place dossier ─── -->
+<section class="screen" id="s08" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head" style="padding-bottom:12px">
+    <div><span class="eyebrow">Ready-made · The Silent Ford</span><h1>Field dossiers</h1></div>
+    <button class="btn quiet" data-go="s09">← build my own instead</button>
+  </div>
+  <div class="dossier-wrap">
+    <div class="thumbrail">
+      <button class="thumb"><span class="avatar">M</span><span class="tn">Maera</span><span class="tc">RANGER</span></button>
+      <button class="thumb" style="border-color:var(--verm)"><span class="avatar" style="border-color:var(--verm);color:var(--paper)">A</span><span class="tn" style="color:var(--paper)">Ser Aldric</span><span class="tc" style="color:var(--verm-hi)">FIGHTER</span></button>
+      <button class="thumb"><span class="avatar">D</span><span class="tn">Dorn</span><span class="tc">CLERIC</span></button>
+      <button class="thumb"><span class="avatar">I</span><span class="tn">Isolde</span><span class="tc">WIZARD</span></button>
+    </div>
+    <div class="dossier">
+      <div class="dos-head">
+        <div class="portrait">A</div>
+        <div>
+          <span class="eyebrow verm">Dossier · 2 of 4</span>
+          <h2>Ser Aldric of Bracken Ford</h2>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--paper-45)">HUMAN · FIGHTER · SOLDIER · LAWFUL GOOD</div>
+          <div class="vitline"><span>HP <b>12</b></span><span>AC <b>17</b></span><span>SPEED <b>30 ft</b></span><span>PROF <b>+2</b></span></div>
+        </div>
+      </div>
+      <div class="statrow">
+        <span class="stat"><span class="sl">STR</span><span class="sv">15</span><span class="sm">+2</span></span>
+        <span class="stat"><span class="sl">CON</span><span class="sv">14</span><span class="sm">+2</span></span>
+        <span class="stat"><span class="sl">DEX</span><span class="sv">13</span><span class="sm">+1</span></span>
+        <span class="stat"><span class="sl">WIS</span><span class="sv">12</span><span class="sm">+1</span></span>
+        <span class="stat"><span class="sl">CHA</span><span class="sv">10</span><span class="sm">+0</span></span>
+        <span class="stat"><span class="sl">INT</span><span class="sv">8</span><span class="sm">−1</span></span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px">
+        <span class="chip">Athletics</span><span class="chip">Intimidation</span><span class="chip">Perception</span>
+        <span class="chip good">Fighting style · Defense</span><span class="chip good">Second Wind</span>
+      </div>
+      <hr class="hr"/>
+      <p class="prose" style="font-size:16.5px">Twenty years holding the toll bridge taught Aldric two things: everyone pays eventually, and the river never forgets a debt. He wore the ford's colors until the night the garrison pulled out and left the town to fend for itself — he stayed, and the shame of the ones who didn't sits on him like a second hauberk.</p>
+      <p class="prose" style="font-size:16.5px;margin-top:12px">He speaks slowly, swears in old toll-house slang, and counts his coppers twice. Not because he's greedy — because a ledger kept honest is the only magic he trusts.</p>
+      <div style="display:flex;gap:12px;margin-top:26px;align-items:center">
+        <button class="btn primary big" data-go="s10">Take this one →</button>
+        <button class="btn" data-go="s07">Back to the row</button>
+        <span class="tag" style="margin-left:auto">caster dossiers add a spell block — subclass, cantrips, the day-one list</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 09 · CUSTOM FORGE ─── -->
+<section class="screen" id="s09" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head" style="padding-bottom:10px">
+    <div><span class="eyebrow">The forge · The Silent Ford</span><h1>Build your own</h1></div>
+  </div>
+  <div class="forge">
+    <div class="steps">
+      <button class="step done" data-fstep="race">Race<span class="sv">human</span></button>
+      <button class="step" data-fstep="subrace" style="opacity:.55">Subrace<span class="sv">— human carries none</span></button>
+      <button class="step done" data-fstep="class">Class<span class="sv">fighter</span></button>
+      <button class="step" data-fstep="subclass" style="opacity:.55">Subclass<span class="sv">— fighters choose at 3</span></button>
+      <button class="step done" data-fstep="background">Background<span class="sv">soldier</span></button>
+      <button class="step done" data-fstep="alignment">Alignment<span class="sv">neutral good</span></button>
+      <button class="step now" data-fstep="abilities">Abilities</button>
+      <button class="step" data-fstep="skills">Skills</button>
+      <button class="step" data-fstep="spells" style="opacity:.55">Spells<span class="sv">— casters only</span></button>
+      <button class="step" data-fstep="identity">Identity</button>
+      <button class="step" data-fstep="portrait">Portrait</button>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.08em;line-height:1.7;padding:18px 14px 0 0">EVERY SOLID STEP IS A LOCKED SRD PICKER · DIM STEPS WAKE WHEN THE ROAD CALLS — SUBRACE, SUBCLASS AT 1, SPELLS · IDENTITY ALONE IS FREE TEXT · CLICK THE TRAIL TO WANDER</div>
+    </div>
+    <div class="forge-main">
+
+      <div class="fstep" data-fpanel="race">
+        <span class="eyebrow verm">Race</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">What blood walks the trail?</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All nine the SRD knows — scan the list, read the page. Where a race branches, the subrace step wakes next.</p>
+        <div class="fsplit">
+          <div class="flist">
+            <button class="fli sel"><span class="fn2">Human</span><span class="fm2">+1 ALL</span></button>
+            <button class="fli"><span class="fn2">Elf</span><span class="fm2">+2 DEX</span></button>
+            <button class="fli"><span class="fn2">Dwarf</span><span class="fm2">+2 CON</span></button>
+            <button class="fli"><span class="fn2">Halfling</span><span class="fm2">+2 DEX</span></button>
+            <button class="fli"><span class="fn2">Gnome</span><span class="fm2">+2 INT</span></button>
+            <button class="fli"><span class="fn2">Half-elf</span><span class="fm2">+2 CHA</span></button>
+            <button class="fli"><span class="fn2">Half-orc</span><span class="fm2">+2 STR</span></button>
+            <button class="fli"><span class="fn2">Dragonborn</span><span class="fm2">+2 STR</span></button>
+            <button class="fli"><span class="fn2">Tiefling</span><span class="fm2">+2 CHA</span></button>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Race · from /v1/srd/races</span>
+            <h3>Human</h3>
+            <p class="flav">Nobody's chosen people. Everywhere anyway.</p>
+            <p class="srd">Humans are the youngest of the common races, late to arrive and short-lived beside the rest — and they make up for it in ambition. Whatever the ford charges, a human has already asked what's on the far side.</p>
+            <div style="margin-top:14px">
+              <div class="grant" style="border-top:none"><span class="gk">ABILITIES</span><span>+1 to every score — the only race that lifts all six</span></div>
+              <div class="grant"><span class="gk">SPEED</span><span>30 feet</span></div>
+              <div class="grant"><span class="gk">LANGUAGES</span><span>Common, plus one of your choice</span></div>
+            </div>
+            <div class="asks"><span class="ah">WHAT THIS CHOICE ASKS NEXT</span>Nothing — humans carry no subrace, so that step sleeps. Pick an elf, a dwarf, a halfling or a gnome and it wakes.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="subrace">
+        <span class="eyebrow verm">Subrace — wakes when the blood branches</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Which river of the old blood?</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Humans carry no subrace — the trail walks past this step. Shown for an elf, for the spec.</p>
+        <div class="fsplit">
+          <div class="flist">
+            <button class="fli sel"><span class="fn2">High elf</span><span class="fm2">+1 INT</span></button>
+            <button class="fli"><span class="fn2">Wood elf</span><span class="fm2">+1 WIS</span></button>
+            <button class="fli"><span class="fn2">Drow</span><span class="fm2">+1 CHA</span></button>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Subrace · from /v1/srd/subraces</span>
+            <h3>High elf</h3>
+            <p class="flav">Raised where the libraries outlived the wars.</p>
+            <p class="srd">High elves keep the old learning the way other folk keep grudges — carefully, and with interest. Even the ones who never held a spellbook grew up within reach of one.</p>
+            <div style="margin-top:14px">
+              <div class="grant" style="border-top:none"><span class="gk">ABILITIES</span><span>+1 Intelligence, on top of the elf's +2 Dexterity</span></div>
+              <div class="grant"><span class="gk">CANTRIP</span><span>One wizard cantrip of your choice — Intelligence casts it</span></div>
+              <div class="grant"><span class="gk">LANGUAGE</span><span>One extra language of your choice</span></div>
+            </div>
+            <div class="asks"><span class="ah">WHAT THIS CHOICE ASKS NEXT</span>Nothing more at the forge — the engine applies the bonuses and proficiencies. The racial cantrip pick is a noted backend gap: today the engine grants subrace abilities and proficiencies only.</div>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">DWARVES, HALFLINGS AND GNOMES BRANCH THE SAME WAY</div>
+      </div>
+
+      <div class="fstep" data-fpanel="class">
+        <span class="eyebrow verm">Class</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">How do you meet trouble?</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All twelve, validated live. The reading pane tells you exactly what each class hands you at level 1 — and what it will ask of you before the sheet is legal.</p>
+        <div class="fsplit">
+          <div class="flist">
+            <button class="fli sel"><span class="fn2">Fighter</span><span class="fm2">d10</span></button>
+            <button class="fli"><span class="fn2">Barbarian</span><span class="fm2">d12</span></button>
+            <button class="fli"><span class="fn2">Paladin</span><span class="fm2">d10</span></button>
+            <button class="fli"><span class="fn2">Ranger</span><span class="fm2">d10</span></button>
+            <button class="fli"><span class="fn2">Rogue</span><span class="fm2">d8</span></button>
+            <button class="fli"><span class="fn2">Monk</span><span class="fm2">d8</span></button>
+            <button class="fli"><span class="fn2">Cleric</span><span class="fm2">d8 · CASTER</span></button>
+            <button class="fli"><span class="fn2">Druid</span><span class="fm2">d8 · CASTER</span></button>
+            <button class="fli"><span class="fn2">Wizard</span><span class="fm2">d6 · CASTER</span></button>
+            <button class="fli"><span class="fn2">Sorcerer</span><span class="fm2">d6 · CASTER</span></button>
+            <button class="fli"><span class="fn2">Warlock</span><span class="fm2">d8 · CASTER</span></button>
+            <button class="fli"><span class="fn2">Bard</span><span class="fm2">d8 · CASTER</span></button>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Class · from /v1/srd/classes</span>
+            <h3>Fighter</h3>
+            <p class="flav">The line that holds when the rest of the line doesn't.</p>
+            <p class="srd">Fighters learn the one lesson every battlefield teaches: technique outlives fury. Armor of every weight, weapons of every shape, and the discipline to still be standing when the clever plans have all gone in the river.</p>
+            <div style="margin-top:14px">
+              <div class="grant" style="border-top:none"><span class="gk">HIT DIE</span><span>d10 — starting HP 10 + CON modifier</span></div>
+              <div class="grant"><span class="gk">SAVES</span><span>Strength &amp; Constitution</span></div>
+              <div class="grant"><span class="gk">ARMOR</span><span>All armor and shields</span></div>
+              <div class="grant"><span class="gk">AT LEVEL 1</span><span>Fighting Style — a school of combat · Second Wind — a bonus-action self-heal, once per rest</span></div>
+            </div>
+            <div class="asks"><span class="ah">WHAT THE FORGE ASKS OF A FIGHTER</span>Two skills from a list of eight. No spells. The subclass waits for level 3, in the level-up flow — pick a cleric, sorcerer or warlock instead and the Subclass step wakes right here: the engine refuses their sheet without it. Wizards and druids choose theirs at 2.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="subclass">
+        <span class="eyebrow verm">Subclass — wakes when the class chooses at 1</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">The shape the calling takes</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Fighters choose theirs at level 3, in the level-up flow — this step sleeps for them. Shown for a cleric, for the spec.</p>
+        <div class="fsplit">
+          <div class="flist">
+            <button class="fli sel"><span class="fn2">Life Domain</span><span class="fm2">CLERIC</span></button>
+            <div style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);padding:10px 12px;letter-spacing:.06em;line-height:1.7">THE SRD CARRIES ONE SUBCLASS PER CLASS · MORE ARRIVE WITH CONTENT, NOT CODE</div>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Subclass · /v1/srd/classes/{index} names the level</span>
+            <h3>Life Domain</h3>
+            <p class="flav">Every wound is an argument. She wins them.</p>
+            <p class="srd">The Life Domain serves the gods whose business is continuance — harvest, healing, the stubborn refusal of the grave. Its clerics are welcome everywhere the river takes people, which in the Riverlands is everywhere.</p>
+            <div style="margin-top:14px">
+              <div class="grant" style="border-top:none"><span class="gk">PROFICIENCY</span><span>Heavy armor</span></div>
+              <div class="grant"><span class="gk">DISCIPLE OF LIFE</span><span>Your healing spells restore extra hit points — 2 + the spell's level</span></div>
+              <div class="grant"><span class="gk">DOMAIN SPELLS</span><span>Bless and Cure Wounds, always prepared, free of the daily count</span></div>
+            </div>
+            <div class="asks"><span class="ah">WHY THIS STEP WON'T SLEEP</span>A cleric, sorcerer or warlock sheet is refused by the engine without a subclass — the choice is part of creation, not a later reward.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="background">
+        <span class="eyebrow verm">Background</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Before the trail, there was a life</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">All thirteen the SRD knows — a background is two skills, a feature, and a past the DM will use against you fondly.</p>
+        <div class="fsplit">
+          <div class="flist">
+            <button class="fli sel"><span class="fn2">Soldier</span></button>
+            <button class="fli"><span class="fn2">Acolyte</span></button>
+            <button class="fli"><span class="fn2">Criminal</span></button>
+            <button class="fli"><span class="fn2">Charlatan</span></button>
+            <button class="fli"><span class="fn2">Entertainer</span></button>
+            <button class="fli"><span class="fn2">Folk hero</span></button>
+            <button class="fli"><span class="fn2">Guild artisan</span></button>
+            <button class="fli"><span class="fn2">Hermit</span></button>
+            <button class="fli"><span class="fn2">Noble</span></button>
+            <button class="fli"><span class="fn2">Outlander</span></button>
+            <button class="fli"><span class="fn2">Sage</span></button>
+            <button class="fli"><span class="fn2">Sailor</span></button>
+            <button class="fli"><span class="fn2">Urchin</span></button>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Background · from /v1/srd/backgrounds</span>
+            <h3>Soldier</h3>
+            <p class="flav">You held a post once. Some part of you never left it.</p>
+            <p class="srd">War taught you your trade and took its fee in the usual coin. You know how a camp settles at night, which orders are worth dying over, and exactly how long a garrison holds after the pay stops coming.</p>
+            <div style="margin-top:14px">
+              <div class="grant" style="border-top:none"><span class="gk">SKILLS</span><span>Athletics, Intimidation</span></div>
+              <div class="grant"><span class="gk">FEATURE</span><span>Military Rank — soldiers loyal to your old banner still defer to it; you can requisition simple favors from them</span></div>
+              <div class="grant"><span class="gk">KIT</span><span>An insignia of rank, a trophy from a fallen enemy, a set of dice, common clothes, 10 gp</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="alignment">
+        <span class="eyebrow verm">Alignment</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Where does your needle point?</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">A starting bearing, not a cage — the DM reads it, never enforces it.</p>
+        <div class="aligngrid">
+          <button class="al9">LAWFUL GOOD</button><button class="al9">NEUTRAL GOOD</button><button class="al9">CHAOTIC GOOD</button>
+          <button class="al9">LAWFUL NEUTRAL</button><button class="al9 sel">TRUE NEUTRAL</button><button class="al9">CHAOTIC NEUTRAL</button>
+          <button class="al9">LAWFUL EVIL</button><button class="al9">NEUTRAL EVIL</button><button class="al9">CHAOTIC EVIL</button>
+        </div>
+      </div>
+
+      <div class="fstep on" data-fpanel="abilities">
+        <span class="eyebrow verm">Abilities</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Place the standard array</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:52ch">The numbers are fixed — <span style="font-family:var(--mono)">15 · 14 · 13 · 12 · 10 · 8</span> — no point-buy, no rolling. Where they go is yours.</p>
+        <div class="pool">
+          <span class="pv used">15</span><span class="pv used">14</span><span class="pv">13</span>
+          <span class="pv">12</span><span class="pv">10</span><span class="pv">8</span>
+        </div>
+        <div class="assign">
+          <div class="as"><span class="al">STR</span><span class="av">15</span><span class="am">+2</span></div>
+          <div class="as sel"><span class="al">DEX</span><span class="av">14</span><span class="am">+2</span></div>
+          <div class="as empty"><span class="al">CON</span><span class="av">·</span><span class="am">&nbsp;</span></div>
+          <div class="as empty"><span class="al">INT</span><span class="av">·</span><span class="am">&nbsp;</span></div>
+          <div class="as empty"><span class="al">WIS</span><span class="av">·</span><span class="am">&nbsp;</span></div>
+          <div class="as empty"><span class="al">CHA</span><span class="av">·</span><span class="am">&nbsp;</span></div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="skills">
+        <span class="eyebrow verm">Skills</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Choose two — the fighter's list</h2>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;max-width:620px;margin-top:16px">
+          <button class="skc sel">Athletics</button>
+          <button class="skc sel">Intimidation</button>
+          <button class="skc">Acrobatics</button>
+          <button class="skc">Animal Handling</button>
+          <button class="skc">History</button>
+          <button class="skc">Insight</button>
+          <button class="skc">Perception</button>
+          <button class="skc">Survival</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">2 OF 8 CHOSEN · LIST COMES FROM /v1/srd — THE ENGINE REJECTS WHAT THE CLASS CAN'T LEARN</div>
+      </div>
+
+      <div class="fstep" data-fpanel="spells">
+        <span class="eyebrow verm">Spells — casters only</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">What the book holds on day one</h2>
+        <p style="font-size:13px;color:var(--paper-45);max-width:56ch">Fighters march past this step. Shown for a wizard, for the spec. First click reads a spell into the pane; the check mark commits it.</p>
+        <div class="fsplit">
+          <div style="width:300px;flex-shrink:0">
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:2px 0 8px">CANTRIPS — CHOOSE 3</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="skc sel">✓ Fire Bolt</button>
+              <button class="skc sel">✓ Mage Hand</button>
+              <button class="skc sel">✓ Light</button>
+              <button class="skc">Prestidigitation</button>
+              <button class="skc">Ray of Frost</button>
+              <button class="skc">Minor Illusion</button>
+            </div>
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:18px 0 8px">FOR THE SPELLBOOK — SIX AT 1ST</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="skc sel" style="border-color:var(--verm);color:var(--verm-hi)">Mage Armor — reading</button>
+              <button class="skc sel">✓ Sleep</button>
+              <button class="skc sel">✓ Shield</button>
+              <button class="skc sel">✓ Detect Magic</button>
+              <button class="skc sel">✓ Magic Missile</button>
+              <button class="skc sel">✓ Feather Fall</button>
+              <button class="skc">Charm Person</button>
+              <button class="skc">Identify</button>
+            </div>
+          </div>
+          <div class="fdetail">
+            <span class="eyebrow">Spell · from /v1/srd/spells, filtered by class</span>
+            <h3>Mage Armor</h3>
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.1em;margin:2px 0 12px">1ST LEVEL · ABJURATION · 1 ACTION · TOUCH · 8 HOURS</div>
+            <p class="srd">You touch a willing creature who isn't wearing armor, and a protective magical force surrounds it. The target's base AC becomes 13 + its Dexterity modifier. The spell ends if the target dons armor or you dismiss it.</p>
+            <div class="asks"><span class="ah">WHY A WIZARD PACKS IT</span>A d6 hit die forgives nothing — this is the closest a wizard gets to a hauberk, and it lasts the whole day.</div>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:14px;letter-spacing:.08em">RIDES THE SAME POST AS THE REST — spell_choices · EVERY SPELL READS BEFORE IT COMMITS</div>
+      </div>
+
+      <div class="fstep" data-fpanel="identity">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;max-width:640px">
+          <div>
+            <span class="eyebrow verm">Identity (free text)</span>
+            <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">Numbers are rules; identity is yours</h2>
+            <p style="font-size:12px;color:var(--paper-45);margin-top:4px;max-width:46ch">Name, story, manner, voice — write them, or hand the DM a seed.</p>
+          </div>
+          <button class="weave">✦ Weave from a prompt</button>
+        </div>
+        <div style="max-width:640px;margin-top:12px">
+          <input placeholder="name" style="margin-bottom:10px"/>
+          <textarea rows="3" style="margin-bottom:10px" placeholder="bio — where they come from, what they owe">an ex-toll-guard who stayed when the garrison ran…</textarea>
+          <div style="display:flex;gap:10px">
+            <input placeholder="personality — three true things"/>
+            <input placeholder="voice — how they sound"/>
+          </div>
+          <div style="margin-top:8px"><span class="tag dep">backend dep · Weave agent — concept → bio / personality / voice</span></div>
+        </div>
+      </div>
+
+      <div class="fstep" data-fpanel="portrait">
+        <span class="eyebrow verm">Portrait — the last step</span>
+        <h2 style="font-size:19px;font-weight:600;margin:8px 0 2px">A face for the dossier</h2>
+        <div style="display:flex;gap:20px;margin-top:12px;max-width:640px;align-items:flex-start">
+          <div class="pframe">+</div>
+          <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+            <button class="btn" style="justify-content:flex-start">Choose from the gallery</button>
+            <button class="btn" style="justify-content:flex-start">Upload your own</button>
+            <button class="btn dis" style="justify-content:flex-start">✦ Generate from description</button>
+            <span class="tag dep">flagged — image gen later (FLUX-schnell earmarked)</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;max-width:640px;margin:30px 0 10px">
+          <button class="btn primary big" data-go="s10">Walk the trail →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ C · PLAY — THE HERO ═══════════════════ -->
+<style>
+/* s11 dice modal */
+.veil{position:absolute;inset:0;background:rgba(13,17,20,.82);display:flex;align-items:center;
+  justify-content:center;z-index:50;backdrop-filter:blur(2px)}
+.skel{padding:42px 52px;filter:blur(1px);opacity:.5}
+.skel .sl{height:11px;border-radius:5px;background:var(--paper-12);margin-bottom:14px}
+.dicecard{width:380px;background:var(--panel) var(--contour);border:1px solid var(--line);
+  border-radius:12px;padding:30px 32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.dc-dc{font-family:var(--mono);font-size:42px;font-weight:700;margin:2px 0}
+.dc-mod{font-family:var(--mono);font-size:12px;color:var(--lichen)}
+.d20{margin:18px auto 6px;display:block}
+.insp-offer{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid var(--verm-30);
+  border-radius:8px;padding:12px 14px;margin:20px 0 16px;background:var(--verm-14)}
+.insp-offer .io-t{font-size:12.5px;line-height:1.45}
+.insp-offer .io-t b{color:var(--verm-hi)}
+.switch{width:34px;height:19px;border-radius:10px;background:var(--verm);position:relative;flex-shrink:0}
+.switch::after{content:"";position:absolute;right:2.5px;top:2.5px;width:14px;height:14px;border-radius:50%;background:#16110D}
+/* s12 combat */
+.initstrip{display:flex;align-items:center;gap:10px;padding:10px 22px;border-bottom:1px solid var(--line);
+  background:var(--panel);overflow-x:auto}
+.round{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--paper-45);
+  padding-right:14px;border-right:1px solid var(--line);flex-shrink:0}
+.init{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:20px;
+  padding:3px 12px 3px 4px;flex-shrink:0;color:var(--paper-70)}
+.init .avatar{width:26px;height:26px;font-size:10px;border-radius:50%}
+.init .iv{font-family:var(--mono);font-size:10.5px}
+.init.pc-turn{border-color:var(--verm);background:var(--verm-14);color:var(--paper)}
+.init.foe .avatar{border-radius:4px}
+.init.down{opacity:.4}
+.combatbody{flex:1;display:flex;min-height:0}
+.combatlog{flex:1;overflow-y:auto;padding:26px 32px;min-width:0;max-width:52%}
+.combatlog .prose{font-size:15.5px;max-width:none}
+.clog-tick{font-family:var(--mono);font-size:10.5px;color:var(--paper-45);margin:12px 0;padding-left:12px;border-left:1px solid var(--line-soft)}
+.clog-tick b{color:var(--paper-70)}
+.zonewrap{flex:1;border-left:1px solid var(--line);display:flex;flex-direction:column;padding:18px 20px;min-width:0}
+.zonecap{font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.1em;
+  display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.actionbar{display:flex;align-items:center;gap:16px;padding:10px 22px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.econ{display:flex;gap:14px;align-items:center;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.1em;color:var(--paper-45);padding-right:14px;border-right:1px solid var(--line)}
+.pip{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--paper-45);display:inline-block;
+  vertical-align:-1px;margin-right:5px}
+.pip.spent{background:var(--verm);border-color:var(--verm)}
+.hints{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--paper-45);
+  border:1px dashed var(--line);border-radius:14px;padding:4px 12px}
+.hint:hover{color:var(--paper);border-color:var(--paper-45)}
+/* zone sketch-regions — the DM's napkin, not a grid */
+.zr{fill:rgba(128,128,128,.06);stroke:var(--paper-28);stroke-width:1.2;stroke-linejoin:round}
+.zg.here .zr{fill:var(--verm-14);stroke:var(--verm);stroke-width:1.6}
+.zg.foezone .zr{stroke:var(--paper-45)}
+.zg .zname{font-family:'Space Grotesk';font-size:12.5px;font-weight:600;fill:var(--paper)}
+.zg .zocc{font-family:'Space Mono';font-size:8.5px;letter-spacing:.1em;fill:var(--paper-45)}
+.zg .zocc.you{fill:var(--verm-hi)}
+.zg .zattr{font-family:'Space Mono';font-size:7.5px;letter-spacing:.08em;fill:var(--paper-28)}
+.zg .zattr.cov{fill:var(--lichen)}
+.zg .zattr.haz{fill:var(--verm-hi)}
+.zedge{stroke:var(--line);stroke-width:1.2;stroke-dasharray:4 5;fill:none}
+.zdist{font-family:'Space Mono';font-size:8px;letter-spacing:.1em;fill:var(--paper-45)}
+/* companion suggest-mode proposal (companion_action_proposed) */
+.proposal{display:flex;align-items:center;gap:12px;padding:9px 22px;border-top:1px solid var(--lichen-40);
+  background:var(--lichen-14)}
+.proposal .pq{font-family:var(--prose);font-style:italic;font-size:14px;color:var(--paper);flex:1;min-width:0}
+.proposal .pw{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--lichen);flex-shrink:0}
+/* s26 into-combat — one orchestrated moment, never a cut */
+@keyframes stripin{from{transform:translateY(-102%);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes unfurl{from{clip-path:inset(0 0 0 100%);opacity:.2}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes riseup{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes duskfall{from{opacity:0}to{opacity:1}}
+.duskcast{position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:linear-gradient(180deg,var(--verm-14),transparent 34%);animation:duskfall 2.2s ease-out both}
+/* s14 death track */
+.deathband{display:flex;align-items:center;gap:20px;padding:12px 22px;border-top:1px solid var(--verm-30);
+  background:linear-gradient(0deg,var(--verm-14),var(--panel))}
+.dpips{display:flex;gap:6px;align-items:center}
+.dpip{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--paper-28)}
+.dpip.s{background:var(--lichen);border-color:var(--lichen)}
+.dpip.f{background:var(--verm);border-color:var(--verm)}
+.dlab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--paper-45);margin-right:8px}
+</style>
+
+<!-- ─── 10 · PLAY — EXPLORATION (the hero) ─── -->
+<section class="screen" id="s10" data-rail="camp" data-tab="play">
+  <div class="vitals">
+    <span class="loc">The Drowned Chapel — nave</span>
+    <span class="vmeta">DAY 14 · LATE EVENING · RAIN ON THE RIVER</span>
+    <span class="right"><span class="vmeta">ACT II · WHAT THE RIVER KEEPS</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <p>The chapel took the flood of '31 and never gave it back. Water stands ankle-deep between the pews, black and patient, and every candle Casimir lights leans away from the altar as if it knows something you don't. Somewhere above, the third bell shifts on its rotten beam.</p>
+        <p>Wrenna crouches at the font, reading the waterline the way other people read letters. <em>"It rose last night,"</em> she says, not looking up. <em>"No rain does that. Rivers don't climb stairs."</em></p>
+        <div class="you"><b>YOU</b> — I wade toward the altar and pull the waterlogged ledger out from under the cloth.</div>
+        <p>The ledger comes free with a sound like a held breath let go. Its pages should be pulp — they are dry. Ink crisp as the day it was set down, and the last three entries are written in a hand you recognize, because it is yours. Three names. Three tolls paid. Dates that haven't happened yet.</p>
+        <p>Casimir's candle gutters out. In the dark of the nave, very quietly, something begins to wade toward you from the direction of the font.</p>
+      </div>
+    </div>
+    <aside class="fieldnotes">
+      <div class="fn-h">Field notes</div>
+      <div class="note"><span class="t">22:41</span>hp 24 → 19 · slipped on the pew steps</div>
+      <div class="note good"><span class="t">22:43</span>perception 17 vs DC 13 ✓</div>
+      <div class="note"><span class="t">22:47</span>gained · waterlogged ledger</div>
+      <div class="note"><span class="t">22:49</span>codex · The Drowned Chapel — updated</div>
+      <div class="note fresh"><span class="t">22:52</span>Wrenna's mood — guarded</div>
+      <div class="note dm"><span class="t">now</span>the DM considers<span class="dots"></span></div>
+    </aside>
+  </div>
+  <div class="band">
+    <div class="avatar">A</div>
+    <div class="who"><span class="nm">Ser Aldric</span><br/><span class="cl">FIGHTER 3 · AC 17</span></div>
+    <div class="hpwrap">
+      <div class="hpline"><span>HP</span><span><b>19</b> / 31</span></div>
+      <div class="hpbar"><i style="width:61%"></i></div>
+    </div>
+    <span class="sep"></span>
+    <span class="chip warn pop" tabindex="0">Exhaustion 1
+      <span class="popcard"><span class="ph">Exhaustion — level 1</span><span class="pm">CONDITION · FROM /v1/srd</span><span class="pb">Disadvantage on ability checks. It climbs with hunger, cold and hard roads; a long rest with food and drink lowers it by one.</span></span>
+    </span>
+    <span class="chip good pop" tabindex="0">Bless · conc.
+      <span class="popcard"><span class="ph">Bless</span><span class="pm">1ST · ENCHANTMENT · CASIMIR CONCENTRATES</span><span class="pb">Add 1d4 to your attack rolls and saving throws while it holds. It drops the moment his concentration breaks.</span></span>
+    </span>
+    <span class="insp" title="Inspiration — spend for advantage" role="img" aria-label="inspiration available"></span>
+    <button class="lvlchip" data-go="s21" title="level_up_pending — XP threshold crossed">▲ level 4 waits</button>
+    <span class="sep"></span>
+    <button class="btn" style="padding:6px 14px;font-size:12px" data-go="s13">Rest</button>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <div class="mini guarded"><div class="avatar">W</div><span class="mood">guarded</span></div>
+      <div class="mini warm"><div class="avatar">C</div><span class="mood">warm</span></div>
+    </div>
+  </div>
+  <div class="inputbar">
+    <input placeholder="What do you do?" aria-label="your action"/>
+    <button class="sendbtn" aria-label="send">→</button>
+  </div>
+</section>
+
+<!-- ─── 11 · DICE MODAL ─── -->
+<section class="screen" id="s11" data-rail="camp" data-tab="play" style="position:relative">
+  <div class="skel" aria-hidden="true">
+    <div class="sl" style="width:70%"></div><div class="sl" style="width:64%"></div>
+    <div class="sl" style="width:72%"></div><div class="sl" style="width:40%"></div>
+    <div class="sl" style="width:68%;margin-top:30px"></div><div class="sl" style="width:66%"></div>
+    <div class="sl" style="width:52%"></div>
+  </div>
+  <div class="veil">
+    <div class="dicecard">
+      <span class="eyebrow verm">The DM calls for a save</span>
+      <h2 style="font-size:19px;font-weight:600;margin:10px 0 2px">Dexterity Saving Throw</h2>
+      <svg class="d20" width="72" height="80" viewBox="0 0 72 80" fill="none" aria-hidden="true">
+        <path d="M36 2 L69 21 L69 59 L36 78 L3 59 L3 21 Z" stroke="#E7E2D4" stroke-opacity=".45" stroke-width="1.5"/>
+        <path d="M36 14 L56 48 L16 48 Z" stroke="#D6552B" stroke-width="1.5" fill="rgba(214,85,43,.12)"/>
+        <path d="M36 2 L36 14 M69 21 L56 48 M3 21 L16 48 M36 78 L36 62 M36 62 L16 48 M36 62 L56 48" stroke="#E7E2D4" stroke-opacity=".25" stroke-width="1"/>
+        <text x="36" y="42" text-anchor="middle" font-family="Space Mono" font-size="15" font-weight="700" fill="#E7E2D4">20</text>
+      </svg>
+      <div class="dc-dc">DC 13</div>
+      <div class="dc-mod">YOUR MODIFIER +1 DEX</div>
+      <div class="insp-offer">
+        <span class="insp" style="margin-left:4px"></span>
+        <span class="io-t"><b>Spend inspiration</b> — roll two, take the higher. One favor, held since Miller's Rise.</span>
+        <span class="switch" role="switch" aria-checked="true" aria-label="spend inspiration"></span>
+      </div>
+      <button class="btn primary big" style="width:100%">Roll the d20</button>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:12px;letter-spacing:.06em">
+        RESULT POSTS TO YOUR FIELD NOTES · THE OUTCOME IS THE DM'S TO TELL</div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:14px;right:16px"><span class="tag dep">same modal serves death saves — backend dep: player-rolled</span></div>
+</section>
+
+<!-- ─── 12a · INTO COMBAT — the table transforms under the narration ─── -->
+<section class="screen" id="s26" data-rail="camp" data-tab="play" style="position:relative;overflow:hidden">
+  <div class="duskcast" aria-hidden="true"></div>
+  <div class="initstrip" style="animation:stripin .7s ease-out .5s both">
+    <span class="round">ROUND 1</span>
+    <span class="init"><span class="avatar">W</span>Wrenna <span class="iv">19</span></span>
+    <span class="init foe"><span class="avatar">T</span>Thrall-warden <span class="iv">16</span></span>
+    <span class="init pc-turn"><span class="avatar" style="border-color:var(--verm)">A</span><b>Ser Aldric</b> <span class="iv" style="color:var(--verm-hi)">14</span></span>
+    <span class="init"><span class="avatar">C</span>Casimir <span class="iv">11</span></span>
+    <span class="init foe"><span class="avatar">t</span>Drowned thrall <span class="iv">8</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <p>Casimir's candle gutters out. In the dark of the nave, very quietly, something begins to wade toward you from the direction of the font.</p>
+        <div class="you"><b>YOU</b> — I put my back to the altar, drop the ledger into my satchel, and draw.</div>
+        <div class="pivot verm">Steel is drawn — round 1</div>
+        <p>The thing at the font stops pretending to be slow. It comes through the pews in two heaves of black water, and what the candlelight finds of its face has been at the bottom of the river a long time. Behind it, a second shape unfolds from the aisle.</p>
+        <p><em>Wrenna is already on the chancel rail, arrow nocked. The order is set — she goes first.</em></p>
+      </div>
+    </div>
+    <div class="zonewrap" style="animation:unfurl 1.1s ease-out 1.1s both">
+      <svg viewBox="0 0 440 320" style="flex:1;min-height:0" aria-label="the DM's sketch, unfurling — every zone seeded at initiative">
+        <path class="zedge" d="M150 222 L192 178"/>
+        <text class="zdist" x="188" y="212" text-anchor="middle">CLOSE · 30FT ×2</text>
+        <path class="zedge" d="M225 118 L218 92"/>
+        <text class="zdist" x="262" y="108" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M282 165 L318 190"/>
+        <text class="zdist" x="302" y="164" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M262 52 L338 60"/>
+        <text class="zdist" x="300" y="44" text-anchor="middle">FAR · 60FT</text>
+        <g class="zg here">
+          <path class="zr" d="M52 232 C 44 200, 66 182, 104 178 C 146 174, 168 196, 164 232 C 160 266, 132 284, 94 280 C 64 277, 58 258, 52 232 Z"/>
+          <text class="zname" x="106" y="222" text-anchor="middle">Nave</text>
+          <text class="zocc you" x="106" y="237" text-anchor="middle">◉ YOU · CASIMIR</text>
+          <text class="zattr" x="106" y="251" text-anchor="middle">NO COVER · OPEN WATERLINE</text>
+        </g>
+        <g class="zg foezone">
+          <path class="zr" d="M186 172 C 176 146, 190 122, 222 114 C 258 105, 284 122, 288 150 C 292 176, 272 194, 240 198 C 212 201, 194 192, 186 172 Z"/>
+          <text class="zname" x="237" y="148" text-anchor="middle">Flooded aisle</text>
+          <text class="zocc" x="237" y="163" text-anchor="middle">✕ WARDEN · ✕ THRALL</text>
+          <text class="zattr" x="237" y="177" text-anchor="middle">DIFFICULT ×2 · KNEE-DEEP</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M172 78 C 166 50, 186 30, 220 26 C 252 22, 274 38, 276 62 C 278 84, 258 96, 226 98 C 196 100, 178 94, 172 78 Z"/>
+          <text class="zname" x="223" y="56" text-anchor="middle">Chancel</text>
+          <text class="zocc" x="223" y="71" text-anchor="middle">● WRENNA — longbow</text>
+          <text class="zattr cov" x="223" y="85" text-anchor="middle">HALF COVER +2 · HIGH GROUND</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M318 216 C 312 192, 328 176, 358 172 C 390 168, 410 182, 412 206 C 414 230, 396 244, 364 246 C 336 248, 322 236, 318 216 Z"/>
+          <text class="zname" x="364" y="202" text-anchor="middle">Bell tower stair</text>
+          <text class="zocc" x="364" y="217" text-anchor="middle">EMPTY</text>
+          <text class="zattr haz" x="364" y="231" text-anchor="middle">⚠ HAZARD — ROTTEN BEAM</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M342 76 C 338 58, 350 46, 372 44 C 394 42, 408 52, 408 68 C 408 84, 394 92, 372 92 C 354 92, 346 88, 342 76 Z"/>
+          <text class="zname" x="374" y="62" text-anchor="middle">Belfry</text>
+          <text class="zocc" x="374" y="76" text-anchor="middle">EMPTY</text>
+          <text class="zattr" x="374" y="88" text-anchor="middle">OUT OF RANGE FROM THE NAVE</text>
+        </g>
+      </svg>
+      <div class="zonecap">
+        <span>THE SKETCH UNFURLS COMPLETE — EVERY ZONE SEEDED AT INITIATIVE, NOTHING HIDDEN</span>
+      </div>
+    </div>
+  </div>
+  <div class="actionbar" style="animation:riseup .6s ease-out 1.8s both">
+    <span class="econ">
+      <span><span class="pip"></span>ACTION</span>
+      <span><span class="pip"></span>BONUS</span>
+      <span><span class="pip"></span>REACTION</span>
+      <span style="color:var(--paper-70)">MOVE 30/30 FT</span>
+    </span>
+    <span style="margin-left:auto;font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;color:var(--paper-28);text-align:right;line-height:1.7">COMBAT BEGINS INSIDE A TURN — NO CUT, NO MODAL · THE PROSE KEEPS SCROLLING, THE LIGHT DROPS A STEP,<br/>THE RIBBON SLIDES IN, THE SKETCH UNFURLS WHERE THE FIELD NOTES STOOD · THE SAME MOVES RUN IN REVERSE WHEN THE LAST FOE FALLS</span>
+  </div>
+  <div class="inputbar">
+    <input placeholder="Wrenna acts first — the ribbon reaches you in two." disabled aria-label="waiting for your place in the order"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
+  </div>
+</section>
+
+<!-- ─── 12 · PLAY — COMBAT MODE ─── -->
+<section class="screen" id="s12" data-rail="camp" data-tab="play">
+  <div class="initstrip">
+    <span class="round">ROUND 3</span>
+    <span class="init"><span class="avatar">W</span>Wrenna <span class="iv">19</span></span>
+    <span class="init foe"><span class="avatar">T</span>Thrall-warden <span class="iv">16</span></span>
+    <span class="init pc-turn"><span class="avatar" style="border-color:var(--verm)">A</span><b>Ser Aldric</b> <span class="iv" style="color:var(--verm-hi)">14 · YOUR TURN</span></span>
+    <span class="init"><span class="avatar">C</span>Casimir <span class="iv">11</span></span>
+    <span class="init foe down"><span class="avatar">t</span>Drowned thrall <span class="iv">8 · down</span></span>
+  </div>
+  <div class="combatbody">
+    <div class="combatlog">
+      <div class="prose">
+        <p>The thrall-warden drags itself over the font rail, water sheeting off armor that stopped being armor a century ago. It swings the bell-chain in a flat arc — you take it on the shield, and the nave rings like the inside of a struck bell.</p>
+      </div>
+      <div class="clog-tick"><b>thrall-warden</b> attack 16 vs AC 17 — miss (shield)</div>
+      <div class="clog-tick"><b>Casimir</b> — Bless holding · concentration intact</div>
+      <div class="prose">
+        <p>Wrenna's arrow takes the smaller thrall through the knee-joint and it folds into the black water without a sound. <em>"One,"</em> she says.</p>
+      </div>
+      <div class="clog-tick"><b>drowned thrall</b> — knocked out of the fight</div>
+      <div class="prose"><p>Your turn. The warden stands in the flooded aisle between you and the tower stair, chain swinging slow.</p></div>
+    </div>
+    <div class="zonewrap">
+      <svg viewBox="0 0 440 320" style="flex:1;min-height:0" aria-label="combat zone sketch — regions, not squares">
+        <!-- edges: distance categories, feet cost -->
+        <path class="zedge" d="M150 222 L192 178"/>
+        <text class="zdist" x="188" y="212" text-anchor="middle">CLOSE · 30FT ×2</text>
+        <path class="zedge" d="M225 118 L218 92"/>
+        <text class="zdist" x="262" y="108" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M282 165 L318 190"/>
+        <text class="zdist" x="302" y="164" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M262 52 L338 60"/>
+        <text class="zdist" x="300" y="44" text-anchor="middle">FAR · 60FT</text>
+        <!-- Nave — you are here -->
+        <g class="zg here">
+          <path class="zr" d="M52 232 C 44 200, 66 182, 104 178 C 146 174, 168 196, 164 232 C 160 266, 132 284, 94 280 C 64 277, 58 258, 52 232 Z"/>
+          <text class="zname" x="106" y="222" text-anchor="middle">Nave</text>
+          <text class="zocc you" x="106" y="237" text-anchor="middle">◉ YOU · CASIMIR</text>
+          <text class="zattr" x="106" y="251" text-anchor="middle">NO COVER · OPEN WATERLINE</text>
+        </g>
+        <!-- Flooded aisle — the warden, difficult terrain -->
+        <g class="zg foezone">
+          <path class="zr" d="M186 172 C 176 146, 190 122, 222 114 C 258 105, 284 122, 288 150 C 292 176, 272 194, 240 198 C 212 201, 194 192, 186 172 Z"/>
+          <text class="zname" x="237" y="148" text-anchor="middle">Flooded aisle</text>
+          <text class="zocc" x="237" y="163" text-anchor="middle">✕ THRALL-WARDEN — melee, chain</text>
+          <text class="zattr" x="237" y="177" text-anchor="middle">DIFFICULT ×2 · KNEE-DEEP</text>
+        </g>
+        <!-- Chancel — Wrenna, half cover -->
+        <g class="zg">
+          <path class="zr" d="M172 78 C 166 50, 186 30, 220 26 C 252 22, 274 38, 276 62 C 278 84, 258 96, 226 98 C 196 100, 178 94, 172 78 Z"/>
+          <text class="zname" x="223" y="56" text-anchor="middle">Chancel</text>
+          <text class="zocc" x="223" y="71" text-anchor="middle">● WRENNA — longbow</text>
+          <text class="zattr cov" x="223" y="85" text-anchor="middle">HALF COVER +2 · HIGH GROUND</text>
+        </g>
+        <!-- Bell tower stair — hazard -->
+        <g class="zg">
+          <path class="zr" d="M318 216 C 312 192, 328 176, 358 172 C 390 168, 410 182, 412 206 C 414 230, 396 244, 364 246 C 336 248, 322 236, 318 216 Z"/>
+          <text class="zname" x="364" y="202" text-anchor="middle">Bell tower stair</text>
+          <text class="zocc" x="364" y="217" text-anchor="middle">EMPTY</text>
+          <text class="zattr haz" x="364" y="231" text-anchor="middle">⚠ HAZARD — ROTTEN BEAM</text>
+        </g>
+        <!-- Belfry — seeded like the rest; zones are all known at combat start -->
+        <g class="zg">
+          <path class="zr" d="M342 76 C 338 58, 350 46, 372 44 C 394 42, 408 52, 408 68 C 408 84, 394 92, 372 92 C 354 92, 346 88, 342 76 Z"/>
+          <text class="zname" x="374" y="62" text-anchor="middle">Belfry</text>
+          <text class="zocc" x="374" y="76" text-anchor="middle">EMPTY</text>
+          <text class="zattr" x="374" y="88" text-anchor="middle">OUT OF RANGE FROM THE NAVE</text>
+        </g>
+      </svg>
+      <div class="zonecap">
+        <span>THE DM'S SKETCH — REGIONS, NOT SQUARES · LEAVING MELEE PROVOKES</span>
+        <span class="tag dep">zones + cover + hazards land with the zones slice</span>
+      </div>
+    </div>
+  </div>
+  <div class="proposal">
+    <div class="avatar" style="width:28px;height:28px;font-size:11px;border-radius:50%;border-color:var(--lichen)">W</div>
+    <span class="pq">"Warden's in the open water. Say the word and I put the next arrow through its chain-arm."</span>
+    <span class="pw">WRENNA PROPOSES · AGENCY — SUGGEST</span>
+    <button class="btn" style="padding:5px 14px;font-size:12px;border-color:var(--lichen-40);color:var(--lichen)">Let her</button>
+    <button class="btn quiet" style="padding:5px 10px;font-size:12px">Direct her</button>
+  </div>
+  <div class="actionbar">
+    <span class="econ">
+      <span><span class="pip"></span>ACTION</span>
+      <span><span class="pip"></span>BONUS</span>
+      <span><span class="pip spent"></span>REACTION</span>
+      <span style="color:var(--paper-70)">MOVE 30/30 FT</span>
+    </span>
+    <span class="hints">
+      <button class="hint" style="border-style:solid;border-color:var(--verm-30);color:var(--verm-hi)" title="use_inspiration rides the turn — advantage on its roll">◈ spend inspiration</button>
+      <button class="hint">⌁ attack the warden</button>
+      <button class="hint">⌁ move to the chancel</button>
+      <button class="hint">⌁ dash</button>
+      <button class="hint">⌁ second wind</button>
+    </span>
+    <span style="margin-left:auto;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--paper-28);text-align:right">YOUR MESSAGE IS YOUR WHOLE TURN —<br/>THE DM SPENDS THE ECONOMY, THEN THE NEXT ACTS</span>
+  </div>
+  <div class="inputbar" style="padding-top:10px">
+    <input placeholder="I put my shield into the warden and drive it back toward the stair — then cut low." aria-label="describe your turn"/>
+    <button class="sendbtn" aria-label="send">→</button>
+  </div>
+</section>
+
+<!-- ─── 13 · REST MOMENT ─── -->
+<section class="screen" id="s13" data-rail="camp" data-tab="play">
+  <div class="vitals">
+    <span class="loc">The Drowned Chapel — bell tower landing</span>
+    <span class="vmeta">DAY 14 · MIDNIGHT · THE RAIN EASES</span>
+    <span class="right"><span class="vmeta">ACT II</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <div class="pivot lich">Short rest</div>
+        <p>You bank a fire in the old brazier with the last of the dry pew-wood, and for an hour the chapel is only a building. Casimir mutters over his beads. Wrenna sits with her back to the wall and her eyes on the stair, but she takes the bread you pass her, which from Wrenna is a speech.</p>
+        <p>You unstrap the shield and let your shoulder remember its own shape. The hit dice come up kind: the ache recedes to something you can carry.</p>
+      </div>
+    </div>
+    <aside class="fieldnotes">
+      <div class="fn-h">Field notes</div>
+      <div class="note good"><span class="t">00:04</span>rest · short — applied</div>
+      <div class="note good"><span class="t">00:04</span>spent 2d10 — hp 19 → 27</div>
+      <div class="note"><span class="t">00:05</span>Second Wind — recharged</div>
+      <div class="note"><span class="t">00:05</span>Casimir — channel divinity restored</div>
+      <div class="note"><span class="t">00:05</span>a long rest would reopen the prayer book — prepared casters choose their spells again</div>
+      <div class="note"><span class="t">·</span>in a hostile scene the same click comes back rest_blocked — the DM says why · a risky one asks "are you sure?" first</div>
+      <div class="note dm"><span class="t">now</span>the fire settles<span class="dots"></span></div>
+    </aside>
+  </div>
+  <div class="band">
+    <div class="avatar">A</div>
+    <div class="who"><span class="nm">Ser Aldric</span><br/><span class="cl">FIGHTER 3 · AC 17</span></div>
+    <div class="hpwrap">
+      <div class="hpline"><span>HP</span><span><b>27</b> / 31</span></div>
+      <div class="hpbar"><i style="width:87%"></i></div>
+    </div>
+    <span class="chip warn">Exhaustion 1</span>
+    <span class="insp" title="Inspiration available"></span>
+    <button class="btn" style="padding:6px 14px;font-size:12px;border-color:var(--lichen-40);color:var(--lichen)">Resting…</button>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <div class="mini guarded"><div class="avatar">W</div><span class="mood">guarded</span></div>
+      <div class="mini warm"><div class="avatar">C</div><span class="mood">warm</span></div>
+    </div>
+  </div>
+  <div class="inputbar">
+    <input placeholder="One click. No forms — the DM narrates what the hour buys you." disabled aria-label="input disabled during rest"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
+  </div>
+</section>
+
+<!-- ─── 14 · DOWNED — death-save takeover ─── -->
+<section class="screen" id="s14" data-rail="camp" data-tab="play">
+  <div class="vitals">
+    <span class="loc">The Drowned Chapel — flooded aisle</span>
+    <span class="vmeta">DAY 14 · THE BELL IS STILL RINGING</span>
+    <span class="right"><span class="vmeta">ROUND 5</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <p>The chain takes you across the temple and the world goes sideways. Black water closes over your ears — the cold is total, and very far away Casimir is shouting your name in a language you're too tired to remember.</p>
+        <div class="pivot verm">Ser Aldric falls</div>
+        <p>The river has your ledger now, and it is deciding what you owe. Wrenna is a silhouette on the chancel rail, drawing and loosing, drawing and loosing. The water does not care. It counts.</p>
+      </div>
+    </div>
+    <aside class="fieldnotes">
+      <div class="fn-h">Field notes</div>
+      <div class="note bad"><span class="t">00:31</span>hp 8 → 0 — knocked out</div>
+      <div class="note good"><span class="t">00:32</span>death save · 14 ✓</div>
+      <div class="note bad"><span class="t">00:33</span>death save · 6 ✗</div>
+      <div class="note dm"><span class="t">now</span>the water counts<span class="dots"></span></div>
+    </aside>
+  </div>
+  <div class="deathband">
+    <div class="avatar" style="filter:grayscale(1);opacity:.7">A</div>
+    <div class="who"><span class="nm">Ser Aldric</span><br/><span class="cl" style="color:var(--verm-hi)">DYING</span></div>
+    <div class="dpips"><span class="dlab">SAVES</span><span class="dpip s"></span><span class="dpip"></span><span class="dpip"></span></div>
+    <div class="dpips"><span class="dlab">FAILS</span><span class="dpip f"></span><span class="dpip"></span><span class="dpip"></span></div>
+    <button class="btn primary" style="margin-left:auto" data-go="s11">Make a death save</button>
+    <span style="font-family:var(--mono);font-size:9px;color:var(--paper-45);letter-spacing:.06em">10+ HOLDS ON · NAT 20 — UP AT 1 HP · NAT 1 — TWO FAILS<br/>MASSIVE DAMAGE SKIPS THE TRACK ENTIRELY</span>
+  </div>
+  <div class="inputbar">
+    <input placeholder="The dice are yours even here — the button opens the same roll modal." disabled aria-label="input disabled while dying"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
+  </div>
+</section>
+
+<!-- ═══════════════════ D · PANELS / RAIL TABS ═══════════════════ -->
+<style>
+/* s15 sheet — the dossier, grown up */
+.sheetgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:980px}
+.sheetgrid .full{grid-column:1/-1}
+.dosshead{display:flex;gap:28px;align-items:flex-start;max-width:980px;margin-bottom:22px}
+.bigport{width:158px;height:190px;border-radius:10px;flex-shrink:0;background:var(--panel-2) var(--contour);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-size:56px;font-weight:700;color:var(--paper-28)}
+.dosshead h1{font-family:var(--prose);font-size:30px;font-weight:600;letter-spacing:-.01em;margin:4px 0 4px}
+.dosshead .dline{font-family:var(--mono);font-size:10.5px;color:var(--paper-45);letter-spacing:.06em}
+.dosshead .dbio{font-family:var(--prose);font-size:15.5px;line-height:1.6;color:var(--paper-70);margin-top:12px;max-width:56ch}
+/* the carried ledger — equipped kit grouped by hand, summed like a toll ledger */
+.gearh{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--paper-45);margin:16px 0 2px}
+.gearh:first-of-type{margin-top:0}
+.gearrow{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-top:1px solid var(--line-soft);font-size:13px}
+.gearrow .gn{font-weight:600}
+.gearrow .gd{font-family:var(--mono);font-size:9px;color:var(--paper-45);letter-spacing:.06em}
+.gearrow .gv{font-family:var(--mono);font-size:11px;color:var(--lichen);margin-left:auto;flex-shrink:0}
+.gearsum{display:flex;align-items:baseline;gap:10px;padding:9px 0 2px;margin-top:2px;
+  border-top:1.5px solid var(--paper-28);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--paper-45)}
+.gearsum b{margin-left:auto;font-size:15px;color:var(--paper)}
+.bpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:8px}
+.bpitem{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--panel-2);
+  font-size:12px;font-weight:600;text-align:left}
+.bpitem .bq{display:block;font-family:var(--mono);font-size:8.5px;color:var(--paper-45);margin-top:3px;font-weight:400}
+.bpitem.quest{border-color:var(--verm-30)}
+.bpitem.quest .bq{color:var(--verm-hi)}
+.spip{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--paper-28);display:inline-block;margin-right:4px;vertical-align:-1px}
+.spip.full{background:var(--lichen);border-color:var(--lichen)}
+.sprow{display:flex;align-items:baseline;gap:12px;padding:7px 0;border-top:1px solid var(--line-soft);font-size:12.5px}
+.sprow .spn{font-weight:600}
+.sprow .spm{font-family:var(--mono);font-size:9.5px;color:var(--paper-45);margin-left:auto}
+.sprow.prepped .spn::before{content:"● ";color:var(--lichen)}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-top:1px solid var(--line-soft);color:var(--paper-70)}
+.kv:first-of-type{border-top:none}
+.kv b{font-family:var(--mono);color:var(--paper)}
+.kv .prof{color:var(--lichen);margin-right:6px}
+.atkrow{display:grid;grid-template-columns:1.4fr .6fr 1fr;gap:8px;font-size:12.5px;padding:7px 0;border-top:1px solid var(--line-soft)}
+.atkrow span{font-family:var(--mono);font-size:11.5px;color:var(--paper-70)}
+.atkrow b{font-weight:600;font-family:var(--ui);color:var(--paper)}
+/* s16 party — around the fire; choosing a member opens their full sheet */
+.fireline{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
+.firem{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:8px;
+  padding:10px 18px 10px 12px;background:var(--panel);text-align:left}
+.firem:hover{border-color:var(--paper-45)}
+.firem .avatar{border-radius:50%}
+.firem .fnm{font-weight:600;font-size:13.5px}
+.firem .fcl{font-family:var(--mono);font-size:9px;color:var(--paper-45);display:block;margin-top:1px}
+.firem.sel{border-color:var(--verm);background:var(--verm-14)}
+.compband{display:flex;align-items:center;gap:20px;flex-wrap:wrap;border:1px solid var(--lichen-40);
+  border-radius:8px;background:var(--lichen-14);padding:12px 18px;margin-bottom:24px}
+.appr-band{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:20px;
+  padding:5px 16px;font-weight:600;font-size:13px}
+.alog{margin-top:12px}
+.alog .ae{font-size:12.5px;line-height:1.5;padding:7px 0 7px 12px;color:var(--paper-70)}
+.alog .ae.up{border-left:2px solid var(--lichen)}
+.alog .ae.dn{border-left:2px solid var(--verm)}
+.alog .ae .aw{font-family:var(--mono);font-size:9px;letter-spacing:.1em;display:block}
+.alog .ae.up .aw{color:var(--lichen)}
+.alog .ae.dn .aw{color:var(--verm-hi)}
+/* s17 codex */
+.cdx-tabs{display:flex;gap:4px;padding:0 44px;border-bottom:1px solid var(--line)}
+.cdx-tab{font-size:13px;font-weight:600;color:var(--paper-45);padding:10px 16px;border-bottom:2px solid transparent}
+.cdx-tab .cnt{font-family:var(--mono);font-size:10px;margin-left:5px;color:var(--paper-28)}
+.cdx-tab.on{color:var(--paper);border-bottom-color:var(--verm)}
+.cdx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;max-width:980px}
+.cdx-card .cn{font-weight:600;font-size:14.5px;margin-bottom:5px}
+.cdx-card .cb{font-family:var(--prose);font-size:14.5px;line-height:1.55;color:var(--paper-70)}
+.cdx-card .cm{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28);display:block;margin-top:10px}
+/* s19 settings */
+.setwrap{max-width:720px}
+.setsec{margin-bottom:26px}
+.setsec>.eyebrow{display:block;margin-bottom:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font-size:12px;font-weight:600;padding:8px 18px;color:var(--paper-45)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg .on{background:var(--verm-14);color:var(--verm-hi)}
+.adv{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:14px 18px;
+  display:flex;justify-content:space-between;align-items:center;color:var(--paper-45);width:100%;text-align:left}
+/* s20 recap */
+.cheats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px}
+.cheats ul{list-style:none;margin-top:10px}
+.cheats li{font-size:12.5px;color:var(--paper-70);padding:6px 0;border-top:1px solid var(--line-soft);line-height:1.5}
+</style>
+
+<!-- ─── 15 · CHARACTER SHEET — the dossier, grown up ─── -->
+<section class="screen scroll" id="s15" data-rail="camp" data-tab="character">
+  <div class="pad" style="padding-top:34px">
+    <div class="dosshead">
+      <div class="bigport">A</div>
+      <div style="flex:1;min-width:0">
+        <span class="eyebrow">Character · The Silent Ford</span>
+        <h1>Ser Aldric of Bracken Ford</h1>
+        <div class="dline">HUMAN · FIGHTER 3 · SOLDIER · LAWFUL GOOD · XP 2890 / 2700 — THRESHOLD CROSSED</div>
+        <p class="dbio">Twenty years holding the toll bridge. Stayed when the garrison ran. Speaks slowly, swears in toll-house slang, counts his coppers twice — a ledger kept honest is the only magic he trusts.</p>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+          <span class="chip warn">Exhaustion 1</span>
+          <span class="chip good">Bless · Casimir, conc.</span>
+          <span class="insp" style="width:14px;height:14px" title="inspiration available"></span>
+          <button class="lvlchip" data-go="s21">▲ Level 4 waits — choose</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">EVERY RULES NOUN IS INSPECTABLE — HOVER OR TAP ANY SPELL, CONDITION OR ITEM · TEXT FROM /v1/srd</div>
+      </div>
+      <div>
+        <div class="statrow" style="margin:0 0 10px">
+          <span class="stat"><span class="sl">STR</span><span class="sv">16</span><span class="sm">+3</span></span>
+          <span class="stat"><span class="sl">DEX</span><span class="sv">13</span><span class="sm">+1</span></span>
+          <span class="stat"><span class="sl">CON</span><span class="sv">14</span><span class="sm">+2</span></span>
+        </div>
+        <div class="statrow" style="margin:0">
+          <span class="stat"><span class="sl">INT</span><span class="sv">8</span><span class="sm">−1</span></span>
+          <span class="stat"><span class="sl">WIS</span><span class="sv">12</span><span class="sm">+1</span></span>
+          <span class="stat"><span class="sl">CHA</span><span class="sv">10</span><span class="sm">+0</span></span>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--paper-70);justify-content:space-between">
+          <span>AC <b style="color:var(--paper);font-size:15px">17</b></span>
+          <span>HP <b style="color:var(--paper);font-size:15px">19/31</b></span>
+          <span>HD <b style="color:var(--paper);font-size:15px">1/3</b></span>
+          <span>SPD <b style="color:var(--paper);font-size:15px">30</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="sheetgrid">
+      <div class="card">
+        <span class="eyebrow">Attacks</span>
+        <div style="margin-top:10px">
+          <div class="atkrow" style="border-top:none"><b>Longsword</b><span>+5</span><span>1d8+3 slashing</span></div>
+          <div class="atkrow"><b>Longsword, 2-h</b><span>+5</span><span>1d10+3 slashing</span></div>
+          <div class="atkrow"><b>Heavy crossbow</b><span>+3</span><span>1d10+1 piercing</span></div>
+        </div>
+        <hr class="hr" style="margin:12px 0"/>
+        <span class="eyebrow">Features</span>
+        <div style="margin-top:8px">
+          <div class="kv"><span>Fighting style — Defense</span><b>+1 AC</b></div>
+          <div class="kv"><span>Second Wind</span><b>1d10+3 · ready</b></div>
+          <div class="kv"><span>Action Surge</span><b>1 / rest</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Saves &amp; skills</span>
+        <div style="display:flex;gap:22px;margin-top:10px">
+          <div style="flex:1">
+            <div class="kv"><span><span class="prof">●</span>STR save</span><b>+5</b></div>
+            <div class="kv"><span><span class="prof">●</span>CON save</span><b>+4</b></div>
+            <div class="kv"><span><span class="prof" style="opacity:.15">●</span>DEX save</span><b>+1</b></div>
+            <div class="kv"><span><span class="prof" style="opacity:.15">●</span>INT save</span><b>−1</b></div>
+            <div class="kv"><span><span class="prof" style="opacity:.15">●</span>WIS save</span><b>+1</b></div>
+            <div class="kv"><span><span class="prof" style="opacity:.15">●</span>CHA save</span><b>+0</b></div>
+          </div>
+          <div style="flex:1">
+            <div class="kv"><span><span class="prof">●</span>Athletics</span><b>+5</b></div>
+            <div class="kv"><span><span class="prof">●</span>Intimidation</span><b>+2</b></div>
+            <div class="kv"><span><span class="prof">●</span>Perception</span><b>+3</b></div>
+            <div class="kv"><span><span class="prof">●</span>Survival</span><b>+3</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="card full">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+          <span class="eyebrow">Carried — a ledger, kept honest</span>
+          <span class="tag">grouped from equipped + SRD item data — no slot model, none needed</span>
+        </div>
+        <div style="display:flex;gap:28px;margin-top:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:300px">
+            <div class="gearh">STEEL — WHAT KEEPS YOU STANDING</div>
+            <div class="gearrow" style="border-top:none"><span class="gn">Chain shirt</span><span class="gd">MEDIUM · UNDER THE COLORS</span><span class="gv">13 + DEX 1</span></div>
+            <div class="gearrow"><span class="gn">Shield</span><span class="gd">OAK, TOLL-HOUSE ARMS</span><span class="gv">+2</span></div>
+            <div class="gearrow"><span class="gn">Fighting style — Defense</span><span class="gd">WHILE ARMORED</span><span class="gv">+1</span></div>
+            <div class="gearsum">THE LEDGER BALANCES<b>AC 17</b></div>
+            <div class="gearh">HANDS — WHAT MEETS TROUBLE</div>
+            <div class="gearrow" style="border-top:none"><span class="gn">Longsword</span><span class="gd">DRAWN · VERSATILE 1d10</span><span class="gv">+5 · 1d8+3</span></div>
+            <div class="gearrow"><span class="gn">Heavy crossbow</span><span class="gd">SLUNG · 100 FT</span><span class="gv">+3 · 1d10+1</span></div>
+            <div class="gearh">WORN — WHAT THE ROAD SEES</div>
+            <div class="gearrow" style="border-top:none"><span class="gn">The old colors</span><span class="gd">CLOAK · THE GARRISON THAT RAN</span><span class="gv">&nbsp;</span></div>
+          </div>
+          <div style="flex:1.1;min-width:320px">
+            <span class="eyebrow" style="font-size:9px">In the pack</span>
+            <div class="bpgrid" style="margin-top:8px">
+              <button class="bpitem quest pop">Waterlogged ledger<span class="bq">QUEST — IT STAYS DRY</span>
+                <span class="popcard"><span class="ph">Waterlogged ledger</span><span class="pm">QUEST ITEM · GAINED DAY 14 · THE DROWNED CHAPEL</span><span class="pb">Pulled from under the altar cloth. Its pages should be pulp — they are dry, and the last three entries are in your hand, dated for days that haven't happened.</span></span>
+              </button>
+              <button class="bpitem">Toll-house key<span class="bq">IRON, OLD</span></button>
+              <button class="bpitem">Rations<span class="bq">×5 DAYS</span></button>
+              <button class="bpitem">Hemp rope<span class="bq">50 FT</span></button>
+              <button class="bpitem">Whetstone<span class="bq">&nbsp;</span></button>
+              <button class="bpitem">Coin<span class="bq">34 GP · 12 SP</span></button>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:12px;letter-spacing:.06em;line-height:1.7">EQUIPPING IS A SENTENCE, NOT A DRAG — "I SLING THE SHIELD AND TAKE THE SWORD IN BOTH HANDS" · THE DM MOVES IT, THE LEDGER FOLLOWS</div>
+          </div>
+        </div>
+      </div>
+      <div class="card full">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+          <span class="eyebrow">Spellcasting</span>
+          <span class="tag">casters only — shown here from Isolde's sheet for the spec</span>
+        </div>
+        <div style="display:flex;gap:26px;margin-top:12px;flex-wrap:wrap">
+          <div style="min-width:180px">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--paper-45);letter-spacing:.1em;margin-bottom:8px">SLOTS</div>
+            <div style="display:flex;flex-direction:column;gap:7px;font-family:var(--mono);font-size:10px;color:var(--paper-45)">
+              <span>1ST&nbsp;&nbsp;<span class="spip full"></span><span class="spip full"></span><span class="spip full"></span><span class="spip"></span></span>
+              <span>2ND&nbsp;&nbsp;<span class="spip full"></span><span class="spip"></span></span>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:12px;line-height:1.6;letter-spacing:.06em">PREPARED CASTERS RE-CHOOSE<br/>AFTER EVERY LONG REST</div>
+          </div>
+          <div style="flex:1;min-width:280px">
+            <div class="sprow prepped" style="border-top:none"><span class="spn pop" tabindex="0">Mage Armor
+              <span class="popcard"><span class="ph">Mage Armor</span><span class="pm">1ST · ABJURATION · TOUCH · 8 HOURS</span><span class="pb">A willing creature not wearing armor gains base AC 13 + its Dexterity modifier. Ends if it dons armor.</span></span>
+            </span><span style="color:var(--paper-45)">1st</span><span class="spm">8 HOURS · SELF</span></div>
+            <div class="sprow prepped"><span class="spn pop" tabindex="0">Sleep
+              <span class="popcard"><span class="ph">Sleep</span><span class="pm">1ST · ENCHANTMENT · 90 FT · 1 MINUTE</span><span class="pb">5d8 hit points of creatures fall unconscious, weakest first. Undead and creatures immune to charm don't count — the drowned won't.</span></span>
+            </span><span style="color:var(--paper-45)">1st</span><span class="spm">5d8 HP OF CREATURES</span></div>
+            <div class="sprow prepped"><span class="spn">Misty Step</span><span style="color:var(--paper-45)">2nd</span><span class="spm">BONUS · 30 FT</span></div>
+            <div class="sprow"><span class="spn" style="color:var(--paper-45);font-weight:400">Detect Magic — known, not prepared</span><span class="spm">RITUAL</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 16 · PARTY — around the fire; a companion opens as a full sheet ─── -->
+<section class="screen scroll" id="s16" data-rail="camp" data-tab="party">
+  <div class="screen-head">
+    <div><span class="eyebrow">Party</span><h1>Who walks with you</h1></div>
+    <span class="tag">companions are characters, not summaries — same sheet, one extra band</span>
+  </div>
+  <div class="pad">
+    <div class="fireline">
+      <button class="firem" data-go="s15">
+        <div class="avatar">A</div>
+        <div><span class="fnm">Ser Aldric</span><span class="fcl">YOU · FIGHTER 3 — YOUR SHEET</span></div>
+      </button>
+      <button class="firem sel">
+        <div class="avatar" style="border-color:var(--verm)">W</div>
+        <div><span class="fnm">Wrenna</span><span class="fcl">RANGER 3 · GUARDED · HP 21/24</span></div>
+      </button>
+      <button class="firem">
+        <div class="avatar" style="border-color:var(--lichen)">C</div>
+        <div><span class="fnm">Brother Casimir</span><span class="fcl">CLERIC 3 · WARM · HP 18/18</span></div>
+      </button>
+    </div>
+
+    <div class="compband">
+      <span style="font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--lichen)">HER LEASH</span>
+      <span class="seg"><button>Directed</button><button class="on" style="background:var(--lichen-14);color:var(--lichen)">Suggest</button><button>Free rein</button></span>
+      <span style="font-size:12px;color:var(--paper-70)">She proposes before she acts — you saw it in the aisle. Free rein and she simply looses.</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28)">WALKS WITH YOU SINCE DAY 2 · THE LANTERN &amp; EEL</span>
+    </div>
+
+    <div class="dosshead">
+      <div class="bigport">W</div>
+      <div style="flex:1;min-width:0">
+        <span class="eyebrow">Companion · The Silent Ford</span>
+        <h1>Wrenna</h1>
+        <div class="dline">SCOUT · RANGER 3 · SHE/HER · OUTLANDER · CHAOTIC GOOD</div>
+        <p class="dbio">Scout out of the salt marshes. Reads water the way other people read letters. Looking for her brother's name in the toll records — and hoping to be wrong about what it means.</p>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+          <span class="appr-band" style="border-color:var(--paper-45)">Holds you — guarded</span>
+          <span class="chip">speaks rarely and means it</span>
+          <span class="chip">calls the river "she"</span>
+        </div>
+      </div>
+      <div>
+        <div class="statrow" style="margin:0 0 10px">
+          <span class="stat"><span class="sl">STR</span><span class="sv">12</span><span class="sm">+1</span></span>
+          <span class="stat"><span class="sl">DEX</span><span class="sv">16</span><span class="sm">+3</span></span>
+          <span class="stat"><span class="sl">CON</span><span class="sv">13</span><span class="sm">+1</span></span>
+        </div>
+        <div class="statrow" style="margin:0">
+          <span class="stat"><span class="sl">INT</span><span class="sv">10</span><span class="sm">+0</span></span>
+          <span class="stat"><span class="sl">WIS</span><span class="sv">15</span><span class="sm">+2</span></span>
+          <span class="stat"><span class="sl">CHA</span><span class="sv">8</span><span class="sm">−1</span></span>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--paper-70);justify-content:space-between">
+          <span>AC <b style="color:var(--paper);font-size:15px">15</b></span>
+          <span>HP <b style="color:var(--paper);font-size:15px">21/24</b></span>
+          <span>HD <b style="color:var(--paper);font-size:15px">3/3</b></span>
+          <span>SPD <b style="color:var(--paper);font-size:15px">30</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheetgrid">
+      <div class="card">
+        <span class="eyebrow">Attacks</span>
+        <div style="margin-top:10px">
+          <div class="atkrow" style="border-top:none"><b>Longbow</b><span>+6</span><span>1d8+3 piercing · 150 ft</span></div>
+          <div class="atkrow"><b>Shortsword</b><span>+5</span><span>1d6+3 piercing</span></div>
+        </div>
+        <hr class="hr" style="margin:12px 0"/>
+        <span class="eyebrow">Features</span>
+        <div style="margin-top:8px">
+          <div class="kv"><span>Favored enemy — the drowned</span><b>adv. tracking</b></div>
+          <div class="kv"><span>Natural explorer — rivers</span><b>always on</b></div>
+          <div class="kv"><span>Hunter's Mark</span><b>1st · +1d6</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="eyebrow">How she holds you</span>
+        <div class="alog" style="margin-top:8px">
+          <div class="ae up"><span class="aw">WARMED — DAY 13</span>you stood between her and the thrall-warden</div>
+          <div class="ae dn"><span class="aw">COOLED — DAY 12</span>the miller's boy was left behind at the ford</div>
+          <div class="ae up"><span class="aw">WARMED — DAY 12</span>you told her the truth about the ledger before she asked</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">NO SCORE, NO METER — YOU READ HER THE WAY SHE READS THE RIVER · WHAT SHE KEEPS HIDDEN STAYS HIDDEN</div>
+      </div>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:18px;letter-spacing:.06em">THE SAME SHEET COMPONENT AS YOURS — is_companion ONLY ADDS THE LEASH AND THE LEDGER OF WARMTH · UNDER TACTICAL AGENCY SHE LEVELS THROUGH THE SAME DOOR YOU DO</div>
+  </div>
+</section>
+
+<!-- ─── 17 · CODEX — discovery journal ─── -->
+<section class="screen scroll" id="s17" data-rail="camp" data-tab="codex">
+  <div class="screen-head">
+    <div><span class="eyebrow">Codex</span><h1>What the road has taught you</h1></div>
+    <span class="tag">grows as you play — nothing here you haven't earned</span>
+  </div>
+  <div class="cdx-tabs">
+    <button class="cdx-tab on">People<span class="cnt">6</span></button>
+    <button class="cdx-tab">Places<span class="cnt">4</span></button>
+    <button class="cdx-tab">Factions<span class="cnt">2</span></button>
+    <button class="cdx-tab">History<span class="cnt">0</span></button>
+    <button class="cdx-tab">Days<span class="cnt">14</span></button>
+    <input placeholder="search what you know…" aria-label="search the codex" style="margin-left:auto;width:220px;align-self:center;padding:7px 12px;font-size:12px"/>
+  </div>
+  <div class="pad" style="padding-top:24px">
+    <div class="cdx-grid">
+      <div class="card cdx-card">
+        <div class="cn">Warden Ilse Marrow</div>
+        <div class="cb">Keeps the toll bridge and the ledger, and prices things that shouldn't have prices. Knows more about the chapel key than she has said.</div>
+        <span class="cm">FIRST MET — DAY 3 · BRACKEN FORD</span>
+      </div>
+      <div class="card cdx-card">
+        <div class="cn">The Ferryman</div>
+        <div class="cb">Poles the crossing when the bridge is closed. Never seen eating, never seen sleeping. Takes payment only in things that were owned a long time.</div>
+        <span class="cm">FIRST MET — DAY 5 · THE CROSSING</span>
+      </div>
+      <div class="card cdx-card">
+        <div class="cn">Brother Casimir</div>
+        <div class="cb">Last brother of the drowned chapel. Stayed for the bells. His faith is smaller than it was and more precise.</div>
+        <span class="cm">FIRST MET — DAY 8 · MILLER'S RISE</span>
+      </div>
+      <div class="card cdx-card">
+        <div class="cn">Wrenna</div>
+        <div class="cb">Scout out of the salt marshes. Reads water. Looking for a name in the toll records and won't say whose — but you know now.</div>
+        <span class="cm">FIRST MET — DAY 2 · THE LANTERN &amp; EEL</span>
+      </div>
+    </div>
+    <div style="margin-top:30px;max-width:520px">
+      <span class="eyebrow">History — nothing recorded yet</span>
+      <p class="prose" style="font-size:15px;font-style:italic;color:var(--paper-45);margin-top:8px">The town's past keeps its own counsel. Dig, and this page will fill.</p>
+    </div>
+    <div class="card" style="margin-top:30px;max-width:560px;padding:18px 22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span class="eyebrow">The Days tab — the trail's ledger</span>
+        <span class="tag">one entry per in-game day · click a day, read its summary</span>
+      </div>
+      <div style="margin-top:10px">
+        <div class="kv" style="border-top:none"><span><b style="font-family:var(--mono);font-size:10px;color:var(--verm-hi);margin-right:10px">DAY 14</b>The chapel, the ledger, the counting dark</span></div>
+        <div class="kv"><span><b style="font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-right:10px">DAY 13</b>Miller's Rise burns its fields against the fog</span></div>
+        <div class="kv"><span><b style="font-family:var(--mono);font-size:10px;color:var(--paper-45);margin-right:10px">DAY 12</b>Ilse Marrow names her price for the chapel key</span></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--paper-28);margin-top:10px;letter-spacing:.06em">GET …/calendar — DAY SUMMARIES IN ORDER · WRITTEN WHEN A DAY TURNS, NEVER REWRITTEN</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 18 · EXPLORATION MAP — the signature payoff ─── -->
+<section class="screen" id="s18" data-rail="camp" data-tab="map">
+  <div class="screen-head" style="padding-bottom:10px">
+    <div><span class="eyebrow">Map</span><h1>Drawn from where you've been</h1></div>
+    <span class="tag">edges from location connections — the frontend lays them out</span>
+  </div>
+  <div style="flex:1;position:relative;min-height:0;background:var(--bg) var(--contour)">
+    <svg viewBox="0 0 900 480" style="width:100%;height:100%" aria-label="exploration map — discovered locations">
+      <path class="ng-edge" d="M170 350 C 240 320, 300 300, 360 270"/>
+      <path class="ng-edge" d="M360 270 C 420 230, 460 200, 520 180"/>
+      <path class="ng-edge" d="M360 270 C 400 320, 450 340, 510 330"/>
+      <path class="ng-edge dash" d="M520 180 C 600 150, 660 140, 720 120"/>
+      <path class="ng-edge dash" d="M510 330 C 590 340, 650 360, 700 390"/>
+      <g class="ng-node visited">
+        <circle class="disc" cx="170" cy="350" r="15"/>
+        <text class="ng-lab" x="170" y="385" text-anchor="middle">Bracken Ford</text>
+        <text class="ng-sub" x="170" y="399" text-anchor="middle" fill="#E7E2D4" fill-opacity=".38">DAY 1 · THE TOLL TOWN</text>
+      </g>
+      <g class="ng-node visited">
+        <circle class="disc" cx="360" cy="270" r="15"/>
+        <text class="ng-lab" x="360" y="305" text-anchor="middle">Old Toll Bridge</text>
+        <text class="ng-sub" x="360" y="319" text-anchor="middle" fill="#E7E2D4" fill-opacity=".38">DAY 5 · PAID ONCE</text>
+      </g>
+      <g class="ng-node visited">
+        <circle class="disc" cx="510" cy="330" r="15"/>
+        <text class="ng-lab" x="510" y="365" text-anchor="middle">Miller's Rise</text>
+        <text class="ng-sub" x="510" y="379" text-anchor="middle" fill="#E7E2D4" fill-opacity=".38">DAY 8 · THE FIRE, THE FAVOR</text>
+      </g>
+      <g class="ng-node here">
+        <circle class="ng-pulse" cx="520" cy="180" r="20"/>
+        <circle class="disc" cx="520" cy="180" r="15"/>
+        <text class="ng-lab" x="520" y="145" text-anchor="middle">The Drowned Chapel</text>
+        <text class="ng-sub" x="520" y="159" text-anchor="middle">YOU ARE HERE · DAY 12</text>
+      </g>
+      <g class="ng-node stub">
+        <circle class="disc" cx="720" cy="120" r="13"/>
+        <text class="ng-lab dim" x="720" y="94" text-anchor="middle">???</text>
+        <text class="ng-sub" x="720" y="150" text-anchor="middle" fill="#E7E2D4" fill-opacity=".3">"BEYOND THE BELLS — THE WEIR"</text>
+      </g>
+      <g class="ng-node stub">
+        <circle class="disc" cx="700" cy="390" r="13"/>
+        <text class="ng-lab dim" x="700" y="424" text-anchor="middle">???</text>
+        <text class="ng-sub" x="700" y="438" text-anchor="middle" fill="#E7E2D4" fill-opacity=".3">"THE SALTMARSH TRACK"</text>
+      </g>
+    </svg>
+    <div class="card" style="position:absolute;right:26px;top:20px;width:250px;padding:16px 18px">
+      <span class="eyebrow verm">The Drowned Chapel</span>
+      <p style="font-size:12.5px;color:var(--paper-70);margin:8px 0 4px;line-height:1.5">First entered Day 12. Two threads run through here: the ledger, and the third bell.</p>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn dis" style="flex:1;padding:7px 0;font-size:12px">Travel</button>
+        <button class="btn" style="flex:1;padding:7px 0;font-size:12px">Recall notes</button>
+      </div>
+    </div>
+    <div style="position:absolute;left:26px;bottom:18px;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--paper-45)">
+      ● VISITED&nbsp;&nbsp;&nbsp;◌ HEARD OF&nbsp;&nbsp;&nbsp;<span style="color:var(--verm-hi)">◉ YOU ARE HERE</span>&nbsp;&nbsp;&nbsp;— SAME LANGUAGE AS THE COMBAT ZONES
+    </div>
+  </div>
+</section>
+
+<!-- ─── 19 · SETTINGS — mirrors resolved campaign settings ─── -->
+<section class="screen scroll" id="s19" data-rail="camp" data-tab="settings">
+  <div class="screen-head">
+    <div><span class="eyebrow">Settings</span><h1>How this table runs</h1></div>
+    <span class="tag">BALANCED · 2 CUSTOM — applies from the next turn</span>
+  </div>
+  <div class="pad setwrap">
+    <div class="setsec">
+      <span class="eyebrow">Agency preset</span>
+      <div class="radios">
+        <button class="radio"><span class="rn">Narrative</span><span class="rd">The story leads; checks stay backstage.</span></button>
+        <button class="radio sel"><span class="rn">Balanced</span><span class="rd">Dice when it matters.</span></button>
+        <button class="radio"><span class="rn">Tactical</span><span class="rd">Every roll on the table.</span></button>
+      </div>
+    </div>
+    <div class="setsec">
+      <span class="eyebrow">Death mode</span>
+      <span class="seg"><button>Pacifist</button><button class="on">Narrative</button><button>Hardcore</button></span>
+    </div>
+    <div class="setsec">
+      <span class="eyebrow">Content &amp; tone</span>
+      <div class="card" style="padding:4px 18px 14px">
+        <div class="trirow" style="border-top:none"><span class="tn">violence</span><span class="tri"><button>off</button><button>fade</button><button class="on">on</button></span></div>
+        <div class="trirow"><span class="tn">gore</span><span class="tri"><button>off</button><button class="on">fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">sexual content</span><span class="tri"><button class="on">off</button><button>fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">romance</span><span class="tri"><button>off</button><button class="lich-on">fade</button><button>on</button></span></div>
+        <div class="trirow"><span class="tn">horror</span><span class="tri"><button>off</button><button>fade</button><button class="on">on</button></span></div>
+        <div class="trirow"><span class="tn">substances</span><span class="tri"><button>off</button><button class="lich-on">fade</button><button>on</button></span></div>
+        <div style="margin:12px 0 4px"><span class="eyebrow">Hard lines</span>
+          <div style="margin-top:8px"><span class="chip warn">no harm to children ✕</span></div>
+        </div>
+        <div style="margin-top:12px"><span class="eyebrow">Tone note</span>
+          <input style="margin-top:8px" value="melancholy, but the jokes still land"/>
+        </div>
+      </div>
+    </div>
+    <div class="setsec">
+      <span class="eyebrow">Model tier — swap any time</span>
+      <div style="display:flex;align-items:center;gap:14px">
+        <span class="seg"><button>Local</button><button class="on">Balanced</button><button>Premium</button></span>
+        <span style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45)">TAKES EFFECT ON YOUR NEXT TURN</span>
+        <button class="btn quiet" style="font-size:11.5px" data-go="s03">manage plan →</button>
+      </div>
+    </div>
+    <div class="setsec">
+      <span class="eyebrow">Narration</span>
+      <span class="seg"><button>Terse</button><button class="on">Normal</button><button>Lush</button></span>
+    </div>
+    <div class="setsec">
+      <button class="adv">
+        <span><b style="color:var(--paper)">Advanced</b> — per-agent model overrides · companion agency · your reactions (ai / suggest / player) · passive checks</span>
+        <span style="font-family:var(--mono)">▾</span>
+      </button>
+    </div>
+    <hr class="hr"/>
+    <div class="setsec">
+      <span class="eyebrow">Appearance — this device, not this table</span>
+      <div class="swatches">
+        <button class="swatch cur" data-settheme="slate"><span class="dots"><span class="d" style="background:#141A1E"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#7E8F6E"></span></span>Slate survey</button>
+        <button class="swatch" data-settheme="lamplight"><span class="dots"><span class="d" style="background:#191510"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#8A9166"></span></span>Lamplight</button>
+        <button class="swatch" data-settheme="blackwood"><span class="dots"><span class="d" style="background:#121813"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#94A47D"></span></span>Blackwood</button>
+        <button class="swatch" data-settheme="gilt"><span class="dots"><span class="d" style="background:#14100A"></span><span class="d" style="background:#D6552B"></span><span class="d" style="background:#C9A04C"></span></span>Gilt</button>
+        <button class="swatch" data-settheme="daylight"><span class="dots"><span class="d" style="background:#E8E3D2"></span><span class="d" style="background:#BC4720"></span><span class="d" style="background:#5C6B47"></span></span>Daylight</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 20 · RECAP + CHEATSHEET ─── -->
+<section class="screen scroll" id="s20" data-rail="camp" data-tab="play">
+  <div class="screen-head">
+    <div><span class="eyebrow">Session 9 · Day 14</span><h1>Previously, on The Silent Ford</h1></div>
+    <span class="tag">the doorway back in — shown when you resume, never mid-session</span>
+  </div>
+  <div class="pad">
+    <div class="prose" style="margin-bottom:30px">
+      <p>You crossed at Miller's Rise under a hunter's moon and paid Ilse Marrow's price for the chapel key — a memory, though she wouldn't say which one until it was gone. The chapel was flooded, the pews were full of black water, and the ledger under the altar cloth was dry as August. The last three entries are in your hand. The dates haven't happened yet. Then the candles went out, and something at the font began to count.</p>
+    </div>
+    <div class="cheats">
+      <div class="card">
+        <span class="eyebrow verm">Objective</span>
+        <p style="font-size:14px;font-weight:600;margin-top:10px;line-height:1.5">Reach the bell tower before the third bell rings.</p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Active threads</span>
+        <ul>
+          <li>The ledger names three of the drowned who still walk</li>
+          <li>Ilse's price — which memory did she take?</li>
+          <li>Wrenna's brother — a name in the toll records</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Where you can go</span>
+        <ul>
+          <li style="font-family:var(--mono);font-size:11.5px">chancel</li>
+          <li style="font-family:var(--mono);font-size:11.5px">flooded aisle</li>
+          <li style="font-family:var(--mono);font-size:11.5px">bell tower stair</li>
+          <li style="font-family:var(--mono);font-size:11.5px;color:var(--paper-45)">the weir lies beyond ···</li>
+        </ul>
+      </div>
+    </div>
+    <button class="btn primary big" style="margin-top:28px" data-go="s10">Return to the trail →</button>
+  </div>
+</section>
+
+<!-- ═══════════════════ E · MOMENTS ═══════════════════ -->
+<style>
+/* s21 level-up */
+.grant{display:flex;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line-soft);font-size:13px}
+.grant .gk{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--lichen);width:90px;flex-shrink:0}
+.lusteps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.lustep{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;padding:7px 14px;
+  border:1px solid var(--line);border-radius:20px;color:var(--paper-45)}
+.lustep.done{border-color:var(--lichen-40);color:var(--lichen)}
+.lustep.now{border-color:var(--verm);color:var(--verm-hi);background:var(--verm-14)}
+.asirow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.asipick{border:1px solid var(--line);border-radius:7px;background:var(--panel);padding:10px 16px;text-align:center}
+.asipick .an2{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--paper-45);display:block}
+.asipick .av2{font-family:var(--mono);font-size:15px;font-weight:700;display:block;margin-top:3px}
+.asipick.sel{border-color:var(--verm);background:var(--verm-14)}
+.asipick.sel .av2{color:var(--verm-hi)}
+/* s22 epilogue */
+.finstat{display:flex;gap:26px;font-family:var(--mono);font-size:10.5px;color:var(--paper-45);letter-spacing:.1em;flex-wrap:wrap;margin:18px 0}
+/* s23 loot — a spoils card riding the log, never a veil */
+.lrow{display:flex;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--line-soft);text-align:left}
+.lrow .ln{font-weight:600;font-size:13.5px}
+.lrow .lm{font-family:var(--mono);font-size:9.5px;color:var(--paper-45);display:block;margin-top:2px}
+.lrow .btn{margin-left:auto;flex-shrink:0}
+.spoils{border:1px solid var(--verm-30);border-radius:10px;background:var(--panel) var(--contour);
+  padding:20px 24px;margin:1.8em 0;font-family:var(--ui);font-size:14px;line-height:1.5}
+/* s25 reaction — an interrupt bar; the board stays in view */
+.reactbar{display:flex;align-items:center;gap:16px;padding:12px 22px;border-top:1px solid var(--verm);
+  background:linear-gradient(0deg,var(--verm-14),var(--panel));flex-wrap:wrap;animation:riseup .4s ease-out both}
+.reactbar .rq{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--paper);line-height:1.6}
+.reactbar .rq b{color:var(--verm-hi)}
+.reactbar .rtimer{font-family:var(--mono);font-size:10px;color:var(--verm-hi);flex-shrink:0}
+</style>
+
+<!-- ─── 21 · LEVEL-UP — level_up_pending → choices ─── -->
+<section class="screen scroll" id="s21" data-rail="camp" data-tab="character">
+  <div class="screen-head">
+    <div><span class="eyebrow verm">The threshold is crossed · XP 2890 · level 4 waits at 2700</span><h1>Ser Aldric sharpens</h1></div>
+    <span class="tag">allowed mid-combat — the rules say so, the fiction copes</span>
+  </div>
+  <div class="pad settle">
+    <div class="lusteps">
+      <span class="lustep done">✓ ① HIT POINTS — AVERAGE TAKEN</span>
+      <span class="lustep now">② IMPROVE — OR SPECIALIZE</span>
+      <span class="lustep">③ SEAL — FIGHTER 4</span>
+    </div>
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span class="eyebrow lich">The preview names the asks — nothing more is shown</span>
+        <span class="tag">GET …/level-up — same door as the POST, asked first</span>
+      </div>
+      <div style="margin-top:8px">
+        <div class="grant" style="border-top:none"><span class="gk">HIT POINTS</span><span>+1d10 — roll it or take the average of 6, +2 CON either way</span></div>
+        <div class="grant"><span class="gk">THE CHOICE</span><span>Level 4 is an improvement rung — ability points, or a feat in their place</span></div>
+        <div class="grant"><span class="gk">NOT ASKED</span><span style="color:var(--paper-45)">No new features, no spells, no subclass — Aldric chose Champion at 3 · proficiency holds at +2 · what a level doesn't ask for never appears here</span></div>
+      </div>
+    </div>
+    <div class="knob">
+      <div class="knob-h"><span class="n">①</span><span class="t">Hit points — decided</span></div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span class="chip good">AVERAGE — 6 + 2 CON = +8 · HP 31 → 39</span>
+        <button class="btn quiet" style="font-size:11.5px">change — roll the d10 instead</button>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--paper-28);letter-spacing:.06em">ROLLING OPENS THE SAME DICE MODAL — YOUR d10, WITNESSED</span>
+      </div>
+    </div>
+    <div class="knob">
+      <div class="knob-h"><span class="n">②</span><span class="t">Improve — or specialize</span></div>
+      <div class="radios">
+        <button class="radio sel"><span class="rn">Ability points</span><span class="rd">Two points, each +1 or one +2 — the engine holds the arithmetic.</span></button>
+        <button class="radio"><span class="rn">A feat</span><span class="rd">Sentinel · Tough · Great Weapon Master — the SRD list, engine-validated.</span></button>
+      </div>
+      <div class="asirow">
+        <button class="asipick sel"><span class="an2">STR</span><span class="av2">16 → 17</span></button>
+        <button class="asipick sel"><span class="an2">CON</span><span class="av2">14 → 15</span></button>
+        <button class="asipick"><span class="an2">DEX</span><span class="av2">13</span></button>
+        <button class="asipick"><span class="an2">WIS</span><span class="av2">12</span></button>
+        <button class="asipick"><span class="an2">CHA</span><span class="av2">10</span></button>
+        <button class="asipick"><span class="an2">INT</span><span class="av2">8</span></button>
+        <span style="align-self:center;font-family:var(--mono);font-size:9px;color:var(--paper-45);letter-spacing:.08em">2 OF 2 SPENT</span>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span class="eyebrow">When the preview asks for more — Isolde, wizard 2 → 3</span>
+        <span class="tag">casters only — the asks grow, the screen doesn't change shape</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:9.5px;color:var(--paper-45);letter-spacing:.12em;margin:14px 0 8px">spells_to_choose: 2 — NEW SPELLS, READ BEFORE COMMITTED</div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="skc sel">✓ Misty Step</button>
+        <button class="skc sel">✓ Web</button>
+        <button class="skc">Knock</button>
+        <button class="skc">Levitate</button>
+        <button class="skc">Invisibility</button>
+      </div>
+      <p style="font-size:12px;color:var(--paper-45);margin-top:12px;max-width:60ch">New spell slots appear on the sheet unasked — slots are arithmetic, not choices. When a level requires a subclass (wizards and druids at 2, most classes at 3), <span style="font-family:var(--mono);font-size:10.5px">subclass_required</span> flips and that step joins the walk. Clerics, sorcerers and warlocks settled theirs at creation.</p>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:24px">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--paper-28);letter-spacing:.06em">POST …/level-up · {hp_method, hp_roll?, asi | feat, new_spells?, subclass?} · UNDER TACTICAL AGENCY, COMPANIONS LEVEL THROUGH THIS SAME DOOR</span>
+      <button class="btn primary big" data-go="s15">③ Seal it — Fighter 4 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── 22 · EPILOGUE — campaign concluded, viewable as memory ─── -->
+<section class="screen scroll" id="s22" data-rail="pre" data-tab="campaigns">
+  <div class="screen-head">
+    <div><span class="eyebrow lich">The Hollow Vigil — concluded ✓</span><h1>The watch is ended</h1></div>
+    <span class="tag">read-only forever — the campaign is memory now</span>
+  </div>
+  <div class="pad">
+    <div class="prose" style="margin-bottom:8px">
+      <p>Isolde came down from the high tower on the forty-first morning carrying the lantern nobody had been able to light for a hundred years, and the siege simply — stopped. Not broken: <em>concluded</em>, the way a sentence concludes. The Reach held. The names of the ones it cost are cut into the vigil stone, Dorn's among them, and the stone was already waiting with room for exactly that many.</p>
+      <p>You are owed nothing further, and you owe nothing. That, in the Riverlands, is the rarest ending there is.</p>
+    </div>
+    <div class="finstat">
+      <span>3 ACTS</span><span>41 DAYS</span><span>9 SESSIONS</span><span>1 COMPANION ON THE STONE</span><span>THE TOWER STANDS</span>
+    </div>
+    <div class="minitrail" style="max-width:340px;margin-bottom:26px">
+      <span class="md done"></span><span class="ml done"></span>
+      <span class="md done"></span><span class="ml done"></span>
+      <span class="md done"></span><span class="ml done"></span><span class="md done"></span>
+    </div>
+    <div class="cardrow">
+      <div class="card" style="width:300px">
+        <span class="eyebrow">The record stays open</span>
+        <p style="font-size:12.5px;color:var(--paper-70);margin-top:8px;line-height:1.55">Codex, map, sheets, every session's prose — readable forever. Nothing more can be written.</p>
+        <button class="btn" style="width:100%;margin-top:14px" data-go="s17">Open the record →</button>
+      </div>
+      <div class="card" style="width:300px;border-color:var(--verm-30)">
+        <span class="eyebrow verm">When death ends it — hardcore</span>
+        <p style="font-size:12.5px;color:var(--paper-70);margin-top:8px;line-height:1.55">Same screen, darker heading: <span style="font-family:var(--mono);font-size:10.5px">status: ended_dead</span>. The trail keeps your cairn. Reads stay open; the world moves on without you.</p>
+      </div>
+    </div>
+    <button class="btn primary big" style="margin-top:28px" data-go="s04">Back to your campaigns →</button>
+  </div>
+</section>
+
+<!-- ─── 23 · LOOT — a spoils card rides the log; nothing blocks ─── -->
+<section class="screen" id="s23" data-rail="camp" data-tab="play">
+  <div class="vitals">
+    <span class="loc">The Drowned Chapel — flooded aisle</span>
+    <span class="vmeta">DAY 14 · THE BELL HAS STOPPED</span>
+    <span class="right"><span class="vmeta">ACT II</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <div class="pivot lich">Steel is sheathed</div>
+        <p>The warden folds at the knee-joints like a chair being put away, and the water takes it back without a ripple. For a long moment the nave is only rain and Casimir's breathing. Whatever held the thing upright has let go — and what it carried didn't go with it.</p>
+        <div class="spoils">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+            <span class="eyebrow verm">The warden yields</span>
+            <span style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.08em">ACTIONABLE WHILE THE FOE LIES HERE</span>
+          </div>
+          <div style="margin-top:8px">
+            <div class="lrow" style="border-top:none"><div><span class="ln">Bell-chain flail</span><span class="lm">1D8 BLUDGEONING · COLD TO THE TOUCH</span></div><button class="btn" style="padding:5px 14px;font-size:12px">Take</button></div>
+            <div class="lrow"><div><span class="ln">Verdigris key</span><span class="lm">STAMPED WITH THE TOLL-HOUSE SEAL</span></div><span class="chip good">taken</span></div>
+            <div class="lrow"><div><span class="ln">Coin, waterlogged</span><span class="lm">12 GP · 30 SP</span></div><button class="btn" style="padding:5px 14px;font-size:12px">Take</button></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn primary" style="padding:7px 18px;font-size:12.5px">Take the rest</button>
+            <button class="btn quiet" style="font-size:12.5px">Leave it</button>
+          </div>
+        </div>
+        <p>Wrenna drops from the chancel rail and wades over, arrow still nocked out of habit. <em>"The key first,"</em> she says. <em>"Dead men carry honest inventories."</em></p>
+      </div>
+    </div>
+    <aside class="fieldnotes">
+      <div class="fn-h">Field notes</div>
+      <div class="note good"><span class="t">00:19</span>combat ends — round 4</div>
+      <div class="note"><span class="t">00:19</span>xp — the warden weighs in</div>
+      <div class="note good"><span class="t">00:21</span>gained · verdigris key</div>
+      <div class="note"><span class="t">·</span>a result, not a decision — the spoils ride the log and never block · each take POSTs …/loot · the story can simply move on past them</div>
+      <div class="note dm"><span class="t">now</span>the water settles<span class="dots"></span></div>
+    </aside>
+  </div>
+  <div class="band">
+    <div class="avatar">A</div>
+    <div class="who"><span class="nm">Ser Aldric</span><br/><span class="cl">FIGHTER 3 · AC 17</span></div>
+    <div class="hpwrap">
+      <div class="hpline"><span>HP</span><span><b>19</b> / 31</span></div>
+      <div class="hpbar"><i style="width:61%"></i></div>
+    </div>
+    <span class="sep"></span>
+    <span class="chip warn">Exhaustion 1</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <div class="mini guarded"><div class="avatar">W</div><span class="mood">guarded</span></div>
+      <div class="mini warm"><div class="avatar">C</div><span class="mood">warm</span></div>
+    </div>
+  </div>
+  <div class="inputbar">
+    <input placeholder="Ask about the key, or walk away — the card doesn't hold the story hostage." aria-label="your action"/>
+    <button class="sendbtn" aria-label="send">→</button>
+  </div>
+</section>
+
+<!-- ─── 24 · SPELL PREP — the last page of the long rest, not a popup ─── -->
+<section class="screen" id="s24" data-rail="camp" data-tab="play">
+  <div class="vitals">
+    <span class="loc">The Drowned Chapel — bell tower landing</span>
+    <span class="vmeta">DAY 15 · DAWN · THE RIVER IS LOWER</span>
+    <span class="right"><span class="tag">prepared casters only — shown from Isolde's table, for the spec</span></span>
+  </div>
+  <div class="playbody">
+    <div class="prosecol">
+      <div class="prose">
+        <div class="pivot lich">Long rest — the day turns</div>
+        <p>Morning arrives the way it does after bad nights — embarrassed, and too bright. The fire is ash, the bells are silent, and for the first time since the ford the water below the landing is moving the right way. Isolde's book lies open on her knees, pages blank of intention.</p>
+        <div class="spoils" style="border-color:var(--lichen-40)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap">
+            <span class="eyebrow lich">The book reopens — prepare 5</span>
+            <span style="font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.08em">INT MOD + WIZARD LEVEL</span>
+          </div>
+          <div style="margin-top:8px">
+            <div class="sprow prepped" style="border-top:none"><span class="spn">Mage Armor</span><span style="color:var(--paper-45)">1st</span><span class="spm">8 HOURS · SELF</span></div>
+            <div class="sprow prepped"><span class="spn">Sleep</span><span style="color:var(--paper-45)">1st</span><span class="spm">5d8 HP OF CREATURES</span></div>
+            <div class="sprow prepped"><span class="spn">Shield</span><span style="color:var(--paper-45)">1st</span><span class="spm">REACTION · +5 AC</span></div>
+            <div class="sprow prepped"><span class="spn">Misty Step</span><span style="color:var(--paper-45)">2nd</span><span class="spm">BONUS · 30 FT</span></div>
+            <div class="sprow prepped"><span class="spn">Web</span><span style="color:var(--paper-45)">2nd</span><span class="spm">CONCENTRATION</span></div>
+            <div class="sprow"><span class="spn" style="color:var(--paper-45);font-weight:400">Detect Magic — in the book, resting</span><span class="spm">RITUAL</span></div>
+            <div class="sprow"><span class="spn" style="color:var(--paper-45);font-weight:400">Feather Fall — in the book, resting</span><span class="spm">REACTION</span></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn primary" style="padding:7px 18px;font-size:12.5px" data-go="s10">Seal the day's prayers</button>
+            <button class="btn quiet" style="font-size:12.5px" data-go="s10">Keep yesterday's</button>
+          </div>
+        </div>
+        <p><em>The road is waiting, and so is the table — but this page turns first.</em></p>
+      </div>
+    </div>
+    <aside class="fieldnotes">
+      <div class="fn-h">Field notes</div>
+      <div class="note good"><span class="t">06:12</span>rest · long — applied</div>
+      <div class="note good"><span class="t">06:12</span>hp restored · slots restored</div>
+      <div class="note good"><span class="t">06:12</span>exhaustion 1 → 0</div>
+      <div class="note"><span class="t">06:12</span>prepared list — cleared · the book asks again</div>
+      <div class="note"><span class="t">·</span>the last page of the long rest, not a popup · POST …/prepare-spells — count and class-legality checked · known-spell casters skip straight to the road</div>
+      <div class="note dm"><span class="t">now</span>the morning holds<span class="dots"></span></div>
+    </aside>
+  </div>
+  <div class="band">
+    <div class="avatar">I</div>
+    <div class="who"><span class="nm">Isolde</span><br/><span class="cl">WIZARD 3 · AC 12</span></div>
+    <div class="hpwrap">
+      <div class="hpline"><span>HP</span><span><b>17</b> / 17</span></div>
+      <div class="hpbar"><i style="width:100%"></i></div>
+    </div>
+  </div>
+  <div class="inputbar">
+    <input placeholder="The day begins when the book is sealed — or kept." disabled aria-label="input waits for spell preparation"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
+  </div>
+</section>
+
+<!-- ─── 25 · REACTION — an interrupt bar; the board stays in view ─── -->
+<section class="screen" id="s25" data-rail="camp" data-tab="play">
+  <div class="initstrip">
+    <span class="round">ROUND 3</span>
+    <span class="init"><span class="avatar">W</span>Wrenna <span class="iv">19</span></span>
+    <span class="init foe" style="border-color:var(--verm)"><span class="avatar">T</span><b>Thrall-warden</b> <span class="iv" style="color:var(--verm-hi)">16 · ACTING</span></span>
+    <span class="init"><span class="avatar" style="border-color:var(--verm)">A</span>Ser Aldric <span class="iv">14</span></span>
+    <span class="init"><span class="avatar">C</span>Casimir <span class="iv">11</span></span>
+    <span class="init foe down"><span class="avatar">t</span>Drowned thrall <span class="iv">8 · down</span></span>
+  </div>
+  <div class="combatbody">
+    <div class="combatlog">
+      <div class="prose">
+        <p>The warden weighs you for a moment longer — then turns, chain trailing, and hauls itself out of the flooded aisle toward the tower stair. It has somewhere to be, and it has decided you are not it.</p>
+      </div>
+      <div class="clog-tick" style="border-left-color:var(--verm)"><b>the round holds its breath</b> — a reaction is yours to spend</div>
+    </div>
+    <div class="zonewrap">
+      <svg viewBox="0 0 440 320" style="flex:1;min-height:0" aria-label="the warden leaves the flooded aisle toward the stair">
+        <path class="zedge" d="M150 222 L192 178"/>
+        <path class="zedge" d="M225 118 L218 92"/>
+        <path d="M290 172 C 306 184, 316 192, 326 202" stroke="var(--verm)" stroke-width="2" fill="none" marker-end="none" stroke-dasharray="5 4"/>
+        <text class="zdist" x="330" y="178" text-anchor="middle" fill="var(--verm-hi)" style="fill:var(--verm-hi)">← IT MOVES</text>
+        <g class="zg here">
+          <path class="zr" d="M52 232 C 44 200, 66 182, 104 178 C 146 174, 168 196, 164 232 C 160 266, 132 284, 94 280 C 64 277, 58 258, 52 232 Z"/>
+          <text class="zname" x="106" y="222" text-anchor="middle">Nave</text>
+          <text class="zocc you" x="106" y="237" text-anchor="middle">◉ YOU · CASIMIR</text>
+        </g>
+        <g class="zg foezone">
+          <path class="zr" d="M186 172 C 176 146, 190 122, 222 114 C 258 105, 284 122, 288 150 C 292 176, 272 194, 240 198 C 212 201, 194 192, 186 172 Z"/>
+          <text class="zname" x="237" y="148" text-anchor="middle">Flooded aisle</text>
+          <text class="zocc" x="237" y="163" text-anchor="middle">✕ WARDEN — LEAVING YOUR REACH</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M172 78 C 166 50, 186 30, 220 26 C 252 22, 274 38, 276 62 C 278 84, 258 96, 226 98 C 196 100, 178 94, 172 78 Z"/>
+          <text class="zname" x="223" y="56" text-anchor="middle">Chancel</text>
+          <text class="zocc" x="223" y="71" text-anchor="middle">● WRENNA — longbow</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M318 216 C 312 192, 328 176, 358 172 C 390 168, 410 182, 412 206 C 414 230, 396 244, 364 246 C 336 248, 322 236, 318 216 Z"/>
+          <text class="zname" x="364" y="202" text-anchor="middle">Bell tower stair</text>
+          <text class="zocc" x="364" y="217" text-anchor="middle">WHERE IT'S HEADED</text>
+          <text class="zattr haz" x="364" y="231" text-anchor="middle">⚠ HAZARD — ROTTEN BEAM</text>
+        </g>
+      </svg>
+      <div class="zonecap">
+        <span>YOU CAN SEE WHY IT MATTERS — THAT'S WHY THIS IS A BAR, NOT A CURTAIN</span>
+        <span class="tag dep">reaction engine — planned; AI allies and foes decide for themselves</span>
+      </div>
+    </div>
+  </div>
+  <div class="reactbar">
+    <span class="rq"><b>THE WARDEN LEAVES YOUR REACH</b> — FLOODED AISLE → BELL TOWER STAIR.<br/>YOUR LONGSWORD CAN CATCH IT ON THE WAY OUT.</span>
+    <span class="chip good">RECOMMENDED — TAKE THE SWING</span>
+    <span class="rtimer">⏱ 6s — SILENCE TAKES THE RECOMMENDATION</span>
+    <div style="display:flex;gap:10px;margin-left:auto">
+      <button class="btn primary" style="padding:7px 18px;font-size:12.5px" data-go="s12">Take the opportunity attack</button>
+      <button class="btn quiet" style="font-size:12.5px" data-go="s12">Let it go</button>
+    </div>
+  </div>
+  <div class="inputbar">
+    <input placeholder="A terse mechanical interrupt, never narration — the round's prose lands after it resolves." disabled aria-label="input paused while the round holds"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
+  </div>
+  <div style="padding:6px 22px 10px;font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.06em;background:var(--bg)">reaction_prompt SSE → POST …/reactions · MAY FIRE MORE THAN ONCE A ROUND · YOUR SETTING — ai / suggest / player — DECIDES HOW OFTEN YOU'RE ASKED · ON TIMEOUT THE RECOMMENDATION APPLIES</div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var btns = Array.prototype.slice.call(document.querySelectorAll('.sw-btn'));
+  var screens = Array.prototype.slice.call(document.querySelectorAll('.screen'));
+  var railPre = document.getElementById('rail-pre');
+  var railCamp = document.getElementById('rail-camp');
+
+  function show(id){
+    if (!document.getElementById(id)) return;
+    screens.forEach(function(s){ s.classList.toggle('active', s.id === id); });
+    btns.forEach(function(b){ b.classList.toggle('active', b.dataset.s === id); });
+    var sec = document.getElementById(id);
+    var rail = sec.dataset.rail;
+    railPre.classList.toggle('show', rail === 'pre');
+    railCamp.classList.toggle('show', rail === 'camp');
+    var tab = sec.dataset.tab;
+    var railEl = rail === 'pre' ? railPre : railCamp;
+    Array.prototype.slice.call(document.querySelectorAll('.rail .tab')).forEach(function(t){
+      t.classList.toggle('on', railEl.contains(t) && t.dataset.tab === tab);
+    });
+    if (sec.classList.contains('scroll')) sec.scrollTop = 0;
+    try { history.replaceState(null, '', '#' + id); } catch(e){}
+  }
+
+  btns.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.s); }); });
+
+  // in-app navigation — any element with data-go jumps to that screen
+  Array.prototype.slice.call(document.querySelectorAll('[data-go]')).forEach(function(el){
+    el.addEventListener('click', function(e){ e.stopPropagation(); show(el.dataset.go); });
+  });
+  // rail tabs navigate too
+  var TABMAP = {campaigns:'s04', account:'s02', play:'s10', character:'s15', party:'s16', codex:'s17', map:'s18', settings:'s19'};
+  Array.prototype.slice.call(document.querySelectorAll('.rail .tab')).forEach(function(t){
+    t.addEventListener('click', function(){ if (TABMAP[t.dataset.tab]) show(TABMAP[t.dataset.tab]); });
+  });
+  // forge — the step trail switches panels
+  Array.prototype.slice.call(document.querySelectorAll('[data-fstep]')).forEach(function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.slice.call(document.querySelectorAll('.step')).forEach(function(s){ s.classList.toggle('now', s === b); });
+      Array.prototype.slice.call(document.querySelectorAll('.fstep')).forEach(function(p){ p.classList.toggle('on', p.dataset.fpanel === b.dataset.fstep); });
+    });
+  });
+
+  var THEMES = ['slate','lamplight','blackwood','gilt','daylight'];
+  var themeBtn = document.getElementById('themebtn');
+  function setTheme(name){
+    if (THEMES.indexOf(name) < 0) name = 'slate';
+    if (name === 'slate') document.body.removeAttribute('data-theme');
+    else document.body.setAttribute('data-theme', name);
+    themeBtn.textContent = '◐ ' + name;
+    Array.prototype.slice.call(document.querySelectorAll('[data-settheme]')).forEach(function(s){
+      s.classList.toggle('cur', s.dataset.settheme === name);
+    });
+    try { localStorage.setItem('cairn-v4-theme', name); } catch(e){}
+  }
+  themeBtn.addEventListener('click', function(){
+    var cur = document.body.getAttribute('data-theme') || 'slate';
+    setTheme(THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length]);
+  });
+  Array.prototype.slice.call(document.querySelectorAll('[data-settheme]')).forEach(function(s){
+    s.addEventListener('click', function(){ setTheme(s.dataset.settheme); });
+  });
+  try { setTheme(localStorage.getItem('cairn-v4-theme') || 'slate'); } catch(e){}
+
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    var cur = btns.findIndex(function(b){ return b.classList.contains('active'); });
+    var next = e.key === 'ArrowRight' ? Math.min(cur + 1, btns.length - 1) : Math.max(cur - 1, 0);
+    show(btns[next].dataset.s);
+  });
+
+  var start = (location.hash || '#s00').slice(1);
+  show(document.getElementById(start) ? start : 's00');
+})();
+</script>
+</body>
+</html>
