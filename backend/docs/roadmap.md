@@ -245,6 +245,8 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - ✅ **Slice 10.7** — reimagined & locked (MCP server + tool registry; **server** direction only — expose the stateful engine outward; tools are already MCP-shaped (context-by-param, own DB session); tagged **auto-discovery registry** (`@register(tags=…)`) replaces the fragile hand-maintained `ALL_TOOLS`/`COMBAT_TOOLS` — subsets are tag-derived, a guard test forbids unregistered tools; symmetric-pair **consolidation** ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp` on FastAPI, single process; **one `@tool` def → two projections**, no `mcp/` folder, no internal dogfooding; **no auth** in Phase A behind `MCP_ENABLED`, auth+internet exposure gated to Phase B).
 - ✅ **Slice 13** — reimagined & locked (world-bible RAG; **pgvector-in-Postgres, no Qdrant, no GraphRAG** — corpus is small + hand-authored + tagged; hybrid dense + Postgres FTS + tag boost fused with RRF, local FastEmbed embedder + cross-encoder reranker (`RERANK_ENABLED`), two concurrent retrievals with scene-scoped lore cache; cross-campaign echoes deferred).
 
+- ✅ **Plans & entitlements — GRILL COMPLETE, locked as Slice 14.5** (grilled 2026-07). The monetization/entitlement layer **above** Slice 10's model-tier mechanism + Slice 14's auth. Two orthogonal axes: *who pays for inference* (hosted-capped vs BYOK-uncapped) and *entitlements* (plan gates max model tier · campaign count · image-gen · turns/day). Ladder = **Free / Plus / Pro** (plan names distinct from `local/balanced/premium` model tiers); BYOK orthogonal (uncaps model, lifts turns cap, feature caps still per-plan). **Entitlement-first** — plan model + enforcement now, manual assignment, checkout deferred to Phase B (Lemon Squeezy/Paddle MoR). Safety/content/RAG/builders/agency **never gated**. Corrects the Slice 10 tier-picker + Slice 15 billing-screen UI (now entitlement-gated). Phase B.
+
 **Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
 
 **PHASE A — Core app + frontend (do now):**
@@ -253,6 +255,7 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - ✅ **Reaction engine — reimagined & locked as Slice 10.5** (grilled 2026-07). Full scope (OA + Shield + Absorb + Counterspell + readied + Sentinel); **engine now owns to-hit** (`roll_attack`, revises Slice 9 cover-AC to hard); reaction bus + registry; **plan-then-execute combat** (deterministic/replayable); deterministic AI heuristics; `reaction_control` = suggest/player/ai via Slice 10; player round-trip via `reaction_prompt` SSE + `POST /reactions`; full nesting (LIFO, depth 4, economy-bounded); readied actions parsed once to structured triggers.
 - ✅ **MCP integration — reimagined & locked as Slice 10.7** (grilled 2026-07). **Server** direction chosen (expose the stateful engine; client deferred — nothing external to consume yet). Tagged auto-discovery **registry** replaces the hand-maintained tool lists (fixes the `ALL_TOOLS`-rot / forget-to-append smell) + symmetric-pair consolidation ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp`; one `@tool` def → two projections (no `mcp/` folder, no internal dogfooding); no auth in Phase A behind `MCP_ENABLED`, auth gated to Phase B.
 - ✅ **UI / frontend — GRILL COMPLETE, locked as Slice 15** (grilled 2026-07). **Full ground-up rebuild** of the temp reference (`Cairn App v2.html` → new `Cairn App v3.html`) into an accurate, replicable visual spec — *not* grilling frameworks. Direction locked: **"Cartographer's Table"** (waymarked-trail shell; reading-column + field-notes-margin play screen; pure-prose w/ margin ticks; modal dice; combat mode-switch w/ zone map; premade dossier + custom-forge creation; **discovered-locations node-map** as the signature; diegetic DM "thinking"; approval bands w/ no raw number; full Phase-B visual-only account/billing screens). Four backend deps surfaced (Weave agent, player-rolled death saves, portrait image-gen, template-browse endpoint). Full detail in Slice 15. **Definition of "core done": the app + frontend run on the dev machine and a full session is playable.** The visual spec is built: **`Cairn App v4.html`** (v3 + three review rounds; see Slice 15 Decisions 9–12).
+- ✅ **Frontend architecture / build — GRILL COMPLETE, locked as Slice 15.5** (grilled 2026-07). The *how* to Slice 15's *what*. Stack: **Vite + React 19 SPA · TanStack Router + Query · Zustand · Tailwind v4 · React Aria Components skinned by us (no shadcn-default kit) · React Flow maps · openapi-typescript · RHF+Zod · Motion · Vitest/RTL/MSW/Playwright · Biome**. SSE via `fetch`+`ReadableStream` (typed event union → tokens to Zustand, structured events to Query cache; reconnect = refetch, no backend dep). Auth deferred to Phase B behind a swappable `authProvider` seam (Phase A = `X-User-Id`). Hosting = Vercel Hobby for now (reversible). **The retired AWS deploy slice is nuked; a budget-correct VPS deploy slice is still to be written (Phase B).**
 
 **PHASE B — Production hardening (deferred until Phase A is playable locally):**
 
@@ -261,7 +264,7 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - **Security.** Prompt-injection defense, jailbreak/abuse handling, PII/output filtering, secret management, rate/spend abuse. **Read ref:** `AI Security.md`.
 - **Auth + cost controls** (old Slice 14).
 - **Ops hardening + evals** (old Slices 11, 12).
-- **Sound / audio.** Ambient/scene audio, SFX — scope TBD.
+- **Sound / audio.** Ambient/scene audio + a sound-design content pass — scope TBD. (The UI/game **sound layer/plumbing** — soundcn — lands in Slice 15.5; this Phase-B item is the richer ambient/scene audio on top.)
 
 **Also pending / cross-cutting:** rewrite the stale day-1 intro ("What's running today" etc.) to reflect reality post-6; decide final slice numbering/ordering (lean: insert named slices, don't renumber, to preserve cross-references); the deploy-arch ADR (Phase B).
 
@@ -1693,7 +1696,7 @@ Client renders "Companion proposes: X — Confirm / Override." Confirm → execu
 
 **Build — UI (rendering deferred to the UI slice):**
 
-- Slice 10's UI obligation: expose resolved settings + preset tag + raw overrides via the routes above. **Captured for the UI slice:** a settings tab — preset radios, a model-tier picker, per-category content toggles (`off`/`fade`/`on`) + a `lines`/`tone_note` box, verbosity selector, collapsible **advanced** section for per-agent `model_overrides` and per-companion agency sliders.
+- Slice 10's UI obligation: expose resolved settings + preset tag + raw overrides via the routes above. **Captured for the UI slice:** a settings tab — preset radios, a model-tier picker (**entitlement-gated — see Slice 14.5**: tiers above the user's plan render locked with an upgrade CTA; `local` shows only when BYOK/local is configured), per-category content toggles (`off`/`fade`/`on`) + a `lines`/`tone_note` box, verbosity selector, collapsible **advanced** section for per-agent `model_overrides` and per-companion agency sliders.
 
 **Decide (locked 2026-07):**
 
@@ -1911,7 +1914,7 @@ _Reimagined post-6 (grilled 2026-07). Depends on: Slice 9 + Slice 10.5 (the comb
 
 ### Slice 11 — Operational hardening
 
-_Depends on: nothing strict. Run before Slice 12 (events for evals); before Slice 15 (SSE for frontend); before Slice 16 (cost controls in prod)._
+_Depends on: nothing strict. Run before Slice 12 (events for evals); before Slice 15 (SSE for frontend)._
 
 Single-purpose slice batching operational bugs and infra prep.
 
@@ -2076,9 +2079,87 @@ _Depends on: nothing strict. Must be done before Slice 15._
 
 ---
 
+### Slice 14.5 — Plans & entitlements
+
+_Depends on: Slice 10 (`llm.tier` mechanism + `resolve_settings`/`validate_overrides`), Slice 14 (Clerk `user_id`, per-user rate limiting, cost tracking, BYOK key storage). Must be done before the billing UI in Slice 15._
+
+The **monetization / entitlement layer** that sits *above* Slice 10's model-tier mechanism. Slice 10 built the machinery to run a campaign at `local | balanced | premium`; this slice decides **which of those a given user is allowed to pick**, plus the feature caps. Nothing here invents new gameplay — it gates existing levers by subscription plan. **Entitlement-first: this slice ships the plan model + enforcement only; real checkout is deferred (Phase B).** Plans are assigned manually (admin/seed) until then.
+
+**Two orthogonal axes (the mental model).** Keep these separate or the design collapses into confusion:
+
+- **Axis A — who pays for inference.** *Hosted* (our API keys; usage capped by plan) vs *BYOK/local* (user's own key or Ollama URL from Slice 14; the user pays for tokens, so their **model quality is uncapped** and their **turns/day cap is lifted** — abuse-limiting only).
+- **Axis B — entitlements.** The plan gates **max model tier**, **campaign count**, **image-gen**, and **turns/day** (hosted-only). BYOK changes Axis A but a BYOK user's Axis-B caps (campaigns, image-gen) **still follow their plan** — "local setup but upgraded" = bring your own inference *and* pay us for features.
+
+**Naming:** subscription **plans** are named distinctly from Slice 10's **model tiers** (`local/balanced/premium`) to avoid collision — a *plan* maps to a *max model tier*, it is not one.
+
+**Plan ladder (v1):**
+
+| Plan | Max model tier | Campaigns | Turns/day (hosted) | Image-gen |
+|---|---|---|---|---|
+| **Free** | `balanced` | 1 | ~20 | — |
+| **Plus** | `balanced` | 3 | ~150 | ✓ |
+| **Pro** | `premium` | ∞-ish | high | ✓ |
+
+BYOK (any plan): model uncapped on the user's key, turns/day lifted; campaign + image-gen caps still per-plan. Free never burns much of our budget (cheap floor model + tight cap); safety/content controls, verbosity, RAG, builders, and companion agency are **never gated** — paywalling safety or narrative quality is off the table.
+
+**Build — plan catalog (config-as-code):**
+
+- `llm/../plans.yaml` (or `config/plans.yaml`) maps `plan → {max_model_tier, campaign_cap, turns_per_day, image_gen}`. Plans change rarely → config, **not** a DB table (same pattern as `models.yaml` `tiers:`).
+
+**Build — schema (`user_entitlements` table, Alembic):**
+
+- Keyed by Clerk `user_id` (Slice 14). Columns: `user_id` (PK), `plan: enum(free|plus|pro)` default `free`, `plan_assigned_at`, `notes`. BYOK-configured state is **derived** from Slice 14's key storage, not duplicated here.
+- Rows created lazily (missing row ⇒ treat as `free`). Manual assignment for now via admin route / seed.
+
+**Build — entitlements service (`services/entitlements.py`):**
+
+- `get_entitlements(user_id) -> Entitlements` — reads plan from `user_entitlements` (default `free`), looks up caps in `plans.yaml`, then overlays BYOK effects (has-own-key ⇒ `max_model_tier` uncapped, `turns_per_day` lifted). **Single source of truth**; every enforcement point reads it. `Entitlements` is a `cairn/types.py` TypedDict.
+
+**Build — enforcement points (wire into existing seams):**
+
+- **Model tier cap** — Slice 10's `validate_overrides` rejects a PATCH selecting `llm.tier` above `entitlements.max_model_tier` (**402** + `upgrade_hint`). `resolve_settings` **also clamps defensively**: if a user's plan was downgraded under an existing campaign, the campaign keeps playing at the max allowed tier — it never errors mid-play. BYOK ⇒ no clamp.
+- **Turns/day** — Slice 14's per-user rate limiter reads `entitlements.turns_per_day` instead of a hardcoded value; BYOK lifts it.
+- **Campaign count** — `POST /v1/campaigns` counts the owner's campaigns vs `entitlements.campaign_cap` → **402** with `upgrade_hint` when over.
+- **Image-gen** — the (Phase-B) generate-portrait endpoint checks `entitlements.image_gen`; gallery + upload stay free for all.
+
+**Build — routes:**
+
+- `GET /v1/me/entitlements` — resolved entitlements for the current user (UI reads this to gate pickers + show upgrade CTAs).
+- `GET /v1/plans` — public plan catalog from `plans.yaml` (drives the pricing/billing screen).
+- `PATCH /v1/admin/users/{user_id}/plan` — manual plan assignment, `is_admin`-gated (Slice 14 dep #8). Minimal; the self-serve upgrade flow is Phase B.
+
+**Build — UI obligations (captured for Slice 15):**
+
+- **Corrects Slice 10's settings model-tier picker (line ~1697):** tiers above `max_model_tier` render **locked with an upgrade CTA**, not freely selectable — you pick any tier *≤ your plan's max*. `local` appears only when BYOK/local is configured (Slice 14), never as a free hosted option.
+- **Corrects Slice 15's Phase-B billing screens:** they render the concrete `GET /v1/plans` ladder + current plan + what each unlocks (no longer placeholder).
+- Campaign-create and generate-portrait affordances show cap state and surface the `upgrade_hint` on 402.
+
+**Decide (locked 2026-07):**
+
+1. **Tier = a hosted bundle** of model quality + feature limits; BYOK/local is a separate escape hatch, not a plan.
+2. **Free = hard-capped hosted** (cheapest hosted model, tight daily cap, 1 campaign) — zero setup to play, bounded spend.
+3. **BYOK is orthogonal** — unlocks model quality on the user's dime; feature caps still follow the plan; turns/day cap is hosted-only.
+4. **Entitlement-first** — ship the plan model + enforcement now; manual assignment; checkout deferred to Phase B (Lemon Squeezy / Paddle merchant-of-record when it lands, to offload VAT for a solo dev — not raw Stripe).
+5. **3 plans — Free / Plus / Pro** per the ladder above; plan names kept distinct from model-tier names.
+6. **Never gate** safety/content, verbosity, RAG, builders, or companion agency.
+
+**Verify:**
+
+- Free user PATCHing `llm.tier: premium` → 402 with `upgrade_hint`; Pro user → 200.
+- Free user creating a 2nd campaign → 402; Plus user → 200 up to 3.
+- Downgrade Pro→Free with a `premium` campaign live: `resolve_settings` clamps to `balanced`, campaign keeps playing, no 500.
+- BYOK user runs `premium` on their own key regardless of plan; not throttled by turns/day.
+- `GET /v1/me/entitlements` matches the assigned plan + BYOK state; `GET /v1/plans` returns the catalog.
+
+**Deferred / Phase B:** real checkout + self-serve upgrade (Lemon Squeezy/Paddle), proration, usage-based overages, per-provider cost accounting (Slice 14 idea), a cheaper-than-`balanced` "floor" model bundle for Free (not taken in v1 — Free runs `balanced` with tight caps).
+
+**Schema changes:** new `user_entitlements` table (Alembic). `plans.yaml` is config, not a migration.
+
+---
+
 ### Slice 15 — Frontend (UI reference rebuild)
 
-_Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v4.html` is the current spec** — v3 built + user review (Decision 9) + consistency audit (Decision 10) + second review / pattern rework (Decision 11) + third review — landing rebuilt as "the page is a session", 12b the drop, the Drafting Room admin surface (Decision 12); v2/v3 kept as history. → **Self-contained build brief (tokens + interaction principles + flow map + 30-screen inventory + build order): `docs/ui-temp-reference/v4-build-brief.md` — open that first to build.** Phase A (core). Depends on: the playable engine (Slices 1–10.7). **Auth is NOT a hard dep** — Phase A is single-user (`X-User-Id` header); the login/tiers screens are drawn **visual-only**, real auth + billing land in Phase B / Slice 14._
+_Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v4.html` is the current spec** — v3 built + user review (Decision 9) + consistency audit (Decision 10) + second review / pattern rework (Decision 11) + third review — landing rebuilt as "the page is a session", 12b the drop, the Drafting Room admin surface (Decision 12); v2/v3 kept as history. → **Self-contained build brief (tokens + interaction principles + flow map + 30-screen inventory + build order): `docs/ui-temp-reference/v4-build-brief.md` — open that first to build.** Phase A (core). Depends on: the playable engine (Slices 1–10.7). **Auth is NOT a hard dep** — Phase A is single-user (`X-User-Id` header); the login/tiers screens are drawn **visual-only**, real auth lands in Phase B / Slice 14 and tiers + billing in Slice 14.5._
 
 **⚠️ Backend deps this slice surfaced (not pure-UI; track separately):**
 1. **Weave agent** — concept prompt → structured `bio`/`personality`/`voice_traits` for the custom-forge identity step (new agent + prompt + `models.yaml` entry).
@@ -2097,7 +2178,7 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v4.html` is the current sp
 - **Hierarchy:** `World` (setting + its lore = the "Codex"; `world_bible_entry` + `world_lore_chunk` RAG) → `CampaignTemplate` (published scenario in a world, with `premade_characters` attached) → `Campaign` (owner's playthrough; `current_act_index`, `settings`, `member_ids`) → `Character` → `Session` → `Scene` (Act/Scene structure).
 - **Turn interaction:** `POST /v1/sessions/{id}/turns` → **SSE stream**; skill checks come back as a `check_required` event → player rolls client-side → `POST /v1/sessions/{id}/turns/{turn_id}/resolve` with the submitted d20 (+ `inspiration_roll` for advantage = take max). Rests: `POST …/short-rest`, `…/long-rest`. Combat state: `GET …/combat`.
 - **SSE event vocabulary (~30) the play screen must render:** `token`, `turn_start`, `turn_end`, `turn_advanced`, `check_required`, `roll_result`, `combat_started`, `combatant_added|removed|knocked_out`, `damage_applied`, `healing_applied`, `condition_applied|removed`, `effect_applied|removed`, `concentration_started|broken|check_passed`, `death_save_rolled`, `massive_damage_death`, `pc_death_recovered`, `campaign_ended`, `inspiration_granted|spent`, `time_advanced`, `character|monster|npc` (entity snapshots).
-- **Auth reality:** just an `X-User-Id` header today. Real auth (Clerk/JWT), tiers, billing = Phase B / Slice 14. The reference still *draws* login/tiers as visual-only.
+- **Auth reality:** just an `X-User-Id` header today. Real auth (Clerk/JWT) = Phase B / Slice 14; tiers + billing = Slice 14.5. The reference still *draws* login/tiers as visual-only.
 - **Zone dependency:** `combatant_moved` / `opportunity_attack` / `zones` events **do not exist yet** — Slice 9 (tactical zones) is reimagined-but-unbuilt. The **zone battle-map component depends on Slice 9 landing.** Until then, combat renders initiative + action economy + enemy states without positioning.
 
 #### LOCKED design decisions (grilled 2026-07)
@@ -2220,7 +2301,7 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v4.html` is the current sp
   - **Recap** — "previously on…" on resume, from `Session.summary` + `/calendar` day-summaries. Render existing data, no new endpoint.
   - **Cheatsheet** — UI-side "current state at a glance" aggregation: active threads (Scene `unresolved_threads`, Slice 8), current objective, reachable exits. Composed from data already on the wire.
   - **Exploration map (signature payoff of "Cartographer's Table"):** an **auto-laid-out node graph of *discovered* locations** — nodes = places visited, edges from `Location.connections` (adjacency-only, **no coordinates** → frontend lays it out), current location highlighted, unvisited-but-known exits shown as `???` stubs; click a node to inspect / travel. **Reuses the same node-graph visual language as the combat zone-map** (Decision 7) for consistency — the two maps are the visual through-line of the whole direction. Grows as you explore. This is the thematic core, not just polish; it earns the "Cartographer's Table" name. _(Real layout work — the biggest non-combat component; a force-directed / dagre-style auto-layout over the adjacency graph.)_
-- ~~**Phase-B visual-only**~~ — **RESOLVED 2026-07: draw the full set** (login · account/security · **tiers/billing**), all in the Cartographer's Table language, **clearly flagged "Phase B — not wired."** Purely design-language completeness; **no commercial model is committed** (auth = Slice 14; today the app runs on `X-User-Id` only; the $5–15/mo cap may never need billing). To keep it coherent, the billing tiers **map to Slice 10's model tiers** — Free → `local` (Ollama), paid tiers → `balanced` / `premium`. Names/prices are placeholder. These screens sit outside the playable path and are the last thing built.
+- ~~**Phase-B visual-only**~~ — **RESOLVED 2026-07: draw the full set** (login · account/security · **tiers/billing**), all in the Cartographer's Table language, **clearly flagged "Phase B — not wired."** Purely design-language completeness. **The billing model is now specified in Slice 14.5** (plan/entitlement layer): three plans **Free / Plus / Pro** (plan names are *not* the `local/balanced/premium` model tiers — a plan maps to a *max* model tier). Free = hosted `balanced` + 1 campaign + tight cap; Plus = `balanced` + more campaigns + image-gen; Pro = `premium`. `local` is **not** a free plan — it's the BYOK/local escape hatch (Slice 14). The tiers/billing screen renders `GET /v1/plans`; the settings model-tier picker is entitlement-gated (locked tiers show an upgrade CTA). Prices are placeholder. These screens sit outside the playable path and are the last thing built.
 - ~~**Deliverable mechanics**~~ — **RESOLVED 2026-07.** Deliverable = a new **`Cairn App v3.html`** in `docs/ui-temp-reference/project/`, keeping `Cairn App v2.html` alongside as history. **DM "thinking" = diegetic only:** during agent latency the field-notes margin shows an in-world shimmer ("the DM considers…", quill/dice motifs) with **no agent names and no pipeline exposed** — the v2 "DM Thinking" agent-status panel is **dropped**. The machinery stays invisible; the margin is field notes, not a debug console. (No dev-trace toggle in v3; not a Slice-10 setting.)
 
 ---
@@ -2261,16 +2342,116 @@ Implement the UI from the Claude Design handoff (`cairn-ui-light-reference` in r
 
 ---
 
-### Slice 16 — AWS deploy
+### Slice 15.5 — Frontend architecture & build (Phase A)
 
-_Depends on: Slice 15._
+_Grilled 2026-07. The **engineering companion to Slice 15**: Slice 15 locks **what the app looks like** (the "Cartographer's Table" visual spec — 30 screens, ~30 SSE events, 5 themes, the node-graph maps); this slice locks **how it's built** (framework, state, data flow, folder structure, production floor). It does not re-open any Slice-15 design decision. Depends on: the playable engine (Slices 1–10.7) for the REST + SSE surface; Slice 15 for the visual spec. **Auth is NOT a dependency** — Phase A runs on the `X-User-Id` shim (see decision 6)._
 
-**Build:**
+**Deliverable.** A `frontend/` app (sibling to `backend/` in the same repo) rendering the Slice-15 spec against the live engine, such that **a full session is playable end-to-end** (pick/forge a character → play turns with streaming prose + margin ticks → combat → rest → level-up), verified by a Playwright e2e run.
 
-- App Runner or ECS Fargate, Lambda, RDS Postgres, pgvector or S3 Vectors.
-- Eval suite runs against deployed env.
-- Spend caps + CloudWatch alarms before opening.
-- LoreKeeper durable queue (SQS) upgrade from in-process retry.
+#### Locked stack (grilled 2026-07)
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| Build / runtime | **Vite + React 19 + TypeScript**, pnpm, Node 22 LTS | Fast, standard, no meta-framework tax |
+| Routing | **TanStack Router** (SPA) | Type-safe routes; the "not Next" modern path; no SSR server to pay RAM for on the VPS |
+| Server state | **TanStack Query** | Cache/invalidation for all REST; pairs natively with the router |
+| Client state | **Zustand** | Thin store for session/streaming/theme — no Redux ceremony |
+| Styling | **Tailwind v4** | The 5 themes become `@theme` + `data-theme` CSS-var swaps — keeps the exact mockup tokens, zero hand-rolled CSS |
+| Primitives | **React Aria Components** (Adobe), skinned 100% in Tailwind | Unstyled → **no default look to read as "shadcn slop"**; best-in-class a11y/keyboard. No uniform component kit. |
+| Distinctive UI | Character-ful components cherry-picked **per-component** + **soundcn** for sound | Avoids the flat one-kit look; sound layer (fallback howler.js / use-sound) |
+| Forms | **React Hook Form + Zod** | The 8-step forge; Zod mirrors backend validation |
+| API types | **openapi-typescript** off FastAPI `/openapi.json` | Typed REST client generated from the backend — no drift |
+| Maps | **React Flow** (`@xyflow/react`) + custom node components + dagre/elk layout (d3-force optional) | Dedicated library, not hand-SVG; nodes are our React components → napkin/cartographer look, pan/zoom free |
+| Animation | **Motion** (Framer) | Mode-changes-under-narration, the drop, streaming reveals; `prefers-reduced-motion` honored |
+| Test | **Vitest + RTL + MSW + Playwright** | Playwright = the playable-session gate; MSW mocks REST *and* SSE |
+| Lint / format | **Biome** | One fast tool, replaces ESLint + Prettier |
+
+#### Locked decisions (the grill)
+
+1. **Rendering — Vite SPA, client-rendered.** The backend is a separate FastAPI service and the app is 100% behind-login + SSE-streaming, so Next / TanStack-Start SSR buys nothing and costs a Node server against the $5–10/mo cap. The one page wanting SEO — the "page is a session" landing — is **statically pre-rendered at build**.
+
+2. **SSE client — `fetch` + `ReadableStream`.** Turns are `POST`, so `EventSource` (GET-only) is out; a `fetch()` + `ReadableStream` reader parses SSE frames into **one typed discriminated union** over the ~30 event kinds. `token` events append to an ephemeral streaming buffer in Zustand; the ~29 structured events (`damage_applied`, `condition_applied`, `combatant_moved`, …) reduce into the **Query cache** (combat / character / scene), so the field-notes margin and combat board simply read Query data.
+   - **Reconnect = refetch, drop tokens.** On a mid-turn drop, Query refetches `/combat` `/character` `/scene` — mechanical truth never desyncs; the in-flight prose paragraph is lost. **No backend dependency.** (This resolves the roadmap's open *"SSE reconnect — replay from Turn.id?"* — full replay is **deferred**, not built.)
+
+3. **State split.** Query owns all server/persistent state; Zustand owns the ephemeral (streaming token buffer, active-turn status, theme, transient UI). Theme persists to `localStorage` (as the mockup already does — a per-device preference, never in the campaign settings payload).
+
+4. **Components — headless + our skin, no kit.** React Aria Components for behavior/a11y, skinned 100% in Tailwind from the mockup tokens; distinctive components cherry-picked per-component; sound via soundcn. Deliberately avoids the shadcn-default "LLM slop" look (we may reuse shadcn's *theming/registry plumbing*, never its component styles).
+
+5. **Maps — React Flow, custom nodes.** Both the combat **zone map** (3–6 nodes, static per fight, the DM's napkin sketch with cover/hazard icons + distance-labeled edges) and the **exploration map** (grows, needs pan/zoom, laid out from `Location.connections`) use React Flow with bespoke node components + auto-layout (dagre/elk; d3-force optional for organic drift). Backend sends **adjacency only, no coordinates** → the frontend lays out. The live zone-map data depends on **Slice 9** landing (`zones` / `combatant_moved` / `opportunity_attack` events); until then combat renders initiative + economy + states **without positioning**.
+
+6. **Auth — deferred to Phase B, seam built now.** Phase A: an `authProvider` returns the `X-User-Id` dev header → a playable session with **no users table**. Phase B (Slice 14): the same provider returns `Bearer <clerk-jwt>` → real login + `is_admin` (dep #8) as a **one-module swap**. The admin Drafting Room waits for Phase B.
+
+7. **Hosting — Vercel (Hobby) for now.** Static SPA on Vercel, API on the VPS. Split-origin, but header-auth (no cookies) reduces it to **a single CORS allowlist** on the API; SSE works cross-origin. Fully reversible in an afternoon to **Cloudflare Pages** (budget-safe: no non-commercial / $20-Pro catch) or **Caddy-on-VPS** (same-origin, no CORS). _A budget-correct deploy slice (single VPS + docker-compose + Caddy fronting the API, spend caps, eval-in-prod) **replaces the retired AWS deploy slice** and is still to be written._
+
+8. **API layer.** `openapi-typescript` generates types from the backend spec → a thin typed `fetch` client → hand-written TanStack Query hooks per feature. The SSE event union is **hand-typed** (SSE is not in OpenAPI).
+
+#### Folder structure
+
+```
+frontend/
+  src/
+    routes/            TanStack Router tree (lazy → route-level code-split)
+    features/
+      play/            reading column + field-notes margin, SSE turn loop
+      combat/          initiative, economy readout, React Flow zone map
+      character/       sheet, carried-ledger inventory, spellcasting
+      forge/           8-step creation (RHF + Zod), Weave assist, premade fast-path
+      codex/           discovery journal, days tab, search
+      party/           roster, companion sheet, approval band
+      campaign/        world/scenario browser, creation framing, recap
+      settings/        agency / death / content / model-tier
+      admin/           Drafting Room (visual in A; live in Phase B)
+    shared/
+      ui/              React Aria + Tailwind primitives (our skin)
+      api/             generated types, fetch client, SSE reader, Query hooks, authProvider
+      lib/             theme, sound, motion, formatting
+    styles/            Tailwind v4 config + the 5 theme CSS-var definitions
+  tests/e2e/           Playwright (playable-session gate)
+```
+
+#### Build order
+
+1. **Scaffold** — Vite + TS + Tailwind v4 + Biome + pnpm; the 5-theme CSS-var system from the mockup; the React Aria primitive skin in `shared/ui`.
+2. **API layer** — openapi-typescript codegen, typed fetch client, SSE reader + event union, Query setup, the `authProvider` seam (`X-User-Id`).
+3. **Shell** — TanStack Router tree, the waymarked rail, the statically pre-rendered landing.
+4. **Play** — reading column + margin, the SSE turn loop, dice modal, rules-noun inspect popovers.
+5. **Character** — forge (RHF + Zod), premade fast-path, the grown-up dossier sheet.
+6. **Combat** — the mode-switch, initiative, economy readout, React Flow zone map (live positions gated on Slice 9).
+7. **The rest** — codex, party, settings, campaign browser/recap, and the moments (level-up, epilogue, loot, spell-prep, reaction).
+8. **Admin** — the Drafting Room (visual; wired in Phase B).
+9. **Test + ship** — Vitest/RTL components, MSW fixtures, the Playwright playable-session e2e; CI gate; Sentry + source maps; deploy to Vercel.
+
+#### Verify
+
+- `pnpm build` → static bundle deploys to Vercel; the SPA loads against the VPS API with **one** CORS allowlist entry.
+- **Playable-session Playwright e2e (the definition of done):** pick a premade → start a campaign → submit a turn → prose streams token-by-token while mechanical ticks land in the margin → a skill check pops the dice modal, the roll submits, the outcome streams → combat begins (mode-switch, initiative, economy) → win → short rest → margin state correct throughout.
+- Simulated SSE drop mid-turn → board + margin refetch correct, no desync.
+- `tsc --noEmit`, Biome, and Vitest green in CI; route bundles code-split; `prefers-reduced-motion` disables Motion; keyboard-only navigation works (React Aria).
+
+#### Deferred (Phase B / later)
+
+- Real auth (Clerk) + users table + `is_admin` → the Drafting Room goes live (Slice 14 / dep #8).
+- Billing / tiers screens wired to a real model (visual-only in Phase A).
+- SSE full replay-from-`Turn.id` (backend per-turn event log + replay endpoint).
+- The Slice-15 backend deps #1–7 (Weave agent, player-rolled death saves, portrait image-gen, `GET /v1/campaigns/templates`, `GET /v1/srd/alignments`, subrace spell grants).
+- **A budget-correct deploy slice** (single VPS + docker-compose + Caddy fronting the API, spend caps, eval-in-prod) — replaces the retired AWS deploy slice.
+
+#### Backend-deps checklist (Slices 15 / 15.5)
+
+Consolidates every backend gap the UI grill surfaced, so the frontend isn't blocked mid-build. Build the **Phase-A blockers** before/alongside the frontend; the rest are Phase B or retired.
+
+| # | Dep | For | Status | Where / effort |
+|---|---|---|---|---|
+| 4 | **`GET /v1/campaigns/templates`** — worlds with scenarios nested (premise · length · premades · teaser lore) | Campaign browser / new-campaign flow | **Phase A — blocker** (can't start a campaign from the UI without it; dev can bootstrap via `make seed` in the meantime) | new route in `api/v1/routes/campaigns.py` |
+| 6 | **`GET /v1/srd/alignments`** — serve the existing `srd/alignments.json` | Forge alignment picker | **Phase A — trivial** | new route in `api/v1/routes/srd.py` |
+| 7 | **Subrace spell grants** — creation service applies subrace ability/prof bonuses but not racial spells (high-elf cantrip) | Forge correctness for spell-granting subraces | **Phase A — small** | character creation service in `domain/services/` |
+| 1 | **Weave agent** — concept prompt → structured `bio` / `personality` / `voice_traits` | Custom-forge AI assist | **Phase A — soft** (forge works with manual text; can land in parallel) | new `agents/weave.py` + `prompts/weave/v1.md` + `models.yaml` entry |
+| 2 | **Player-rolled death saves** — route `roll_death_save` through the client-roll → `/resolve` pattern (keep outcome logic) | Dice-modal death-save UX | **Phase A — soft** (auto-roll works today, but it's the wrong UX) | `domain/services/combat/rolls.py:65` + a `check_required`-style prompt |
+| 3 | **Portrait image-gen** — Replicate FLUX-schnell (~$0.003/img) | "Generate portrait" button | **Phase B** — flagged affordance; Gallery + Upload work in Phase A | new provider + key + image agent (from scratch) |
+| 8 | **Auth + `is_admin`** — no users table exists at all yet | Real login + the Drafting Room admin gate | **Phase B** (Slice 14) — Phase A runs on the `X-User-Id` shim | users table + Clerk + `is_admin` flag |
+| 5 | ~~Equipment slot taxonomy~~ | (drag-to-slot inventory) | **RETIRED** (Decision 11 — the carried ledger needs only `equipped` + SRD data) | — |
+
+**"Green light to build the frontend" = #4 done** (or bootstrap via seed for now); **#6 / #7** are quick wins; **#1 / #2** land in parallel with the forge / combat features that consume them. **#3 / #8** are Phase B; **#5** is dead.
 
 ---
 
