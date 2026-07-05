@@ -310,6 +310,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <button class="sw-btn" data-s="s11">11 dice</button>
   <button class="sw-btn" data-s="s26">12a into-combat</button>
   <button class="sw-btn" data-s="s12">12 combat</button>
+  <button class="sw-btn" data-s="s27">12b the-drop</button>
   <button class="sw-btn" data-s="s13">13 rest</button>
   <button class="sw-btn" data-s="s14">14 downed</button>
   <span class="sw-lab">D·PANELS</span>
@@ -325,6 +326,9 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <button class="sw-btn" data-s="s23">23 loot</button>
   <button class="sw-btn" data-s="s24">24 spell-prep</button>
   <button class="sw-btn" data-s="s25">25 reaction</button>
+  <span class="sw-lab">F·ADMIN</span>
+  <button class="sw-btn" data-s="s28">26 drafting</button>
+  <button class="sw-btn" data-s="s29">27 world-editor</button>
   <span class="sw-lab">·</span>
   <button class="sw-btn" id="themebtn" style="border:1px solid var(--line)">◐ slate</button>
 </nav>
@@ -345,6 +349,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <nav class="rail-tabs" style="margin-top:18px;border-top:1px solid var(--line-soft)">
     <button class="tab" data-tab="campaigns"><span class="tico">▲</span>Campaigns</button>
     <button class="tab" data-tab="account"><span class="tico">◍</span>Account</button>
+    <button class="tab" data-tab="drafting"><span class="tico">✎</span>Drafting Room<span style="margin-left:auto;font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--verm-hi);border:1px solid var(--verm-30);border-radius:3px;padding:1px 5px">ADMIN</span></button>
   </nav>
   <div style="padding:14px 18px;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--paper-28);line-height:1.7">THE CODEX IS CAMPAIGN MEMORY — IT LIVES INSIDE A CAMPAIGN, NEVER OUT HERE</div>
   <div class="rail-foot" style="margin-top:auto">
@@ -478,7 +483,8 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
 </style>
 
 <style>
-/* s00 landing — a scrollable trail; every waypoint is a real product moment */
+/* s00 landing — THE PAGE IS A SESSION: one campaign, performed at reading pace.
+   Scroll drives the reveal; the margin writes itself the way the codex does in play. */
 .landing{background:var(--bg) var(--contour)}
 .land-hero{min-height:calc(100vh - var(--sw-h));display:flex;flex-direction:column;align-items:center;
   justify-content:center;text-align:center;padding:60px 30px 80px;position:relative}
@@ -489,36 +495,77 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
 .scrollcue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-family:var(--mono);
   font-size:9px;letter-spacing:.22em;color:var(--paper-28);animation:cuedrift 2.8s ease-in-out infinite}
 @keyframes cuedrift{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
-/* the trail spine — a dashed line walking down the page, inked section by section */
-.land-way{max-width:880px;margin:0 auto;padding:0 30px 30px;position:relative}
-.land-way::before{content:"";position:absolute;left:50px;top:0;bottom:0;border-left:1.5px dashed var(--line)}
-.wayp{position:relative;padding:54px 0 54px 62px}
-.wayp::before{content:"";position:absolute;left:44.5px;top:66px;width:12px;height:12px;border-radius:50%;
-  background:var(--lichen);border:2px solid var(--bg);box-shadow:0 0 0 1.5px var(--lichen)}
-.wayp.here::before{background:var(--verm);box-shadow:0 0 0 1.5px var(--verm),0 0 0 6px var(--verm-14)}
+/* the spine — one dashed trail from the hero to the sign-up button */
+.land-way{max-width:940px;margin:0 auto;padding:0 30px 6px;position:relative}
+.land-way::before{content:"";position:absolute;left:50px;top:0;bottom:30px;border-left:1.5px dashed var(--line)}
+.wayp{position:relative;padding:46px 0 30px 62px}
+.wayp::before{content:"";position:absolute;left:44.5px;top:58px;width:12px;height:12px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--bg);box-shadow:0 0 0 1.5px var(--paper-28);
+  transition:background .6s ease,box-shadow .6s ease;z-index:1}
+.wayp.lit::before,.landing:not(.prep) .wayp::before{background:var(--lichen);box-shadow:0 0 0 1.5px var(--lichen)}
+.wayp.here.lit::before,.landing:not(.prep) .wayp.here::before{background:var(--verm);box-shadow:0 0 0 1.5px var(--verm),0 0 0 7px var(--verm-14)}
 .wayp .wno{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;color:var(--verm-hi);display:block;margin-bottom:8px}
 .wayp h2{font-family:var(--prose);font-size:28px;font-weight:600;letter-spacing:-.01em;margin-bottom:10px}
-.wayp .wlede{font-size:14px;color:var(--paper-70);line-height:1.65;max-width:58ch;margin-bottom:22px}
-/* the sample turn — the honest artifact */
-.turnsample{border:1px solid var(--line);border-radius:10px;background:var(--panel) var(--contour);
-  padding:26px 30px;max-width:640px}
-.turnsample .prose{font-size:16px;max-width:none}
+.wayp .wlede{font-size:14px;color:var(--paper-70);line-height:1.65;max-width:58ch}
+/* headline waypoints (no beat columns) reveal whole */
+.landing.prep .wayp:not(.beat){opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
+.landing.prep .wayp.lit:not(.beat){opacity:1;transform:none}
+/* a beat — one turn of the performed session: prose left, the margin inks in right */
+.beat{display:flex;gap:30px;align-items:flex-start}
+.beat .pr{flex:1;min-width:0}
+.beat .pr .prose{font-size:16px;max-width:none}
+.beat .mg{width:272px;flex-shrink:0;position:relative;margin-top:30px}
+.mg::before{content:"";position:absolute;left:-30px;top:30px;width:30px;border-top:1px dashed var(--verm-30)}
+.landing.prep .beat .pr{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+.landing.prep .beat .mg{opacity:0;transform:translateX(14px);transition:opacity .7s ease .5s,transform .7s ease .5s}
+.landing.prep .beat .mg::before{width:0;transition:width .45s ease 1.05s}
+.landing.prep .wayp.lit .pr{opacity:1;transform:none}
+.landing.prep .wayp.lit .mg{opacity:1;transform:none}
+.landing.prep .wayp.lit .mg::before{width:30px}
+.daychip{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--paper-45);
+  border:1px solid var(--line);border-radius:3px;padding:3px 10px;margin-bottom:16px}
 .tokens{display:inline}
-.tokens i{font-style:normal;opacity:0;animation:tok .01s forwards}
+.tokens i{font-style:normal;opacity:0}
+.wayp.lit .tokens i,.landing:not(.prep) .tokens i{animation:tok .01s forwards}
 @keyframes tok{to{opacity:1}}
-.samplenotes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
-/* memory row: codex card + mini map, side by side */
-.memrow{display:flex;gap:16px;flex-wrap:wrap;align-items:stretch}
-.memrow .card{flex:1;min-width:250px}
-/* rules-of-the-table mini knobs */
-.tablerow{display:flex;gap:12px;flex-wrap:wrap;max-width:640px}
+/* margin artifacts — the same components the app uses, not a lighter version */
+.mgcard{background:var(--panel) var(--contour);border:1px solid var(--line);border-radius:9px;padding:15px 17px}
+.mgcard+.mgcard{margin-top:12px}
+.mgcard .me{font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;color:var(--verm-hi);display:block;margin-bottom:8px}
+.mgcard .mn{font-weight:600;font-size:14px;display:block;margin-bottom:4px}
+.mgcard .mb{font-family:var(--prose);font-size:13.5px;line-height:1.55;color:var(--paper-70);display:block}
+.mgcard .mm{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;color:var(--paper-28);display:block;margin-top:10px;line-height:1.7}
+.mgcard .addline{border-left:2px solid var(--lichen);padding:2px 0 2px 10px;margin-top:9px}
+.mgcard .addline .at2{font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--lichen);display:block;margin-bottom:2px}
+.beatcap{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--paper-28);line-height:1.7;margin-top:10px}
+.mistrip{display:flex;flex-wrap:wrap;gap:5px}
+.mi{font-family:var(--mono);font-size:9px;letter-spacing:.06em;border:1px solid var(--line);border-radius:12px;padding:2px 9px;color:var(--paper-70)}
+.mi.foe2{border-style:dashed}
+.mi.act2{border-color:var(--verm-30);color:var(--verm-hi);background:var(--verm-14);border-style:solid}
+/* combat beat — the light drops a step around the row */
+.wayp.dusk::after{content:"";position:absolute;left:44px;right:-14px;top:32px;bottom:4px;
+  background:linear-gradient(180deg,var(--verm-14),transparent 80%);border-radius:14px;z-index:-1}
+/* rules of the table */
+.tablerow{display:flex;gap:12px;flex-wrap:wrap;max-width:700px;margin-top:20px}
 .tablecard{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:16px 18px}
 .tablecard .ct{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--verm-hi);display:block;margin-bottom:7px}
 .tablecard .cb{font-size:12.5px;color:var(--paper-45);line-height:1.55}
-.land-cta{text-align:center;padding:30px 30px 90px}
-.land-cta h2{font-family:var(--prose);font-size:30px;font-weight:600;margin-bottom:18px}
-.landfoot{border-top:1px solid var(--line-soft);padding:20px 30px 26px;text-align:center;
-  font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--paper-28)}
+/* the real footer — a colophon, not an afterthought */
+.bigfoot{border-top:1px solid var(--line);background:var(--panel) var(--contour);padding:46px 30px 28px;margin-top:56px}
+.bf-in{max-width:940px;margin:0 auto;display:flex;gap:44px;flex-wrap:wrap}
+.bf-brand{min-width:230px;flex:1.3}
+.bf-brand .tagline{font-family:var(--prose);font-style:italic;font-size:15px;color:var(--paper-70);margin:10px 0 8px}
+.bf-col{min-width:150px;flex:1}
+.bf-h{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--paper-45);margin-bottom:12px;text-transform:uppercase}
+.bf-a{display:block;font-size:12.5px;color:var(--paper-70);padding:3.5px 0;text-align:left}
+.bf-a:hover{color:var(--paper)}
+.bf-base{max-width:940px;margin:30px auto 0;padding-top:16px;border-top:1px solid var(--line-soft);
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--paper-28)}
+.bf-dots{display:flex;gap:7px;align-items:center}
+.bf-dot{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--line);padding:0}
+.bf-dot:hover{border-color:var(--paper-45)}
+.bf-dot.cur{border-color:var(--verm)}
 </style>
 
 <!-- ─── 00 · LANDING — the public face, a trail you scroll ─── -->
@@ -536,53 +583,100 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       <button class="btn primary big" data-go="s01">Start your expedition</button>
       <button class="btn big" data-go="s01">Sign in</button>
     </div>
-    <span class="scrollcue">▾ THE TRAIL CONTINUES</span>
+    <span class="scrollcue">▾ ONE CAMPAIGN, PERFORMED BELOW</span>
   </div>
 
   <div class="land-way">
-    <div class="wayp">
-      <span class="wno">WAYPOINT — THE TABLE</span>
-      <h2>You write a turn. The DM answers.</h2>
-      <p class="wlede">No menus, no verb buttons. You say what you do, in your own words, and the Dungeon Master narrates what the world does back — live, token by token. This is a real exchange, exactly as it renders in play:</p>
-      <div class="turnsample">
+    <div class="wayp" data-beat>
+      <span class="wno">WHAT FOLLOWS IS NOT A FEATURE LIST</span>
+      <h2>Eleven days at a river ford, in four turns.</h2>
+      <p class="wlede">Everything below is the actual table — same type, same components, same dice. The story moves at your reading pace, and the margin writes itself the way the codex does in play. Watch what the DM keeps.</p>
+    </div>
+
+    <div class="wayp beat" data-beat>
+      <div class="pr">
+        <span class="daychip">DAY 3 · BRACKEN FORD · FIRST LIGHT</span>
         <div class="prose">
-          <div class="you"><b>YOU</b> — I wade toward the altar and pull the waterlogged ledger out from under the cloth.</div>
-          <p>The ledger comes free with a sound like a held breath let go. Its pages should be pulp — they are dry. Ink crisp as the day it was set down, and the last three entries are written in a hand you recognize, <span class="tokens"><i style="animation-delay:.2s">because </i><i style="animation-delay:.45s">it </i><i style="animation-delay:.7s">is </i><i style="animation-delay:1s">yours.</i></span></p>
+          <p>The toll bridge is older than the town that grew up around it, and the chain across it is new. The woman holding the chain doesn't look up from her ledger. <em>"Warden Ilse Marrow,"</em> she says, as if the name were a fee. <em>"Crossing is two copper. <span class="tokens"><i style="animation-delay:.5s">Questions </i><i style="animation-delay:.75s">are </i><i style="animation-delay:1s">extra, </i><i style="animation-delay:1.3s">and </i><i style="animation-delay:1.5s">I </i><i style="animation-delay:1.7s">set </i><i style="animation-delay:1.9s">the </i><i style="animation-delay:2.1s">rate </i><i style="animation-delay:2.35s">after </i><i style="animation-delay:2.6s">I </i><i style="animation-delay:2.8s">hear </i><i style="animation-delay:3.05s">them."</i></span></em></p>
         </div>
-        <div class="samplenotes">
-          <span class="chip good">perception 17 vs DC 13 ✓</span>
-          <span class="chip">gained · waterlogged ledger</span>
-          <span class="chip">codex · The Drowned Chapel — updated</span>
+      </div>
+      <div class="mg">
+        <div class="mgcard">
+          <span class="me">WRITTEN TO THE CODEX — QUIETLY</span>
+          <span class="mn">Warden Ilse Marrow</span>
+          <span class="mb">Keeps the toll bridge and the ledger, and prices things that shouldn't have prices.</span>
+          <span class="mm">PERSON · FIRST MET DAY 3<br/>THE DM TOOK THIS NOTE — YOU DIDN'T HAVE TO</span>
         </div>
       </div>
     </div>
 
-    <div class="wayp">
-      <span class="wno">WAYPOINT — THE LEDGER</span>
-      <h2>The world writes down what you did.</h2>
-      <p class="wlede">Every person you meet, every place you reach, every day that turns becomes a page you can return to. Not a save file — a memory. Ask about someone from twelve sessions ago and the DM knows exactly what you owe each other.</p>
-      <div class="memrow">
-        <div class="card">
-          <span class="eyebrow">From a codex, mid-campaign</span>
-          <div style="font-weight:600;font-size:14.5px;margin:10px 0 5px">Warden Ilse Marrow</div>
-          <div style="font-family:var(--prose);font-size:14.5px;line-height:1.55;color:var(--paper-70)">Keeps the toll bridge and the ledger, and prices things that shouldn't have prices. Knows more about the chapel key than she has said.</div>
-          <span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28);display:block;margin-top:10px">FIRST MET — DAY 3 · NOTHING HERE YOU HAVEN'T EARNED</span>
+    <div class="wayp beat" data-beat>
+      <div class="pr">
+        <div class="prose">
+          <div class="you"><b>YOU</b> — I pay the two copper. Then I put down a silver and ask what the river took last spring.</div>
+          <p>The silver disappears without appearing to move. <em>"A ferry. Six souls. The river gave back five."</em> She meets your eyes for exactly as long as it takes that to land, and not a moment longer.</p>
         </div>
-        <div class="card" style="display:flex;flex-direction:column">
-          <span class="eyebrow">The map draws itself</span>
-          <svg viewBox="0 0 300 130" style="flex:1;margin-top:8px" aria-hidden="true">
-            <path class="ng-edge" d="M40 100 C 90 85, 130 75, 165 60"/>
-            <path class="ng-edge dash" d="M165 60 C 210 42, 245 38, 272 30"/>
-            <g class="ng-node visited"><circle class="disc" cx="40" cy="100" r="10"/><text class="ng-lab" style="font-size:10px" x="40" y="122" text-anchor="middle">Bracken Ford</text></g>
-            <g class="ng-node here"><circle class="disc" cx="165" cy="60" r="10"/><text class="ng-lab" style="font-size:10px" x="165" y="84" text-anchor="middle">The Chapel</text></g>
-            <g class="ng-node stub"><circle class="disc" cx="272" cy="30" r="8"/><text class="ng-lab dim" style="font-size:10px" x="272" y="52" text-anchor="middle">???</text></g>
-          </svg>
-          <span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--paper-28)">ONLY WHERE YOU'VE BEEN · RUMORS STAY DASHED</span>
+      </div>
+      <div class="mg">
+        <div class="mgcard">
+          <span class="me">FIELD NOTES — THE MARGIN OF PLAY</span>
+          <div class="note"><span class="t">DAY 3</span>toll paid · 2 copper, 1 silver</div>
+          <div class="note good"><span class="t">DAY 3</span>insight 14 vs DC 12 ✓ — she is leaving one soul out on purpose</div>
+          <div class="note"><span class="t">DAY 3</span>codex · Ilse Marrow — updated</div>
+        </div>
+        <div class="beatcap">THE d20 WAS YOURS — THE DM ONLY CALLED FOR IT</div>
+      </div>
+    </div>
+
+    <div class="wayp beat dusk" data-beat>
+      <div class="pr">
+        <span class="daychip" style="border-color:var(--verm-30);color:var(--verm-hi)">DAY 9 · THE CHAPEL ROAD · DUSK</span>
+        <div class="prose">
+          <p>The sixth soul finds you at dusk, and it has stopped pretending to be slow. It comes out of the reeds in two heaves of black water, and what the failing light finds of its face has been in the river since spring.</p>
+          <div class="pivot verm">Steel is drawn — round 1</div>
+          <p>Wrenna's arrow is nocked before your sword is clear. The order is set. <em>She goes first.</em></p>
+        </div>
+      </div>
+      <div class="mg">
+        <div class="mgcard">
+          <span class="me">THE PAGE BECOMES THE TABLE</span>
+          <div class="mistrip">
+            <span class="mi">WRENNA 19</span>
+            <span class="mi foe2 act2">THE DROWNED 16</span>
+            <span class="mi">YOU 14</span>
+            <span class="mi">CASIMIR 11</span>
+          </div>
+          <span class="mm">NO CUT, NO LOADING SCREEN — THE LIGHT DROPS A STEP, THE RIBBON SLIDES IN, THE PROSE KEEPS SCROLLING</span>
+        </div>
+        <div class="mgcard">
+          <div class="note bad"><span class="t">ROUND 2</span>hp 24 → 11 · the chain</div>
+          <div class="note good"><span class="t">ROUND 3</span>the drowned thing falls — your longsword, your dice</div>
         </div>
       </div>
     </div>
 
-    <div class="wayp">
+    <div class="wayp beat" data-beat>
+      <div class="pr">
+        <span class="daychip">DAY 14 · UNDER THE BRIDGE · RAIN</span>
+        <div class="prose">
+          <div class="you"><b>YOU</b> — Before we go under — remind me. What do I actually have on Marrow?</div>
+          <p>Eleven days of small facts and one paid-for silence. She prices things that shouldn't have prices. She knew the chapel key by its teeth before you ever showed it to her. And she still owes you the sixth soul's name — <span class="tokens"><i style="animation-delay:.5s">bought </i><i style="animation-delay:.72s">with </i><i style="animation-delay:.94s">silver </i><i style="animation-delay:1.18s">on </i><i style="animation-delay:1.36s">the </i><i style="animation-delay:1.54s">morning </i><i style="animation-delay:1.78s">you </i><i style="animation-delay:1.96s">met. </i><i style="animation-delay:2.5s">You </i><i style="animation-delay:2.68s">two </i><i style="animation-delay:2.86s">have </i><i style="animation-delay:3.06s">met </i><i style="animation-delay:3.26s">since, </i><i style="animation-delay:3.52s">on </i><i style="animation-delay:3.7s">the </i><i style="animation-delay:3.88s">chapel </i><i style="animation-delay:4.1s">road. </i><i style="animation-delay:4.6s">You </i><i style="animation-delay:4.8s">were </i><i style="animation-delay:5s">never </i><i style="animation-delay:5.28s">introduced.</i></span></p>
+        </div>
+      </div>
+      <div class="mg">
+        <div class="mgcard">
+          <span class="me">THE SAME CARD, ELEVEN DAYS ON</span>
+          <span class="mn">Warden Ilse Marrow</span>
+          <span class="mb">Keeps the toll bridge and the ledger, and prices things that shouldn't have prices.</span>
+          <div class="addline"><span class="at2">＋ DAY 8</span><span class="mb">Knew the chapel key before she saw it. Did not ask where it was found.</span></div>
+          <div class="addline"><span class="at2">＋ DAY 9</span><span class="mb">Owes an answer, paid for in silver: the sixth soul's name.</span></div>
+          <span class="mm">NOTHING HERE YOU DIDN'T EARN AT THE TABLE</span>
+        </div>
+        <div class="beatcap">THE DM DIDN'T REREAD A TRANSCRIPT — THE WORLD KEEPS A LEDGER, AND THE LEDGER KEEPS YOU</div>
+      </div>
+    </div>
+
+    <div class="wayp" data-beat>
       <span class="wno">WAYPOINT — YOUR RULES</span>
       <h2>Set the table once. Change it any evening.</h2>
       <p class="wlede">Death, tone, content lines, how loud the dice are, how much rope your companions get — the table runs your way, and every knob turns mid-campaign.</p>
@@ -593,10 +687,10 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       </div>
     </div>
 
-    <div class="wayp here">
-      <span class="wno" style="color:var(--verm-hi)">YOU ARE HERE</span>
-      <h2>The ford is waiting.</h2>
-      <p class="wlede">Pick a world, frame the telling, forge a character — or take up a ready blade and be playing in five minutes.</p>
+    <div class="wayp here" data-beat>
+      <span class="wno" style="color:var(--verm-hi)">YOU ARE HERE — THE TRAIL ENDS AT THE DOOR</span>
+      <h2>That one was played for the spec.<br/>Yours hasn't happened yet.</h2>
+      <p class="wlede" style="margin-bottom:22px">Pick a world, frame the telling, forge a character — or take up a ready blade and be playing in five minutes.</p>
       <div style="display:flex;gap:12px">
         <button class="btn primary big" data-go="s01">Start your expedition</button>
         <button class="btn big" data-go="s01">Sign in</button>
@@ -604,7 +698,50 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
     </div>
   </div>
 
-  <div class="landfoot">CAIRN · A WORLD THAT REMEMBERS</div>
+  <footer class="bigfoot">
+    <div class="bf-in">
+      <div class="bf-brand">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="22" height="24" viewBox="0 0 22 24" fill="none" aria-hidden="true">
+            <rect x="7" y="1" width="8" height="4" rx="2" fill="#D6552B"/>
+            <rect x="4.5" y="8" width="13" height="4.5" rx="2.2" fill="#E7E2D4" opacity=".85"/>
+            <rect x="2" y="15.5" width="18" height="5" rx="2.5" fill="#E7E2D4" opacity=".55"/>
+          </svg>
+          <span style="font-weight:700;font-size:15px;letter-spacing:.24em">CAIRN</span>
+        </div>
+        <div class="tagline">A world that remembers.</div>
+        <span style="font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--paper-28);line-height:1.8">AN AI DUNGEON MASTER THAT KEEPS THE LEDGER —<br/>SOLO D&amp;D 5E, PLAYED IN PROSE</span>
+      </div>
+      <div class="bf-col">
+        <div class="bf-h">The table</div>
+        <button class="bf-a" data-go="s01">Start an expedition</button>
+        <button class="bf-a" data-go="s01">Sign in</button>
+        <button class="bf-a" data-go="s03">Plans &amp; lantern oil</button>
+      </div>
+      <div class="bf-col">
+        <div class="bf-h">The rules of it</div>
+        <button class="bf-a">The dice are yours</button>
+        <button class="bf-a">Death means what you say</button>
+        <button class="bf-a">Hard lines hold</button>
+      </div>
+      <div class="bf-col">
+        <div class="bf-h">Colophon</div>
+        <button class="bf-a">Built on the 5e SRD · CC-BY-4.0</button>
+        <button class="bf-a">Privacy — your table is yours</button>
+        <button class="bf-a">Terms</button>
+      </div>
+    </div>
+    <div class="bf-base">
+      <span>© 2026 CAIRN · A WORLD THAT REMEMBERS</span>
+      <span class="bf-dots" role="group" aria-label="theme">
+        <button class="bf-dot" data-settheme="slate" style="background:#141A1E" title="slate" aria-label="slate theme"></button>
+        <button class="bf-dot" data-settheme="lamplight" style="background:#191510" title="lamplight" aria-label="lamplight theme"></button>
+        <button class="bf-dot" data-settheme="blackwood" style="background:#121813" title="blackwood" aria-label="blackwood theme"></button>
+        <button class="bf-dot" data-settheme="gilt" style="background:#14100A" title="gilt" aria-label="gilt theme"></button>
+        <button class="bf-dot" data-settheme="daylight" style="background:#E8E3D2" title="daylight" aria-label="daylight theme"></button>
+      </span>
+    </div>
+  </footer>
 </section>
 
 <!-- ─── 01 · LOGIN (Phase B, visual only) ─── -->
@@ -1416,6 +1553,11 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
 .dpip.s{background:var(--lichen);border-color:var(--lichen)}
 .dpip.f{background:var(--verm);border-color:var(--verm)}
 .dlab{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--paper-45);margin-right:8px}
+/* s27 the drop — death is a mode, not a modal: the board drains, the story keeps its ink */
+@keyframes boarddrain{to{filter:grayscale(1) brightness(.82);opacity:.55}}
+@keyframes stampin{0%{opacity:0;transform:scale(1.6) rotate(-16deg)}60%{opacity:1;transform:scale(.95) rotate(-8deg)}100%{opacity:.92;transform:scale(1) rotate(-8deg)}}
+.stamp{position:absolute;right:24px;bottom:60px;z-index:6;pointer-events:none;
+  animation:stampin .45s cubic-bezier(.2,1.4,.4,1) 2.1s both}
 </style>
 
 <!-- ─── 10 · PLAY — EXPLORATION (the hero) ─── -->
@@ -1691,6 +1833,102 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <div class="inputbar" style="padding-top:10px">
     <input placeholder="I put my shield into the warden and drive it back toward the stair — then cut low." aria-label="describe your turn"/>
     <button class="sendbtn" aria-label="send">→</button>
+  </div>
+</section>
+
+<!-- ─── 12b · THE DROP — hp hits 0: the board drains, the ribbon keeps moving ─── -->
+<section class="screen" id="s27" data-rail="camp" data-tab="play" style="position:relative;overflow:hidden">
+  <div class="initstrip">
+    <span class="round">ROUND 5</span>
+    <span class="init"><span class="avatar">W</span>Wrenna <span class="iv">19</span></span>
+    <span class="init foe" style="border-color:var(--verm-30);background:var(--verm-14)"><span class="avatar">T</span>Thrall-warden <span class="iv" style="color:var(--verm-hi)">16 · ACTING</span></span>
+    <span class="init down"><span class="avatar">A</span>Ser Aldric <span class="iv">14 · 0 HP</span></span>
+    <span class="init"><span class="avatar">C</span>Casimir <span class="iv">11</span></span>
+    <span class="init foe down"><span class="avatar">t</span>Drowned thrall <span class="iv">8 · slain</span></span>
+  </div>
+  <div class="combatbody">
+    <div class="combatlog">
+      <div class="prose" style="font-size:15.5px;max-width:none">
+        <div class="clog-tick"><b>Thrall-warden</b> — the chain arcs over the pews · 19 vs AC 17 — hit · 11 damage</div>
+        <p>The chain takes you across the temple and the world goes sideways. Black water closes over your ears. The cold is total, and very far away Casimir is shouting your name in a language you are suddenly too tired to remember.</p>
+        <div class="pivot verm">Ser Aldric falls — 0 HP</div>
+        <p>The color goes out of the chapel the way sound goes out of a struck bell. What is left is grey water and grey stone — and the one red thing remaining in the world, which is the ledger the river keeps. It has your name in it now. It is deciding what you owe.</p>
+        <div class="clog-tick">the round does not stop for you — <b>Casimir · 11</b> is two places down the ribbon, already wading</div>
+      </div>
+    </div>
+    <div class="zonewrap" style="position:relative">
+      <svg viewBox="0 0 440 320" style="flex:1;min-height:0;animation:boarddrain 2s ease-out .9s both" aria-label="the DM's sketch draining to grey">
+        <path class="zedge" d="M150 222 L192 178"/>
+        <text class="zdist" x="188" y="212" text-anchor="middle">CLOSE · 30FT ×2</text>
+        <path class="zedge" d="M225 118 L218 92"/>
+        <text class="zdist" x="262" y="108" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M282 165 L318 190"/>
+        <text class="zdist" x="302" y="164" text-anchor="middle">CLOSE · 30FT</text>
+        <path class="zedge" d="M262 52 L338 60"/>
+        <text class="zdist" x="300" y="44" text-anchor="middle">FAR · 60FT</text>
+        <g class="zg">
+          <path class="zr" d="M52 232 C 44 200, 66 182, 104 178 C 146 174, 168 196, 164 232 C 160 266, 132 284, 94 280 C 64 277, 58 258, 52 232 Z"/>
+          <text class="zname" x="106" y="222" text-anchor="middle">Nave</text>
+          <text class="zocc" x="106" y="237" text-anchor="middle">● CASIMIR — wading to you</text>
+          <text class="zattr" x="106" y="251" text-anchor="middle">NO COVER · OPEN WATERLINE</text>
+        </g>
+        <g class="zg here">
+          <path class="zr" d="M186 172 C 176 146, 190 122, 222 114 C 258 105, 284 122, 288 150 C 292 176, 272 194, 240 198 C 212 201, 194 192, 186 172 Z"/>
+          <text class="zname" x="237" y="148" text-anchor="middle">Flooded aisle</text>
+          <text class="zocc you" x="237" y="163" text-anchor="middle">◉ YOU — DOWN · ✕ WARDEN</text>
+          <text class="zattr" x="237" y="177" text-anchor="middle">DIFFICULT ×2 · KNEE-DEEP</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M172 78 C 166 50, 186 30, 220 26 C 252 22, 274 38, 276 62 C 278 84, 258 96, 226 98 C 196 100, 178 94, 172 78 Z"/>
+          <text class="zname" x="223" y="56" text-anchor="middle">Chancel</text>
+          <text class="zocc" x="223" y="71" text-anchor="middle">● WRENNA — longbow</text>
+          <text class="zattr cov" x="223" y="85" text-anchor="middle">HALF COVER +2 · HIGH GROUND</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M318 216 C 312 192, 328 176, 358 172 C 390 168, 410 182, 412 206 C 414 230, 396 244, 364 246 C 336 248, 322 236, 318 216 Z"/>
+          <text class="zname" x="364" y="202" text-anchor="middle">Bell tower stair</text>
+          <text class="zocc" x="364" y="217" text-anchor="middle">EMPTY</text>
+          <text class="zattr haz" x="364" y="231" text-anchor="middle">⚠ HAZARD — ROTTEN BEAM</text>
+        </g>
+        <g class="zg">
+          <path class="zr" d="M342 76 C 338 58, 350 46, 372 44 C 394 42, 408 52, 408 68 C 408 84, 394 92, 372 92 C 354 92, 346 88, 342 76 Z"/>
+          <text class="zname" x="374" y="62" text-anchor="middle">Belfry</text>
+          <text class="zocc" x="374" y="76" text-anchor="middle">EMPTY</text>
+          <text class="zattr" x="374" y="88" text-anchor="middle">OUT OF RANGE FROM THE NAVE</text>
+        </g>
+      </svg>
+      <div class="stamp" aria-hidden="true">
+        <svg width="106" height="106" viewBox="0 0 110 110" fill="none">
+          <circle cx="55" cy="55" r="50" stroke="var(--verm)" stroke-width="2.5" stroke-dasharray="3 2" opacity=".9"/>
+          <circle cx="55" cy="55" r="42" stroke="var(--verm)" stroke-width="1"/>
+          <circle cx="55" cy="46" r="15" fill="var(--verm-14)" stroke="var(--verm)" stroke-width="2"/>
+          <circle cx="49.5" cy="44" r="3.2" fill="var(--verm)"/>
+          <circle cx="60.5" cy="44" r="3.2" fill="var(--verm)"/>
+          <path d="M55 50 l-2.4 4.2 h4.8 z" fill="var(--verm)"/>
+          <path d="M48 62 v5.5 M55 63.5 v5.5 M62 62 v5.5" stroke="var(--verm)" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="55" y="88" text-anchor="middle" font-family="Space Mono" font-size="7" letter-spacing="2" fill="var(--verm)">DAY 14 · R5</text>
+        </svg>
+      </div>
+      <div class="zonecap">
+        <span>THE BOARD DRAINS — THE STORY KEEPS ITS INK · THE HAZARD MARK IS THE CARTOGRAPHER'S, NOT A GAME-OVER SCREEN</span>
+      </div>
+    </div>
+  </div>
+  <div class="deathband" style="animation:riseup .6s ease-out 2.6s both">
+    <div class="avatar" style="filter:grayscale(1);opacity:.7">A</div>
+    <div class="who"><span class="nm">Ser Aldric</span><br/><span class="cl" style="color:var(--verm-hi)">DYING — THE TRACK IS FRESH</span></div>
+    <div class="dpips"><span class="dlab">HOLDS</span><span class="dpip"></span><span class="dpip"></span><span class="dpip"></span></div>
+    <div class="dpips"><span class="dlab">FAILS</span>
+      <svg width="15" height="17" viewBox="0 0 20 22" aria-hidden="true"><circle cx="10" cy="8.6" r="6" stroke="var(--paper-28)" stroke-width="1.5" fill="none"/><circle cx="7.8" cy="8" r="1.3" fill="var(--paper-28)"/><circle cx="12.2" cy="8" r="1.3" fill="var(--paper-28)"/><path d="M7 15.2 v2.6 M10 16 v2.6 M13 15.2 v2.6" stroke="var(--paper-28)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg width="15" height="17" viewBox="0 0 20 22" aria-hidden="true"><circle cx="10" cy="8.6" r="6" stroke="var(--paper-28)" stroke-width="1.5" fill="none"/><circle cx="7.8" cy="8" r="1.3" fill="var(--paper-28)"/><circle cx="12.2" cy="8" r="1.3" fill="var(--paper-28)"/><path d="M7 15.2 v2.6 M10 16 v2.6 M13 15.2 v2.6" stroke="var(--paper-28)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg width="15" height="17" viewBox="0 0 20 22" aria-hidden="true"><circle cx="10" cy="8.6" r="6" stroke="var(--paper-28)" stroke-width="1.5" fill="none"/><circle cx="7.8" cy="8" r="1.3" fill="var(--paper-28)"/><circle cx="12.2" cy="8" r="1.3" fill="var(--paper-28)"/><path d="M7 15.2 v2.6 M10 16 v2.6 M13 15.2 v2.6" stroke="var(--paper-28)" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <button class="btn primary" style="margin-left:auto" data-go="s11">Make a death save →</button>
+    <span style="font-family:var(--mono);font-size:8.5px;color:var(--paper-45);letter-spacing:.06em;line-height:1.7">A MODE CHANGE, NOT A MODAL — THE RIBBON KEEPS MOVING, THE LEDGER RISES WHERE YOUR ACTIONS STOOD<br/>THE TABLE SETTLES INTO 14 · DOWNED — AND RUNS ALL OF THIS IN REVERSE AT 1 HP</span>
+  </div>
+  <div class="inputbar">
+    <input placeholder="The water counts. Casimir is two places down the order." disabled aria-label="input disabled while dying"/>
+    <button class="sendbtn" aria-label="send" style="opacity:.4">→</button>
   </div>
 </section>
 
@@ -2631,6 +2869,147 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
   <div style="padding:6px 22px 10px;font-family:var(--mono);font-size:8.5px;color:var(--paper-28);letter-spacing:.06em;background:var(--bg)">reaction_prompt SSE → POST …/reactions · MAY FIRE MORE THAN ONCE A ROUND · YOUR SETTING — ai / suggest / player — DECIDES HOW OFTEN YOU'RE ASKED · ON TIMEOUT THE RECOMMENDATION APPLIES</div>
 </section>
 
+<!-- ═══════════════════ F · THE DRAFTING ROOM (admin) ═══════════════════ -->
+<style>
+/* s28-s29 the drafting room — the workshop behind the shop; replaces cli/seed.py with a door */
+.drrow{display:flex;align-items:flex-start;gap:20px;width:100%;max-width:900px;text-align:left;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel) var(--contour);
+  padding:18px 22px;margin-bottom:12px}
+button.drrow:hover{border-color:var(--paper-45)}
+.drrow .wn2{font-family:var(--prose);font-size:19px;font-weight:600;display:block;margin-bottom:4px}
+.drrow .wsum{font-size:12px;color:var(--paper-45);line-height:1.5;display:block;max-width:52ch}
+.drrow .wchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.drrow .wstats{margin-left:auto;text-align:right;font-family:var(--mono);font-size:9px;
+  letter-spacing:.08em;color:var(--paper-45);line-height:1.9;flex-shrink:0}
+/* editor */
+.dr-split{display:flex;gap:26px;align-items:flex-start;max-width:1020px}
+.dr-list{width:264px;flex-shrink:0}
+.dr-group{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--paper-45);padding:14px 2px 5px}
+.dr-item{display:flex;align-items:baseline;justify-content:space-between;gap:8px;width:100%;text-align:left;
+  padding:7px 12px;border:1px solid transparent;border-radius:6px;font-size:12.5px;color:var(--paper-70)}
+.dr-item:hover{background:var(--paper-12);color:var(--paper)}
+.dr-item.sel{border-color:var(--verm);background:var(--verm-14);color:var(--paper);font-weight:600}
+.dr-item .emb{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;color:var(--lichen);flex-shrink:0}
+.dr-item .emb.pend{color:var(--verm-hi)}
+.dr-pane{flex:1;min-width:0}
+.fieldlab{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--paper-45);display:block;margin:16px 0 6px}
+</style>
+
+<!-- ─── 26 · DRAFTING ROOM — worlds, before any player sees them ─── -->
+<section class="screen scroll" id="s28" data-rail="pre" data-tab="drafting">
+  <div class="screen-head">
+    <div><span class="eyebrow verm">The Drafting Room · admin</span><h1>Worlds, before the players</h1></div>
+    <span class="tag dep">backend dep · auth + is_admin — today cli/seed.py writes these tables</span>
+  </div>
+  <div class="pad">
+    <button class="drrow" data-go="s29">
+      <span style="min-width:0">
+        <span class="wn2">The Riverlands</span>
+        <span class="wsum">Toll towns and drowned parishes along a river that keeps its own ledger. Low magic, long memory, debts that outlive the debtors.</span>
+        <span class="wchips">
+          <span class="chip good">The Silent Ford — published</span>
+          <span class="chip good">The Hollow Vigil — published</span>
+          <span class="chip warn">Salt &amp; Cinder — draft</span>
+        </span>
+      </span>
+      <span class="wstats">41 LORE CHUNKS · 39 EMBEDDED<br/>3 SCENARIOS · CALENDAR SET<br/>EDITED 2 DAYS AGO</span>
+    </button>
+    <button class="drrow">
+      <span style="min-width:0">
+        <span class="wn2">The Ashen Reach</span>
+        <span class="wsum">A frontier under a sky that burned once and might again. High sorcery, ruined roads, everything worth having is buried.</span>
+        <span class="wchips">
+          <span class="chip good">The Kiln Road — published</span>
+          <span class="chip good">Last Light — published</span>
+        </span>
+      </span>
+      <span class="wstats">38 LORE CHUNKS · 38 EMBEDDED<br/>2 SCENARIOS · CALENDAR SET<br/>EDITED IN MAY</span>
+    </button>
+    <button class="drrow" style="border-style:dashed;opacity:.85">
+      <span style="min-width:0">
+        <span class="wn2">The Undercroft Sea</span>
+        <span class="wsum">A sunless ocean under the mountains. Six paragraphs of canon and no doors in yet — nothing here a player could meet.</span>
+        <span class="wchips"><span class="chip warn">no published scenario — invisible to players</span></span>
+      </span>
+      <span class="wstats">6 LORE CHUNKS · 0 EMBEDDED<br/>0 SCENARIOS<br/>EDITED YESTERDAY</span>
+    </button>
+    <button class="drrow" style="border-style:dashed;justify-content:center;color:var(--paper-45);background:transparent">
+      <span style="font-size:13px;font-weight:600">+ Raise a new world</span>
+    </button>
+    <div style="max-width:900px;margin-top:14px;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--paper-28);line-height:1.8">PLAYERS BROWSE ONLY PUBLISHED SCENARIOS — status: draft | published ALREADY LIVES ON campaign_templates · A WORLD SHIPS THE DAY ITS FIRST SCENARIO DOES · THE ADMIN TAB EXISTS ONLY FOR ACCOUNTS WITH is_admin — EVERYONE ELSE NEVER SEES THIS ROOM</div>
+  </div>
+</section>
+
+<!-- ─── 27 · WORLD EDITOR — canon, chunk by chunk ─── -->
+<section class="screen scroll" id="s29" data-rail="pre" data-tab="drafting">
+  <div class="screen-head">
+    <div><span class="eyebrow verm">The Drafting Room · The Riverlands</span><h1>Canon, chunk by chunk</h1></div>
+    <span class="tag dep">worlds · world_lore_chunks · campaign_templates — same tables the seed writes</span>
+  </div>
+  <div class="pad">
+    <div class="dr-split">
+      <div class="dr-list">
+        <span class="eyebrow" style="display:block;padding:0 2px">The world's memory · 41 chunks</span>
+        <div class="dr-group">DEITY</div>
+        <button class="dr-item">The Weigher<span class="emb">✓</span></button>
+        <button class="dr-item">The Patient One<span class="emb">✓</span></button>
+        <div class="dr-group">FIGURE</div>
+        <button class="dr-item sel">Warden Ilse Marrow<span class="emb">✓</span></button>
+        <button class="dr-item">The Ferryman<span class="emb">✓</span></button>
+        <div class="dr-group">REGION</div>
+        <button class="dr-item">Bracken Ford<span class="emb">✓</span></button>
+        <button class="dr-item">The Drowned Parish<span class="emb pend">⋯ on save</span></button>
+        <div class="dr-group">HISTORY</div>
+        <button class="dr-item">The flood of '31<span class="emb">✓</span></button>
+        <div class="dr-group">FACTION</div>
+        <button class="dr-item">The Toll-Guild<span class="emb">✓</span></button>
+        <button class="dr-item" style="border:1px dashed var(--line);justify-content:center;margin-top:12px;color:var(--paper-45)">+ new chunk</button>
+      </div>
+      <div class="dr-pane">
+        <div class="card" style="padding:24px 26px">
+          <span class="fieldlab" style="margin-top:0">TITLE</span>
+          <input value="Warden Ilse Marrow" aria-label="chunk title"/>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px"><span class="fieldlab">KEY — STABLE SLUG</span><input value="figure_ilse_marrow" style="font-family:var(--mono);font-size:12px" aria-label="chunk key"/></div>
+            <div style="width:170px"><span class="fieldlab">CATEGORY</span>
+              <select aria-label="chunk category"><option>figure</option><option>faction</option><option>region</option><option>deity</option><option>history</option><option>custom</option></select>
+            </div>
+          </div>
+          <span class="fieldlab">CONTENT — WHAT THE DM MAY DRAW ON</span>
+          <textarea rows="7" aria-label="chunk content">Ilse Marrow has kept the toll bridge at Bracken Ford for thirty-one years and the true ledger for twenty-nine of them — the one under the counter, not the one travelers sign. She prices favors, silences and names, and never sells the same thing twice. She knows the chapel key by its teeth and what it opens by heart. The one thing she will not trade at any price is the name of the sixth soul from the ferry, which she is saving to settle a debt of her own.</textarea>
+          <span class="fieldlab">TAGS</span>
+          <input value="bridge, tolls, chapel-key, ledger" aria-label="chunk tags"/>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:18px;border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+            <span class="switch" role="switch" aria-checked="false" aria-label="always on" style="background:var(--paper-12)"></span>
+            <span style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--paper-45);line-height:1.7">ALWAYS-ON RIDES EVERY PROMPT — SPEND IT ON ALMOST NOTHING.<br/>EVERYTHING ELSE IS RETRIEVED ONLY WHEN THE TABLE REACHES FOR IT · THIS WORLD: 2 OF 41 ALWAYS ON</span>
+          </div>
+          <hr class="hr"/>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn primary">Save — re-embeds the chunk</button>
+            <button class="btn quiet">Delete</button>
+            <span class="chip good" style="margin-left:auto">EMBEDDED ✓</span>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;padding:22px 26px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <span class="eyebrow">Scenario — The Silent Ford</span>
+            <span class="chip good">PUBLISHED</span>
+          </div>
+          <div class="acttrail" style="margin-top:12px">
+            <div class="atw" style="border-top:none"><span class="an">ACT I</span><span class="at">The Crossing</span><span class="ad">core events · 3</span></div>
+            <div class="atw"><span class="an">ACT II</span><span class="at">What the River Keeps</span><span class="ad">core events · 4</span></div>
+            <div class="atw"><span class="an">ACT III</span><span class="at">The Weir</span><span class="ad">core events · 3</span></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <span class="chip">the toll is paid</span><span class="chip">a door opens that shouldn't</span><span class="chip">the first body comes back</span>
+          </div>
+          <div style="font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;color:var(--paper-28);margin-top:14px;line-height:1.8">acts: [{title, premise, core_events}] — THE PLAYER'S TRAIL VEILS EVERY ACT THEY HAVEN'T REACHED · UNPUBLISHING HIDES IT FROM NEW EXPEDITIONS ONLY — RUNNING CAMPAIGNS POINT AT THE TEMPLATE BY ID</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 </main>
 </div>
 
@@ -2665,7 +3044,7 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
     el.addEventListener('click', function(e){ e.stopPropagation(); show(el.dataset.go); });
   });
   // rail tabs navigate too
-  var TABMAP = {campaigns:'s04', account:'s02', play:'s10', character:'s15', party:'s16', codex:'s17', map:'s18', settings:'s19'};
+  var TABMAP = {campaigns:'s04', account:'s02', drafting:'s28', play:'s10', character:'s15', party:'s16', codex:'s17', map:'s18', settings:'s19'};
   Array.prototype.slice.call(document.querySelectorAll('.rail .tab')).forEach(function(t){
     t.addEventListener('click', function(){ if (TABMAP[t.dataset.tab]) show(TABMAP[t.dataset.tab]); });
   });
@@ -2676,6 +3055,18 @@ input::placeholder,textarea::placeholder{color:var(--paper-28)}
       Array.prototype.slice.call(document.querySelectorAll('.fstep')).forEach(function(p){ p.classList.toggle('on', p.dataset.fpanel === b.dataset.fstep); });
     });
   });
+
+  // landing — the session performs itself at reading pace
+  var landing = document.getElementById('s00');
+  if (landing && 'IntersectionObserver' in window) {
+    landing.classList.add('prep');
+    var lio = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting) { en.target.classList.add('lit'); lio.unobserve(en.target); }
+      });
+    }, {threshold:.25});
+    Array.prototype.slice.call(landing.querySelectorAll('[data-beat]')).forEach(function(w){ lio.observe(w); });
+  }
 
   var THEMES = ['slate','lamplight','blackwood','gilt','daylight'];
   var themeBtn = document.getElementById('themebtn');

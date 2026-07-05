@@ -43,7 +43,7 @@ These govern every screen; they exist because v3 over-used three patterns (card 
 
 ## Global shell — "Waymarked rail" (Decision 3, amended v4)
 
-Left nav-rail = the trail. **In-campaign:** live campaign trail on top (acts → waypoints; vermilion "you are here"); tabs: **Play · Character · Party · Codex · Map · Settings**. **Pre-campaign:** **Campaigns · Account** only — **the codex is campaign memory and never appears in the global rail** (v4 fix; it lives in the in-campaign tabs and, read-only, behind a concluded campaign's "Open the record").
+Left nav-rail = the trail. **In-campaign:** live campaign trail on top (acts → waypoints; vermilion "you are here"); tabs: **Play · Character · Party · Codex · Map · Settings**. **Pre-campaign:** **Campaigns · Account** — **the codex is campaign memory and never appears in the global rail** (v4 fix; it lives in the in-campaign tabs and, read-only, behind a concluded campaign's "Open the record"). Round 3 adds a third pre-campaign tab, **Drafting Room (marked ADMIN)** — rendered only for `is_admin` accounts (dep #8).
 
 ---
 
@@ -58,11 +58,13 @@ HOME (4)                                  rail: Campaigns · Account
   ├─ "+ Begin a new expedition" → WORLDS (5) → scenario → "Begin here" → NEW-CAMPAIGN (6)
   │     → "Create campaign" → CHOICE (7) → PREMADE (8) "Take this one" → PLAY (10)
   │                                      └→ FORGE (9) …list+pane steps… → PLAY (10)
-  └─ Account tab → ACCOUNT (2) → "Manage plan" → BILLING (3)
+  ├─ Account tab → ACCOUNT (2) → "Manage plan" → BILLING (3)
+  └─ Drafting Room tab (admin only) → DRAFTING ROOM (26) → world row → WORLD EDITOR (27)
 PLAY (10)                                 rail: trail + the six tabs
   ├─ check_required → DICE (11, overlay — the one true modal; also death saves from 14)
   ├─ combat begins mid-turn → INTO-COMBAT (12a, in-place transformation) → COMBAT (12)
   │     ├─ reaction_prompt → REACTION (25, interrupt BAR on the live board)
+  │     ├─ hp hits 0 → THE DROP (12b, the board drains in place) → DOWNED (14) → dice (11) per round
   │     └─ combat ends + fallen foe → LOOT (23, spoils card riding the log)
   ├─ band "Rest" → REST (13); a LONG rest for a prepared caster ends on SPELL-PREP (24, the rest's last page)
   ├─ band "▲ level N waits" → LEVEL-UP (21, walks the preview's asks) → SHEET (15)
@@ -70,10 +72,10 @@ PLAY (10)                                 rail: trail + the six tabs
 RECAP (20): the doorway back in — resume only, never mid-session, first session skips it.
 ```
 
-## Screen inventory (27 sections, s00–s26)
+## Screen inventory (30 sections, s00–s29)
 
 ### A. Shell / pre-play
-0. **Landing (public)** — reworked v4: a **scrollable page whose spine is the trail** (dashed vertical line, waypoint dots inking section by section). Hero = headline ("Play D&D with a DM who never forgets") + CTA + scroll cue. Then four waypoints, each a **real product moment**: ① *The table* — a rendered turn exchange exactly as it looks in play (`.you` block, streaming tokens, field-note chips); ② *The ledger* — a real codex card + a mini self-drawing map; ③ *Your rules* — dice/death/hard-lines claim cards; ④ *You are here* — closing CTA. No abstract "set out → choose" steps — every waypoint labels real content.
+0. **Landing (public)** — rebuilt again in review round 3 on the thesis **"the page is a session."** The failure of the explain-the-app version: below the hero it *described* components; a landing must *perform*. Now: hero (kept — headline + CTA + scroll cue "one campaign, performed below"), then **one continuous played campaign — eleven days at a river ford in four turns — revealed at reading pace** down the trail spine. Each beat is a two-column row: DM prose left (streaming tokens fire when the beat scrolls into view via IntersectionObserver + `.lit`), and **the margin writes itself right** the way the codex does in play (`.mgcard` inks in on a dashed thread): ① day 3 — Ilse Marrow named in prose, her codex card appears ("the DM took this note — you didn't have to"); ② the player turn + insight check as field notes ("the d20 was yours"); ③ day 9 — combat brushes the page: dusk gradient on the row, mini initiative strip, "the page becomes the table, no cut"; ④ day 14 — **the callback that is the whole pitch**: the player asks what they have on Marrow, the DM answers from eleven days of ledger (including "you two have met since — you were never introduced"), and the margin shows *the same card, eleven days on*, grown by two dated `.addline`s. Then the rules waypoint (3 tablecards, kept), the CTA where **the spine terminates in the sign-up button** ("that one was played for the spec — yours hasn't happened yet"), and a **real colophon footer** (`.bigfoot`): brand + tagline, table links, rules links, SRD/CC-BY-4.0 credit, working theme dots (`data-settheme`). Waypoint dots ink lichen as they light; JS-off degrades to everything visible (`.prep` is added only when IO exists).
 1. **Login** — Phase-B visual-only, flagged.
 2. **Account + security** — Phase-B visual-only (name, appearance swatches, plan → billing, sign out, danger zone).
 3. **Billing / tiers** — Phase-B visual-only, speculative; Free→`local`, paid→`balanced`/`premium`.
@@ -92,7 +94,8 @@ RECAP (20): the doorway back in — resume only, never mid-session, first sessio
 12. **Play — combat:** initiative strip · compressed prose log · **zone sketch-map** (the DM's napkin: irregular regions, occupants, cover/difficult/hazard attrs, distance-labeled edges; **all zones seeded at init, nothing hidden**) · read-only economy bar (A/B/R pips + MOVE in feet) + insert-chips + "◈ spend inspiration" chip. **Your message is your whole turn** — no End-turn, no verb buttons. Suggest-mode proposal band above the bar.
 12a. **Into-combat (s26, NEW)** — the transformation moment, mocked with staged CSS animation: prose continues past a vermilion "Steel is drawn — round 1" pivot → the light drops a step (`duskcast` gradient) → initiative ribbon slides down → the sketch **unfurls complete** where the field notes stood → economy bar rises. Caption: combat begins *inside* a turn, no cut, no modal; the same moves run in reverse when the last foe falls.
 13. **Rest moment** — one-click from the band; narrated stream; no form, hit-dice automatic. Blocked/risky states as field-note spec lines. A long rest for a prepared caster ends on screen 24.
-14. **Downed** — band becomes the 3/3 death-save track; massive damage skips it.
+12b. **The drop (s27, NEW in round 3)** — the alive→dying transition, 12a's dark twin, same principle (mode change under the narration, never a cut). Staged: the warden's hit lands in the log → vermilion pivot "Ser Aldric falls — 0 HP" → **the board drains** (`boarddrain`: the zone sketch grayscales and dims — the story keeps its ink; prose column stays warm) → **the cartographer's hazard stamp** presses onto the sketch corner (`stampin`: a stamped red skull in a dashed double ring, "DAY 14 · R5" — the map-marker register, not a game-over splash) → the ribbon **keeps moving** (warden ACTING, Casimir two down, thrall slain) → the death ledger rises where the actions stood (3 hollow hold-dots / 3 hollow skull-fails, "the track is fresh," Make a death save → dice veil). Caption: settles into 14 · downed; **runs all of it in reverse at 1 HP**.
+14. **Downed** — band becomes the 3/3 death-save track; massive damage skips it. (12b is the *moment*; 14 is the steady state it settles into.)
 
 ### D. Panels (rail tabs)
 15. **Character sheet** — dossier-grown-up header (big portrait, Newsreader name, bio, live chips, "every rules noun is inspectable" note) + ability tiles + attacks/features + saves/skills. **Inventory = the carried ledger** (v4, replaces the slot grid): equipped kit grouped by hand — **STEEL** (armor rows whose AC arithmetic sums to a balanced ledger line: chain shirt 13 + DEX 1 + shield 2 + Defense 1 = **AC 17**), **HANDS** (weapons + attack math), **WORN** — beside the **pack** tile grid (quest items vermilion, popovers). **No slot model, none needed** — grouping derives from `equipped` + SRD item data; equipping is a *sentence to the DM*, not a drag ("I sling the shield and take the sword in both hands" — the ledger follows). Spellcasting block for casters (slot pips, prepared rows, popovers).
@@ -109,6 +112,11 @@ RECAP (20): the doorway back in — resume only, never mid-session, first sessio
 24. **Spell prep** — reworked v4: **the last page of the long rest**, not a popup. A rest-morning play screen (dawn vitals, morning prose) with the prep card inline in the column: prepared rows + "PREPARE N — mod + level," **Seal the day's prayers** → `POST …/prepare-spells` (count + class-legality validated) / **Keep yesterday's**. Input waits until the book is sealed. Known-spell casters skip straight to the road. Shown from Isolde's table, for the spec.
 25. **Reaction prompt** — reworked v4: an **interrupt bar over the live board**, never a curtain — you can see the aisle, the stair, and why the swing matters (that's the point). Round holds its breath: the acting foe highlighted in the ribbon, its move drawn on the sketch, a vermilion bar with the terse templated trigger + recommendation chip + countdown ("silence takes the recommendation") + take / let it go → `POST …/reactions`. May fire more than once a round; frequency = `reaction_control` (ai/suggest/player); AI allies and foes decide for themselves. Planned-engine dep, flagged.
 
+### F. The Drafting Room (admin — NEW in round 3)
+The authoring surface that replaces `cli/seed.py` with a door. Lives as a **third tab in the pre-campaign rail, marked ADMIN** — visible only to accounts with `is_admin` (part of the auth dep, #8). Grounded in the real tables: `worlds` (key/name/summary/calendar), `world_lore_chunks` (category faction|region|deity|figure|history|custom · key · title · content · tags · `always_on` · nullable `embedding`), `campaign_templates` (acts JSONB `[{title, premise, core_events}]` · `status: draft|published` — the field already exists).
+26. **Drafting Room (s28)** — worlds list as rows: name, summary, per-scenario status chips (published green / draft vermilion), stats column (chunks · embedded count · scenarios · last edited). A draft world (dashed, "no published scenario — invisible to players") + "Raise a new world." Caption: players browse only published scenarios; a world ships the day its first scenario does.
+27. **World editor (s29)** — canon, chunk by chunk. Left: lore-chunk list grouped by category with embedding state per row (✓ / "⋯ on save"). Right: the chunk form — title, key (stable slug), category select, content textarea, tags, and an **always-on toggle with the cost stated on it** ("rides every prompt — spend it on almost nothing; everything else is retrieved only when the table reaches for it · this world: 2 of 41 always on" — the no-context-pollution rule, in the UI). Save re-embeds. Below: the scenario card (Silent Ford) — acts rows reusing `.atw`, core-event chips, PUBLISHED chip; note that unpublishing hides it from *new* expeditions only (running campaigns point at the template by id).
+
 ---
 
 ## Build order (post-compaction)
@@ -120,7 +128,9 @@ RECAP (20): the doorway back in — resume only, never mid-session, first sessio
 5. **Panels (15–17, 19–20)** — sheet w/ carried ledger, party-as-full-sheet, codex, settings, recap.
 6. **Moments (21–25)** + **pre-play/Phase-B (0–6)**.
 
-Wire the top switcher so all 27 are clickable in one file.
+7. **Round 3 additions** — landing rebuilt as the performed session (0), the drop (12b), the Drafting Room (26–27).
+
+Wire the top switcher so all 30 are clickable in one file.
 
 ---
 
@@ -132,5 +142,6 @@ Wire the top switcher so all 27 are clickable in one file.
 5. ~~**Equipment slot taxonomy**~~ — **retired in v4:** the carried ledger groups by `equipped` + SRD item category; no slot model needed. Revisit only if true slot *rules* (one body, two hands) are ever wanted.
 6. **`GET /v1/srd/alignments`** — `alignments.json` ships but no route serves it. Trivial.
 7. **Subrace spell grants** (added v4) — the creation service applies subrace ability bonuses + proficiencies but not racial spells (high-elf cantrip). Either grant it server-side or drop the claim from the pane.
+8. **Auth + `is_admin`** (added round 3) — there is **no users table at all yet**; the Account tab already presumes auth, and the Drafting Room tab additionally needs an admin flag on the user. One dep, two consumers. Until then the only writer of worlds/templates/chunks is `cli/seed.py`.
 
 _Engine features (Slices 4/6/9/10/10.5) the UI renders rather than omits: caster creation contract, level-up preview/asks incl. caster knobs + rest-morning re-prep, loot, death modes/epilogue, combat inspiration, rest_blocked, zone anatomy + OA, suggest-mode proposals, reaction prompt + `reaction_control`, codex Days (`/calendar`) + search (`/lore?q=`)._
