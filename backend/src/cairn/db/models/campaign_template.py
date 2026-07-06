@@ -21,6 +21,8 @@ class CampaignTemplate(Base):
     # acts: [{title, premise, core_events: [str]}]
     acts: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
     always_on_lore_keys: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    # World-cast character keys this scenario connects — cloned into the campaign at creation.
+    world_characters: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     status: Mapped[str] = mapped_column(default="draft", server_default="draft")  # draft | published
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

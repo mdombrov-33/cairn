@@ -16,9 +16,9 @@ class CharacterCreate(BaseModel):
     ability_scores: dict[str, int]
     skill_choices: list[str]
     alignment: str
-    bio: str
-    personality: str
-    voice_traits: dict[str, Any] = Field(default_factory=dict)
+    # Deep prose identity (NarrativeProfile shape). Optional for PCs (authored later);
+    # required for companions, who are roleplayed straight from it.
+    narrative_profile: dict[str, Any] = Field(default_factory=dict)
     subrace: str | None = None
     subclass: str | None = None
     is_companion: bool = False
@@ -35,8 +35,10 @@ class CharacterCreate(BaseModel):
 
     @model_validator(mode="after")
     def _validate_companion(self) -> CharacterCreate:
-        if self.is_companion and not self.voice_traits:
-            raise ValueError("voice_traits required for companions")
+        if self.is_companion:
+            missing = {"name", "personality", "voice"} - set(self.narrative_profile)
+            if missing:
+                raise ValueError(f"companion narrative_profile requires: {sorted(missing)}")
         return self
 
 
@@ -85,7 +87,7 @@ class PrepareSpellsRequest(BaseModel):
 
 class CharacterPatch(BaseModel):
     name: str | None = None
-    bio: str | None = None
+    narrative_profile: dict[str, Any] | None = None
 
 
 class CharacterResponse(CreatureBase):
@@ -107,7 +109,6 @@ class CharacterResponse(CreatureBase):
     resources: dict[str, Any]
     is_companion: bool
     has_inspiration: bool = False
-    bio: str | None
-    personality: str | None
-    voice_traits: dict[str, Any]
+    narrative_profile: dict[str, Any] = Field(default_factory=dict)
+    companion_meta: dict[str, Any] | None = None
     prepared_spells: list[str] = []

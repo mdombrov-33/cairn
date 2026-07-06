@@ -282,11 +282,86 @@ class NarrativeRecovery(TypedDict):
     prior_events_summary: str
 
 
-# Dialogue — provisional entity view for NPCs and companions (rich profile lands later).
+# Narrative profile — the deep prose identity shared by NPCs and companions.
+# Stored in `NPC.narrative_profile` / `Character.narrative_profile` (JSONB). Only
+# prose-for-prompts fields live here; mutable/queried bits (disposition, tier,
+# companion_meta) stay as columns. Required at write time: name, personality, voice.
+# Background NPCs may otherwise be sparse; authored/recurring should be full.
+
+NpcTier = Literal["major", "recurring", "background"]
+
+
+class NarrativeVoice(TypedDict, total=False):
+    accent: str
+    pace: str
+    vocabulary: str
+    speech_quirks: list[str]
+
+
+class NarrativeGoals(TypedDict, total=False):
+    immediate: str
+    midterm: str
+    life: str
+
+
+class NarrativeRelationship(TypedDict, total=False):
+    name: str
+    relation: str
+    status: str
+    notes: str
+
+
+class NarrativeProfile(TypedDict, total=False):
+    name: Required[str]
+    personality: Required[str]
+    voice: Required[NarrativeVoice]
+    race: str
+    age: int
+    profession: str
+    physical: str
+    backstory: str
+    goals: NarrativeGoals
+    prejudices: list[str]
+    relationships: list[NarrativeRelationship]
+    private_facts: list[str]
+
+
+# Companion approval — lives in `Character.companion_meta` (JSONB, is_companion=True).
+# Approval/mood mutate frequently and gate behavior, so they stay a column rather than
+# nesting in the profile blob. mood is derived (see companions.derive_mood).
+
+
+class ApprovalLogEntry(TypedDict):
+    turn_id: str
+    delta: int
+    reason: str
+    total: int
+
+
+class CompanionMeta(TypedDict, total=False):
+    approval: int
+    mood: str
+    personal_goal: str
+    secret: str | None
+    approval_log: list[ApprovalLogEntry]
+
+
+# companion_reflector structured output — one entry per companion whose standing moved.
+
+
+class ApprovalDelta(TypedDict):
+    companion_id: str
+    delta: int
+    reason: str
+
+
+# Dialogue — the entity view the dialogue agent roleplays from. Carries the full
+# narrative profile; companions additionally carry current approval/mood.
 
 
 class DialogueEntity(TypedDict):
     name: str
-    bio: str
-    personality: str
+    profile: NarrativeProfile
     disposition: str
+    approval_band: NotRequired[str]
+    mood: NotRequired[str]

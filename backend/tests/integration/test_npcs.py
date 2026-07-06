@@ -14,7 +14,8 @@ async def test_campaign_creation_seeds_npcs(client: AsyncClient) -> None:
     )
     assert r.status_code == 200
     npcs = r.json()
-    assert len(npcs) == 3
+    # tavern_v1 scenario cast (Old Grim, The Stranger, Aldwin, Bram) + connected world cast (Reeve Halden).
+    assert len(npcs) == 5
 
 
 async def test_npcs_have_stat_block_fields(client: AsyncClient) -> None:

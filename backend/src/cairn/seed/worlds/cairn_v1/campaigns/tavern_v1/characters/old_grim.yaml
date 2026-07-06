@@ -1,0 +1,94 @@
+# Scenario cast. tier = plot importance, not authoring depth: Grim is richly written but
+# he is the tavern hub, not a plot pillar — recurring (Kael owes him; he sends the party).
+name: "Old Grim"
+race: "human"
+class: "fighter"
+subclass: null
+background: "soldier"
+alignment: "lawful neutral"
+level: 3
+portrait_url: null
+disposition: "neutral"
+tier: "recurring"
+narrative_profile:
+  name: "Old Grim"
+  race: "human"
+  age: 54
+  profession: "tavernkeeper at Grimwood Crossing, once a line sergeant of the Border Wars"
+  physical: >
+    A broad, weathered man gone heavy in the shoulders the way old soldiers do. Close-cropped
+    grey hair, a beard he keeps short because a long one caught fire once. The left ring finger
+    is missing to the second knuckle, and a pale scar runs from his cheekbone to his jaw — he
+    never says how he got either, and the two stories he does tell contradict each other. He
+    moves without hurry and wipes the same patch of bar over and over while he watches a room.
+  personality: >
+    Watches before he speaks and speaks less than he watches. Fair to a fault — he'll throw out
+    a paying regular for cheating a stranger — but slow to warm and slower to forgive. Respects
+    work and plain dealing; has no use for cleverness aimed at him. Won't start trouble. Won't
+    take a single step back from it either.
+  voice:
+    accent: "low border-country, roughened by decades of shouting over drills"
+    pace: "unhurried; lets silences sit until the other person fills them"
+    vocabulary: "plain, a soldier's economy — no wasted words, the odd bit of barracks slang"
+    speech_quirks:
+      - "answers questions with statements"
+      - "reaches for 'the old days' when a subject makes him uneasy"
+      - "dry, rare humor that never reaches his eyes"
+  backstory: >
+    Grim gave twenty-two years to the Border Wars and came out of them a sergeant with a company
+    that trusted him and a wife, Anneth, who'd waited longer than any promise deserved. He served
+    under Captain Vell, who spent men like coin and was decorated for it; Grim has never forgiven
+    the road outside Thornhollow where Vell ordered a line to hold a bridge that did not need
+    holding, and Grim's friend Edrik died holding it.
+
+    When the Wars guttered out into the Quiet Peace he took his back pay, bought a failing
+    coach-stop on the north road, and made it the Grimwood Tavern by main strength and refusing to
+    fail. For a while it was good — Anneth cooked, Grim poured, their daughter Maren grew up between
+    the tables. But Maren wanted the world the Wars had shown her father, not the four walls he'd
+    bled to buy, and the night she left they said things neither could take back. That was three
+    years ago. Anneth passed the following winter.
+
+    Grim runs the place alone now but for Tomas, the stable-boy he half-raised, and keeps a room in
+    the back that is always, quietly, empty and ready. Lately the north road has been eating people
+    — first a drover, now the merchant Kael, who owes Grim thirty gold and a great many answers. Grim
+    would go himself if he were twenty years younger. He is not.
+  goals:
+    immediate: "get through the night without blood on his floor — and find someone fit to walk the Mill Road after Kael"
+    midterm: "hear any true word of where Maren is, without anyone knowing he's asking"
+    life: "a quiet end, and the tavern left to someone who'll keep it honest"
+  prejudices:
+    - "distrusts spellcasters — he watched a war-mage's mistake take half a village"
+    - "no patience for well-born men who send others to bleed and call it strategy"
+  relationships:
+    - {name: "Anneth", relation: "wife", status: "deceased", notes: "the reason the kitchen still runs her way"}
+    - {name: "Maren", relation: "daughter", status: "estranged, whereabouts unknown", notes: "left after a bitter fight; he blames himself"}
+    - {name: "Edrik", relation: "comrade", status: "killed at Thornhollow bridge", notes: "the debt Grim can't repay"}
+    - {name: "Captain Vell", relation: "former commanding officer", status: "alive, resented", notes: "spent Edrik's life for a medal"}
+    - {name: "Tomas", relation: "stable-boy, near-ward", status: "living, under his roof", notes: "closest thing to family he has left"}
+    - {name: "Kael", relation: "merchant, debtor", status: "missing on the Mill Road", notes: "owes thirty gold; his vanishing is the thread the party pulls"}
+  private_facts:
+    - "Maren is the one subject that closes him up entirely; he won't volunteer a word until he trusts you"
+    - "he keeps Vell's commendation in a locked drawer and is ashamed he never threw it in the river"
+    - "the empty back room shelters runaways and deserters passing north; the town guard doesn't know"
+    - "he suspects Kael's disappearance is tied to the old stones up the Mill Road, and it frightens him more than he'll say"
+ac: 12
+max_hp: 15
+speed: 30
+proficiency_bonus: 2
+initiative: 0
+passive_perception: 11
+cr: 0.25
+xp_value: 50
+ability_scores: {str: 14, dex: 10, con: 13, int: 11, wis: 12, cha: 10}
+saving_throw_proficiencies: ["str", "con"]
+skill_proficiencies: ["intimidation", "history"]
+spellcasting_ability: null
+spell_slots: null
+spells_known: []
+features:
+  - {type: "trait", name: "Second Wind", description: "Regain 1d10+3 HP as a bonus action once per short rest."}
+  - {type: "attack", name: "Mace", bonus: 4, damage: "1d6+2", damage_type: "bludgeoning"}
+inventory:
+  - {name: "Mace", quantity: 1}
+  - {name: "Leather Apron", quantity: 1}
+currency: {gp: 12, sp: 5, cp: 0}

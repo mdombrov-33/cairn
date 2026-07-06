@@ -1,0 +1,77 @@
+# Scenario cast. recurring — the hooded stranger is a live thread of Act 1, but the plot
+# doesn't hinge on them the way it hinges on what's up the Mill Road.
+name: "The Stranger"
+race: "half-elf"
+class: "rogue"
+subclass: "arcane trickster"
+background: "spy"
+alignment: "true neutral"
+level: 4
+portrait_url: null
+disposition: "neutral"
+tier: "recurring"
+narrative_profile:
+  name: "The Stranger"
+  race: "half-elf"
+  age: 37
+  profession: "informant, currently between employers"
+  physical: >
+    Slight and still, hooded even indoors, with a half-elf's ageless face glimpsed only in the
+    shift of firelight. Gloved hands, good boots worn quiet, and a way of sitting with their back
+    to the wall and both exits in view. Three days at the corner table and no one has yet seen them
+    eat.
+  personality: >
+    Cryptic and deliberate. Chooses every word and offers none for free. Watches the room more than
+    the conversation and seems to know more than they should about people they've never met. Not
+    cruel — careful, the way a person is careful when carelessness has cost them before.
+  voice:
+    accent: "polished, placeless — deliberately scrubbed of any tell"
+    pace: "long pauses before answering, as if pricing each reply"
+    vocabulary: "oblique, fond of questions returned for questions"
+    speech_quirks:
+      - "answers a question with a question when cornered"
+      - "refers to things sidelong, never by name"
+  backstory: >
+    They have been three days at the corner table of the Grimwood, paying in gold and asking careful
+    questions about the Mill Road, the old holdings up-country, and which names still carry weight in
+    the Reach. Whoever they last worked for, that arrangement ended badly, and they are hunting both a
+    new patron and a way out. They came north because south had become fatal — and because the same
+    thread the party is about to pull, the vanishings on the Mill Road, is one they have been quietly
+    following for a reason of their own.
+  goals:
+    immediate: "learn who in this room is worth trusting, and who is worth avoiding"
+    midterm: "find out what is really happening on the Mill Road before their pursuers find them"
+    life: "one last turn of luck large enough to disappear on"
+  prejudices:
+    - "assumes everyone is working an angle, and is rarely wrong"
+  relationships:
+    - {name: "a former employer", relation: "patron turned pursuer", status: "hunting them", notes: "does not yet know exactly where they are"}
+    - {name: "Kael", relation: "quarry of interest", status: "missing", notes: "the Stranger was watching Kael before he vanished"}
+  private_facts:
+    - "they carry a coded letter naming people who profit from the Mill Road vanishings; they haven't decided whether to sell it or use it"
+    - "they know more about what took Kael than anyone else in the room, and will trade it only for leverage"
+ac: 14
+max_hp: 10
+speed: 30
+proficiency_bonus: 2
+initiative: 3
+passive_perception: 14
+cr: 0.125
+xp_value: 25
+ability_scores: {str: 10, dex: 16, con: 11, int: 15, wis: 14, cha: 12}
+saving_throw_proficiencies: ["dex", "int"]
+skill_proficiencies: ["deception", "insight", "perception", "stealth"]
+spellcasting_ability: "int"
+spell_slots: {"1": 2}
+spells_known: ["mage hand", "minor illusion", "charm person"]
+features:
+  - {type: "trait", name: "Evasion", description: "Take no damage on successful DEX save, half on failed."}
+  - {type: "trait", name: "Uncanny Dodge", description: "Halve damage from one attack per round as a reaction."}
+  - {type: "trait", name: "Sneak Attack", description: "Deal extra 2d6 damage when you have advantage or an ally is adjacent."}
+  - {type: "attack", name: "Dagger", bonus: 5, damage: "1d4+3", damage_type: "piercing"}
+  - {type: "attack", name: "Dagger (offhand)", bonus: 5, damage: "1d4", damage_type: "piercing"}
+inventory:
+  - {name: "Dagger", quantity: 2}
+  - {name: "Thieves' Tools", quantity: 1}
+  - {name: "Coded Letter", quantity: 1, description: "Sealed with an unknown sigil."}
+currency: {gp: 40, sp: 0, cp: 0}

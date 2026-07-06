@@ -1,0 +1,72 @@
+# WORLD cast. recurring — the Crown's thin authority in the district. He connects into the tavern
+# scenario (template.md world_characters), because he is the one ordering the Mill Road vanishings
+# kept quiet. Not the source of the horror; the man deciding it isn't worth a panic.
+name: "Reeve Halden"
+race: "human"
+class: "commoner"
+subclass: null
+background: "noble functionary"
+alignment: "lawful neutral"
+level: 3
+portrait_url: null
+disposition: "neutral"
+tier: "recurring"
+narrative_profile:
+  name: "Reeve Halden"
+  race: "human"
+  age: 46
+  profession: "district reeve — the Crown's tax-and-order man for the Crossing and the north road"
+  physical: >
+    Soft-handed and tidily dressed a notch above what the Reach can afford, with the pouched eyes of a
+    man who sleeps badly. He keeps his chain of office polished and his cuffs clean and is forever
+    brushing road-dust off a sleeve that never quite comes clean out here.
+  personality: >
+    Careful, weary, and quietly frightened — a middling official who wants above all for nothing to
+    happen on his watch that reaches the ears of people who could end him. Not cruel, but a coward
+    with authority, which can do as much harm. He tells himself every suppression is prudence.
+  voice:
+    accent: "clipped heartland — he wants you to hear he isn't from here"
+    pace: "hesitant, hedging, full of 'officially' and 'as far as we know'"
+    vocabulary: "bureaucratic cushioning — 'irregularities', 'the matter', 'contained'"
+    speech_quirks:
+      - "downgrades every alarming word to a blander one mid-sentence"
+      - "invokes distant superiors he's terrified of as if they were on his side"
+  backstory: >
+    Halden was posted to the Reach as a punishment he's never been told the reason for, and he has
+    spent a decade trying to earn his way back to the heartland by keeping his district boringly
+    quiet. When travelers began vanishing on the Mill Road he did the thing that has always kept him
+    safe: he made it smaller. Fewer notices, a word to the watch to downplay it, no request up the
+    chain that might read as a failure of order. He does not know what is taking people. He has
+    decided, so far, that he would rather not.
+  goals:
+    immediate: "keep the Mill Road vanishings from becoming a report with his name on it"
+    midterm: "a transfer back to the heartland, or at least a posting that can't get worse"
+    life: "to have mattered somewhere that mattered — a wound he'll never name"
+  prejudices:
+    - "condescends to the Reach-born as backward and doomed"
+    - "fears and flatters anyone he thinks outranks him"
+  relationships:
+    - {name: "the watch", relation: "his instrument", status: "obeying under protest", notes: "told to keep the vanishings quiet; Aldwin among them"}
+  private_facts:
+    - "he has had two credible reports about the Mill Road that he filed where no one will read them"
+    - "he suspects it's worse than he's admitting, and that suspicion is the thing keeping him up"
+ac: 11
+max_hp: 12
+speed: 30
+proficiency_bonus: 2
+initiative: 0
+passive_perception: 11
+cr: 0.125
+xp_value: 25
+ability_scores: {str: 9, dex: 10, con: 10, int: 13, wis: 11, cha: 12}
+saving_throw_proficiencies: []
+skill_proficiencies: ["persuasion", "deception", "insight"]
+spellcasting_ability: null
+spell_slots: null
+spells_known: []
+features:
+  - {type: "attack", name: "Ceremonial Dagger", bonus: 2, damage: "1d4", damage_type: "piercing"}
+inventory:
+  - {name: "Chain of Office", quantity: 1}
+  - {name: "Sealed District Ledger", quantity: 1, description: "Includes two buried reports on the Mill Road."}
+currency: {gp: 25, sp: 0, cp: 0}

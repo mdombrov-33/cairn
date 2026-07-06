@@ -5,6 +5,9 @@ title: The Tavern at Grimwood Crossing
 status: published
 always_on_lore_keys:
   - the_quiet_peace
+# World-cast figures this scenario connects — cloned into the campaign at creation.
+world_characters:
+  - reeve_halden
 acts:
   - title: "The Missing Merchant"
     premise: >

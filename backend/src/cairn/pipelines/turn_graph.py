@@ -11,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 from cairn.agents import dialogue as dialogue_agent
 from cairn.agents import (
     intent_router,
+    recruiter,
     rules_lawyer,
     scene_director,
     scene_summarizer,
@@ -24,8 +25,10 @@ from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
+from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import NotFoundError
-from cairn.domain.services import campaign_view, scene_director_context
+from cairn.domain.services import campaign_view, companions, recruitment, scene_director_context
+from cairn.domain.services import npcs as npc_service
 from cairn.domain.services.combat import state as combat_state_service
 from cairn.pipelines.checkpointer import get_checkpointer
 from cairn.types import CheckData, DialogueEntity, HelperRef, ScenePreOutput
@@ -140,33 +143,121 @@ async def _resolve_dialogue(state: TurnState) -> dict[str, Any]:
     name = state["npc_name"] or ""
 
     async with db_client.get_session() as db:
-        npc = await npc_queries.find_by_name(db, campaign_id, name)
-        if npc is not None:
-            entity: DialogueEntity = {
-                "name": npc.name,
-                "bio": npc.bio,
-                "personality": npc.personality,
-                "disposition": npc.disposition,
-            }
-            result = await dialogue_agent.run(state["player_input"], entity)
-            if result.disposition_change:
-                npc.disposition = result.disposition_change
-                await db.commit()
-            return {"npc_context": f'[{npc.name}]: "{result.dialogue}"'}
+        scene = await scene_queries.get_current_scene(db, campaign_id)
+        location_id = scene.location_id if scene is not None else None
+        npc = await npc_queries.find_by_name(db, campaign_id, name, location_id=location_id)
 
-        # Fallback: the player may be addressing a party companion (a Character, not an NPC).
-        companion = await character_queries.find_companion_by_name(db, campaign_id, name)
-        if companion is None:
-            return {"npc_context": ""}
+        if npc is None:
+            # The player may be addressing a party companion (a Character, not an NPC).
+            companion = await character_queries.find_companion_by_name(db, campaign_id, name)
+            if companion is not None:
+                meta = companion.companion_meta or {}
+                comp_entity: DialogueEntity = {
+                    "name": companion.name,
+                    "profile": companion.narrative_profile,
+                    "disposition": "friendly",
+                    "approval_band": companions.approval_band(meta.get("approval", 0)),
+                    "mood": meta.get("mood", "content"),
+                }
+                result = await dialogue_agent.run(state["player_input"], comp_entity)
+                return {"npc_context": f'[{companion.name}]: "{result.dialogue}"'}
 
-        entity = {
-            "name": companion.name,
-            "bio": companion.bio or "",
-            "personality": companion.personality or "",
-            "disposition": "friendly",
+            # No one by that name exists yet: instantiate an authored world figure the party has
+            # now reached, else the builder generates a background walk-on on the spot.
+            _, _, world = await campaign_view.world_chain(db, campaign_id)
+            npc = await npc_service.instantiate_world_cast(db, campaign_id=campaign_id, world_key=world.key, name=name)
+            if npc is None:
+                npc = await npc_service.generate_background_npc(db, campaign_id=campaign_id, name=name, scene=scene)
+
+        entity: DialogueEntity = {
+            "name": npc.name,
+            "profile": npc.narrative_profile,
+            "disposition": npc.disposition,
         }
         result = await dialogue_agent.run(state["player_input"], entity)
-        return {"npc_context": f'[{companion.name}]: "{result.dialogue}"'}
+        if result.disposition_change and result.disposition_change != npc.disposition:
+            await _record_disposition_change(db, campaign_id, npc, old=npc.disposition, new=result.disposition_change)
+            npc.disposition = result.disposition_change
+        await npc_service.record_dialogue_exchange(db, npc=npc, scene=scene)
+        await db.commit()
+        return {"npc_context": f'[{npc.name}]: "{result.dialogue}"'}
+
+
+async def _record_disposition_change(db: Any, campaign_id: uuid.UUID, npc: Any, *, old: str, new: str) -> None:
+    """Log an NPC's disposition shift to the world bible so it becomes canon the DM remembers
+    (e.g. "old_grim disposition: neutral → hostile"). Deterministic — the mechanical flip is
+    recorded here, not left for the LLM LoreKeeper to infer from prose."""
+    campaign = await campaign_queries.get_campaign(db, campaign_id)
+    await world_bible_queries.upsert_entry(
+        db,
+        campaign_id=campaign_id,
+        namespace=campaign.world_bible_namespace,
+        type_="RELATIONSHIP",
+        key=f"{npc.name} — disposition toward the party",
+        content=f"{npc.name}'s disposition toward the party is now {new} (was {old}).",
+        source_turn_id=current_turn_id.get(),
+    )
+
+
+async def _resolve_recruitment(state: TurnState) -> dict[str, Any]:
+    """Adjudicate a bid to recruit an NPC. The `recruiter` decides in-character; on accept the NPC
+    converts to a party companion (soft-capped), on conditional the ask is recorded for later."""
+    campaign_id = uuid.UUID(state["campaign_id"])
+    name = state["npc_name"] or ""
+
+    async with db_client.get_session() as db:
+        scene = await scene_queries.get_current_scene(db, campaign_id)
+        location_id = scene.location_id if scene is not None else None
+        npc = await npc_queries.find_by_name(db, campaign_id, name, location_id=location_id)
+        if npc is None:
+            return {"npc_context": f'[No one here answers to "{name}".]'}
+        if not recruitment.is_recruitable(npc):
+            return {"npc_context": f"[{npc.name} is not someone who would throw in with the party.]"}
+
+        decision = await recruiter.run(
+            state["player_input"],
+            profile=npc.narrative_profile,
+            disposition=npc.disposition,
+            context=(scene.summary if scene is not None else "") or "",
+            recruitment_condition=npc.recruitment_condition,
+        )
+        line = f'[{npc.name}]: "{decision.line}"'
+
+        if decision.decision == "accept":
+            if await recruitment.is_party_full(db, campaign_id):
+                return {
+                    "npc_context": f"{line}\n[The party is already "
+                    f"{recruitment.MAX_ACTIVE_COMPANIONS} strong — someone must step aside first.]"
+                }
+            campaign = await campaign_queries.get_campaign(db, campaign_id)
+            await recruitment.recruit(db, npc=npc, owner_id=campaign.owner_id)
+            await db.commit()
+            log.info("companion_recruited", campaign_id=state["campaign_id"], name=npc.name)
+            return {"npc_context": f"{line}\n[{npc.name} joins the party.]"}
+
+        if decision.decision == "conditional":
+            npc.recruitment_condition = decision.condition or None
+            await db.commit()
+            return {"npc_context": line}
+
+        return {"npc_context": line}  # refuse — stays an NPC, re-attemptable
+
+
+async def _resolve_dismissal(state: TurnState) -> dict[str, Any]:
+    """Part ways with a party companion: it converts back into an NPC at the current location."""
+    campaign_id = uuid.UUID(state["campaign_id"])
+    name = state["npc_name"] or ""
+
+    async with db_client.get_session() as db:
+        companion = await character_queries.find_companion_by_name(db, campaign_id, name)
+        if companion is None:
+            return {"npc_context": f'[No companion named "{name}" travels with the party.]'}
+        scene = await scene_queries.get_current_scene(db, campaign_id)
+        location_id = scene.location_id if scene is not None else None
+        npc = await recruitment.dismiss(db, character=companion, location_id=location_id)
+        await db.commit()
+        log.info("companion_dismissed", campaign_id=state["campaign_id"], name=npc.name)
+        return {"npc_context": f"[{npc.name} parts ways with the party.]"}
 
 
 async def _scene_director_pre(state: TurnState) -> dict[str, Any]:
@@ -311,6 +402,10 @@ def _pick_node(state: TurnState) -> str:
         return "resolve_dialogue"
     if intent == "rest_action":
         return "resolve_rest"
+    if intent == "recruit_attempt":
+        return "resolve_recruitment"
+    if intent == "dismiss_companion":
+        return "resolve_dismissal"
     return END
 
 
@@ -325,6 +420,8 @@ def _get_graph() -> Any:
     builder.add_node("resolve_skill_check", _resolve_skill_check)
     builder.add_node("resolve_dialogue", _resolve_dialogue)
     builder.add_node("resolve_rest", _resolve_rest)
+    builder.add_node("resolve_recruitment", _resolve_recruitment)
+    builder.add_node("resolve_dismissal", _resolve_dismissal)
 
     builder.add_edge(START, "scene_director_pre")
     builder.add_conditional_edges(
@@ -339,6 +436,8 @@ def _get_graph() -> Any:
     builder.add_edge("resolve_skill_check", END)
     builder.add_edge("resolve_dialogue", END)
     builder.add_edge("resolve_rest", END)
+    builder.add_edge("resolve_recruitment", END)
+    builder.add_edge("resolve_dismissal", END)
 
     return builder.compile(checkpointer=get_checkpointer())
 

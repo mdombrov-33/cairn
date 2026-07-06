@@ -1,6 +1,6 @@
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,29 +11,46 @@ from cairn.db.queries import campaigns as queries
 from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import world_bible as world_bible_queries
+from cairn.db.queries import worlds as world_queries
 from cairn.domain.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from cairn.db.models.location import Location
 
-_SEED_DIR = Path(__file__).parent.parent.parent / "seed" / "templates"
+_SEED_DIR = Path(__file__).parent.parent.parent / "seed" / "worlds"
 
 
-async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, template_id: str) -> None:
-    path = _SEED_DIR / template_id / "npcs.yaml"
-    if not path.exists():
+async def _create_npc_from_yaml(db: AsyncSession, campaign_id: uuid.UUID, data: dict[str, Any]) -> None:
+    kwargs = dict(data)
+    kwargs.setdefault("hp", kwargs.get("max_hp", 1))
+    if "class" in kwargs:
+        kwargs["class_"] = kwargs.pop("class")
+    await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)
+
+
+async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, campaign_dir: Path) -> None:
+    """Clone the scenario's local cast (always present) into the campaign's NPC rows."""
+    char_dir = campaign_dir / "characters"
+    if not char_dir.exists():
         return
-    data = yaml.safe_load(path.read_text())
-    for npc_data in data.get("npcs", []):
-        kwargs = dict(npc_data)
-        kwargs.setdefault("hp", kwargs.get("max_hp", 1))
-        if "class" in kwargs:
-            kwargs["class_"] = kwargs.pop("class")
-        await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)
+    for path in sorted(char_dir.glob("*.yaml")):
+        await _create_npc_from_yaml(db, campaign_id, yaml.safe_load(path.read_text()))
 
 
-async def _seed_locations(db: AsyncSession, campaign_id: uuid.UUID, template_id: str) -> list[Location]:
-    path = _SEED_DIR / template_id / "locations.yaml"
+async def _seed_world_cast(
+    db: AsyncSession, campaign_id: uuid.UUID, world_dir: Path, character_keys: list[str]
+) -> None:
+    """Clone the world-cast figures this scenario explicitly connects. Unconnected world figures
+    stay lore-only until lazily instantiated on-encounter (later slice)."""
+    for key in character_keys:
+        path = world_dir / "characters" / f"{key}.yaml"
+        if not path.exists():
+            continue
+        await _create_npc_from_yaml(db, campaign_id, yaml.safe_load(path.read_text()))
+
+
+async def _seed_locations(db: AsyncSession, campaign_id: uuid.UUID, campaign_dir: Path) -> list[Location]:
+    path = campaign_dir / "locations.yaml"
     if not path.exists():
         return []
     data = yaml.safe_load(path.read_text())
@@ -66,9 +83,14 @@ async def create(
         template_id=template.id,
         world_bible_namespace=f"campaign_{uuid.uuid4().hex}",
     )
-    # NPC/location blueprints still clone from the template's YAML files.
-    await _seed_npcs(db, campaign.id, template.key)
-    await _seed_locations(db, campaign.id, template.key)
+    # Character/location blueprints clone from the world's YAML tree at creation:
+    # the scenario's local cast always, plus the world-cast figures this scenario connects.
+    world = await world_queries.get(db, template.world_id)
+    world_dir = _SEED_DIR / world.key
+    campaign_dir = world_dir / "campaigns" / template.key
+    await _seed_npcs(db, campaign.id, campaign_dir)
+    await _seed_world_cast(db, campaign.id, world_dir, template.world_characters)
+    await _seed_locations(db, campaign.id, campaign_dir)
     return campaign
 
 

@@ -1,0 +1,75 @@
+# Scenario cast. background — the militiaman is texture and a rules-voice, not a plot driver.
+# Richly written anyway, because the player may lean on him for local information.
+name: "Town Guard"
+race: "human"
+class: "fighter"
+subclass: null
+background: "folk hero"
+alignment: "lawful good"
+level: 2
+portrait_url: null
+disposition: "neutral"
+tier: "background"
+narrative_profile:
+  name: "Aldwin"
+  race: "human"
+  age: 34
+  profession: "town militiaman, Grimwood Crossing watch"
+  physical: >
+    Mid-thirties and beginning to soften at the belt, with a jaw he keeps clean-shaven under
+    regulation and the perpetual slight frown of a man who would rather be off-shift. The uniform is
+    pressed; the boots are not.
+  personality: >
+    Formal, rule-bound, and quietly tired of the posting — but he takes the job seriously and is
+    proud of the uniform even when he complains about the hours. Suspicious of strangers by training,
+    not by nature. Not a cruel man; the kind who'd rather talk a drunk home than book him.
+  voice:
+    accent: "flat local townsman"
+    pace: "measured, official"
+    vocabulary: "quotes regulations and town ordinance; uses titles like 'citizen', 'traveler'"
+    speech_quirks:
+      - "cites a rule number he isn't quite sure he remembers correctly"
+      - "uncomfortable with anything ambiguous; asks you to 'state your business'"
+  backstory: >
+    Aldwin took the militia posting because it was steady work near home after a farming life that
+    never quite paid. He keeps the peace at the Grimwood on rowdy nights, mostly by standing where
+    people can see him. He answers to the watch office up the road and would like, someday, to be able
+    to stop. The vanishings on the Mill Road are above his pay and he knows it — he's been told to keep
+    it quiet, and it sits badly with him.
+  goals:
+    immediate: "no incidents on his watch tonight"
+    midterm: "a transfer to day shift"
+    life: "a small pension and a quiet street to walk"
+  prejudices:
+    - "distrusts armed outsiders until they've proven dull"
+  relationships:
+    - {name: "Old Grim", relation: "tavernkeeper on his beat", status: "cordial", notes: "an understanding — Grim keeps order, Aldwin keeps out of the back room"}
+  private_facts:
+    - "he's noticed the Grimwood's back room and has chosen, so far, not to report it"
+    - "he was ordered from above to downplay the Mill Road disappearances and doesn't know why"
+ac: 16
+max_hp: 16
+speed: 30
+proficiency_bonus: 2
+initiative: 1
+passive_perception: 11
+cr: 0.25
+xp_value: 50
+ability_scores: {str: 13, dex: 12, con: 12, int: 10, wis: 11, cha: 10}
+saving_throw_proficiencies: ["str", "con"]
+skill_proficiencies: ["perception", "athletics"]
+spellcasting_ability: null
+spell_slots: null
+spells_known: []
+features:
+  - {type: "trait", name: "Action Surge", description: "Take one additional action on your turn, once per short rest."}
+  - {type: "trait", name: "Town Militia", description: "Knows local laws, can call for backup within 1d4 rounds."}
+  - {type: "attack", name: "Spear", bonus: 3, damage: "1d6+1", damage_type: "piercing"}
+  - {type: "attack", name: "Heavy Crossbow", bonus: 3, damage: "1d10+1", damage_type: "piercing", range: "100/400"}
+inventory:
+  - {name: "Spear", quantity: 1}
+  - {name: "Heavy Crossbow", quantity: 1}
+  - {name: "Bolts", quantity: 20}
+  - {name: "Chain Mail", quantity: 1}
+  - {name: "Shield", quantity: 1}
+currency: {gp: 3, sp: 2, cp: 8}

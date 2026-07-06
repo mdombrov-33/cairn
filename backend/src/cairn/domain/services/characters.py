@@ -26,7 +26,7 @@ from cairn.srd import (
     get_subclass,
     get_subrace,
 )
-from cairn.types import AbilityScores, InventoryItem
+from cairn.types import AbilityScores, InventoryItem, NarrativeProfile
 
 log = structlog.get_logger()
 
@@ -178,9 +178,7 @@ async def create(
     ability_scores = body.ability_scores
     skill_choices = body.skill_choices
     alignment = body.alignment
-    bio = body.bio
-    personality = body.personality
-    voice_traits = body.voice_traits
+    narrative_profile = body.narrative_profile
     subrace = body.subrace
     subclass = body.subclass
     is_companion = body.is_companion
@@ -311,9 +309,12 @@ async def create(
         currency={"gp": 0, "sp": 0, "cp": 0},
         resources=initialize_resources(character_class, 1, final_scores),
         is_companion=is_companion,
-        bio=bio,
-        personality=personality,
-        voice_traits=voice_traits,
+        narrative_profile=narrative_profile,
+        companion_meta=(
+            {"approval": 0, "mood": "content", "personal_goal": "", "secret": None, "approval_log": []}
+            if is_companion
+            else None
+        ),
     )
 
 
@@ -330,8 +331,8 @@ async def patch(
         raise AuthError("cannot modify companion characters", code="forbidden")
     if body.name is not None:
         char.name = body.name
-    if body.bio is not None:
-        char.bio = body.bio
+    if body.narrative_profile is not None:
+        char.narrative_profile = cast(NarrativeProfile, body.narrative_profile)
     await db.flush()
     return char
 

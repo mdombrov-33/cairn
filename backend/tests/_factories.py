@@ -14,8 +14,6 @@ DEFAULT_CHARACTER: dict[str, Any] = {
     "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
     "skill_choices": ["Perception", "Athletics"],
     "alignment": "Lawful Good",
-    "bio": "A seasoned warrior.",
-    "personality": "Stoic and direct.",
 }
 
 
@@ -45,7 +43,7 @@ async def make_character(
 ) -> dict:
     """Create a character. Defaults to a level-1 human fighter.
     Pass keyword overrides to change any field (e.g. character_class="ranger",
-    is_companion=True, voice_traits={"accent": "soft"}).
+    is_companion=True, narrative_profile={"name": "X", "personality": "...", "voice": {}}).
     """
     payload = {**DEFAULT_CHARACTER, **overrides}
     r = await client.post(

@@ -26,7 +26,11 @@ WIZARD: dict = {
 COMPANION_OVERRIDES: dict = {
     "name": "Bramble",
     "is_companion": True,
-    "voice_traits": {"tone": "gruff", "manner": "blunt"},
+    "narrative_profile": {
+        "name": "Bramble",
+        "personality": "Gruff and blunt.",
+        "voice": {"tone": "gruff", "manner": "blunt"},
+    },
 }
 
 BARBARIAN: dict = {
@@ -348,12 +352,12 @@ async def test_get_returns_player_and_companion(client: AsyncClient) -> None:
 # Companion creation
 
 
-async def test_companion_requires_voice_traits(client: AsyncClient) -> None:
+async def test_companion_requires_narrative_profile(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     r = await client.post(
         f"/v1/campaigns/{camp['id']}/characters",
         headers={"X-User-Id": "user_a"},
-        json={**DEFAULT_CHARACTER, "is_companion": True, "voice_traits": {}},
+        json={**DEFAULT_CHARACTER, "is_companion": True, "narrative_profile": {}},
     )
     assert r.status_code == 422
 
@@ -361,18 +365,19 @@ async def test_companion_requires_voice_traits(client: AsyncClient) -> None:
 # PATCH
 
 
-async def test_patch_name_and_bio(client: AsyncClient) -> None:
+async def test_patch_name_and_profile(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     char = await make_character(client, camp["id"])
 
+    profile = {"name": "Sir Aldric the Bold", "personality": "Reborn from battle.", "voice": {}}
     r = await client.patch(
         f"/v1/campaigns/{camp['id']}/characters/{char['id']}",
         headers={"X-User-Id": "user_a"},
-        json={"name": "Sir Aldric the Bold", "bio": "Reborn from battle."},
+        json={"name": "Sir Aldric the Bold", "narrative_profile": profile},
     )
     assert r.status_code == 200
     assert r.json()["name"] == "Sir Aldric the Bold"
-    assert r.json()["bio"] == "Reborn from battle."
+    assert r.json()["narrative_profile"]["personality"] == "Reborn from battle."
 
 
 async def test_patch_companion_returns_401(client: AsyncClient) -> None:

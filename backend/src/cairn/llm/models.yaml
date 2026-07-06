@@ -51,6 +51,27 @@ agents:
       primary: ollama/qwen2.5:latest
     frontier:
       primary: openai/gpt-5.4-mini
+  companion_reflector:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4-mini
+  npc_builder:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4-mini
+  npc_builder_deepen:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4
+      fallback: openai/gpt-5.4-mini
+  recruiter:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4-mini
   combat_resolver:
     local:
       primary: ollama/qwen2.5:latest

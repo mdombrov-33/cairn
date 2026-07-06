@@ -9,8 +9,17 @@ from cairn.llm.router import agent_setup
 
 log = structlog.get_logger()
 
-Intent = Literal["narrative_action", "skill_check", "npc_dialogue", "rest_action"]
-_VALID_INTENTS = {"narrative_action", "skill_check", "npc_dialogue", "rest_action"}
+Intent = Literal[
+    "narrative_action", "skill_check", "npc_dialogue", "rest_action", "recruit_attempt", "dismiss_companion"
+]
+_VALID_INTENTS = {
+    "narrative_action",
+    "skill_check",
+    "npc_dialogue",
+    "rest_action",
+    "recruit_attempt",
+    "dismiss_companion",
+}
 
 
 async def run(player_input: str) -> tuple[Intent, str | None]:

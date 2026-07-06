@@ -1,0 +1,113 @@
+# WORLD cast — a canon figure of the Reach, authored once at world scope. Appears in a scenario
+# only when connected or encountered. major: what remains of the Iron Vow is a real power in the
+# Reach's underworld of debts-no-court-will-hear, and Serel Vane is its head.
+name: "Serel Vane"
+race: "human"
+class: "fighter"
+subclass: "battle master"
+background: "mercenary veteran"
+alignment: "lawful neutral"
+level: 8
+portrait_url: null
+disposition: "neutral"
+tier: "major"
+narrative_profile:
+  name: "Serel Vane"
+  race: "human"
+  age: 51
+  profession: "Crowmarshal — the last commander of the Iron Vow"
+  physical: >
+    Lean and upright in a way that reads as discipline rather than vanity, iron-grey hair scraped
+    back and bound with a plain leather cord, a weathered face schooled over decades to give nothing
+    away. She wears the three crows openly, embroidered on a black surcoat gone soft and grey-edged
+    with age, where nearly every other veteran hides the mark — it is, in its way, a statement: she
+    is the one who does not need to hide. Her right hand is scarred white across the knuckles and she
+    keeps it half-curled; she offers the left to shake, and she watches which hand you reach for and
+    what your eyes do when you see the crows. She is never armed obviously and never, on inspection,
+    unarmed. When she stands still, which is often, she stands the way a sentry stands — weight even,
+    back to a wall, the exits already counted.
+  personality: >
+    Quiet, exact, and unhurried, carrying the terrible patience of a woman who has outlived everyone
+    who ever doubted her and expects to outlive everyone who doubts her now. She does not raise her
+    voice; she has never once in her life needed to, and she knows the not-needing is itself a kind of
+    threat. She is scrupulously, almost painfully fair — she will honor the letter of a bargain that
+    has turned against her rather than break her word by a hair — and this fairness is the most
+    unsettling thing about her, because it means the terms she states are exactly the terms that will
+    come to pass, no more and never any less. She believes, with the flat certainty of religion, that
+    the Vow's word is the only law left worth keeping in a country the powers walked away from, and
+    she enforces it the way a court would if any court out here still cared: without heat, without
+    mercy, and without end. She is not cruel. Cruelty is waste, and she does not waste.
+  voice:
+    accent: "clean, old-officer diction — the Wars drilled the frontier out of it long ago"
+    pace: "slow and complete; she finishes every sentence and lets the silence after it work"
+    vocabulary: "the language of ledgers and oaths — terms, faith, settlement, the debt, the book"
+    speech_quirks:
+      - "speaks of the Vow as 'we' even when she is entirely, obviously alone"
+      - "restates your own position back to you, precisely and without malice, before she answers it"
+      - "never threatens; she describes what will happen, in the future tense, as simple fact"
+  backstory: >
+    Serel Vane took the crow at nineteen, in the middle years of the Border Wars, a farrier's
+    daughter who had watched two brothers march off under heartland banners and neither come home.
+    The Iron Vow was different from the companies that had eaten her brothers: it kept its word, it
+    kept its own, and it paid its debts, and to a girl who had learned that the great powers did none
+    of those things, that was worth more than any wage. She rose through it slowly and without
+    charm — she was never loved, only trusted, which in the Vow counted for more — until by the last
+    years of the fighting she was one of a handful of officers the founder trusted to hold a line he
+    could not see.
+
+    When the powers ran out of coin and the Wars simply stopped, the Vow was left unpaid on a
+    frontier nobody wanted, and it should have scattered like all the rest. Most of it did. Serel
+    Vane held the core of it together through the first hard winters of the Quiet Peace by force of
+    will and a refusal, which she has never explained, to let the one honest thing she had ever
+    belonged to die of neglect. She buried the founder herself, and she has never taken his title,
+    only his work. Under her the Vow stopped being an army and became something stranger and more
+    lasting: the keeper of promises in a lawless country. Protection that holds. Recovery of what was
+    taken. And the settlement, patient and total, of debts no magistrate would hear.
+
+    Three generations of that work have made the three crows a verdict rather than a rumor. It has
+    also made Serel Vane very old for the trade, and very alone, and increasingly aware that the Vow
+    she has spent her life keeping alive is now more fear than force — a reputation held up by a
+    dwindling few, herself the oldest and hardest among them. She keeps a long book of debts owed and
+    owing, and she has begun, though she would never say so, to read it as a list of things she must
+    finish before there is no one iron enough left to finish them.
+  goals:
+    immediate: "keep the Vow's word worth fearing in a country that has no other law"
+    midterm: "settle the debts still open in the book — the ones owed to the Vow, and the ones the Vow owes, including the deserters"
+    life: "leave the three crows to someone who understands that faith kept is the only thing the Wars did not burn — and die before she has to watch it fail"
+  prejudices:
+    - "holds oath-breakers beneath contempt — lower than any honest enemy, because an enemy at least never claimed your trust"
+    - "distrusts the heartland powers and their agents on reflex; they abandoned the Reach and everyone in it, and she has not forgiven it in fifty years"
+    - "has no patience for charm, flattery, or cleverness aimed at her — she reads all three as the opening moves of a cheat"
+  relationships:
+    - {name: "the Iron Vow", relation: "the order she commands and embodies", status: "scattered but bound", notes: "a few sworn and a wider net of veterans who still answer the three crows; smaller than anyone outside it knows"}
+    - {name: "the founder", relation: "her commander, long dead", status: "deceased, unspoken", notes: "she buried him, took his work and never his title; the one loyalty she has never examined"}
+    - {name: "Bram Ashford", relation: "an open line in her book", status: "deserter, debt unsettled", notes: "took the crow and walked; she has not hurried, and she has not forgotten"}
+    - {name: "Reeve Halden", relation: "a heartland functionary in her district", status: "beneath her notice, so far", notes: "the kind of frightened official whose cover-ups occasionally make honest work harder"}
+  private_facts:
+    - "she knows more of who deserted and why than she ever admits, and has quietly spared one or two whose reasons she privately judged sound — but never publicly, because the day mercy becomes precedent is the day the crow means nothing"
+    - "the Vow is far smaller than the fear of it, perhaps fatally so, and keeping that difference invisible is now the largest part of her work"
+    - "she is tired in a way she cannot afford to be seen to be, and has started to wonder, in the smallest hours, whether the debts she is settling are the Vow's or only her own"
+ac: 18
+max_hp: 68
+speed: 30
+proficiency_bonus: 3
+initiative: 2
+passive_perception: 14
+cr: 5.0
+xp_value: 1800
+ability_scores: {str: 16, dex: 14, con: 15, int: 13, wis: 13, cha: 14}
+saving_throw_proficiencies: ["str", "con"]
+skill_proficiencies: ["intimidation", "insight", "history", "perception"]
+spellcasting_ability: null
+spell_slots: null
+spells_known: []
+features:
+  - {type: "trait", name: "Action Surge", description: "Take one additional action on your turn, once per short rest."}
+  - {type: "trait", name: "Combat Superiority", description: "Four superiority dice (d8); maneuvers: Riposte, Trip Attack, Commander's Strike."}
+  - {type: "trait", name: "Second Wind", description: "Regain 1d10+8 HP as a bonus action once per short rest."}
+  - {type: "attack", name: "Longsword", bonus: 7, damage: "1d8+4", damage_type: "slashing"}
+inventory:
+  - {name: "Longsword", quantity: 1}
+  - {name: "Half Plate", quantity: 1}
+  - {name: "The Vow's Ledger", quantity: 1, description: "A long book of debts kept and owed."}
+currency: {gp: 120, sp: 0, cp: 0}

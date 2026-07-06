@@ -3,6 +3,7 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel
 
+from cairn.domain.services.narrative_profile import format_profile
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
 from cairn.types import DialogueEntity
@@ -20,7 +21,7 @@ async def run(
     entity: DialogueEntity,
     context: str = "",
 ) -> DialogueResult:
-    """Voice an NPC or a party companion. The deep narrative profile lands in a later slice."""
+    """Voice an NPC or a party companion straight from their narrative profile."""
     prompt, model, fallbacks = agent_setup("dialogue")
 
     return await complete_to_model(
@@ -30,9 +31,10 @@ async def run(
                 "role": "user",
                 "content": prompt.render(
                     name=entity["name"],
-                    bio=entity["bio"],
-                    personality=entity["personality"],
+                    profile=format_profile(entity["profile"]),
                     disposition=entity["disposition"],
+                    approval_band=entity.get("approval_band"),
+                    mood=entity.get("mood"),
                     player_input=player_input,
                     context=context,
                 ),

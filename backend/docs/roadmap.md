@@ -268,6 +268,8 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 
 **Also pending / cross-cutting:** rewrite the stale day-1 intro ("What's running today" etc.) to reflect reality post-6; decide final slice numbering/ordering (lean: insert named slices, don't renumber, to preserve cross-references); the deploy-arch ADR (Phase B).
 
+**Content standard (2026-07).** Authored content depth bar = the `the_iron_vow` lore chunk + `serel_vane` profile (multi-section lore ~500–700 words; profiles with multi-paragraph backstory + full fields). **Real worlds/scenarios are 20+ files of lore + cast, not 3–4** — the architecture must assume that (retrieval-first: lean `always_on` chunks, depth in retrievable chunks + per-character profiles; RAG is Slice 13). The authored set is a **backbone** (major/recurring figures + core lore + key places); the **long tail (background NPCs, off-map locations) is generated on demand** by the NPC builder (Slice 7) and the location builder (Slice 8) — you do not hand-author everything. A full content pack for a world/scenario is **iterative content work**, not an engine-slice blocker.
+
 ---
 
 ### Slice 1 — Character CRUD + schema cleanup — DONE
@@ -1025,10 +1027,58 @@ This slice intentionally cut several items the original roadmap placed here. Eac
 _Depends on: Slice 5 (schema, scene model), Slice 6 (dialogue rename, post-response pass slot)._
 
 > **Reimagined post-6 (grilled 2026-07).** Supersedes the original Slice 7. Decisions locked in the "Decisions locked" block below.
+>
+> **Grill 2 (2026-07) — character scope + recruitment.** A second grill widened this slice with three revisions, captured in the new "Character scope", "Seed structure", and "Recruitment" sections below. They **supersede** any conflicting phrasing above/below: (1) **`tier` = plot importance, decoupled from authoring depth** — a background NPC can still be richly written; (2) **world- vs scenario-scoped characters** (the Skyrim model), with a nested seed folder tree; (3) a **recruitment flow** — companions are earned in-character, not auto-joined.
 
 Today an NPC carries thin narrative columns (`bio`, `personality`, `voice_traits`, `disposition`) and a companion is a `Character` with `is_companion=True` and an empty `companion_meta`. This slice gives every NPC and companion a deep, prose-driven **profile** — who they are, how they talk, their history, goals, prejudices, and secrets — and rewires the dialogue/narrator/ally agents to roleplay from that profile instead of a stat block. **This is the foundation slice for narrative quality.** Without depth here, dialogue plays thin, companions feel like followers, and scenes have nothing to riff on.
 
-The mental model: every NPC and every companion is a **real person**. Authored ones are many-page documents. Builder-generated ones come out lighter but follow the same shape. Tier determines depth, not shape.
+The mental model: every NPC and every companion is a **real person**. Authored ones are detailed, multi-section documents; builder-generated ones come out lighter but follow the same shape. **Authoring depth and narrative tier are separate dials** — a starting-tavern bartender the player talks to constantly deserves rich prose, and is still `background`.
+
+#### Character scope — world vs scenario (locked, grill 2)
+
+Characters exist at two authoring scopes, mirroring **World → Scenario (`CampaignTemplate`) → Campaign → Session**. The mental model is Skyrim: the *world* is the whole setting and its canon; a *scenario* is one adventure and where it starts (Riften vs Winterhold); the player navigates locations, meeting the scenario's local cast, while world-famous figures (Ulfric, Alduin) exist at world scope and appear only where they're connected.
+
+- **Scenario cast** — the local faces of one adventure. Cloned into the campaign's `npcs` rows **at creation** (always present; the player will very likely interact). Mostly `recurring` / `background`, but a scenario may author its **own** `major` (this adventure's villain).
+- **World cast** — canon figures authored once under the world. **Not** auto-instantiated — they exist as *known entities* (you can hear about Alduin through lore without meeting him). They enter a campaign only when **connected**:
+  - **Explicit** — a scenario's `template.md` lists `world_characters: [<key>...]`; those clone into the campaign at creation.
+  - **Lazy on-encounter** — if the player reaches a place/situation tied to a world figure the scenario didn't pre-declare, the engine instantiates them from the **authored world blueprint** (checked before falling back to builder generation — see the builder section).
+- **Tier × scope are orthogonal** — a `major` can be world- or scenario-scoped; a world figure can be `recurring`.
+- **Runtime stays campaign-scoped and isolated** — a world figure is *cloned* into your campaign's `npcs` rows, so your version can diverge (die, turn hostile) without touching any other campaign. World **lore** stays shared read-only (it's immutable reference); world **characters** clone (they're mutable). This preserves the campaign-isolation property the world-bible namespace already guarantees.
+
+#### Seed structure — nested to match the hierarchy (locked, grill 2)
+
+The old flat layout (`seed/worlds/` and `seed/templates/` as siblings) hid the hierarchy. New tree:
+
+```
+seed/worlds/<world>/
+  world.md                     world summary + calendar
+  lore/*.md                    shared read-only canon (unchanged)
+  characters/*.yaml            WORLD cast blueprints (recruitable ones flagged)
+  campaigns/<scenario>/        (was seed/templates/<scenario>/)
+    template.md                premise, acts, + world_characters: [keys] connections
+    characters/*.yaml          SCENARIO cast (was npcs.yaml)
+    locations.yaml
+    premade_characters/*.md     player-pickable PCs (unchanged shape)
+```
+
+- `templates/<scenario>/` moves under `worlds/<world>/campaigns/<scenario>/`. The seed loader + `campaigns.create` clone paths follow.
+- **No `companions/` folder.** A predefined companion is a cast member (world or scenario) flagged `recruitable: true` carrying a `companion_sheet` — recruitability is a *property*, not a location (see Recruitment). This unifies predefined and dynamic companions.
+- World-cast characters are seeded as **world-scoped blueprints** (analogous to `premade_characters` being template-scoped blueprints); connected/encountered ones clone into campaign `npcs` rows.
+
+#### Recruitment — earned in-character (locked, grill 2)
+
+A companion is a `Character(is_companion=True)` with a full playable sheet (`ally_ai` actually spends their abilities). An NPC is a lighter `npcs` row. Recruitment bridges them, serving **both** predefined (authored) and dynamic (any bonded `recurring` NPC) recruits through **one path**:
+
+- **Spine — convert on recruit.** An unrecruited companion lives in the world as a normal **NPC** (met, talked to, promoted via the machinery below). Recruiting **converts NPC → `Character(is_companion=True)`**:
+  - **Predefined** — the cast blueprint carries an authored `companion_sheet`; conversion copies it + inits `companion_meta` (approval 0).
+  - **Dynamic** — a builder "stat-up" pass derives a playable sheet from the NPC's stats/profile (reuses the Phase-4 builder, pointed at sheet-building).
+  - The source `npcs` row is retired once converted.
+- **Adjudication — a dedicated `recruiter` prompt, not a toggle.** When a recruitment bid is detected, the candidate weighs it against their `narrative_profile` (goals, prejudices, personality) + current disposition/approval + recent history + what the player offered/proved, and returns a structured decision: **accept** / **refuse** / **conditional**. No hard numeric gate — a hostile candidate won't come; a warming one may set terms. `agents/recruiter.py` + `prompts/recruiter/v1.md` + `models.yaml` entry.
+  - **accept** → conversion fires; approval starts at 0.
+  - **refuse** → stays an NPC; won't be badgered; re-attemptable if circumstances change.
+  - **conditional** → the ask is recorded (lightweight — an `NPC.recruitment_condition` string) and re-opens recruitment once satisfied.
+- **Party cap** — soft `MAX_ACTIVE_COMPANIONS = 4`; recruiting past it requires dismissing someone (narrated, not a hard wall).
+- **Dismissal** — supported: `Character(is_companion=True)` → back to an NPC at the current location, remembering the parting. **Auto-leave** on betrayal / rock-bottom approval is flagged, **not** built in v1.
 
 #### Storage model — hybrid, not a monolith (locked)
 
@@ -1090,7 +1140,7 @@ Approval is **LLM-driven only in v1 — no hardcoded auto-triggers, no reaction 
 
 #### Build — NPC tier + promotion
 
-- **Tiers:** `major` (authored, multi-page), `recurring` (medium depth), `background` (walk-on).
+- **Tiers = plot importance, not authoring depth (grill 2):** `major` = the story turns on them (antagonist, key patron, arc-bearing ally) — authored-only, the builder never emits one; `recurring` = a stable returning presence with a stake; `background` = texture (bartender, guard, passerby). Depth is a separate dial — a `background` NPC can still be richly authored.
 - **Auto-promotion (locked):** a `background` NPC promotes to `recurring` automatically once the player has genuinely engaged it — **≥3 dialogue exchanges** with that NPC. Promotion fires a *one-time* builder deepen-pass that extends the existing profile in place (same name/facts, fleshed out — continuity preserved).
 - Promotion counter: track dialogue-exchange count per NPC (small counter column or derive from turn/scene history — decide during build; lean a `dialogue_exchange_count` column on NPC for cheap reads).
 
@@ -1098,7 +1148,7 @@ Approval is **LLM-driven only in v1 — no hardcoded auto-triggers, no reaction 
 
 `agents/npc_builder.py` + `prompts/npc_builder/v1.md`. **The builder never generates `major`** — that's authored-only ("authoring is the foundation").
 
-- **Lazy / on-demand firing (locked):** generate only when the player actually addresses an NPC who doesn't exist. `_resolve_dialogue` calls `npc_queries.find_by_name`; on miss (and no companion match), the dialogue path invokes the builder to create a `background` NPC, then answers. Only NPCs that get talked to are ever paid for.
+- **Lazy / on-demand firing (locked):** generate only when the player actually addresses an NPC who doesn't exist. `_resolve_dialogue` calls `npc_queries.find_by_name`; on miss (and no companion match), the dialogue path **first checks the authored world-cast blueprints** (grill 2) — if the name matches a known world figure, instantiate them from the blueprint (preserving canon); otherwise the builder creates a `background` NPC — then answers. Only NPCs that get talked to are ever paid for.
 - **Model tiered to value (locked):** `background` generation uses the **fast/cheap tier** (~1–2s, barely noticeable before dialogue streams). The **promotion-to-`recurring`** deepen-pass uses a **stronger tier** (rarer, earns the spend). Drops the original "always frontier builder." (Locally both map to Qwen via `models.yaml`, so dev is free.)
 - **Authored-scene NPCs are the exception:** NPCs a scene explicitly declares (Slice 8 scene schema) are built when the scene is created — the author declared they matter.
 - **Canon-consistency at build time (pre-RAG):** inject `{location context, factions present, existing NPCs in the area, always_on lore chunks, key-matched world bible entries for referenced names}` so a generated NPC doesn't contradict canon. RAG-quality retrieval swaps in when it lands (Slice 13); key-match is the v1 mechanism.
@@ -1137,11 +1187,15 @@ Receives: full profile of the speaking entity + active PC's profile for context 
 - `scene_narrator/v1.md` — receives profiles of all NPCs and companions in scene. Drops 1–2 sentence companion reactions in narrative turns when their approval/mood/personal_goal/prejudices are touched. Sparingly, meaningfully.
 - `ally_ai/v1.md` — receives the companion's full profile + current approval/mood. Behavior emerges from profile (low approval → hesitates, refuses risky support, sarcastic; high approval → takes risks for the PC), never `if approval < 0: refuse`.
 
-#### Build — templates (authoring discipline)
+#### Build — content authoring (discipline; grill 2)
 
-- `seed/templates/tavern_v1/npcs/old_grim.yaml` — fully authored, many-page profile as the bar (Edrik, Anneth, Maren, Captain Vell, Tomas referenced; backstory as continuous prose).
-- All other tavern_v1 NPCs upgraded to at least `recurring` depth.
-- `seed/templates/tavern_v1/companions/<name>.yaml` for each premade companion at the same bar.
+Author at real depth — detailed, multi-section, not two tidy paragraphs. Depth is the *authoring* bar; **tier is plot importance** (a richly-written bartender is still `background`).
+
+- **World cast** — `seed/worlds/cairn_v1/characters/*.yaml`: the setting's canon figures at world scope (a ruler, a legend, a known villain). These carry the `major` figures of the world; some are `recruitable`.
+- **World lore** — deepen `seed/worlds/cairn_v1/lore/*.md` so the world is rich enough for world characters to be *of* somewhere.
+- **Scenario cast** — `seed/worlds/cairn_v1/campaigns/tavern_v1/characters/*.yaml` (was `npcs.yaml`): Old Grim authored richly but tiered **`background`/`recurring`** (a tavernkeeper, not a plot pillar); the scenario's own `major` (if any) is this adventure's antagonist, not the barman.
+- **Companions** — one or two recruitable companions in the scenario cast (flagged `recruitable`, carrying a `companion_sheet`) — e.g. a sellsword at the bar the player can earn.
+- `template.md` declares `world_characters: [<key>...]` for the world figures this scenario connects.
 
 #### Fix
 
@@ -1158,14 +1212,20 @@ Receives: full profile of the speaking entity + active PC's profile for context 
 | `Character.narrative_profile` JSONB (new); drop `Character.bio`, `Character.personality`, `Character.voice_traits` | Same, for companions. |
 | `Character.companion_meta` — no change (already exists) | Approval/mood/goal/secret/log live here. |
 | `NPC.disposition` — no change (stays a column) | Hot-path read. |
+| **`NPC.recruitable` bool (new, default false)** (grill 2) | Predefined companions set it; any `recurring` NPC is dynamically recruitable. |
+| **`NPC.companion_sheet` JSONB \| null (new)** (grill 2) | Authored playable sheet for predefined companions; null → builder stats up dynamic recruits. |
+| **`NPC.recruitment_condition` str \| null (new)** (grill 2) | Tracks a `conditional` recruiter outcome; re-opens recruitment when met. |
+| **World-cast blueprint store (new)** (grill 2) | World characters seeded as world-scoped blueprints (like `premade_characters` are template-scoped); connected/encountered ones clone into campaign `npcs`. Table shape finalized at build. |
 
-Pre-launch nuke-and-reseed acceptable (no production data).
+Pre-launch nuke-and-reseed acceptable (no production data). Grill-2 columns fold into the **same single migration**.
 
 #### Files added / changed
 
-- **New:** `agents/npc_builder.py`, `prompts/npc_builder/v1.md`, `agents/companion_reflector.py`, `prompts/companion_reflector/v1.md`, `domain/services/companions.py`, `db/queries/companions.py` (or extend `characters.py`).
-- **Changed:** `db/models/npc.py`, `db/models/character.py` (profile/tier/counter columns); `db/queries/npcs.py` (`find_by_name` ranked + scene-aware, tier/promotion helpers); `agents/dialogue.py` + `prompts/dialogue/v1.md`; `agents/scene_narrator.py` + `prompts/scene_narrator/v1.md`; `agents/combat_ai.py` + `prompts/ally_ai/v1.md`; `domain/services/turns.py` (schedule `companion_reflector` in the post-response slot); `domain/services/narrative_context.py` + `scene_director_context.py` (inject profiles); `agents/lore_keeper.py` (disposition-change entries); `llm/models.yaml` (`npc_builder`, `companion_reflector`); `cairn/types.py` (`NarrativeProfile`, `CompanionMeta`, `ApprovalDelta`, `NpcTier`).
-- **Tool registry:** no new LLM-callable tools (approval is service-applied from reflector structured output).
+- **New:** `agents/npc_builder.py`, `prompts/npc_builder/v1.md`, `agents/companion_reflector.py`, `prompts/companion_reflector/v1.md`, `domain/services/companions.py`, `domain/services/narrative_profile.py` (profile→prompt formatter). Extend `db/queries/characters.py` for companion-meta (no separate `companions.py`).
+- **New (grill 2):** `agents/recruiter.py` + `prompts/recruiter/v1.md` + `models.yaml` entry (recruitment adjudication); `domain/services/recruitment.py` (NPC→Character conversion, dismissal, party cap); world-cast seeding + blueprint store + connection/lazy-instantiation logic in `domain/services/campaigns.py` + `db/queries`.
+- **Changed:** `db/models/npc.py`, `db/models/character.py` (profile/tier/counter + recruit columns); `db/queries/npcs.py` (`find_by_name` ranked + scene-aware, tier/promotion + world-cast lookup helpers); `agents/dialogue.py` + `prompts/dialogue/v1.md`; `agents/scene_narrator.py` + `prompts/scene_narrator/v1.md`; `agents/combat_ai.py` + `prompts/ally_ai/v1.md`; `domain/services/turns.py` (schedule `companion_reflector`); `domain/services/narrative_context.py` + `scene_director_context.py` (inject profiles); `agents/lore_keeper.py` (disposition-change entries); `llm/models.yaml` (`npc_builder`, `companion_reflector`, `recruiter`); `cairn/types.py` (`NarrativeProfile`, `CompanionMeta`, `ApprovalDelta`, `NpcTier`).
+- **Seed restructure (grill 2):** `seed/templates/<scenario>/` → `seed/worlds/<world>/campaigns/<scenario>/`; `npcs.yaml` → `characters/`; new `seed/worlds/<world>/characters/`; loader in `cli/seed.py` + clone paths in `domain/services/campaigns.py` follow.
+- **Tool registry:** no new LLM-callable tools (approval is service-applied from reflector output; recruitment is a resolver acting on the `recruiter` decision).
 
 #### Decisions locked (grilled 2026-07)
 
@@ -1174,9 +1234,12 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 3. **Approval placement** — fire-and-forget **post-turn reflection pass** (`companion_reflector`), structured output, uniform across narrative + combat, fires only when companions present. No inline approval tool in v1.
 4. **Magnitude** — ±2–5 minor, ±15–30 major; clamp [-100, 100].
 5. **Surfacing** — vague bands to the player; green/red `approval_log` reason lines in the companion drawer **without numeric deltas or the running total** — the raw integer never reaches the player (see the resolved-contradiction paragraph above; a stale "raw number in the drawer" phrasing here was corrected 2026-07).
-6. **Tiers** — auto-promote background→recurring at **≥3 dialogue exchanges**; builder caps at `recurring`; `major` authored-only.
-7. **Builder** — **lazy on-demand**; cheap/fast model for `background`, stronger model only on promotion; canon context injected at build time (key-match pre-RAG).
+6. **Tiers** — **tier = plot importance, not authoring depth** (grill 2); auto-promote background→recurring at **≥3 dialogue exchanges**; builder caps at `recurring`; `major` authored-only.
+7. **Builder** — **lazy on-demand**; cheap/fast model for `background`, stronger model only on promotion; canon context injected at build time (key-match pre-RAG); on a name miss, **authored world-cast blueprint is checked before generation** (grill 2).
 8. **Approval scope** — PC↔companion only in v1; inter-companion matrix = v2.
+9. **Character scope (grill 2)** — world- vs scenario-scoped cast (Skyrim model); scenario cast clones at creation, world cast clones on explicit connection or lazy encounter; runtime campaign-scoped + isolated; tier × scope orthogonal.
+10. **Seed structure (grill 2)** — nested `worlds/<world>/campaigns/<scenario>/`; `npcs.yaml` → `characters/`; no `companions/` folder (recruitability is a property).
+11. **Recruitment (grill 2)** — unrecruited companions are NPCs; recruiting converts NPC→`Character`; predefined ship a `companion_sheet`, dynamic recruits are statted-up by the builder; adjudicated by a dedicated `recruiter` prompt (accept/refuse/conditional, no hard gate); conditions tracked; party soft-cap 4; dismissal supported; auto-leave deferred.
 
 #### Verify
 
@@ -1188,6 +1251,8 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 - Companion at approval −40 in combat refuses to spend a daily ability on the PC; at +60 volunteers it (ally_ai reads profile + approval, no hardcoded threshold).
 - Approval drawer shows the last 20 changes, green/red, each with a reason; the player never sees a raw number elsewhere.
 - No dialogue response ever lists facts as bullets or dumps exposition.
+- **(grill 2) Scope:** a scenario clones its local cast at creation; a connected world figure appears; an unconnected world figure is only referenced in lore until the player reaches them, then instantiates from the authored blueprint (not a fresh generation).
+- **(grill 2) Recruitment:** asking a candidate to join runs the `recruiter` adjudication — a low-approval/hostile candidate refuses in character; a warming one sets a condition; meeting it and asking again yields accept → the NPC converts to a `Character(is_companion=True)` and joins the party. A dismissed companion becomes an NPC again. Recruiting a plain `recurring` NPC (dynamic) stats them up into a playable sheet.
 
 ---
 
@@ -1473,6 +1538,8 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 _Reimagined post-6 (grilled 2026-07). Depends on: Slice 6 (combat polish), Slice 7 (companion profile for ally_ai), Slice 8 (scene context feeds `zone_seeder`)._
 
 Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 **named regions** per combat, each combatant in one, distances as categories (`close` / `far` / `out_of_range`). Moving between zones is a tool that spends the mover's **real Speed**. Attack/spell range is a hard legality gate. This is a **node graph, not a grid** — the UI renders regions, not squares.
+
+> **Locations rework (locked 2026-07, this slice owns it).** Today `locations.yaml` bakes a combat-zone grid (`Location.zones` with cover/terrain/adjacency) into every authored place — wrong. **A location is an *abstract* narrative place** (name + description + connections), nothing tactical. Combat zones are **generated by the engine** (`zone_seeder`) from the abstract location + scene context **when combat starts**, not hand-authored. This removes `Location.zones` authoring, drops the baked grid from `locations.yaml`, and makes the tactical map a native product of where the fight happens. Authors describe places; the engine derives the battlefield.
 
 **Design stance (locked): block the impossible, allow the unwise.** The engine knows range/position as fact and enforces *legality* — an out-of-range action is rejected with a plain reason and control returned, **never** "so move closer." It does not nanny tactics or protect informed-but-bad choices (a Fireball that also catches your ally resolves; the friendly fire lands). The **same** enforcement path serves the human player (via `combat_resolver`) and AI combatants (via `combat_ai`) — range lives in the tool layer, checked once.
 

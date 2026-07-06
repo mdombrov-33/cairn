@@ -29,15 +29,50 @@ async def get_npc(session: AsyncSession, npc_id: uuid.UUID) -> NPC:
     return npc
 
 
-async def find_by_name(session: AsyncSession, campaign_id: uuid.UUID, name_hint: str) -> NPC | None:
-    """Fuzzy match: finds the first NPC whose name contains the hint or vice versa."""
+def _name_score(npc_name: str, hint: str) -> int:
+    """Rank a name against a hint: exact > whole-word > substring > token-overlap > miss."""
+    name = npc_name.lower()
+    tokens = name.split()
+    if name == hint:
+        return 100
+    if hint in tokens:
+        return 80
+    if hint in name or name in hint:
+        return 50
+    if set(hint.split()) & set(tokens):
+        return 30
+    return 0
+
+
+async def find_by_name(
+    session: AsyncSession,
+    campaign_id: uuid.UUID,
+    name_hint: str,
+    *,
+    location_id: uuid.UUID | None = None,
+) -> NPC | None:
+    """Best ranked match for a spoken name — exact beats partial, and an NPC standing in the
+    current scene (``location_id``) wins ties over one referenced from elsewhere."""
+    hint = name_hint.strip().lower()
+    if not hint:
+        return None
     npcs = await get_npcs_by_campaign(session, campaign_id)
-    hint = name_hint.lower()
-    for npc in npcs:
-        npc_lower = npc.name.lower()
-        if hint in npc_lower or npc_lower in hint:
-            return npc
-    return None
+
+    def rank(npc: NPC) -> int:
+        score = _name_score(npc.name, hint)
+        if score and location_id is not None and npc.location_id == location_id:
+            score += 10
+        return score
+
+    best = max(npcs, key=rank, default=None)
+    return best if best is not None and rank(best) > 0 else None
+
+
+async def bump_dialogue_exchange(session: AsyncSession, npc: NPC) -> int:
+    """Increment the promotion counter for a talked-to NPC; returns the new count."""
+    npc.dialogue_exchange_count += 1
+    await session.flush()
+    return npc.dialogue_exchange_count
 
 
 async def list_by_location(session: AsyncSession, campaign_id: uuid.UUID, location_id: uuid.UUID) -> list[NPC]:
@@ -64,3 +99,10 @@ async def update_disposition(session: AsyncSession, npc_id: uuid.UUID, dispositi
     npc.disposition = disposition
     await session.flush()
     return npc
+
+
+async def delete_npc(session: AsyncSession, npc_id: uuid.UUID) -> None:
+    """Retire an NPC row — used when a recruited NPC converts into a party Character."""
+    npc = await get_npc(session, npc_id)
+    await session.delete(npc)
+    await session.flush()

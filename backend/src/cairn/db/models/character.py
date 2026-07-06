@@ -8,11 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from cairn.db.base import Base
 from cairn.types import (
     AbilityScores,
+    CompanionMeta,
     ConcentrationData,
     Currency,
     FeatEntry,
     FeatureEntry,
     InventoryItem,
+    NarrativeProfile,
     Resource,
     SpellSlots,
 )
@@ -80,13 +82,11 @@ class Character(Base):
     # System-enforced advantage flag. Granted by DM for good roleplay, spent for advantage.
     has_inspiration: Mapped[bool] = mapped_column(default=False, server_default="false")
 
-    # For is_companion=True: approval/mood/personal_goal/secret. Populated in a later slice.
-    companion_meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # For is_companion=True: approval/mood/personal_goal/secret/approval_log.
+    companion_meta: Mapped[CompanionMeta | None] = mapped_column(JSONB, nullable=True)
 
-    # narrative voice — replaced by NarrativeProfile in Slice 7; stays loose for now.
-    bio: Mapped[str | None]
-    personality: Mapped[str | None]
-    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    # Deep prose identity — same shape as NPC.narrative_profile. Empty for PCs until authored.
+    narrative_profile: Mapped[NarrativeProfile] = mapped_column(JSONB, default=dict, server_default="{}")
 
     # spellcasting - None for non-spellcasters
     spellcasting_ability: Mapped[str | None]

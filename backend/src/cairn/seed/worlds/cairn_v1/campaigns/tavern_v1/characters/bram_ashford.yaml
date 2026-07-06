@@ -1,0 +1,119 @@
+# A recruitable companion. He lives in the scenario as an NPC (drinking at the Grimwood) until
+# the party earns him — recruitment converts this NPC into a Character(is_companion=True) using
+# `companion_sheet`. recruitable=true; any recurring NPC could also be recruited dynamically,
+# but Bram ships an authored sheet so his party version is hand-tuned.
+name: "Bram Ashford"
+race: "human"
+class: "fighter"
+subclass: null
+background: "mercenary veteran"
+alignment: "chaotic good"
+level: 2
+portrait_url: null
+disposition: "friendly"
+tier: "recurring"
+recruitable: true
+narrative_profile:
+  name: "Bram Ashford"
+  race: "human"
+  age: 29
+  profession: "sellsword between contracts, once of the Iron Vow"
+  physical: >
+    Big through the chest and easy on his feet, with a boxer's nose that's been broken twice and a
+    grin he uses to end arguments before they start. Chain shirt kept oiled, boots kept bad. On his
+    left forearm, under a sleeve he rarely rolls up, is a small crow sigil — the mark of the Iron Vow,
+    scarred over as if he once tried to burn it off and thought better of it.
+  personality: >
+    Loud, warm, and quicker to laugh than the room usually deserves — which is armor, mostly. Loyal to
+    whoever's loyal back and allergic to cruelty dressed up as necessity. Brave to the edge of stupid,
+    and touchy about being called stupid. He tests people with jokes before he trusts them with
+    anything true.
+  voice:
+    accent: "cheerful lowland drawl"
+    pace: "fast when happy, clipped when he isn't"
+    vocabulary: "camp slang, easy oaths, the odd surprisingly gentle word"
+    speech_quirks:
+      - "names his weapons and talks to them"
+      - "deflects a real question with a joke — but only once; press him and he'll level"
+  backstory: >
+    Bram soldiered under the three crows of the Iron Vow until the night a captain ordered a granary
+    burned to starve a holdout village into terms through the winter. He put the fire out instead and
+    walked — which among the Vow, who keep faith with their own above all, is the one unforgivable
+    thing. They do not call it conscience. They call it desertion, and the Vow settles its own debts.
+
+    Since then he's drifted the Reach on odd contracts, never staying anywhere the crows might come
+    asking. He drinks at the Grimwood because Old Grim doesn't pry and the ale is honest, and because
+    two old soldiers can share a bar without needing to say a word about any of it. He is looking,
+    though he'd never put it plainly, for people worth standing beside again — and for whom standing
+    beside them might mean something.
+  goals:
+    immediate: "a contract that pays and doesn't turn his stomach"
+    midterm: "stay ahead of the Vow — or face the ones who'd hold his walking against him"
+    life: "a life he doesn't have to keep a sleeve over"
+  prejudices:
+    - "despises officers who spend other men to look decisive"
+    - "won't abide harming folk who can't fight back — it's the line he broke faith over"
+  relationships:
+    - {name: "the Iron Vow", relation: "former order", status: "would call him deserter", notes: "the three crows keep faith with their own; he broke it"}
+    - {name: "Old Grim", relation: "tavernkeeper", status: "wary mutual respect", notes: "two old soldiers who don't need to say it"}
+  private_facts:
+    - "the desertion and the crow scar; he'll only speak of it once he trusts you not to sell it to the Vow"
+# Copied into a Character(is_companion=True) on recruitment. The narrative_profile above carries
+# over; companion_meta is initialized fresh (approval 0) from personal_goal/secret here.
+companion_sheet:
+  personal_goal: "earn back a name worth more than the price the Vow would pay for it"
+  secret: "he didn't just douse the fire — he cut down the sergeant who tried to relight it, and that man had a family"
+  classes:
+    - {name: "fighter", level: 2, hit_dice_spent: 0, subclass: null}
+  hit_die_size: 10
+  hit_dice_remaining: 2
+  hp: 20
+  max_hp: 20
+  temp_hp: 0
+  ac: 16
+  speed: 30
+  proficiency_bonus: 2
+  initiative: 1
+  passive_perception: 12
+  ability_scores: {str: 16, dex: 13, con: 14, int: 9, wis: 11, cha: 12}
+  saving_throw_proficiencies: ["str", "con"]
+  skill_proficiencies: ["athletics", "intimidation", "perception"]
+  spellcasting_ability: null
+  spell_slots: null
+  spells_known: []
+  prepared_spells: []
+  resources:
+    second_wind: {name: "Second Wind", max: 1, current: 1, recharge: "short_rest"}
+  features:
+    - {type: "trait", name: "Second Wind", description: "Regain 1d10+2 HP as a bonus action once per short rest."}
+    - {type: "attack", name: "Longsword", bonus: 5, damage: "1d8+3", damage_type: "slashing"}
+  feats: []
+  inventory:
+    - {name: "Longsword", quantity: 1}
+    - {name: "Chain Shirt", quantity: 1}
+    - {name: "Shield", quantity: 1}
+    - {name: "Bedroll", quantity: 1}
+  currency: {gp: 4, sp: 0, cp: 6}
+# NPC combat presence (pre-recruitment, if a brawl breaks out at the bar). Mirrors the sheet.
+ac: 16
+max_hp: 20
+speed: 30
+proficiency_bonus: 2
+initiative: 1
+passive_perception: 12
+cr: 0.5
+xp_value: 100
+ability_scores: {str: 16, dex: 13, con: 14, int: 9, wis: 11, cha: 12}
+saving_throw_proficiencies: ["str", "con"]
+skill_proficiencies: ["athletics", "intimidation", "perception"]
+spellcasting_ability: null
+spell_slots: null
+spells_known: []
+features:
+  - {type: "trait", name: "Second Wind", description: "Regain 1d10+2 HP as a bonus action once per short rest."}
+  - {type: "attack", name: "Longsword", bonus: 5, damage: "1d8+3", damage_type: "slashing"}
+inventory:
+  - {name: "Longsword", quantity: 1}
+  - {name: "Chain Shirt", quantity: 1}
+  - {name: "Shield", quantity: 1}
+currency: {gp: 4, sp: 0, cp: 6}

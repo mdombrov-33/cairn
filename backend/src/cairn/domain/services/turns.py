@@ -6,7 +6,7 @@ from typing import Any
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cairn.agents import combat_resolver, lore_keeper, scene_director, scene_narrator
+from cairn.agents import combat_resolver, companion_reflector, lore_keeper, scene_director, scene_narrator
 from cairn.context import recording_turn
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
@@ -20,6 +20,7 @@ from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
+from cairn.domain.services import companions as companions_service
 from cairn.domain.services import loot as loot_service
 from cairn.domain.services import narrative_context, scene_director_context
 from cairn.domain.services import time as time_service
@@ -102,9 +103,10 @@ def _check_payload(check: CheckData) -> dict[str, Any]:
 def _schedule_post_turn(
     dm_response: str, *, session_id: uuid.UUID, campaign_id: uuid.UUID, namespace: str, turn_id: uuid.UUID
 ) -> None:
-    """Shared post-narration epilogue: fire the LoreKeeper and the Scene Director post-pass."""
+    """Shared post-narration epilogue: fire the LoreKeeper, Scene Director post-pass, and reflector."""
     schedule_lore_keeper(dm_response, campaign_id, namespace, turn_id)
     schedule_scene_director_post(session_id, turn_id)
+    schedule_companion_reflector(session_id, turn_id)
 
 
 async def _narrate(
@@ -190,8 +192,13 @@ async def stream(
             yield _event("check_required", _check_payload(check))
             return
 
-        # npc_dialogue folds the NPC's line into the context; narrative_action uses DM context alone.
-        context = _join_context(dm_context, state["npc_context"] or "") if intent == "npc_dialogue" else dm_context
+        # Intents that resolve to an NPC/companion line fold it into the context; narrative_action
+        # uses the DM context alone.
+        context = (
+            _join_context(dm_context, state["npc_context"] or "")
+            if intent in ("npc_dialogue", "recruit_attempt", "dismiss_companion")
+            else dm_context
+        )
 
         narrator = scene_narrator.run(
             state["player_input"],
@@ -361,6 +368,66 @@ async def _apply_director_time(db: AsyncSession, session: Session, turn_id: uuid
 
 def schedule_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
     asyncio.create_task(run_scene_director_post(session_id, turn_id), name="cairn-bg")
+
+
+def _companion_view(character: Character) -> dict[str, Any]:
+    """The reflector's view of a companion: who they are + their current standing."""
+    profile = character.narrative_profile or {}
+    meta = character.companion_meta or {}
+    return {
+        "id": str(character.id),
+        "name": character.name,
+        "personality": profile.get("personality", ""),
+        "prejudices": profile.get("prejudices", []),
+        "personal_goal": meta.get("personal_goal", ""),
+        "approval": meta.get("approval", 0),
+        "mood": meta.get("mood", "content"),
+    }
+
+
+async def run_companion_reflector(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
+    """Judge a completed turn per-companion and apply approval deltas. Fire-and-forget.
+
+    Reads the committed turn (player input, narration, events) and the party's companions;
+    if none are present it does nothing. Deltas that name an unknown companion or move by 0
+    are dropped before they reach the approval service.
+    """
+    try:
+        async with db_client.get_sessionmaker()() as db:
+            party = await character_queries.get_party_for_session(db, session_id)
+            companions = [c for c in party if c.is_companion]
+            if not companions:
+                return
+            turn = await turn_queries.get_turn(db, turn_id)
+            player_input = turn.player_input
+            dm_response = turn.dm_response or ""
+            events = list(turn.events or [])
+            views = [_companion_view(c) for c in companions]
+
+        deltas = await companion_reflector.run(
+            player_input=player_input, dm_response=dm_response, events=events, companions=views
+        )
+        valid_ids = {str(c.id) for c in companions}
+        applied = [d for d in deltas if d["companion_id"] in valid_ids and d["delta"] != 0]
+        if not applied:
+            return
+
+        async with db_client.get_sessionmaker()() as db, db.begin():
+            for delta in applied:
+                await companions_service.adjust_approval(
+                    db,
+                    character_id=uuid.UUID(delta["companion_id"]),
+                    delta=delta["delta"],
+                    reason=delta["reason"],
+                    turn_id=turn_id,
+                )
+        log.info("companion_reflector_done", count=len(applied), session_id=str(session_id))
+    except Exception as exc:
+        log.error("companion_reflector_failed", error=str(exc), session_id=str(session_id))
+
+
+def schedule_companion_reflector(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
+    asyncio.create_task(run_companion_reflector(session_id, turn_id), name="cairn-bg")
 
 
 async def consume_death_recovery(db: AsyncSession, *, session_id: uuid.UUID) -> bool:

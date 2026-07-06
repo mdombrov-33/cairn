@@ -13,6 +13,7 @@ from cairn.types import (
     FeatEntry,
     FeatureEntry,
     InventoryItem,
+    NarrativeProfile,
     SpellSlots,
 )
 
@@ -34,11 +35,21 @@ class NPC(Base):
     level: Mapped[int] = mapped_column(default=1, server_default="1")
     portrait_url: Mapped[str | None]
 
-    # Narrative / voice — replaced by NarrativeProfile in Slice 7.
-    bio: Mapped[str]
-    personality: Mapped[str]
-    voice_traits: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    # Deep prose identity — who they are, how they talk, history, goals, prejudices, secrets.
+    narrative_profile: Mapped[NarrativeProfile] = mapped_column(JSONB, default=dict, server_default="{}")
     disposition: Mapped[str] = mapped_column(default="neutral", server_default="neutral")
+    # Narrative importance to the plot (NOT authoring depth): major | recurring | background.
+    tier: Mapped[str] = mapped_column(default="background", server_default="background")
+    # Cheap promotion trigger: background→recurring auto-promotes at >=3 dialogue exchanges.
+    dialogue_exchange_count: Mapped[int] = mapped_column(default=0, server_default="0")
+
+    # Recruitment: an unrecruited companion lives as an NPC. `recruitable` marks predefined
+    # companions (any recurring NPC is also dynamically recruitable). `companion_sheet` is the
+    # authored playable sheet copied on conversion (null → the builder stats up a dynamic recruit).
+    # `recruitment_condition` records a `conditional` recruiter outcome until it's met.
+    recruitable: Mapped[bool] = mapped_column(default=False, server_default="false")
+    companion_sheet: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    recruitment_condition: Mapped[str | None]
 
     # Combat stats
     ac: Mapped[int] = mapped_column(default=10, server_default="10")

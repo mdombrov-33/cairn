@@ -15,10 +15,12 @@ RANGER_COMPANION: dict = {
     "ability_scores": {"str": 10, "dex": 15, "con": 13, "int": 8, "wis": 14, "cha": 12},
     "skill_choices": ["Athletics", "Stealth", "Survival"],
     "alignment": "Neutral Good",
-    "bio": "A traveling ranger.",
-    "personality": "Watchful.",
     "is_companion": True,
-    "voice_traits": {"accent": "soft", "pace": "measured"},
+    "narrative_profile": {
+        "name": "Bria",
+        "personality": "Watchful.",
+        "voice": {"accent": "soft", "pace": "measured"},
+    },
 }
 
 

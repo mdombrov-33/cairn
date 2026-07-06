@@ -39,6 +39,7 @@ async def upsert(
     premise: str,
     acts: list[dict[str, Any]],
     always_on_lore_keys: list[str],
+    world_characters: list[str],
     status: str,
 ) -> CampaignTemplate:
     stmt = (
@@ -50,6 +51,7 @@ async def upsert(
             premise=premise,
             acts=acts,
             always_on_lore_keys=always_on_lore_keys,
+            world_characters=world_characters,
             status=status,
         )
         .on_conflict_do_update(
@@ -60,6 +62,7 @@ async def upsert(
                 "premise": premise,
                 "acts": acts,
                 "always_on_lore_keys": always_on_lore_keys,
+                "world_characters": world_characters,
                 "status": status,
             },
         )

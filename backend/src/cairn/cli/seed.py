@@ -2,15 +2,16 @@
 
 Usage: uv run python -m cairn.cli.seed <template_key>   (e.g. tavern_v1)
 
-Authored content lives in files under src/cairn/seed/:
-  worlds/<world_key>/world.md         frontmatter: key, name, calendar; body: summary
-  worlds/<world_key>/lore/*.md        frontmatter: category, key, title, tags, always_on; body: content
-  templates/<template_key>/template.md  frontmatter: key, world, title, status,
-                                        always_on_lore_keys, acts; body: premise
-  templates/<template_key>/premade_characters/*.md  frontmatter: sheet fields; body: bio
+Authored content lives in files under src/cairn/seed/ (nested World → Scenario):
+  worlds/<world>/world.md              frontmatter: key, name, calendar; body: summary
+  worlds/<world>/lore/*.md             frontmatter: category, key, title, tags, always_on; body: content
+  worlds/<world>/characters/*.yaml     world-cast NPC blueprints (canon figures)
+  worlds/<world>/campaigns/<scenario>/template.md  frontmatter: key, world, title, status,
+                                        always_on_lore_keys, world_characters, acts; body: premise
+  worlds/<world>/campaigns/<scenario>/premade_characters/*.md  frontmatter: sheet fields; body: backstory
 
-NPC/location blueprints stay as YAML and are cloned per-campaign at campaign creation —
-they are NOT seeded here.
+Character/location blueprints (scenario `characters/`, world `characters/`, `locations.yaml`) stay as
+YAML and are cloned per-campaign at campaign creation — they are NOT seeded into DB here.
 """
 
 import asyncio
@@ -66,8 +67,16 @@ async def _seed_world(db: Any, world_key: str) -> Any:
     return world
 
 
+def _find_campaign_dir(template_key: str) -> Path:
+    """Locate a scenario dir by key under any world: worlds/<world>/campaigns/<key>/."""
+    matches = sorted(_SEED_DIR.glob(f"worlds/*/campaigns/{template_key}"))
+    if not matches:
+        raise FileNotFoundError(f"no scenario dir for template {template_key!r} under seed/worlds/*/campaigns/")
+    return matches[0]
+
+
 async def _seed_template(db: Any, template_key: str) -> None:
-    template_dir = _SEED_DIR / "templates" / template_key
+    template_dir = _find_campaign_dir(template_key)
     meta, premise = _load(template_dir / "template.md")
 
     world = await _seed_world(db, meta["world"])
@@ -80,6 +89,7 @@ async def _seed_template(db: Any, template_key: str) -> None:
         premise=premise,
         acts=meta.get("acts", []),
         always_on_lore_keys=meta.get("always_on_lore_keys", []),
+        world_characters=meta.get("world_characters", []),
         status=meta.get("status", "draft"),
     )
 
@@ -87,9 +97,15 @@ async def _seed_template(db: Any, template_key: str) -> None:
     count = 0
     if premade_dir.exists():
         for path in sorted(premade_dir.glob("*.md")):
-            pmeta, bio = _load(path)
+            pmeta, backstory = _load(path)
             key = pmeta.pop("key")
-            sheet = {**pmeta, "bio": bio}
+            # The md body is the character's backstory; fold it into the narrative_profile
+            # so the stored sheet matches the CharacterCreate shape.
+            profile = dict(pmeta.pop("narrative_profile", {}))
+            profile.setdefault("name", pmeta.get("name"))
+            if backstory:
+                profile.setdefault("backstory", backstory)
+            sheet = {**pmeta, "narrative_profile": profile}
             await template_queries.upsert_premade(db, template_id=template.id, key=key, sheet=sheet)
             count += 1
     log.info("seeded_template", key=template_key, premades=count)
