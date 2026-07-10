@@ -23,7 +23,7 @@ def get_ability_score(scores: AbilityScores, ability: str, default: int = 10) ->
 def empty_combat_state() -> CombatState:
     """Fresh empty CombatState; used as a fallback when combat isn't active.
     Returning a new dict every call avoids accidental mutation of a shared sentinel."""
-    return {"round": 0, "turn_index": 0, "combatants": [], "effects": []}
+    return {"round": 0, "turn_index": 0, "combatants": [], "effects": [], "zones": []}
 
 
 ABILITY_LONG = {

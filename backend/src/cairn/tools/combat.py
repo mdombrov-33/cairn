@@ -33,6 +33,48 @@ async def start_combat(
 
 
 @tool
+async def move_combatant(
+    session_id: Annotated[str, "The session UUID."],
+    combatant_id: Annotated[str, "The combatant ID to move."],
+    target_zone: Annotated[str, "The destination zone id."],
+) -> dict:
+    """Move a combatant to a reachable tactical zone using its remaining Speed."""
+    async with db_client.get_session() as db:
+        return await combat_service.zones.move_combatant(
+            db,
+            session_id=uuid.UUID(session_id),
+            combatant_id=combatant_id,
+            target_zone_id=target_zone,
+        )
+
+
+@tool
+async def get_combatants_in_zone(
+    session_id: Annotated[str, "The session UUID."],
+    zone_id: Annotated[str, "The zone id whose occupants to return."],
+) -> dict:
+    """Return every combatant currently occupying one tactical zone."""
+    async with db_client.get_session() as db:
+        return await combat_service.zones.combatants_in_zone(db, session_id=uuid.UUID(session_id), zone_id=zone_id)
+
+
+@tool
+async def get_zones_in_range(
+    session_id: Annotated[str, "The session UUID."],
+    from_zone: Annotated[str, "The origin zone id."],
+    range_category: Annotated[str, 'Either "close" or "far".'],
+) -> dict:
+    """Return zones connected to an origin at exactly the requested range category."""
+    async with db_client.get_session() as db:
+        return await combat_service.zones.zones_in_range(
+            db,
+            session_id=uuid.UUID(session_id),
+            from_zone_id=from_zone,
+            range_category=range_category,
+        )
+
+
+@tool
 async def end_combat(
     session_id: Annotated[str, "The session UUID."],
     outcome: Annotated[str, '"victory", "defeat", "retreat", or "resolved" (peaceful end).'],
@@ -53,6 +95,8 @@ async def apply_damage(
     subdue: Annotated[
         bool, "True for a non-lethal knockout blow (melee only). Drops target to 0 HP, unconscious."
     ] = False,
+    attacker_id: Annotated[str, "Attacker combatant id. Omit for environmental or ongoing damage."] = "",
+    weapon_range_ft: Annotated[int, "Weapon range in feet. Omit for environmental or ongoing damage."] = 0,
 ) -> dict:
     """Apply damage to a combatant, respecting temp HP.
 
@@ -68,6 +112,8 @@ async def apply_damage(
             amount=amount,
             damage_type=damage_type,
             subdue=subdue,
+            attacker_id=attacker_id,
+            weapon_range_ft=weapon_range_ft,
         )
 
 
@@ -224,6 +270,7 @@ async def cast_concentration_spell(
     damage: Annotated[str, 'Tick damage dice, e.g. "1d6". Empty if none.'] = "",
     damage_type: Annotated[str, "Damage type for tick damage."] = "",
     mechanical_notes: Annotated[str, "Free-text notes on how to resolve ticks."] = "",
+    spell_range_ft: Annotated[int, "Spell range in feet. Omit for non-targeted effects."] = 0,
 ) -> dict:
     """Cast a concentration spell: apply its effect AND set the caster's concentration in one call.
 
@@ -247,6 +294,7 @@ async def cast_concentration_spell(
             damage=damage,
             damage_type=damage_type,
             mechanical_notes=mechanical_notes,
+            spell_range_ft=spell_range_ft,
         )
 
 
@@ -392,6 +440,9 @@ async def apply_aoe_damage(
     half_on_save: Annotated[
         bool, "If true, targets take half damage on a successful save. If false, no damage on save."
     ] = True,
+    caster_id: Annotated[str, "Caster combatant id when targeting a zone."] = "",
+    origin_zone: Annotated[str, "Zone where the area effect lands. Omit for legacy explicit targets."] = "",
+    spell_range_ft: Annotated[int, "Spell range in feet when targeting a zone."] = 0,
 ) -> dict:
     """Apply area-of-effect damage to multiple targets.
 
@@ -412,6 +463,9 @@ async def apply_aoe_damage(
             save_dc=save_dc,
             damage_type=damage_type,
             half_on_save=half_on_save,
+            caster_id=caster_id,
+            origin_zone=origin_zone,
+            spell_range_ft=spell_range_ft,
         )
 
 

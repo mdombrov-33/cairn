@@ -234,7 +234,14 @@ async def create(
 
     speed: int = race_data.get("speed", 30)
     race_traits = [{"index": t["index"], "name": t["name"]} for t in race_data.get("traits", [])]
-    features = features + race_traits
+    subrace_traits = (
+        [{"index": t["index"], "name": t["name"]} for t in subrace_data.get("racial_traits", [])]
+        if subrace_data
+        else []
+    )
+    if any(trait["index"] == "fleet-of-foot" for trait in subrace_traits):
+        speed += 5
+    features = features + race_traits + subrace_traits
 
     bg_skills: list[str] = bg_data.get("skill_proficiencies", [])
     tool_proficiencies: list[str] = bg_data.get("tool_proficiencies", [])

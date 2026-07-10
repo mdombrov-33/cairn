@@ -16,7 +16,6 @@ class Location(Base):
     name: Mapped[str]
     description: Mapped[str]
     connections: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
-    zones: Mapped[list[Any]] = mapped_column(JSONB, default=list)
     # Raw authored scene for this location (parsed from scenes/*.yaml at seed time). Read-mostly;
     # split into Scene.authored + npcs_present at scene birth. Empty for thin/unauthored locations.
     authored_scene: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")

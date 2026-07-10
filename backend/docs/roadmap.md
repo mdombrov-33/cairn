@@ -1533,7 +1533,7 @@ Pre-launch nuke-and-reseed acceptable (no production data).
 
 ---
 
-### Slice 9 — Tactical zones + AI movement
+### Slice 9 — Tactical zones + AI movement — DONE
 
 _Reimagined post-6 (grilled 2026-07). Depends on: Slice 6 (combat polish), Slice 7 (companion profile for ally_ai), Slice 8 (scene context feeds `zone_seeder`)._
 
@@ -1558,17 +1558,15 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 - Each combatant's existing `zone: str | None` is filled at init (never left None — see placement).
 - `distances[other]` is a category (`close` / `far`); an absent entry ⇒ `out_of_range`. Feet cost of a hop: `close` = 30ft, `far` = 60ft (doubled if the destination has `difficult_terrain`).
 
-**Build — zone seeding (authored wins, else lazy LLM):**
+**Build — zone seeding (generated per combat):**
 
-- At `start_combat`: if the scene's `Location.zones` is non-empty → use it (authored path).
-- Else fire ONE structured-output pass, **`zone_seeder`** (new agent), reading the current scene description (Slice 8 `authored` + narrative context) → returns 3–6 zones (distances / cover / terrain / hazard) **plus** a per-team starting placement.
+- At `start_combat`, fire ONE structured-output pass, **`zone_seeder`** (new agent), reading the abstract location plus current Slice-8 scene context → returns 3–6 zones (distances / cover / terrain / hazard) **plus** a per-team starting placement.
 - Parse-safe: on `AgentError` / parse failure, fall back to a single `open_ground` zone. Combat never blocks on seeding.
 - Synchronous, before initiative. **No AI-callable `define_zones` tool** (dropped) — zones are seeded once at combat start and are otherwise immutable in v1.
 
 **Build — initial placement:**
 
-- Deterministic default: all `players`-team combatants → `zones[0]`; all `enemies`-team → `zones[1]` (or `zones[0]` if only one zone exists).
-- If `zone_seeder` ran, its per-team placement overrides the default (it knows the fiction — ambush, standoff).
+- `zone_seeder` supplies one starting zone per team; the single-zone fallback places both teams in `open_ground`.
 - Hard guarantee: every combatant has a non-None `zone` after init.
 
 **Build — speed fix (folded in; latent bug today):**
@@ -1624,14 +1622,14 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 
 **Fix:**
 
-- **`Location.zones` unused** — seed fields (`cover`, `cover_ac_bonus`, …) are read by nothing today. Wired up here.
+- **`Location.zones` obsolete** — remove the static authored grid and its database column; zones now belong solely to an active combat state.
 - **`combatant["zone"] = None`** — filled at init (placement above).
 - **Speed hardcoded to 30** (`state.py:220`, `resources.py` defaults) — use real per-combatant speed (above).
 
 **Decide (locked 2026-07):**
 
 1. **Movement** — feet-mapped (not abstract hops), checked against real Speed.
-2. **Zone seeding** — authored `Location.zones` wins; else parse-safe `zone_seeder` pass; single-zone fallback.
+2. **Zone seeding** — parse-safe `zone_seeder` pass from abstract location + scene context; single-zone fallback. Locations never author tactical grids.
 3. **Placement** — deterministic team-split, fiction override, never None.
 4. **Range** — hard-gate the existing effect tools; block the impossible, allow the unwise; **no** new `resolve_attack` tool.
 5. **OA** — inline in `move_combatant`, auto-taken. **The general reaction engine — Counterspell / Shield / Absorb Elements / readied actions / interrupts / player-prompt round-trip / settings-gated `ai`/`suggest`/`player` — is its own dedicated slice** (sequenced after zones, since most reaction triggers are range/position-based). OA is generalized into it when it lands. Slice 9 builds **no reaction bus**.
@@ -1639,7 +1637,7 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 7. **Distance granularity** — `close` / `far` / `out_of_range` only (no `medium`).
 8. **Zone soft-cap** — 6 per combat.
 
-**Schema changes:** none new (`Location.zones` already exists; `combat_state` is JSONB). New agent `zone_seeder` needs `prompts/zone_seeder/v1.md` + a `llm/models.yaml` entry.
+**Schema changes:** drop obsolete `Location.zones` with an Alembic-generated migration; `combat_state` remains JSONB. New agent `zone_seeder` needs `prompts/zone_seeder/v1.md` + a `llm/models.yaml` entry.
 
 **Files added / changed:**
 
@@ -1647,11 +1645,15 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 - `services/combat/range.py` (new) — `srd_range_to_category`.
 - `services/combat/zones.py` (new) — seeding, placement, hop-cost, reachability, OA-on-exit helper.
 - `services/combat/state.py` — store `speed` on combatants; seed `movement_remaining` from speed; fill `zone` at init.
+- `db/models/location.py`, `locations.yaml`, and migration — retire the old static location-grid field.
+- `services/characters.py` — apply Wood Elf's SRD Fleet of Foot speed bonus so the real-speed contract is correct.
 - `tools/combat.py` — `move_combatant`, `get_combatants_in_zone`, `get_zones_in_range`; range params on `apply_damage` / `apply_aoe_damage` / `cast_concentration_spell`; subdue melee check.
 - `tools/__init__.py` — register the three zone tools in `COMBAT_TOOLS`.
 - `prompts/ally_ai/v1.md`, `prompts/enemy_ai/v1.md`, `combat_resolver` prompt — zone-context block.
 
-**Verify:** Combat in a tavern seeds 4 zones (authored or `zone_seeder`); every combatant placed, none None. A 25ft dwarf can't reach a 30ft `close` zone without Dashing; a 35ft wood elf can. Wizard at `stairs` casts Fireball (150ft) at `behind_bar` → in range, hits everyone there via `get_combatants_in_zone`. Wizard tries Cure Wounds (touch) on a PC two zones away → tool rejects with a plain reason, no turn wasted. Rogue leaves a zone holding a goblin with a scimitar + free reaction → auto OA resolves, goblin's reaction marked used, `opportunity_attack` emitted. Companion in a half-cover zone: AoE save gets +2; the AI is *told* +2 AC for to-hit.
+**Verify:** Combat in a tavern seeds 3–6 generated zones (or `open_ground` on a parse failure); every combatant is placed, none `None`. A 25ft dwarf can't reach a 30ft `close` zone without Dashing; a 35ft wood elf can. Wizard at `stairs` casts Fireball (150ft) at `behind_bar` → in range, hits every occupant there. Wizard tries Cure Wounds (touch) on a PC two zones away → tool rejects with a plain reason, no turn wasted. Rogue leaves a zone holding a goblin with a scimitar + free reaction → auto OA resolves, goblin's reaction marked used, `opportunity_attack` emitted. Companion in a half-cover zone: AoE save gets +2; the AI is *told* +2 AC for to-hit.
+
+**Completed 2026-07-10.** `make check` passes: 321 tests green.
 
 **Deferred:** full reaction engine (own slice); OA-modifying feats (Sentinel); mid-combat zone edits; battle-map rendering + exploration map (UI slice).
 

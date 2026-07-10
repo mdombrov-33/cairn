@@ -277,6 +277,9 @@ async def test_add_combatant_before_active_increments_turn_index(client: AsyncCl
     state = session.combat_state
     assert state is not None
     assert state["turn_index"] == 2
+    joined = next(combatant for combatant in state["combatants"] if combatant["id"] == result["combatant_id"])
+    assert joined["zone"] is not None
+    assert state["turn_economy"][joined["id"]]["movement_remaining"] == joined["speed"]
 
 
 async def test_remove_combatant_before_active_decrements_turn_index(client: AsyncClient) -> None:

@@ -81,6 +81,55 @@ async def test_start_combat_initialises_state(client: AsyncClient) -> None:
     assert rolls == sorted(rolls, reverse=True)
 
 
+async def test_start_combat_falls_back_to_open_ground_and_places_everyone(client: AsyncClient) -> None:
+    """A bad zone-seeder response cannot block combat or leave combatants unplaced."""
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
+
+    result = await start_combat.ainvoke(
+        {
+            "session_id": sess["id"],
+            "enemies_json": '[{"type": "monster", "name": "goblin"}]',
+        }
+    )
+
+    state = result["combat_state"]
+    assert state["zones"] == [
+        {
+            "id": "open_ground",
+            "name": "Open Ground",
+            "description": "An open area with no meaningful tactical divisions.",
+            "cover": "none",
+            "cover_ac_bonus": 0,
+            "cover_save_bonus": 0,
+            "difficult_terrain": False,
+            "hazard": None,
+            "distances": {},
+        }
+    ]
+    assert {combatant["zone"] for combatant in state["combatants"]} == {"open_ground"}
+
+
+async def test_start_combat_seeds_first_turn_movement_from_character_speed(client: AsyncClient) -> None:
+    """The opening combatant can move using its real Speed without a 30ft default."""
+    camp = await make_campaign(client)
+    dwarf = await make_character(client, camp["id"], race="dwarf", subrace="hill-dwarf")
+    sess = await make_session(client, camp["id"])
+
+    result = await start_combat.ainvoke(
+        {
+            "session_id": sess["id"],
+            "enemies_json": "[]",
+        }
+    )
+
+    state = result["combat_state"]
+    combatant = next(item for item in state["combatants"] if item["id"] == dwarf["id"])
+    assert combatant["speed"] == 25
+    assert state["turn_economy"][dwarf["id"]]["movement_remaining"] == 25
+
+
 async def test_apply_damage_reduces_hp(client: AsyncClient) -> None:
     """apply_damage reduces monster HP tracked in combat_state."""
     camp = await make_campaign(client)

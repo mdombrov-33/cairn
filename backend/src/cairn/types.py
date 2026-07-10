@@ -136,6 +136,25 @@ class ConcentrationData(TypedDict):
 
 CombatantType = Literal["character", "npc", "monster"]
 CombatantTeam = Literal["players", "enemies"]
+ZoneDistance = Literal["close", "far"]
+
+
+class CombatZone(TypedDict):
+    id: str
+    name: str
+    description: str
+    cover: str
+    cover_ac_bonus: int
+    cover_save_bonus: int
+    difficult_terrain: bool
+    hazard: str | None
+    distances: dict[str, ZoneDistance]
+
+
+class ZoneSeed(TypedDict):
+    zones: list[CombatZone]
+    player_start: str
+    enemy_start: str
 
 
 class _CombatantBase(TypedDict):
@@ -145,6 +164,7 @@ class _CombatantBase(TypedDict):
     initiative_roll: int
     initiative_modifier: int
     zone: str | None
+    speed: int
     conditions: list[str]
     is_alive: bool
     is_conscious: bool
@@ -166,7 +186,6 @@ class MonsterCombatant(_CombatantBase):
     max_hp: int
     ac: int
     temp_hp: NotRequired[int]
-    speed: NotRequired[int]
     actions: NotRequired[list[dict]]  # SRD action list
     special_abilities: NotRequired[list[dict]]
     concentration: NotRequired[ConcentrationData | None]  # ephemeral — dies with combat_state
@@ -207,6 +226,7 @@ class CombatState(TypedDict, total=False):
     turn_index: Required[int]
     combatants: Required[list[Combatant]]
     effects: Required[list[CombatEffect]]
+    zones: Required[list[CombatZone]]
     turn_economy: dict[str, TurnEconomy]  # keyed by combatant id
 
 

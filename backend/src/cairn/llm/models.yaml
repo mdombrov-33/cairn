@@ -73,6 +73,12 @@ agents:
     frontier:
       primary: openai/gpt-5.4
       fallback: openai/gpt-5.4-mini
+  zone_seeder:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4-mini
+      fallback: openai/gpt-5.4
   recruiter:
     local:
       primary: ollama/qwen2.5:latest

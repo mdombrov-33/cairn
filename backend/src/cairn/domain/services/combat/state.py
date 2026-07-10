@@ -1,17 +1,22 @@
+import re
 import uuid
 from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
+from cairn.agents import zone_seeder
 from cairn.db.models.character import Character
 from cairn.db.models.npc import NPC
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
+from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
+from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
 from cairn.domain.services import death_mode
+from cairn.domain.services.combat import zones as zone_service
 from cairn.domain.services.combat.emitter import emit
 from cairn.domain.services.combat.rolls import dex_mod, parse_and_roll
 from cairn.domain.services.rng import session_rng
@@ -23,6 +28,7 @@ from cairn.types import (
     CombatState,
     MonsterCombatant,
     NpcCombatant,
+    TurnEconomy,
 )
 
 
@@ -36,6 +42,7 @@ def _character_combatant(char: Character, initiative_roll: int) -> CharacterComb
         "initiative_roll": initiative_roll,
         "initiative_modifier": char.initiative,
         "zone": None,
+        "speed": char.speed,
         "conditions": list(char.conditions),
         "is_alive": char.hp > 0,
         "is_conscious": char.hp > 0,
@@ -51,6 +58,7 @@ def _npc_combatant(npc: NPC, team: CombatantTeam, initiative_roll: int) -> NpcCo
         "initiative_roll": initiative_roll,
         "initiative_modifier": npc.initiative,
         "zone": None,
+        "speed": npc.speed,
         "conditions": list(npc.conditions),
         "is_alive": npc.hp > 0,
         "is_conscious": npc.hp > 0,
@@ -61,6 +69,8 @@ def _monster_combatant(
     monster: dict, *, name: str, team: CombatantTeam, initiative_roll: int, max_hp: int
 ) -> MonsterCombatant:
     ac = monster["armor_class"][0]["value"] if monster.get("armor_class") else 10
+    walk_speed = str((monster.get("speed") or {}).get("walk", "30 ft."))
+    match = re.search(r"\d+", walk_speed)
     return {
         "id": f"monster-{uuid.uuid4()}",
         "type": "monster",
@@ -70,6 +80,7 @@ def _monster_combatant(
         "initiative_roll": initiative_roll,
         "initiative_modifier": dex_mod(monster.get("dexterity", 10)),
         "zone": None,
+        "speed": int(match.group()) if match else 30,
         "hp": max_hp,
         "max_hp": max_hp,
         "ac": ac,
@@ -93,6 +104,19 @@ async def init_state(
 
     rng = session_rng(db_session)
     combatants: list[Combatant] = []
+
+    scene = await scene_queries.get_current_scene(db, db_session.campaign_id)
+    location = (
+        await location_queries.get_location(db, db_session.current_location_id)
+        if db_session.current_location_id is not None
+        else None
+    )
+    generated = await zone_seeder.run(
+        location_name=location.name if location else "Unknown location",
+        location_description=location.description if location else "",
+        scene=dict(scene.authored) if scene else {},
+    )
+    zone_seed = zone_service.normalize_seed(generated)
 
     characters = await character_queries.get_party_for_session(db, session_id)
     for char in characters:
@@ -125,12 +149,25 @@ async def init_state(
         key=lambda c: (c["initiative_roll"], c["initiative_modifier"], rng.random()),
         reverse=True,
     )
+    zone_service.place_combatants(combatants, zone_seed)
+
+    turn_economy: dict[str, TurnEconomy] = {
+        combatant["id"]: {
+            "action_used": False,
+            "bonus_action_used": False,
+            "reaction_used": False,
+            "movement_remaining": combatant["speed"],
+        }
+        for combatant in combatants
+    }
 
     combat_state: CombatState = {
         "round": 1,
         "turn_index": 0,
         "combatants": combatants,
         "effects": [],
+        "zones": zone_seed["zones"],
+        "turn_economy": turn_economy,
     }
 
     await session_queries.update_combat_state(db, session_id, combat_state=combat_state, combat_active=True)
@@ -217,7 +254,7 @@ async def advance_turn(
         e for e in state["effects"] if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
     ]
 
-    movement = current.get("speed", 30) if current["type"] == "monster" else 30
+    movement = current["speed"]
     economy = state.setdefault("turn_economy", {})
     economy[current["id"]] = {
         "action_used": False,
@@ -292,6 +329,15 @@ async def add_combatant(
         )
     else:
         return {"error": f"Unknown combatant_type: {combatant_type!r}"}
+
+    same_team_zone = next((c["zone"] for c in combatants if c["team"] == entry["team"] and c["zone"]), None)
+    entry["zone"] = same_team_zone or (state["zones"][0]["id"] if state["zones"] else "open_ground")
+    state.setdefault("turn_economy", {})[entry["id"]] = {
+        "action_used": False,
+        "bonus_action_used": False,
+        "reaction_used": False,
+        "movement_remaining": entry["speed"],
+    }
 
     insert_idx = next(
         (i for i, c in enumerate(combatants) if initiative_roll > c["initiative_roll"]),

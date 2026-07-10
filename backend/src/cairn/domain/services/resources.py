@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.services.combat.helpers import empty_combat_state
-from cairn.types import TurnEconomy
+from cairn.types import CombatState, TurnEconomy
 
 
 async def consume_spell_slot(
@@ -166,6 +166,11 @@ async def roll_concentration_check(
 EconomyFlag = Literal["action_used", "bonus_action_used", "reaction_used"]
 
 
+def _movement_speed(state: CombatState, combatant_id: str) -> int:
+    combatant = next((item for item in state["combatants"] if item["id"] == combatant_id), None)
+    return combatant["speed"] if combatant is not None else 0
+
+
 async def spend_economy(
     db: AsyncSession,
     *,
@@ -182,7 +187,7 @@ async def spend_economy(
             "action_used": False,
             "bonus_action_used": False,
             "reaction_used": False,
-            "movement_remaining": 30,
+            "movement_remaining": _movement_speed(state, combatant_id),
         },
     )
     if entry[field]:
@@ -210,7 +215,7 @@ async def spend_movement(
             "action_used": False,
             "bonus_action_used": False,
             "reaction_used": False,
-            "movement_remaining": 30,
+            "movement_remaining": _movement_speed(state, combatant_id),
         },
     )
     remaining = entry.get("movement_remaining", 0)

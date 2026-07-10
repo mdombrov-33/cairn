@@ -17,6 +17,7 @@ from cairn.domain.services.combat.helpers import (
     find_combatant,
     find_monster,
 )
+from cairn.domain.services.combat.range import range_feet_to_category, target_in_range, zone_in_range
 from cairn.domain.services.combat.rolls import (
     parse_and_roll,
     roll_d20,
@@ -75,7 +76,34 @@ async def apply_damage(
     amount: int,
     damage_type: str = "untyped",
     subdue: bool = False,
+    attacker_id: str = "",
+    weapon_range_ft: int = 0,
 ) -> dict:
+    if subdue and not attacker_id:
+        return {"error": "Subdual damage requires attacker_id."}
+    if subdue:
+        session = await session_queries.get_session(db, session_id)
+        state = session.combat_state or empty_combat_state()
+        if not target_in_range(
+            state,
+            source_id=attacker_id,
+            target_id=combatant_id,
+            range_category="touch",
+        ):
+            return {"error": "Subdual damage requires the attacker and target to share a zone."}
+    if attacker_id and weapon_range_ft > 0:
+        session = await session_queries.get_session(db, session_id)
+        state = session.combat_state or empty_combat_state()
+        if not target_in_range(
+            state,
+            source_id=attacker_id,
+            target_id=combatant_id,
+            range_category=range_feet_to_category(weapon_range_ft),
+        ):
+            target = find_combatant(state, combatant_id)
+            name = target["name"] if target is not None else combatant_id
+            return {"error": f"{name} is out of range for a {weapon_range_ft}ft attack."}
+
     if combatant_type == "character":
         char = await character_queries.get_character(db, uuid.UUID(combatant_id))
         hp_before = char.hp
@@ -414,12 +442,25 @@ async def cast_concentration_spell(
     damage: str = "",
     damage_type: str = "",
     mechanical_notes: str = "",
+    spell_range_ft: int = 0,
 ) -> dict:
     """Atomically apply a concentration effect and set the caster's concentration record.
 
     Bundling prevents drift between the concentration record and its linked effect, so the
     damage-triggered auto-save can remove the right effect when concentration breaks.
     """
+    if spell_range_ft > 0:
+        session = await session_queries.get_session(db, session_id)
+        state = session.combat_state or empty_combat_state()
+        if not target_in_range(
+            state,
+            source_id=caster_id,
+            target_id=target_id,
+            range_category=range_feet_to_category(spell_range_ft),
+        ):
+            target = find_combatant(state, target_id)
+            name = target["name"] if target is not None else target_id
+            return {"error": f"{name} is out of range for a {spell_range_ft}ft spell."}
     effect_result = await apply_effect(
         db,
         session_id=session_id,
@@ -475,8 +516,37 @@ async def apply_aoe_damage(
     save_dc: int,
     damage_type: str = "untyped",
     half_on_save: bool = True,
+    caster_id: str = "",
+    origin_zone: str = "",
+    spell_range_ft: int = 0,
 ) -> dict:
     """Roll damage once, then roll a save per target and apply full/half/no damage."""
+    cover_by_target: dict[str, int] = {}
+    if origin_zone:
+        session = await session_queries.get_session(db, session_id)
+        state = session.combat_state or empty_combat_state()
+        zones = {zone["id"]: zone for zone in state["zones"]}
+        if origin_zone not in zones:
+            return {"error": f"Zone '{origin_zone}' not found."}
+        if not caster_id:
+            return {"error": "AoE zone targeting requires caster_id."}
+        if spell_range_ft > 0 and not zone_in_range(
+            state,
+            source_id=caster_id,
+            target_zone_id=origin_zone,
+            range_category=range_feet_to_category(spell_range_ft),
+        ):
+            return {"error": f"{origin_zone} is out of range for a {spell_range_ft}ft spell."}
+        targets = [
+            {"id": combatant["id"], "type": combatant["type"]}
+            for combatant in state["combatants"]
+            if combatant["zone"] == origin_zone
+        ]
+        cover_by_target = {
+            combatant["id"]: zones[combatant["zone"]]["cover_save_bonus"]
+            for combatant in state["combatants"]
+            if combatant["zone"] in zones
+        }
     # Roll damage once — all targets are hit by the same roll.
     damage_roll = parse_and_roll(damage_dice)
     results = []
@@ -496,7 +566,8 @@ async def apply_aoe_damage(
             continue
 
         save_rolls, save_result = roll_d20("normal")
-        save_total = save_result + save_mod
+        cover_save_bonus = cover_by_target.get(combatant_id, 0)
+        save_total = save_result + save_mod + cover_save_bonus
         saved = save_total >= save_dc
 
         if saved and half_on_save:
@@ -523,6 +594,7 @@ async def apply_aoe_damage(
                 "combatant": name,
                 "save_rolls": save_rolls,
                 "save_modifier": save_mod,
+                "cover_save_bonus": cover_save_bonus,
                 "save_total": save_total,
                 "saved": saved,
                 "damage": amount,
@@ -537,6 +609,7 @@ async def apply_aoe_damage(
         "save_dc": save_dc,
         "half_on_save": half_on_save,
         "results": results,
+        **({"origin_zone": origin_zone} if origin_zone else {}),
     }
 
 
