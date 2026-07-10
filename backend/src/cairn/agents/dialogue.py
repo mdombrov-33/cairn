@@ -3,6 +3,7 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel
 
+from cairn.context import current_campaign_settings
 from cairn.domain.services.narrative_profile import format_profile
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
@@ -23,6 +24,7 @@ async def run(
 ) -> DialogueResult:
     """Voice an NPC or a party companion straight from their narrative profile."""
     prompt, model, fallbacks = agent_setup("dialogue")
+    content = (current_campaign_settings.get() or {}).get("content", {})
 
     return await complete_to_model(
         model=model,
@@ -37,6 +39,7 @@ async def run(
                     mood=entity.get("mood"),
                     player_input=player_input,
                     context=context,
+                    content=content,
                 ),
             }
         ],

@@ -7,6 +7,7 @@ from contextvars import ContextVar
 # several layers deep (and behind fixed LangChain @tool signatures that can't carry a
 # turn_id), so they read the active turn from here rather than threading it through.
 current_turn_id: ContextVar[uuid.UUID | None] = ContextVar("current_turn_id", default=None)
+current_campaign_settings: ContextVar[dict | None] = ContextVar("current_campaign_settings", default=None)
 
 
 @contextmanager
@@ -22,3 +23,13 @@ def recording_turn(turn_id: uuid.UUID) -> Iterator[None]:
         yield
     finally:
         current_turn_id.reset(token)
+
+
+@contextmanager
+def using_campaign_settings(settings: dict) -> Iterator[None]:
+    """Bind one resolved campaign-settings snapshot for the full turn."""
+    token = current_campaign_settings.set(settings)
+    try:
+        yield
+    finally:
+        current_campaign_settings.reset(token)

@@ -76,6 +76,7 @@ async def open_scene(
     comes from the authored cast, or the location roster for a thin/unauthored scene.
     """
     raw: dict[str, Any] = location.authored_scene if location else {}
+    authored: AuthoredScene
     if raw:
         authored = _split_authored(raw)
         presence = await _resolve_authored_presence(db, campaign_id, raw)

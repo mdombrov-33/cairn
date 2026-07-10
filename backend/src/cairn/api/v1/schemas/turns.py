@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,6 +14,11 @@ class ResolveRequest(BaseModel):
     # Optional second d20 the client rolls when spending inspiration (advantage).
     inspiration_roll: int | None = Field(default=None, ge=1, le=20)
     use_inspiration: bool = False
+
+
+class CompanionActionResolutionRequest(BaseModel):
+    decision: Literal["confirm", "override"]
+    override: str | None = None
 
 
 class TurnResponse(BaseModel):

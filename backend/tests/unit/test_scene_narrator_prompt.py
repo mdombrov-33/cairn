@@ -29,3 +29,17 @@ def test_scene_running_rules_are_present() -> None:
     out = _render(pacing_nudge=None)
     assert "Withhold by default" in out
     assert "Don't play for the player" in out
+
+
+def test_content_and_verbosity_settings_reach_the_prompt() -> None:
+    out = _render(
+        pacing_nudge=None,
+        verbosity="terse",
+        content={"gore": "off", "lines": ["self-harm"], "tone_note": "hopeful"},
+        passive_checks={"passive_perception": "surfaced", "passive_insight": "silent"},
+    )
+
+    assert "Narration setting: terse" in out
+    assert "gore: off" in out
+    assert "self-harm" in out
+    assert "perception=surfaced" in out

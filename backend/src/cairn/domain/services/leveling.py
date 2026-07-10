@@ -7,17 +7,20 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.character import Character
+from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import feat_effects
 from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.combat.helpers import get_ability_score
+from cairn.domain.services.settings import resolve_settings
 from cairn.srd import (
     get_class_levels,
     get_feat,
     get_subclass,
     get_subclass_features_at_level,
     list_all_feats,
+    list_spells,
     list_subclasses_for_class,
 )
 from cairn.types import AbilityKey, AbilityScores, FeatureEntry
@@ -63,6 +66,21 @@ RESOURCE_MAP: dict[str, tuple[str, str]] = {
 
 
 _ABILITY_KEYS = {"str", "dex", "con", "int", "wis", "cha"}
+
+_PRIMARY_ABILITY: dict[str, str] = {
+    "barbarian": "str",
+    "bard": "cha",
+    "cleric": "wis",
+    "druid": "wis",
+    "fighter": "str",
+    "monk": "dex",
+    "paladin": "str",
+    "ranger": "dex",
+    "rogue": "dex",
+    "sorcerer": "cha",
+    "warlock": "cha",
+    "wizard": "int",
+}
 
 
 # Pure helpers
@@ -280,6 +298,7 @@ async def _award_xp(
         raise ValidationError(f"xp amount must be non-negative, got {amount}")
     char = await character_queries.get_character(db, character_id)
     char.xp = (char.xp or 0) + amount
+    await _auto_level_companion(db, char)
     ready = has_pending_level_up(char)
     log.info(
         "xp_awarded",
@@ -304,6 +323,7 @@ async def award_xp(
         raise ValidationError(f"xp amount must be non-negative, got {amount}")
     char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
     char.xp = (char.xp or 0) + amount
+    await _auto_level_companion(db, char)
     ready = has_pending_level_up(char)
     log.info(
         "xp_awarded",
@@ -322,12 +342,13 @@ async def apply_level_up(
     campaign_id: uuid.UUID,
     owner_id: str,
     choices: LevelUpChoices,
+    _skip_companion_control: bool = False,
 ) -> Character:
-    # TODO Slice 10: for companion characters (is_companion=True), when
-    # settings.companion.leveling == "ai", auto-build LevelUpChoices server-side
-    # (average HP, first available feat/ASI, pick balanced spells) instead of
-    # requiring player submission. When == "player", flow is the same as a PC.
     char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
+    if char.is_companion and not _skip_companion_control:
+        campaign = await campaign_queries.get_campaign(db, campaign_id)
+        if resolve_settings(campaign.settings)["companion"]["leveling"] != "player":
+            raise ValidationError("companion leveling is AI-controlled for this campaign", code="companion_leveling_ai")
 
     if not has_pending_level_up(char):
         raise ValidationError(f"{char.name} has no pending level-up (xp={char.xp}, level={char.level})")
@@ -405,6 +426,80 @@ async def apply_level_up(
         class_=cls,
     )
     return char
+
+
+async def _auto_level_companion(db: AsyncSession, char: Character) -> None:
+    """Apply deterministic balanced choices while this companion has pending levels."""
+    if not char.is_companion or not has_pending_level_up(char):
+        return
+    campaign = await campaign_queries.get_campaign(db, char.campaign_id)
+    if resolve_settings(campaign.settings)["companion"]["leveling"] != "ai":
+        return
+
+    while has_pending_level_up(char):
+        await apply_level_up(
+            db,
+            character_id=char.id,
+            campaign_id=char.campaign_id,
+            owner_id=campaign.owner_id,
+            choices=_balanced_companion_choices(char),
+            _skip_companion_control=True,
+        )
+
+
+def _balanced_companion_choices(char: Character) -> LevelUpChoices:
+    """Choose stable, legal level-up inputs without spending another LLM call."""
+    target_level = char.level + 1
+    cls = char.class_name
+    asi: dict[str, int] | None = None
+    feat: str | None = None
+    if _is_asi_level(cls, target_level):
+        asi = _balanced_asi(char)
+        if asi is None:
+            available = [
+                f
+                for f in list_all_feats()
+                if f.get("type") in {"general", "epic-boon"} and f["index"] != "ability-score-improvement"
+            ]
+            feat = available[0]["index"] if available else None
+
+    subclass: str | None = None
+    if SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass_name:
+        subclasses = list_subclasses_for_class(cls)
+        subclass = subclasses[0]["index"] if subclasses else None
+
+    pick_count = expected_spell_picks(cls, target_level)
+    known = {spell.casefold() for spell in char.spells_known}
+    max_spell_level = max((_spell_slots_for_level(cls, target_level) or {"0": 0}), key=int)
+    candidates = [
+        spell["name"]
+        for spell in list_spells(class_index=cls, max_level=int(max_spell_level))
+        if spell["name"].casefold() not in known
+    ]
+
+    return LevelUpChoices(
+        hp_method="average",
+        asi=asi,
+        feat=feat,
+        new_spells=candidates[:pick_count],
+        subclass=subclass,
+    )
+
+
+def _balanced_asi(char: Character) -> dict[str, int] | None:
+    priorities = [_PRIMARY_ABILITY.get(char.class_name, "con"), "con", "dex", "wis", "cha", "int", "str"]
+    unique_priorities = list(dict.fromkeys(priorities))
+    remaining = 2
+    result: dict[str, int] = {}
+    for ability in unique_priorities:
+        room = 20 - get_ability_score(char.ability_scores, cast(AbilityKey, ability))
+        increase = min(room, remaining)
+        if increase > 0:
+            result[ability] = increase
+            remaining -= increase
+        if remaining == 0:
+            return result
+    return None
 
 
 # Internal mutators

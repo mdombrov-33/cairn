@@ -17,7 +17,7 @@ from cairn.agents import (
     scene_director,
     scene_summarizer,
 )
-from cairn.context import current_turn_id
+from cairn.context import current_campaign_settings, current_turn_id
 from cairn.db import client as db_client
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
@@ -50,6 +50,7 @@ class TurnState(TypedDict):
     scene_pre_output: ScenePreOutput | None  # set by scene_director_pre; None when combat already active
     is_scene_entry: bool  # set by scene_create; consumed by route layer for narration
     combat_just_started: bool  # set by combat_entry when init_state ran
+    settings: dict[str, Any]  # resolved once by turns.prepare; shared snapshot for the whole turn
 
 
 async def _route_intent(state: TurnState) -> dict[str, Any]:
@@ -153,6 +154,10 @@ async def _resolve_dialogue(state: TurnState) -> dict[str, Any]:
             # The player may be addressing a party companion (a Character, not an NPC).
             companion = await character_queries.find_companion_by_name(db, campaign_id, name)
             if companion is not None:
+                active_settings = current_campaign_settings.get()
+                settings = active_settings if active_settings is not None else state["settings"]
+                if settings.get("companion", {}).get("dialogue", "ai") != "ai":
+                    return {"npc_context": f"[{companion.name}'s dialogue is player-controlled.]"}
                 meta = companion.companion_meta or {}
                 comp_entity: DialogueEntity = {
                     "name": companion.name,
@@ -488,6 +493,7 @@ async def run(
             scene_pre_output=None,
             is_scene_entry=False,
             combat_just_started=False,
+            settings={},
         ),
         config=config,
     )

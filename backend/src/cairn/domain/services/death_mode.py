@@ -7,6 +7,7 @@ from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.services.combat.emitter import emit
+from cairn.domain.services.settings import resolve_settings
 from cairn.types import NarrativeRecovery
 
 log = structlog.get_logger()
@@ -25,7 +26,7 @@ async def resolve_pc_death(db: AsyncSession, session: Session, character: Charac
     Pacifist never reaches here — `apply_damage` clamps the PC's HP first.
     """
     campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-    mode = (campaign.settings or {}).get("death_mode", "narrative")
+    mode = resolve_settings(campaign.settings)["death_mode"]
 
     if mode == "hardcore":
         campaign.status = "ended_dead"

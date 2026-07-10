@@ -12,7 +12,8 @@ from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.db.queries import worlds as world_queries
-from cairn.domain.exceptions import NotFoundError
+from cairn.domain.exceptions import NotFoundError, ValidationError
+from cairn.domain.services import settings as settings_service
 
 if TYPE_CHECKING:
     from cairn.db.models.location import Location
@@ -155,3 +156,44 @@ async def list_(db: AsyncSession, *, owner_id: str) -> list[Campaign]:
 
 async def delete(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> None:
     await queries.delete_campaign_owned_by(db, campaign_id, owner_id)
+
+
+async def get_settings(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> dict[str, Any]:
+    campaign = await queries.get_campaign_owned_by(db, campaign_id, owner_id)
+    stored = campaign.settings or {}
+    return {
+        "preset": stored.get("preset", "narrative"),
+        "overrides": stored.get("overrides", {}),
+        "resolved": settings_service.resolve_settings(stored),
+    }
+
+
+async def update_settings(
+    db: AsyncSession,
+    *,
+    campaign_id: uuid.UUID,
+    owner_id: str,
+    preset: str | None,
+    overrides: dict[str, Any] | None,
+) -> dict[str, Any]:
+    campaign = await queries.get_campaign_owned_by(db, campaign_id, owner_id)
+    current = campaign.settings or {}
+    next_preset = preset if preset is not None else current.get("preset", "narrative")
+    if next_preset not in {"narrative", "balanced", "tactical"}:
+        raise ValidationError("unknown settings preset")
+
+    next_overrides = dict(current.get("overrides", {}))
+    if overrides is not None:
+        try:
+            settings_service.validate_overrides(overrides)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+        next_overrides = settings_service.merge_overrides(next_overrides, overrides)
+
+    campaign.settings = {"preset": next_preset, "overrides": next_overrides}
+    await db.flush()
+    return {
+        "preset": next_preset,
+        "overrides": next_overrides,
+        "resolved": settings_service.resolve_settings(campaign.settings),
+    }

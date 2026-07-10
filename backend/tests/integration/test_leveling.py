@@ -135,6 +135,56 @@ async def test_award_xp_crosses_threshold(client: AsyncClient) -> None:
     assert result == {"xp": 300, "level": 1, "ready_to_level_up": True}
 
 
+async def test_ai_controlled_companion_levels_automatically(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    char = await make_character(
+        client,
+        camp["id"],
+        name="Wrenna",
+        is_companion=True,
+        narrative_profile={"name": "Wrenna", "personality": "Steady", "voice": {"cadence": "brief"}},
+    )
+
+    async with db_client.get_session() as db:
+        result = await leveling.award_xp(
+            db,
+            character_id=uuid.UUID(char["id"]),
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            amount=300,
+        )
+
+    assert result == {"xp": 300, "level": 2, "ready_to_level_up": False}
+
+
+async def test_player_controlled_companion_keeps_pending_level(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    settings_response = await client.patch(
+        f"/v1/campaigns/{camp['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"overrides": {"companion": {"leveling": "player"}}},
+    )
+    assert settings_response.status_code == 200
+    char = await make_character(
+        client,
+        camp["id"],
+        name="Wrenna",
+        is_companion=True,
+        narrative_profile={"name": "Wrenna", "personality": "Steady", "voice": {"cadence": "brief"}},
+    )
+
+    async with db_client.get_session() as db:
+        result = await leveling.award_xp(
+            db,
+            character_id=uuid.UUID(char["id"]),
+            campaign_id=uuid.UUID(camp["id"]),
+            owner_id="user_a",
+            amount=300,
+        )
+
+    assert result == {"xp": 300, "level": 1, "ready_to_level_up": True}
+
+
 async def test_award_xp_negative_raises(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     char = await make_character(client, camp["id"])

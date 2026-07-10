@@ -240,12 +240,12 @@ Slices 1–6 are **DONE** and are the fixed reference (the working engine). Ever
 - ✅ **Slice 7** — reimagined & locked (see below).
 - ✅ **Slice 8** — reimagined & locked (scene depth + pacing; state via resolver + Scene Director passes, no mid-stream tools).
 - ✅ **Slice 9** — reimagined & locked (tactical zones + AI movement; feet-mapped movement on real Speed, hard range gate, OA inline; full reaction engine split out to its own slice).
-- ✅ **Slice 10** — reimagined & locked (per-campaign settings; two orthogonal dials — agency preset + model tier — plus gameplay knobs; `settings.llm` contract + per-agent model-override mechanism ships now, BYOK/providers stay Slice 14; content lines/veils + narration verbosity added).
+- ✅ **Slice 10** — DONE (per-campaign gameplay settings + agency presets; model choice is deliberately absent from `Campaign.settings`; content lines/veils + narration verbosity added; account-tier model routing is configured for Phase A and becomes per-user in Slice 14.5).
 - ✅ **Slice 10.5** — reimagined & locked (reaction engine; full scope OA + Shield + Absorb + Counterspell + readied + Sentinel; **engine now owns to-hit** via `roll_attack`, revising Slice 9 cover-AC to hard; reaction bus + registry; **plan-then-execute combat** — deterministic/replayable; deterministic AI heuristics; `reaction_control` suggest/player/ai via Slice 10; player round-trip via `reaction_prompt` SSE + `POST /reactions`; full nesting LIFO depth-4 economy-bounded; readied actions parsed once to structured triggers).
 - ✅ **Slice 10.7** — reimagined & locked (MCP server + tool registry; **server** direction only — expose the stateful engine outward; tools are already MCP-shaped (context-by-param, own DB session); tagged **auto-discovery registry** (`@register(tags=…)`) replaces the fragile hand-maintained `ALL_TOOLS`/`COMBAT_TOOLS` — subsets are tag-derived, a guard test forbids unregistered tools; symmetric-pair **consolidation** ~58→~40; **FastMCP** streamable-HTTP mounted at `/mcp` on FastAPI, single process; **one `@tool` def → two projections**, no `mcp/` folder, no internal dogfooding; **no auth** in Phase A behind `MCP_ENABLED`, auth+internet exposure gated to Phase B).
 - ✅ **Slice 13** — reimagined & locked (world-bible RAG; **pgvector-in-Postgres, no Qdrant, no GraphRAG** — corpus is small + hand-authored + tagged; hybrid dense + Postgres FTS + tag boost fused with RRF, local FastEmbed embedder + cross-encoder reranker (`RERANK_ENABLED`), two concurrent retrievals with scene-scoped lore cache; cross-campaign echoes deferred).
 
-- ✅ **Plans & entitlements — GRILL COMPLETE, locked as Slice 14.5** (grilled 2026-07). The monetization/entitlement layer **above** Slice 10's model-tier mechanism + Slice 14's auth. Two orthogonal axes: *who pays for inference* (hosted-capped vs BYOK-uncapped) and *entitlements* (plan gates max model tier · campaign count · image-gen · turns/day). Ladder = **Free / Plus / Pro** (plan names distinct from `local/balanced/premium` model tiers); BYOK orthogonal (uncaps model, lifts turns cap, feature caps still per-plan). **Entitlement-first** — plan model + enforcement now, manual assignment, checkout deferred to Phase B (Lemon Squeezy/Paddle MoR). Safety/content/RAG/builders/agency **never gated**. Corrects the Slice 10 tier-picker + Slice 15 billing-screen UI (now entitlement-gated). Phase B.
+- ✅ **Plans & entitlements — GRILL COMPLETE, locked as Slice 14.5** (grilled 2026-07; corrected 2026-07-10). The monetization/entitlement layer above Slice 14's auth. The user's current **Free / Plus / Pro** account tier directly selects the hosted model bundle and gates campaign count · image-gen · turns/day; campaigns never select a second model tier. BYOK remains orthogonal and later. **Entitlement-first** — plan model + enforcement now, manual assignment, checkout deferred to Phase B (Lemon Squeezy/Paddle MoR). Safety/content/RAG/builders/agency **never gated**. Phase B.
 
 **Phasing (decided 2026-07):** build the **core app + frontend running locally on the dev machine first**, then do all production/ops hardening as a **deferred second phase**. Rationale: prove the game is fun and coherent end-to-end before spending effort (and money) on deployment/observability/security. **MCP is core, not deferred** — we have 50+ tools and no MCP surface; it belongs with the core tool work.
 
@@ -1659,15 +1659,16 @@ Zones bridge theater-of-mind ("you're across the room") and grid combat: 3–6 *
 
 ---
 
-### Slice 10 — Per-campaign settings + agency presets
+### Slice 10 — Per-campaign settings + agency presets — DONE
 
-_Reimagined post-6 (grilled 2026-07). Depends on: Slice 5 (`Campaign.settings` JSONB column), Slice 7 (companion depth used by the sliders), Slice 9 (combat behaviour of the companion-combat slider)._
+_Reimagined post-6 (grilled 2026-07; model ownership corrected 2026-07-10). Depends on: Slice 5 (`Campaign.settings` JSONB column), Slice 7 (companion depth used by the sliders), Slice 9 (combat behaviour of the companion-combat slider)._
 
-Per-campaign configuration, set at creation and editable mid-campaign, **resolved once per turn**. Three groups, two of them independent dials:
+Campaign configuration, selected during campaign creation, editable any time in that campaign's Settings tab, and **resolved once per turn**. It has two groups:
 
 1. **Agency** — who controls what (AI vs player): the preset + override system.
-2. **Model tier** — how much LLM quality/cost the campaign spends. **Orthogonal to agency** — picking "Tactical" says nothing about which models run.
-3. **Gameplay knobs** — death mode, passive checks, content/safety, narration verbosity.
+2. **Gameplay knobs** — death mode, passive checks, content/safety, narration verbosity.
+
+**Account tier is a separate concern.** The user's current Free / Plus / Pro tier is bought and managed in Account/Billing and automatically selects the hosted model bundle for every campaign. Upgrading or downgrading changes model routing from the next turn onward. `Campaign.settings` never stores a model tier, provider, model id, or per-agent model override. Local Ollama/Qwen is a developer runtime profile, not a user tier. Slice 14.5 owns account-tier persistence, entitlements, and per-request selection; before then hosted runs default to Free, with an environment override for testing Plus/Pro.
 
 **Design stance — settings are a merge, presets are never mutated.** A named preset supplies defaults; a **sparse override layer** sits on top; `resolve_settings` produces the effective dict everything reads. The preset tag stays put and overrides are stored separately (UI shows "Balanced · 3 custom") — there is no magic "custom" preset value. Agents/tools read only the *resolved* dict, never the raw stored one.
 
@@ -1680,7 +1681,7 @@ Per-campaign configuration, set at creation and editable mid-campaign, **resolve
 }
 ```
 
-Example stored value: `{"preset": "balanced", "overrides": {"companion": {"combat": "player"}, "llm": {"tier": "premium"}}}`.
+Example stored value: `{"preset": "balanced", "overrides": {"companion": {"combat": "player"}, "narration": {"verbosity": "terse"}}}`.
 
 **Build — resolved shape (what `resolve_settings` returns, what agents read):**
 
@@ -1699,10 +1700,6 @@ Example stored value: `{"preset": "balanced", "overrides": {"companion": {"comba
     "passive_insight":    "silent" | "surfaced" | "on_demand"
   },
   "death_mode": "hardcore" | "narrative" | "pacifist",
-  "llm": {
-    "tier": "local" | "balanced" | "premium",
-    "model_overrides": { "<agent_name>": "<model_id>" }
-  },
   "content": {
     "violence":   "off" | "fade" | "on",
     "gore":       "off" | "fade" | "on",
@@ -1720,19 +1717,19 @@ Example stored value: `{"preset": "balanced", "overrides": {"companion": {"comba
 **Build — preset resolver (`services/settings.py`):**
 
 - `resolve_settings(campaign) -> dict` — start from base defaults for **all** blocks, overlay the preset (agency + death_mode + passive checks only), then apply `overrides` (sparse, deep-merged). Returns the resolved shape.
-- **The preset only steers agency + `death_mode` + `checks`.** `llm`, `content`, `narration` default **independently** of the preset and change only by explicit override — this is what keeps the model tier orthogonal.
+- **The preset only steers agency + `death_mode` + `checks`.** `content` and `narration` default independently of the preset and change only by explicit override.
 - Agency presets:
   - **Narrative (default):** companion = AI everything; checks = silent; death_mode = narrative.
   - **Balanced:** companion combat = suggest, dialogue/equipment/leveling/checks = ai; checks = surfaced; death_mode = narrative.
   - **Tactical:** companion combat = player, dialogue = ai, equipment/leveling/checks = player; checks = surfaced; death_mode = hardcore.
-- Independent defaults (all presets): `llm.tier` = **env-driven** (`dev` → `local`, else `balanced`); `content` = every category `fade`, `lines: []`, `tone_note: ""`; `narration.verbosity` = `normal`.
-- `validate_overrides(overrides) -> None | raises` — enum-checks every field; for `llm`, checks `tier` is defined and every `model_overrides` value is in the **server-available model registry** (models the backend actually has creds for + local Ollama, read from `models.yaml`/env). Unknown model or tier → `422`.
+- Independent defaults (all presets): `content` = every category `fade`, `lines: []`, `tone_note: ""`; `narration.verbosity` = `normal`.
+- `validate_overrides(overrides) -> None | raises` — rejects unknown fields and enum-checks every value. Any model-related field is unknown campaign configuration and returns `422`.
 
-**Build — model tier (the "mechanism now" work):**
+**Build — model-policy configuration (separate from campaign settings):**
 
-- `llm/models.yaml` gains a `tiers:` section mapping `tier → {agent_name: model_id}`. Bundles are **cross-provider and task-tuned** — latency-critical agents (`intent_router`, combat tool-loop, passive-check rolls) get fast models (Flash / mini class); quality-critical agents (`scene_narrator`, `dialogue`, `lore_keeper`) get stronger-but-responsive models. **Not** reflexively the biggest — no Opus-class default (latency cost outweighs prose gain). `local` = all Ollama/Qwen (free).
-- `resolve_settings` picks the `tier` bundle, then applies the sparse `model_overrides` on top → an effective `{agent_name: model_id}` map inside the resolved dict.
-- `llm/router.py::agent_setup(name, settings=...)` and `llm/client.py` read the per-agent model from the resolved map instead of the static env default. **Only the mechanism ships here; only server-configured models are selectable.** BYOK / per-user provider / new providers = Slice 14.
+- `llm/models.yaml` has one developer profile plus three hosted account-tier bundles keyed `free | plus | pro`. `development` maps every agent to local Ollama/Qwen. **Free** uses Luna by default with Terra fallback. **Plus** uses Luna for latency-critical / structured / tool-loop work and Terra (with Luna fallback) for player-facing narration, dialogue, scene building, and NPC deepening. **Pro** adds Sol with Terra fallback for the narrator while retaining the task-tuned Plus map elsewhere.
+- `llm/router.py::agent_setup(name, account_tier=...)` owns model selection. `LLM_ENV=local` always selects the developer profile. Hosted selection defaults to `free`; `LLM_TIER=plus|pro` is a Phase-A/test override. Slice 14.5 replaces that process-wide override with the authenticated user's current account tier per request/turn.
+- Tier bundles are internal server policy. Users buy a tier; they do not select individual models or edit the per-agent map.
 
 **Build — resolve once, thread through the turn:**
 
@@ -1763,40 +1760,43 @@ data: { "combatant_id": "...", "proposed": {"tool": "...", "args": {...}, "narra
 
 Client renders "Companion proposes: X — Confirm / Override." Confirm → execute `proposed` via the resolver path; Override → normal resolver input.
 
+**Implementation note (locked during build):** the proposal is persisted against the current paused Turn and rendered as the combat proposal band; confirm/override resumes that same Turn through CombatResolver, so no tool mutation happens before the player chooses. Slice 10.5 replaces this interim resolver replay with its typed deterministic plan executor.
+
 **Build — UI (rendering deferred to the UI slice):**
 
-- Slice 10's UI obligation: expose resolved settings + preset tag + raw overrides via the routes above. **Captured for the UI slice:** a settings tab — preset radios, a model-tier picker (**entitlement-gated — see Slice 14.5**: tiers above the user's plan render locked with an upgrade CTA; `local` shows only when BYOK/local is configured), per-category content toggles (`off`/`fade`/`on`) + a `lines`/`tone_note` box, verbosity selector, collapsible **advanced** section for per-agent `model_overrides` and per-companion agency sliders.
+- Slice 10's UI obligation: expose resolved settings + preset tag + raw overrides via the routes above. **Captured for the UI slice:** a campaign settings tab with preset radios, death mode, per-category content toggles (`off`/`fade`/`on`) + `lines`/`tone_note`, verbosity, and a collapsible **advanced** section for per-companion agency sliders and passive-check modes. Account tier is shown and purchased only in Account/Billing. The older v4 mock's campaign model picker and per-agent model overrides are superseded by this correction.
 
 **Decide (locked 2026-07):**
 
-1. **Model scope** — `settings.llm` contract + per-agent override *mechanism* ships now; only server-configured models selectable; BYOK/providers → Slice 14.
-2. **Model UX** — player-facing **quality tier** (curated, cross-provider, task-tuned bundle in `models.yaml`) + advanced per-agent `model_overrides`. No single-global-model, no raw-map-only.
-3. **Tier is orthogonal** to the agency preset; defaults env-driven (`local` in dev, `balanced` in prod).
+1. **Ownership** — `Campaign.settings` is gameplay-only. Account tier owns models and entitlements for all of a user's campaigns.
+2. **Tier behaviour** — Free / Plus / Pro automatically selects a curated, task-tuned bundle in `models.yaml`; no campaign picker and no user-facing per-agent overrides.
+3. **Development** — local Qwen is a separate runtime profile and never appears as a customer plan.
 4. **Extra settings in v1** — content/safety + narration verbosity. Rules-strictness and a separate global roll-visibility toggle **deferred**.
 5. **Content shape** — rich structured categories (`off`/`fade`/`on`) + `lines` escape hatch + `tone_note`. Prompt-level enforcement.
 6. **Storage** — preset tag + sparse override layer; never a "custom" preset. `resolve_settings` = base + preset overlay + overrides.
-7. **Validation** — `PATCH` enum-checks all fields and validates `llm` against the server-available model registry (→ `422`).
+7. **Validation** — `PATCH` rejects unknown or invalid gameplay fields (→ `422`), including any attempted model field.
 8. **Mid-campaign changes apply going forward**, current state untouched (switch to hardcore at 0 HP does not retro-kill; the next death locks).
 
-**Schema changes:** none (`Campaign.settings` JSONB exists from Slice 5). `models.yaml` gains a `tiers:` section (config, not migration).
+**Schema changes:** none (`Campaign.settings` JSONB exists from Slice 5). `models.yaml` gains developer profile + hosted account-tier bundles (config, not migration). No user-preference table is introduced here.
 
 **Files added / changed:**
 
-- `services/settings.py` (new) — `resolve_settings`, preset tables, base defaults, `validate_overrides`, server-available model registry.
+- `services/settings.py` (new) — `resolve_settings`, preset tables, base defaults, `validate_overrides`.
 - `api/v1/routes/campaigns.py` (or new `settings.py`) — `GET`/`PATCH` settings routes.
-- `llm/models.yaml` — new `tiers:` section (cross-provider, task-tuned bundles).
-- `llm/router.py`, `llm/client.py` — `agent_setup`/`complete*` read the per-agent model from the resolved settings map.
+- `llm/models.yaml` — developer profile + Free/Plus/Pro task-tuned bundles.
+- `llm/router.py`, `config.py` — developer-vs-hosted routing and a temporary hosted-tier override for Phase A/testing.
 - `pipelines/turn_graph.py`, `domain/services/turns/service.py` — resolve settings once per turn, thread into context.
 - `prompts/scene_narrator/v1.md`, `prompts/dialogue/v1.md` — content block + verbosity instruction.
 - Combat/companion wiring (`combat_ai` invocation gate, companion dialogue gate, leveling/equipment gates).
 
-**Verify:** New campaign → Narrative preset resolves (companion all-AI, checks silent, `llm.tier` = env default). `PATCH {"overrides": {"companion": {"combat": "player"}}}` → resolved companion.combat = player, preset still "balanced", `GET` shows "Balanced · 1 custom". Toggle Tactical → companion combat turns expect player input. `PATCH` an `llm.model_overrides` value the server has no key for → `422`. Switch `llm.tier` premium → next turn's `scene_narrator` uses the premium bundle's model, `intent_router` still uses its fast model. Set `content.gore = "off"` + `lines: ["self-harm"]` → narrator prompt carries the block; gore stays out of the fiction. Set `narration.verbosity = "terse"` → shorter narration + lower token cap. Switch to hardcore while PC at 0 HP → no retro-death; next lethal hit locks the campaign.
+**Verify:** New campaign → Narrative preset resolves (companion all-AI, checks silent). `PATCH {"overrides": {"companion": {"combat": "player"}}}` → resolved companion.combat = player, preset still "balanced", `GET` shows "Balanced · 1 custom". Toggle Tactical → companion combat turns expect player input. Attempt `PATCH {"overrides": {"llm": ...}}` → `422`. Development always uses Qwen; hosted Free uses Luna; Plus task-routes prose to Terra; Pro routes narration to Sol. Set `content.gore = "off"` + `lines: ["self-harm"]` → narrator prompt carries the block; gore stays out of the fiction. Set `narration.verbosity = "terse"` → shorter narration + lower token cap. Switch to hardcore while PC at 0 HP → no retro-death; next lethal hit locks the campaign.
 
-**Deferred:** BYOK + per-user provider selection + new providers (Slice 14); rules-strictness knob; content categories beyond the fixed set (the `lines` escape hatch covers the gap); settings-tab rendering (UI slice).
+
+**Deferred:** authenticated per-user tier resolution, caps, and checkout (Slices 14/14.5); BYOK + per-user provider selection (Slice 14); rules-strictness knob; content categories beyond the fixed set (the `lines` escape hatch covers the gap); settings-tab rendering (UI slice).
 
 **Ideas (later):**
 
-- **BYOK** — encrypted per-user API keys unlock providers beyond the server's own (OpenAI/OpenRouter/Anthropic/user-hosted Ollama URL). Extends the same `settings.llm` contract; needs user identity to hang keys on → Slice 14, UI in the frontend slice.
+- **BYOK** — encrypted per-user API keys unlock providers beyond the server's own (OpenAI/OpenRouter/Anthropic/user-hosted Ollama URL). This is account-owned and needs user identity → Slice 14, UI in the frontend slice.
 
 ---
 
@@ -2143,37 +2143,37 @@ _Depends on: nothing strict. Must be done before Slice 15._
 
 **Ideas (not scoped yet — think about when we get here):**
 
-- **BYOK (bring-your-own-key) for per-user LLM provider choice** — encrypted per-user API key storage for the providers picked in Slice 10's `settings.llm`. Backend reads user's keys before LLM calls. For Ollama: user supplies their own localhost URL; backend needs outbound config + clear-warning UX about local-only networking.
+- **BYOK (bring-your-own-key) for per-user LLM provider choice** — encrypted per-user API key storage owned by the account. Backend reads the user's key before LLM calls. For Ollama: user supplies their own localhost URL; backend needs outbound config + clear-warning UX about local-only networking.
 - **Per-provider cost tracking** — `Turn.llm_cost_usd` already populated from LiteLLM callbacks. Extend to also tag `Turn.llm_provider` so we can report cost per provider per user (matters for BYOK accounting and OpenRouter routing visibility).
 
 ---
 
 ### Slice 14.5 — Plans & entitlements
 
-_Depends on: Slice 10 (`llm.tier` mechanism + `resolve_settings`/`validate_overrides`), Slice 14 (Clerk `user_id`, per-user rate limiting, cost tracking, BYOK key storage). Must be done before the billing UI in Slice 15._
+_Depends on: Slice 10 (`models.yaml` account-tier bundles), Slice 14 (Clerk `user_id`, per-user rate limiting, cost tracking, BYOK key storage). Must be done before the billing UI in Slice 15._
 
-The **monetization / entitlement layer** that sits *above* Slice 10's model-tier mechanism. Slice 10 built the machinery to run a campaign at `local | balanced | premium`; this slice decides **which of those a given user is allowed to pick**, plus the feature caps. Nothing here invents new gameplay — it gates existing levers by subscription plan. **Entitlement-first: this slice ships the plan model + enforcement only; real checkout is deferred (Phase B).** Plans are assigned manually (admin/seed) until then.
+The **account-tier / entitlement layer**. A user has one current `free | plus | pro` tier; it directly selects the hosted model bundle for every campaign and supplies the feature caps. There is no second campaign-level model tier to pick or clamp. Developer-local Qwen is a separate runtime profile, not a plan. Nothing here invents new gameplay — it supplies account policy to existing runtime and creation seams. **Entitlement-first: this slice ships the tier model + enforcement only; real checkout is deferred (Phase B).** Tiers are assigned manually (admin/seed) until then.
 
 **Two orthogonal axes (the mental model).** Keep these separate or the design collapses into confusion:
 
 - **Axis A — who pays for inference.** *Hosted* (our API keys; usage capped by plan) vs *BYOK/local* (user's own key or Ollama URL from Slice 14; the user pays for tokens, so their **model quality is uncapped** and their **turns/day cap is lifted** — abuse-limiting only).
-- **Axis B — entitlements.** The plan gates **max model tier**, **campaign count**, **image-gen**, and **turns/day** (hosted-only). BYOK changes Axis A but a BYOK user's Axis-B caps (campaigns, image-gen) **still follow their plan** — "local setup but upgraded" = bring your own inference *and* pay us for features.
+- **Axis B — account tier.** Free / Plus / Pro selects the hosted model bundle and gates **campaign count**, **image-gen**, and **turns/day** (hosted-only). BYOK changes Axis A but a BYOK user's feature caps (campaigns, image-gen) still follow their account tier.
 
-**Naming:** subscription **plans** are named distinctly from Slice 10's **model tiers** (`local/balanced/premium`) to avoid collision — a *plan* maps to a *max model tier*, it is not one.
+**Naming:** "plan" and "account tier" refer to the same buyable Free / Plus / Pro ladder. Internal per-agent assignments are called **model bundles**, never another user-facing tier.
 
 **Plan ladder (v1):**
 
-| Plan | Max model tier | Campaigns | Turns/day (hosted) | Image-gen |
+| Account tier | Hosted model bundle | Campaigns | Turns/day (hosted) | Image-gen |
 |---|---|---|---|---|
-| **Free** | `balanced` | 1 | ~20 | — |
-| **Plus** | `balanced` | 3 | ~150 | ✓ |
-| **Pro** | `premium` | ∞-ish | high | ✓ |
+| **Free** | Luna default (Terra fallback) | 1 | ~20 | — |
+| **Plus** | Luna fast/structured; Terra prose/builders | 3 | ~150 | ✓ |
+| **Pro** | Plus bundle; Sol narrator | ∞-ish | high | ✓ |
 
 BYOK (any plan): model uncapped on the user's key, turns/day lifted; campaign + image-gen caps still per-plan. Free never burns much of our budget (cheap floor model + tight cap); safety/content controls, verbosity, RAG, builders, and companion agency are **never gated** — paywalling safety or narrative quality is off the table.
 
 **Build — plan catalog (config-as-code):**
 
-- `llm/../plans.yaml` (or `config/plans.yaml`) maps `plan → {max_model_tier, campaign_cap, turns_per_day, image_gen}`. Plans change rarely → config, **not** a DB table (same pattern as `models.yaml` `tiers:`).
+- `llm/../plans.yaml` (or `config/plans.yaml`) maps `plan → {campaign_cap, turns_per_day, image_gen}`. Model bundles remain in `models.yaml` under the same `free | plus | pro` keys. Plans change rarely → config, **not** a DB table.
 
 **Build — schema (`user_entitlements` table, Alembic):**
 
@@ -2182,11 +2182,11 @@ BYOK (any plan): model uncapped on the user's key, turns/day lifted; campaign + 
 
 **Build — entitlements service (`services/entitlements.py`):**
 
-- `get_entitlements(user_id) -> Entitlements` — reads plan from `user_entitlements` (default `free`), looks up caps in `plans.yaml`, then overlays BYOK effects (has-own-key ⇒ `max_model_tier` uncapped, `turns_per_day` lifted). **Single source of truth**; every enforcement point reads it. `Entitlements` is a `cairn/types.py` TypedDict.
+- `get_entitlements(user_id) -> Entitlements` — reads the account tier from `user_entitlements` (default `free`), looks up caps in `plans.yaml`, and overlays BYOK effects (has-own-key ⇒ hosted turns cap lifted). It returns the current tier so LLM routing selects the matching bundle. **Single source of truth**; every enforcement point reads it. `Entitlements` is a `cairn/types.py` TypedDict.
 
 **Build — enforcement points (wire into existing seams):**
 
-- **Model tier cap** — Slice 10's `validate_overrides` rejects a PATCH selecting `llm.tier` above `entitlements.max_model_tier` (**402** + `upgrade_hint`). `resolve_settings` **also clamps defensively**: if a user's plan was downgraded under an existing campaign, the campaign keeps playing at the max allowed tier — it never errors mid-play. BYOK ⇒ no clamp.
+- **Model routing** — resolve entitlements once at turn start and bind `entitlements.plan` to the LLM routing context. Upgrade/downgrade automatically changes all campaigns from the next turn; no campaign row is rewritten.
 - **Turns/day** — Slice 14's per-user rate limiter reads `entitlements.turns_per_day` instead of a hardcoded value; BYOK lifts it.
 - **Campaign count** — `POST /v1/campaigns` counts the owner's campaigns vs `entitlements.campaign_cap` → **402** with `upgrade_hint` when over.
 - **Image-gen** — the (Phase-B) generate-portrait endpoint checks `entitlements.image_gen`; gallery + upload stay free for all.
@@ -2199,28 +2199,27 @@ BYOK (any plan): model uncapped on the user's key, turns/day lifted; campaign + 
 
 **Build — UI obligations (captured for Slice 15):**
 
-- **Corrects Slice 10's settings model-tier picker (line ~1697):** tiers above `max_model_tier` render **locked with an upgrade CTA**, not freely selectable — you pick any tier *≤ your plan's max*. `local` appears only when BYOK/local is configured (Slice 14), never as a free hosted option.
-- **Corrects Slice 15's Phase-B billing screens:** they render the concrete `GET /v1/plans` ladder + current plan + what each unlocks (no longer placeholder).
+- Campaign Settings has no model picker. Account/Billing renders the concrete `GET /v1/plans` ladder + current tier + model/feature improvements and owns the upgrade CTA.
 - Campaign-create and generate-portrait affordances show cap state and surface the `upgrade_hint` on 402.
 
 **Decide (locked 2026-07):**
 
-1. **Tier = a hosted bundle** of model quality + feature limits; BYOK/local is a separate escape hatch, not a plan.
+1. **One buyable tier** selects both the hosted model bundle and feature limits; there is no second per-campaign quality tier.
 2. **Free = hard-capped hosted** (cheapest hosted model, tight daily cap, 1 campaign) — zero setup to play, bounded spend.
 3. **BYOK is orthogonal** — unlocks model quality on the user's dime; feature caps still follow the plan; turns/day cap is hosted-only.
 4. **Entitlement-first** — ship the plan model + enforcement now; manual assignment; checkout deferred to Phase B (Lemon Squeezy / Paddle merchant-of-record when it lands, to offload VAT for a solo dev — not raw Stripe).
-5. **3 plans — Free / Plus / Pro** per the ladder above; plan names kept distinct from model-tier names.
+5. **3 account tiers — Free / Plus / Pro** per the ladder above.
 6. **Never gate** safety/content, verbosity, RAG, builders, or companion agency.
 
 **Verify:**
 
-- Free user PATCHing `llm.tier: premium` → 402 with `upgrade_hint`; Pro user → 200.
+- Free, Plus, and Pro turns select their matching model bundles without reading Campaign.settings.
 - Free user creating a 2nd campaign → 402; Plus user → 200 up to 3.
-- Downgrade Pro→Free with a `premium` campaign live: `resolve_settings` clamps to `balanced`, campaign keeps playing, no 500.
-- BYOK user runs `premium` on their own key regardless of plan; not throttled by turns/day.
+- Downgrade Pro→Free with active campaigns: their next turns use the Free bundle; campaign gameplay settings are unchanged.
+- BYOK user runs on their own configured provider; hosted turns/day is not charged.
 - `GET /v1/me/entitlements` matches the assigned plan + BYOK state; `GET /v1/plans` returns the catalog.
 
-**Deferred / Phase B:** real checkout + self-serve upgrade (Lemon Squeezy/Paddle), proration, usage-based overages, per-provider cost accounting (Slice 14 idea), a cheaper-than-`balanced` "floor" model bundle for Free (not taken in v1 — Free runs `balanced` with tight caps).
+**Deferred / Phase B:** real checkout + self-serve upgrade (Lemon Squeezy/Paddle), proration, usage-based overages, per-provider cost accounting (Slice 14 idea).
 
 **Schema changes:** new `user_entitlements` table (Alembic). `plans.yaml` is config, not a migration.
 
@@ -2360,17 +2359,17 @@ _Grilled 2026-07 — **GRILL COMPLETE ✅. `Cairn App v4.html` is the current sp
 - ~~**Pre-play screens**~~ — **RESOLVED 2026-07.**
   - **Codex = in-play discovery journal.** Keyed off the existing `GET /v1/campaigns/{id}/lore` (WorldBibleEntry, filterable by type: people/places/factions/history). Starts sparse, fills as LoreKeeper writes entries for what the player actually encounters — **spoiler-safe by construction**. **No new endpoint.** Pre-play, a template card shows only a **short authored teaser blurb**, never the full lore. (Honors discovery + no-context-pollution ethos.)
   - **Home / browser:** `GET /v1/campaigns` lists your playthroughs; starting a new one needs a **template-browse endpoint** (`GET /v1/campaigns/templates` — still to build; already in the retained surface checklist). Template detail shows premise · length · premades · teaser lore.
-  - **Campaign creation — foregrounded framing vs. Settings-tab.** Slice 10 makes **all** settings editable anytime (`PATCH …/settings`, resolved-per-turn merge) — nothing is technically locked at creation. The create flow is `POST /campaigns` (name+template) → immediately `PATCH …/settings` with the chosen framing values (no new endpoint). The **creation screen foregrounds three framing choices** (all still editable later in Settings): **① Agency preset** (Narrative/Balanced/Tactical) · **② Death mode** (pacifist/narrative/hardcore) · **③ Content & tone** (violence/gore/sexual/romance/horror/substances off·fade·on + hard-no `lines` + `tone_note`). **Model tier, per-agent overrides, passive-check modes, and narration verbosity are NOT on the create screen** — they live only in the Settings tab (model tier especially is an explicit *anytime* swap per the user). See Settings-tab fork below.
+  - **Campaign creation — foregrounded framing vs. Settings-tab.** Slice 10 makes **all campaign settings** editable anytime (`PATCH …/settings`, resolved-per-turn merge) — nothing is technically locked at creation. The create flow is `POST /campaigns` (name+template) → immediately `PATCH …/settings` with the chosen framing values (no new endpoint). The **creation screen foregrounds three framing choices** (all still editable later in Settings): **① Agency preset** (Narrative/Balanced/Tactical) · **② Death mode** (pacifist/narrative/hardcore) · **③ Content & tone** (violence/gore/sexual/romance/horror/substances off·fade·on + hard-no `lines` + `tone_note`). Passive-check modes and narration verbosity live only in the Settings tab. Account tier is managed separately in Account/Billing.
 - ~~**Party / companions**~~ (Slice 7) — **RESOLVED 2026-07.**
   - **Approval surfacing:** vague **bands only** at a glance ("cold"/"warming up"/"loyal"); **the raw integer is never shown** (meta-info — decided with the user, resolving the Slice-7 line-1086 contradiction). Drawer's Approval section = band + the **colored reason-log** (green delta>0 / red delta<0, each with its reason string like "Burned the village down") **without numeric deltas/total**. Integer stays server-side.
   - **Party at a glance:** companions ride in the **slim character band** (the Decision-8/vitals band) as mini-avatars — mood-tinted, vague band label under each — beside the PC. Mirrors how combat's initiative strip already lists them.
   - **Companion drawer** (click an avatar): full sheet (companions are real `Character` rows, `is_companion=True`) + Approval section (above) + `mood` + `personal_goal`. **`secret` is never shown to the player.**
-- ~~**Settings tab**~~ (Slice 10) — **RESOLVED 2026-07** (fully specified by Slice 10 line ~1696; UI just renders it). One tab, editable anytime, backed by `GET/PATCH /v1/campaigns/{cid}/settings`: **agency preset radios** (Narrative/Balanced/Tactical) · **death-mode** · **content toggles** (per-category off/fade/on) + `lines`/`tone_note` box · **model-tier picker** (the anytime model swap) · **narration verbosity** · a collapsible **Advanced** section for per-agent `model_overrides` + per-companion agency sliders + passive-check modes. Header shows the merge state as **"Balanced · N custom"** (preset tag + count of sparse overrides — never a magic "custom" preset). The three creation framing knobs (agency/death/content) reappear here as the canonical home; the create screen is just an up-front subset.
+- ~~**Settings tab**~~ (Slice 10) — **RESOLVED 2026-07; model ownership corrected 2026-07-10.** One tab, editable anytime, backed by `GET/PATCH /v1/campaigns/{cid}/settings`: **agency preset radios** (Narrative/Balanced/Tactical) · **death-mode** · **content toggles** (per-category off/fade/on) + `lines`/`tone_note` box · **narration verbosity** · a collapsible **Advanced** section for per-companion agency sliders + passive-check modes (+ reaction control after Slice 10.5). Header shows the merge state as **"Balanced · N custom"** (preset tag + count of sparse overrides — never a magic "custom" preset). The three creation framing knobs (agency/death/content) reappear here as the canonical home; the create screen is just an up-front subset. The v4 mock's model picker/per-agent model overrides are stale and must not be rebuilt.
 - ~~**Session summary · cheatsheet · exploration map**~~ — **RESOLVED 2026-07.**
   - **Recap** — "previously on…" on resume, from `Session.summary` + `/calendar` day-summaries. Render existing data, no new endpoint.
   - **Cheatsheet** — UI-side "current state at a glance" aggregation: active threads (Scene `unresolved_threads`, Slice 8), current objective, reachable exits. Composed from data already on the wire.
   - **Exploration map (signature payoff of "Cartographer's Table"):** an **auto-laid-out node graph of *discovered* locations** — nodes = places visited, edges from `Location.connections` (adjacency-only, **no coordinates** → frontend lays it out), current location highlighted, unvisited-but-known exits shown as `???` stubs; click a node to inspect / travel. **Reuses the same node-graph visual language as the combat zone-map** (Decision 7) for consistency — the two maps are the visual through-line of the whole direction. Grows as you explore. This is the thematic core, not just polish; it earns the "Cartographer's Table" name. _(Real layout work — the biggest non-combat component; a force-directed / dagre-style auto-layout over the adjacency graph.)_
-- ~~**Phase-B visual-only**~~ — **RESOLVED 2026-07: draw the full set** (login · account/security · **tiers/billing**), all in the Cartographer's Table language, **clearly flagged "Phase B — not wired."** Purely design-language completeness. **The billing model is now specified in Slice 14.5** (plan/entitlement layer): three plans **Free / Plus / Pro** (plan names are *not* the `local/balanced/premium` model tiers — a plan maps to a *max* model tier). Free = hosted `balanced` + 1 campaign + tight cap; Plus = `balanced` + more campaigns + image-gen; Pro = `premium`. `local` is **not** a free plan — it's the BYOK/local escape hatch (Slice 14). The tiers/billing screen renders `GET /v1/plans`; the settings model-tier picker is entitlement-gated (locked tiers show an upgrade CTA). Prices are placeholder. These screens sit outside the playable path and are the last thing built.
+- ~~**Phase-B visual-only**~~ — **RESOLVED 2026-07: draw the full set** (login · account/security · **tiers/billing**), all in the Cartographer's Table language, **clearly flagged "Phase B — not wired."** Purely design-language completeness. **The billing model is specified in Slice 14.5:** one Free / Plus / Pro account tier automatically controls the hosted model bundle and feature caps for every campaign. Free = Luna + 1 campaign + tight cap; Plus adds task-routed Terra + more campaigns + image-gen; Pro adds Sol narration. Local Qwen is developer-only; BYOK is a separate future account feature. The tiers/billing screen renders `GET /v1/plans`; campaign Settings has no model controls. Prices are placeholder. These screens sit outside the playable path and are the last thing built.
 - ~~**Deliverable mechanics**~~ — **RESOLVED 2026-07.** Deliverable = a new **`Cairn App v3.html`** in `docs/ui-temp-reference/project/`, keeping `Cairn App v2.html` alongside as history. **DM "thinking" = diegetic only:** during agent latency the field-notes margin shows an in-world shimmer ("the DM considers…", quill/dice motifs) with **no agent names and no pipeline exposed** — the v2 "DM Thinking" agent-status panel is **dropped**. The machinery stays invisible; the margin is field notes, not a debug console. (No dev-trace toggle in v3; not a Slice-10 setting.)
 
 ---
@@ -2391,7 +2390,7 @@ Implement the UI from the Claude Design handoff (`cairn-ui-light-reference` in r
 - Level-up flow — multi-step form (HP / ASI-feat / spells / subclass).
 - Prepared-caster spell flow — daily prep prompt after long rest.
 - Campaign end UX — "campaign complete" screen with epilogue + `CAMPAIGN_CONCLUDED` content.
-- Settings tab — preset radios + advanced overrides per Slice 10.
+- Settings tab — preset radios + advanced gameplay/agency overrides per Slice 10; no model controls.
 - Suggest-mode combat — proposal modal with Confirm / Override.
 - Approval indicator — vague band ("very upset" / "warming up" / "loyal") per Slice 7 decision.
 - NPC profile drawer — when player asks "tell me about Old Grim" or hovers/opens NPC card, show what's been revealed (filtered by `revealed_at_turn_id` like the lore book).
@@ -2407,7 +2406,7 @@ Implement the UI from the Claude Design handoff (`cairn-ui-light-reference` in r
 
 **Ideas (not scoped yet — think about when we get here):**
 
-- **Model picker UI in settings** — surfaces Slice 10's `settings.llm` shape (provider + per-agent overrides) + Slice 14's BYOK key entry. Includes a quality-warning band when user assigns a weak model (e.g., Ollama 7B) to a frontier-tier agent (scene_narrator, combat_resolver): "This model may degrade narrative quality — recommended: frontier tier for storytelling agents."
+- **BYOK UI in Account** — provider/key configuration belongs to the account surface from Slice 14, never Campaign Settings.
 
 ---
 

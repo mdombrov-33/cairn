@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     database_url: str
 
     llm_env: Literal["local", "frontier"] = "local"
+    # Phase-A/testing override. Slice 14.5 replaces this process-wide value with
+    # the authenticated user's current account tier at turn start.
+    llm_tier: Literal["free", "plus", "pro"] = "free"
     llm_prompt_versions: str = "{}"  # JSON map e.g. '{"intent_router": "v2"}'
 
 

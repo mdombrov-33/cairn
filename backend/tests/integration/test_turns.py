@@ -134,6 +134,19 @@ async def test_get_turns_empty_before_any_turns(client: AsyncClient) -> None:
     assert r.json() == []
 
 
+async def test_companion_action_requires_a_pending_proposal(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
+
+    r = await client.post(
+        f"/v1/sessions/{sess['id']}/turns/00000000-0000-0000-0000-000000000000/companion-action",
+        headers={"X-User-Id": "user_a"},
+        json={"decision": "confirm"},
+    )
+
+    assert r.status_code == 404
+
+
 async def test_list_turns_returns_turns_in_order(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     sess = await make_session(client, camp["id"])

@@ -521,3 +521,53 @@ async def test_equip_unknown_item_returns_404(client: AsyncClient) -> None:
         json={"item_name": "Vorpal Sword of Doom"},
     )
     assert r.status_code == 404
+
+
+async def test_ai_controlled_companion_equipment_rejects_player_changes(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    companion = await make_character(
+        client,
+        camp["id"],
+        **{
+            **CLERIC,
+            "is_companion": True,
+            "narrative_profile": {"name": "Wrenna", "personality": "Steady", "voice": {"cadence": "brief"}},
+        },
+    )
+    item_name = companion["inventory"][0]["name"]
+
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters/{companion['id']}/equip",
+        headers={"X-User-Id": "user_a"},
+        json={"item_name": item_name},
+    )
+
+    assert r.status_code == 422
+
+
+async def test_player_controlled_companion_equipment_allows_player_changes(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    settings_response = await client.patch(
+        f"/v1/campaigns/{camp['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"overrides": {"companion": {"equipment": "player"}}},
+    )
+    assert settings_response.status_code == 200
+    companion = await make_character(
+        client,
+        camp["id"],
+        **{
+            **CLERIC,
+            "is_companion": True,
+            "narrative_profile": {"name": "Wrenna", "personality": "Steady", "voice": {"cadence": "brief"}},
+        },
+    )
+    item_name = companion["inventory"][0]["name"]
+
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters/{companion['id']}/equip",
+        headers={"X-User-Id": "user_a"},
+        json={"item_name": item_name},
+    )
+
+    assert r.status_code == 200

@@ -2,15 +2,21 @@ import json
 from typing import Literal
 
 import structlog
+from pydantic import BaseModel
 
 from cairn.domain.exceptions import AgentError
 from cairn.domain.services import companions
 from cairn.domain.services.narrative_profile import format_profile
-from cairn.llm.client import complete_with_tools
+from cairn.llm.client import complete_to_model, complete_with_tools
 from cairn.llm.router import agent_setup
 from cairn.tools import COMBAT_TOOLS, fetch_combat_context
 
 log = structlog.get_logger()
+
+
+class CompanionProposal(BaseModel):
+    action: str
+    narration: str
 
 
 def _companion_dispositions(party: list[dict]) -> str:
@@ -76,3 +82,34 @@ async def run(session_id: str, role: Literal["ally", "enemy"]) -> str:
     except json.JSONDecodeError:
         log.warning("combat_ai_non_json_response", role=role, raw=final_text[:200])
         return final_text
+
+
+async def propose(session_id: str) -> CompanionProposal:
+    """Have the current companion propose an unexecuted resolver instruction."""
+    combat_state, party = await fetch_combat_context(session_id)
+    current = combat_state.get("combatants", [])[combat_state.get("turn_index", 0)]
+    prompt, model, fallbacks = agent_setup("ally_ai")
+    rendered = prompt.render(
+        session_id=session_id,
+        combatant_name=current["name"],
+        combatant_type=current["type"],
+        combatant_id=current["id"],
+        combat_state=json.dumps(combat_state, indent=2),
+        party=json.dumps(party, indent=2),
+        companion_dispositions=_companion_dispositions(party),
+    )
+    rendered += """
+
+SUGGEST MODE: do not call tools and do not advance the turn. Propose exactly one action the player
+may confirm. `action` must be a concise combat instruction that CombatResolver can execute for this
+companion. `narration` is one in-character sentence for the player-facing proposal band.
+Respond only with JSON: {"action": "...", "narration": "..."}.
+"""
+    return await complete_to_model(
+        model=model,
+        messages=[{"role": "user", "content": rendered}],
+        model_cls=CompanionProposal,
+        agent="ally_ai",
+        fallbacks=fallbacks,
+        temperature=prompt.temperature,
+    )

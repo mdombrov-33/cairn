@@ -41,6 +41,7 @@ def _state(session_id: str, campaign_id: str, pre: ScenePreOutput | None, player
         "scene_pre_output": pre,
         "is_scene_entry": False,
         "combat_just_started": False,
+        "settings": {},
     }
 
 

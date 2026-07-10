@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.turns import ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.api.v1.schemas.turns import CompanionActionResolutionRequest, ResolveRequest, SubmitTurnRequest, TurnResponse
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import inspiration as inspiration_service
 from cairn.domain.services import turns as service
@@ -68,6 +68,33 @@ async def resolve(
             session_id=session_id,
             campaign_id=campaign_id,
             namespace=namespace,
+        ):
+            yield sse(event["type"], event["data"])
+
+    return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
+
+
+@router.post("/{session_id}/turns/{turn_id}/companion-action")
+async def resolve_companion_action(
+    session_id: uuid.UUID,
+    turn_id: uuid.UUID,
+    body: CompanionActionResolutionRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> StreamingResponse:
+    turn, proposal, namespace = await service.prepare_companion_action(
+        db, session_id=session_id, turn_id=turn_id, owner_id=user_id
+    )
+
+    async def generate() -> AsyncGenerator[str]:
+        async for event in service.stream_companion_action(
+            db,
+            turn=turn,
+            proposal=proposal,
+            session_id=session_id,
+            namespace=namespace,
+            decision=body.decision,
+            override=body.override,
         ):
             yield sse(event["type"], event["data"])
 

@@ -53,6 +53,39 @@ async def test_get_others_campaign_returns_404(client: AsyncClient) -> None:
     }
 
 
+async def test_settings_patch_deep_merges_and_returns_resolved_settings(client: AsyncClient) -> None:
+    created = await make_campaign(client)
+
+    r = await client.patch(
+        f"/v1/campaigns/{created['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"preset": "balanced", "overrides": {"companion": {"combat": "player"}}},
+    )
+
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["preset"] == "balanced"
+    assert body["overrides"] == {"companion": {"combat": "player"}}
+    assert body["resolved"]["companion"]["combat"] == "player"
+    assert body["resolved"]["companion"]["dialogue"] == "ai"
+
+    saved = await client.get(f"/v1/campaigns/{created['id']}/settings", headers={"X-User-Id": "user_a"})
+    assert saved.status_code == 200
+    assert saved.json() == body
+
+
+async def test_campaign_settings_reject_account_owned_model_fields(client: AsyncClient) -> None:
+    created = await make_campaign(client)
+
+    r = await client.patch(
+        f"/v1/campaigns/{created['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"overrides": {"llm": {"tier": "pro"}}},
+    )
+
+    assert r.status_code == 422
+
+
 async def test_delete_own_campaign(client: AsyncClient) -> None:
     created = await make_campaign(client)
     r = await client.delete(f"/v1/campaigns/{created['id']}", headers={"X-User-Id": "user_a"})

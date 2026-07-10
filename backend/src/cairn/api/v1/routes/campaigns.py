@@ -3,7 +3,12 @@ import uuid
 from fastapi import APIRouter, Query, status
 
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.campaigns import CampaignResponse, CreateCampaignRequest
+from cairn.api.v1.schemas.campaigns import (
+    CampaignResponse,
+    CampaignSettingsResponse,
+    CreateCampaignRequest,
+    PatchCampaignSettingsRequest,
+)
 from cairn.api.v1.schemas.lore import WorldBibleEntryResponse
 from cairn.api.v1.schemas.sessions import SessionResponse
 from cairn.domain.services import campaigns as service
@@ -45,6 +50,32 @@ async def get(
 ) -> CampaignResponse:
     campaign = await service.get(db, campaign_id=campaign_id, owner_id=user_id)
     return CampaignResponse.model_validate(campaign)
+
+
+@router.get("/{campaign_id}/settings", response_model=CampaignSettingsResponse)
+async def get_settings(
+    campaign_id: uuid.UUID,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CampaignSettingsResponse:
+    return CampaignSettingsResponse(**await service.get_settings(db, campaign_id=campaign_id, owner_id=user_id))
+
+
+@router.patch("/{campaign_id}/settings", response_model=CampaignSettingsResponse)
+async def update_settings(
+    campaign_id: uuid.UUID,
+    body: PatchCampaignSettingsRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> CampaignSettingsResponse:
+    result = await service.update_settings(
+        db,
+        campaign_id=campaign_id,
+        owner_id=user_id,
+        preset=body.preset,
+        overrides=body.overrides,
+    )
+    return CampaignSettingsResponse(**result)
 
 
 @router.get("/{campaign_id}/lore", response_model=list[WorldBibleEntryResponse])

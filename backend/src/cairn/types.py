@@ -114,6 +114,23 @@ class CheckData(TypedDict):
     total: NotRequired[int]  # set on resolve
     success: NotRequired[bool]  # set on resolve
     loot_intent: NotRequired[LootIntent]  # set when input is a pickpocket attempt
+    settings: NotRequired[dict[str, Any]]  # immutable campaign-settings snapshot for this turn
+
+
+class CompanionActionProposal(TypedDict):
+    """A paused companion turn. The action is replayed through CombatResolver on confirmation."""
+
+    kind: Required[Literal["companion_action"]]
+    status: Required[Literal["pending", "resolved"]]
+    combatant_id: Required[str]
+    combatant_name: Required[str]
+    action: Required[str]
+    narration: Required[str]
+    prior_context: Required[str]
+    settings: Required[dict[str, Any]]
+
+
+PendingTurnData = CheckData | CompanionActionProposal
 
 
 # Concentration

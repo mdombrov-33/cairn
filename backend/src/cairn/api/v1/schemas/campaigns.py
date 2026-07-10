@@ -11,6 +11,17 @@ class CreateCampaignRequest(BaseModel):
     template_id: str
 
 
+class PatchCampaignSettingsRequest(BaseModel):
+    preset: str | None = None
+    overrides: dict[str, Any] | None = None
+
+
+class CampaignSettingsResponse(BaseModel):
+    preset: str
+    overrides: dict[str, Any]
+    resolved: dict[str, Any]
+
+
 class CampaignResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

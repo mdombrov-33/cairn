@@ -14,7 +14,7 @@ from cairn.agents import (
     scene_narrator,
     scene_summarizer,
 )
-from cairn.context import recording_turn
+from cairn.context import recording_turn, using_campaign_settings
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
 from cairn.db.models.scene import Scene
@@ -28,14 +28,15 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
-from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError
+from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError, ValidationError
 from cairn.domain.services import campaign_view, narrative_context, scene_director_context
 from cairn.domain.services import companions as companions_service
 from cairn.domain.services import loot as loot_service
+from cairn.domain.services import settings as settings_service
 from cairn.domain.services import time as time_service
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
-from cairn.types import CheckData, LootIntent, NpcPresence, ScenePostOutput
+from cairn.types import CheckData, CompanionActionProposal, LootIntent, NpcPresence, ScenePostOutput
 
 log = structlog.get_logger()
 
@@ -72,12 +73,14 @@ async def prepare(
 
     # The graph runs for every turn now — the Scene Director's pre-pass decides whether the
     # turn enters/continues combat, transitions scenes, or routes to a normal resolver.
-    with recording_turn(turn.id):
+    resolved_settings = settings_service.resolve_settings(campaign.settings)
+    with recording_turn(turn.id), using_campaign_settings(resolved_settings):
         state = await turn_graph.run(
             player_input=player_input,
             session_id=session_id,
             campaign_id=db_session.campaign_id,
         )
+    state["settings"] = resolved_settings
     if state["intent"] is None:
         raise AgentError("IntentRouter returned no intent")
 
@@ -164,11 +167,33 @@ async def stream(
     intent = state["intent"]
     is_scene_entry = state["is_scene_entry"]
 
-    with recording_turn(turn.id):
+    with recording_turn(turn.id), using_campaign_settings(state.get("settings", {})):
         yield _event("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
         if intent == "combat_action":
-            narrator = combat_resolver.run(state["player_input"], str(session_id))
+            combat_context, proposal = await combat_resolver.resolve(state["player_input"], str(session_id))
+            if proposal is not None:
+                pending: CompanionActionProposal = {
+                    "kind": "companion_action",
+                    "status": "pending",
+                    **proposal,
+                    "prior_context": combat_context,
+                    "settings": state.get("settings", {}),
+                }
+                await turn_queries.update_turn_check(db, turn.id, check_data=pending)
+                yield _event(
+                    "companion_action_proposed",
+                    {
+                        "combatant_id": proposal["combatant_id"],
+                        "proposed": {
+                            "tool": "combat_resolver",
+                            "args": {"input": proposal["action"]},
+                            "narration": proposal["narration"],
+                        },
+                    },
+                )
+                return
+            narrator = scene_narrator.run(state["player_input"], context=combat_context)
             async for event in _narrate(
                 narrator, db, turn=turn, session_id=session_id, campaign_id=campaign_id, namespace=namespace
             ):
@@ -206,7 +231,13 @@ async def stream(
             ):
                 setup_chunks.append(chunk)
                 yield _event("token", {"text": chunk})
-            await save_check_setup(db, turn_id=turn.id, check=check, setup_prose="".join(setup_chunks))
+            await save_check_setup(
+                db,
+                turn_id=turn.id,
+                check=check,
+                setup_prose="".join(setup_chunks),
+                settings=state.get("settings", {}),
+            )
             yield _event("check_required", _check_payload(check))
             return
 
@@ -304,26 +335,27 @@ async def stream_resolve(
         outcome_context += "\n\nNewly discovered this check (narrate the party finding it):\n" + "\n".join(
             f"- {r}" for r in revealed
         )
-    outcome_chunks: list[str] = []
-    async for chunk in scene_narrator.run(turn.player_input, context=outcome_context):
-        outcome_chunks.append(chunk)
-        yield _event("token", {"text": chunk})
+    with using_campaign_settings(check.get("settings", {})):
+        outcome_chunks: list[str] = []
+        async for chunk in scene_narrator.run(turn.player_input, context=outcome_context):
+            outcome_chunks.append(chunk)
+            yield _event("token", {"text": chunk})
 
-    outcome_prose = "".join(outcome_chunks)
-    dm_response = setup_prose + "\n\n" + outcome_prose
-    await save_resolved_check(
-        db,
-        turn_id=turn.id,
-        check=check,
-        roll=raw_roll,
-        total=total,
-        success=success,
-        dm_response=dm_response,
-    )
-    yield _event("turn_end", {"turn_id": str(turn.id)})
-    _schedule_post_turn(
-        dm_response, session_id=session_id, campaign_id=campaign_id, namespace=namespace, turn_id=turn.id
-    )
+        outcome_prose = "".join(outcome_chunks)
+        dm_response = setup_prose + "\n\n" + outcome_prose
+        await save_resolved_check(
+            db,
+            turn_id=turn.id,
+            check=check,
+            roll=raw_roll,
+            total=total,
+            success=success,
+            dm_response=dm_response,
+        )
+        yield _event("turn_end", {"turn_id": str(turn.id)})
+        _schedule_post_turn(
+            dm_response, session_id=session_id, campaign_id=campaign_id, namespace=namespace, turn_id=turn.id
+        )
 
 
 async def run_lore_keeper(
@@ -601,8 +633,9 @@ async def save_check_setup(
     turn_id: uuid.UUID,
     check: CheckData,
     setup_prose: str,
+    settings: dict[str, Any],
 ) -> None:
-    updated: CheckData = {**check, "setup_prose": setup_prose}
+    updated: CheckData = {**check, "setup_prose": setup_prose, "settings": settings}
     await turn_queries.update_turn_check(db, turn_id, check_data=updated)
 
 
@@ -677,4 +710,75 @@ async def prepare_resolve(
     if not check or check.get("status") != "pending":
         raise ConflictError("no pending check on this turn", code="no_pending_check")
 
-    return turn, check
+    return turn, cast(CheckData, check)
+
+
+async def prepare_companion_action(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    turn_id: uuid.UUID,
+    owner_id: str,
+) -> tuple[Turn, CompanionActionProposal, str]:
+    db_session = await session_queries.get_session(db, session_id)
+    campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
+    turn = await turn_queries.get_turn(db, turn_id)
+    if turn.session_id != session_id:
+        raise NotFoundError(f"turn {turn_id} not found", code="turn_not_found")
+    proposal = turn.check_data
+    if not proposal or proposal.get("kind") != "companion_action" or proposal.get("status") != "pending":
+        raise ConflictError("no pending companion action on this turn", code="no_pending_companion_action")
+    return turn, cast(CompanionActionProposal, proposal), campaign.world_bible_namespace
+
+
+async def stream_companion_action(
+    db: AsyncSession,
+    *,
+    turn: Turn,
+    proposal: CompanionActionProposal,
+    session_id: uuid.UUID,
+    namespace: str,
+    decision: str,
+    override: str | None,
+) -> AsyncGenerator[dict[str, Any]]:
+    if decision not in {"confirm", "override"}:
+        raise ValidationError("decision must be confirm or override")
+    if decision == "override" and not override:
+        raise ValidationError("override text is required")
+    instruction = proposal["action"] if decision == "confirm" else cast(str, override)
+    db_session = await session_queries.get_session(db, session_id)
+    campaign = await campaign_queries.get_campaign(db, db_session.campaign_id)
+    with using_campaign_settings(proposal["settings"]), recording_turn(turn.id):
+        narrative_context, next_proposal = await combat_resolver.resolve(
+            instruction,
+            str(session_id),
+            prior_context=proposal["prior_context"],
+        )
+        if next_proposal is not None:
+            pending: CompanionActionProposal = {
+                "kind": "companion_action",
+                "status": "pending",
+                **next_proposal,
+                "prior_context": narrative_context,
+                "settings": proposal["settings"],
+            }
+            await turn_queries.update_turn_check(db, turn.id, check_data=pending)
+            yield _event(
+                "companion_action_proposed",
+                {
+                    "combatant_id": next_proposal["combatant_id"],
+                    "proposed": {
+                        "tool": "combat_resolver",
+                        "args": {"input": next_proposal["action"]},
+                        "narration": next_proposal["narration"],
+                    },
+                },
+            )
+            return
+        resolved: CompanionActionProposal = {**proposal, "status": "resolved"}
+        await turn_queries.update_turn_check(db, turn.id, check_data=resolved)
+        narrator = scene_narrator.run(instruction, context=narrative_context)
+        async for event in _narrate(
+            narrator, db, turn=turn, session_id=session_id, campaign_id=campaign.id, namespace=namespace
+        ):
+            yield event

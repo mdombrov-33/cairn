@@ -1,104 +1,68 @@
-defaults:
-  local:
-    primary: ollama/qwen2.5:latest
-  frontier:
-    primary: openai/gpt-5.4-mini
-    fallback: openai/gpt-5.4
+agent_names:
+  - intent_router
+  - scene_narrator
+  - rules_lawyer
+  - dialogue
+  - scene_director_pre
+  - scene_director_post
+  - scene_summarizer
+  - lore_keeper
+  - companion_reflector
+  - npc_builder
+  - npc_builder_deepen
+  - scene_builder
+  - zone_seeder
+  - recruiter
+  - combat_resolver
+  - enemy_ai
+  - ally_ai
 
-agents:
-  intent_router:
-    local:
+profiles:
+  development:
+    default:
       primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  scene_narrator:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4
-      fallback: openai/gpt-5.4-mini
-  rules_lawyer:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  dialogue:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  scene_director_pre:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  scene_director_post:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  scene_summarizer:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  lore_keeper:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  companion_reflector:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  npc_builder:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  npc_builder_deepen:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4
-      fallback: openai/gpt-5.4-mini
-  scene_builder:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4
-      fallback: openai/gpt-5.4-mini
-  zone_seeder:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  recruiter:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-  combat_resolver:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  enemy_ai:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
-  ally_ai:
-    local:
-      primary: ollama/qwen2.5:latest
-    frontier:
-      primary: openai/gpt-5.4-mini
-      fallback: openai/gpt-5.4
+
+tiers:
+  # Every hosted account starts here: fast and economical, Luna everywhere.
+  free:
+    default:
+      primary: openai/gpt-5.6-luna
+      fallback: openai/gpt-5.6-terra
+
+  # Terra is reserved for the player-facing and rare generation calls.
+  plus:
+    default:
+      primary: openai/gpt-5.6-luna
+      fallback: openai/gpt-5.6-terra
+    agents:
+      scene_narrator:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+      dialogue:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+      npc_builder_deepen:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+      scene_builder:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+
+  # Sol is deliberately rare: Pro narration, not every background or combat call.
+  pro:
+    default:
+      primary: openai/gpt-5.6-luna
+      fallback: openai/gpt-5.6-terra
+    agents:
+      scene_narrator:
+        primary: openai/gpt-5.6-sol
+        fallback: openai/gpt-5.6-terra
+      dialogue:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+      npc_builder_deepen:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna
+      scene_builder:
+        primary: openai/gpt-5.6-terra
+        fallback: openai/gpt-5.6-luna

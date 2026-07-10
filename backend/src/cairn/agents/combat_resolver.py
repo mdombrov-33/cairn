@@ -1,10 +1,11 @@
 import json
 from collections.abc import AsyncIterator
-from typing import Literal
+from typing import Literal, TypedDict
 
 import structlog
 
 from cairn.agents import combat_ai, scene_narrator
+from cairn.context import current_campaign_settings
 from cairn.db import client as db_client
 from cairn.domain.exceptions import AgentError
 from cairn.domain.services.combat.emitter import emit
@@ -13,6 +14,70 @@ from cairn.llm.router import agent_setup
 from cairn.tools import COMBAT_TOOLS, fetch_combat_context
 
 log = structlog.get_logger()
+
+
+class PendingCompanionProposal(TypedDict):
+    combatant_id: str
+    combatant_name: str
+    action: str
+    narration: str
+
+
+async def resolve(
+    player_input: str,
+    session_id: str,
+    context: str = "",
+    *,
+    prior_context: str = "",
+) -> tuple[str, PendingCompanionProposal | None]:
+    """Resolve a combat instruction until narration is possible or a companion proposes a turn."""
+    player_summary = await _resolve_mechanics(player_input, session_id, context)
+    summaries = [f"[PLAYER ACTION]\n{player_summary}"]
+
+    initial_state, _ = await fetch_combat_context(session_id)
+    cap = len(initial_state.get("combatants", [])) if initial_state else 0
+    settings = current_campaign_settings.get() or {}
+    companion_mode = settings.get("companion", {}).get("combat", "ai")
+
+    for _ in range(cap):
+        combat_state, party = await fetch_combat_context(session_id)
+        if not combat_state:
+            break
+        combatants = combat_state.get("combatants", [])
+        if not combatants:
+            break
+        current = combatants[combat_state.get("turn_index", 0)]
+        if not current.get("is_alive", True):
+            break
+        companion = next(
+            (member for member in party if member.get("id") == current["id"] and member.get("is_companion")), None
+        )
+        if companion is not None and companion_mode == "player":
+            break
+        if companion is not None and companion_mode == "suggest":
+            proposal = await combat_ai.propose(session_id)
+            combined = "\n\n".join(part for part in [prior_context, *summaries] if part)
+            return combined, {
+                "combatant_id": current["id"],
+                "combatant_name": current["name"],
+                "action": proposal.action,
+                "narration": proposal.narration,
+            }
+        if current["type"] == "character" and not current.get("ai_controlled"):
+            break
+        role: Literal["ally", "enemy"] = "ally" if current.get("team") == "players" else "enemy"
+        try:
+            summary = await combat_ai.run(session_id, role=role)
+        except Exception as exc:
+            log.error("combat_step_failed", error=str(exc), session_id=session_id)
+            async with db_client.get_session() as db:
+                await emit(db, {"type": "combat_step_failed", "error": str(exc)})
+                await db.commit()
+            raise
+        summaries.append(f"[{'ALLY' if role == 'ally' else 'ENEMY'} TURN]\n{summary}")
+
+    combined = "\n\n".join(part for part in [prior_context, *summaries, context] if part)
+    return combined, None
 
 
 async def run(
@@ -26,41 +91,9 @@ async def run(
     Phase 2: Loop ally/enemy turns until it's the player's character's turn again.
     Phase 3: Narrate everything together.
     """
-    player_summary = await _resolve_mechanics(player_input, session_id, context)
-
-    # Safety cap: at most one ally/enemy turn per combatant before control returns to the player.
-    initial_state, _ = await fetch_combat_context(session_id)
-    cap = len(initial_state.get("combatants", [])) if initial_state else 0
-
-    enemy_summaries: list[str] = []
-    for _ in range(cap):
-        combat_state, _ = await fetch_combat_context(session_id)
-        if not combat_state:
-            break  # combat ended (victory/defeat)
-        combatants = combat_state.get("combatants", [])
-        if not combatants:
-            break
-        current = combatants[combat_state.get("turn_index", 0)]
-        if not current.get("is_alive", True):
-            break
-        if current["type"] == "character" and not current.get("ai_controlled"):
-            break  # player's own character — stop and wait for input
-        role: Literal["ally", "enemy"] = "ally" if current.get("team") == "players" else "enemy"
-        try:
-            summary = await combat_ai.run(session_id, role=role)
-        except Exception as exc:
-            log.error("combat_step_failed", error=str(exc), session_id=session_id)
-            async with db_client.get_session() as db:
-                await emit(db, {"type": "combat_step_failed", "error": str(exc)})
-                await db.commit()
-            raise
-        enemy_summaries.append(summary)
-
-    narrative_context = f"[PLAYER ACTION]\n{player_summary}"
-    for s in enemy_summaries:
-        narrative_context += f"\n\n[ENEMY TURN]\n{s}"
-    if context:
-        narrative_context += f"\n\n{context}"
+    narrative_context, proposal = await resolve(player_input, session_id, context)
+    if proposal is not None:
+        return
 
     async for chunk in scene_narrator.run(player_input, context=narrative_context):
         yield chunk

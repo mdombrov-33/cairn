@@ -106,7 +106,7 @@ async def _generate(
 ) -> _Profile:
     settings = get_settings()
     prompt = load_prompt("npc_builder", resolve_version("npc_builder", settings.llm_prompt_versions))
-    model, fallbacks = get_model(model_key, settings.llm_env)
+    model, fallbacks = get_model(model_key, settings.llm_env, settings.llm_tier)
     return await complete_to_model(
         model=model,
         messages=[
