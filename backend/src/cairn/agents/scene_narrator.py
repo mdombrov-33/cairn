@@ -11,6 +11,7 @@ async def run(
     intro_mode: bool = False,
     is_scene_entry: bool = False,
     death_recovery: bool = False,
+    pacing_nudge: str | None = None,
 ) -> AsyncIterator[str]:
     prompt, model, fallbacks = agent_setup("scene_narrator")
 
@@ -25,6 +26,7 @@ async def run(
                     intro_mode=intro_mode,
                     is_scene_entry=is_scene_entry,
                     death_recovery=death_recovery,
+                    pacing_nudge=pacing_nudge,
                 ),
             }
         ],

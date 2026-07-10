@@ -9,6 +9,7 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError
 from cairn.domain.services import campaigns as campaign_service
+from cairn.domain.services import scenes as scene_service
 
 
 async def start(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> Session:
@@ -31,13 +32,11 @@ async def start(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> S
     # Every turn belongs to a scene, so the opening scene exists from turn 0.
     # Scene Director owns all later transitions.
     if await scene_queries.get_current_scene(db, campaign_id) is None:
-        await scene_queries.create_scene(
+        await scene_service.open_scene(
             db,
             campaign_id=campaign_id,
-            location_id=starting_location.id if starting_location else None,
+            location=starting_location,
             act_index=campaign.current_act_index,
-            scene_mode="exploration",
-            safety_level="safe",
         )
 
     return db_session

@@ -1,7 +1,12 @@
+import uuid
 from unittest.mock import patch
 
 from httpx import AsyncClient
 
+from cairn.db import client as db_client
+from cairn.db.queries import locations as location_queries
+from cairn.db.queries import scenes as scene_queries
+from cairn.domain.services import scenes as scene_service
 from tests._factories import make_campaign, make_session, parse_sse
 
 
@@ -227,3 +232,103 @@ async def test_resolve_roll_must_be_1_to_20(client: AsyncClient) -> None:
         json={"roll": 21},
     )
     assert r.status_code == 422
+
+
+# --- Check-gated discoveries: a passed check surfaces an authored hidden detail ---
+
+
+async def _open_back_room(campaign_id: str) -> None:
+    """Make the authored back room (investigation dc 14 → false drawer) the campaign's current scene."""
+    cid = uuid.UUID(campaign_id)
+    async with db_client.get_session() as db:
+        back_room = next(loc for loc in await location_queries.list_by_campaign(db, cid) if "Back Room" in loc.name)
+        await scene_service.open_scene(db, campaign_id=cid, location=back_room, act_index=0)
+        await db.commit()
+
+
+async def _submit_check(client: AsyncClient, session_id: str, campaign_id: str, *, skill: str) -> str:
+    """Submit a turn that resolves to a pending check of `skill` (dc 14, mod 0). Returns the turn id."""
+
+    async def _run(player_input, session_id, campaign_id):
+        return {
+            "session_id": str(session_id),
+            "campaign_id": str(campaign_id),
+            "player_input": player_input,
+            "intent": "skill_check",
+            "npc_name": None,
+            "check": {"skill": skill, "dc": 14, "modifier": 0, "roll_type": "d20", "status": "pending"},
+            "npc_context": None,
+            "rest_context": None,
+            "scene_pre_output": None,
+            "is_scene_entry": False,
+            "combat_just_started": False,
+        }
+
+    with patch("cairn.pipelines.turn_graph.run", side_effect=_run):
+        r = await client.post(
+            f"/v1/sessions/{session_id}/turns",
+            headers={"X-User-Id": "user_a"},
+            json={"player_input": f"I make a {skill} check on the desk"},
+        )
+    assert r.status_code == 201
+    return parse_sse(r.text)[0]["data"]["turn_id"]
+
+
+async def _discovered_facts(campaign_id: str) -> tuple[list[str], int | None]:
+    async with db_client.get_session() as db:
+        scene = await scene_queries.get_current_scene(db, uuid.UUID(campaign_id))
+        assert scene is not None
+        return list(scene.discovered_facts), scene.last_revelation_at_turn
+
+
+async def test_passed_check_surfaces_matching_hidden_detail(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
+    await _open_back_room(camp["id"])
+    turn_id = await _submit_check(client, sess["id"], camp["id"], skill="investigation")
+
+    # roll 14 + mod 0 = 14 → clears the authored investigation dc 14.
+    await client.post(
+        f"/v1/sessions/{sess['id']}/turns/{turn_id}/resolve",
+        headers={"X-User-Id": "user_a"},
+        json={"roll": 14},
+    )
+
+    facts, last_at = await _discovered_facts(camp["id"])
+    assert any("false drawer" in f for f in facts)
+    assert last_at is not None  # stalling clock stamped
+
+
+async def test_failed_check_surfaces_nothing(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
+    await _open_back_room(camp["id"])
+    turn_id = await _submit_check(client, sess["id"], camp["id"], skill="investigation")
+
+    # roll 10 + mod 0 = 10 → under the authored dc 14.
+    await client.post(
+        f"/v1/sessions/{sess['id']}/turns/{turn_id}/resolve",
+        headers={"X-User-Id": "user_a"},
+        json={"roll": 10},
+    )
+
+    facts, last_at = await _discovered_facts(camp["id"])
+    assert facts == []
+    assert last_at is None
+
+
+async def test_wrong_skill_leaves_hidden_detail_sealed(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
+    await _open_back_room(camp["id"])
+    # Perception dc 16 gates the footprints; an investigation total of 14 must not surface them.
+    turn_id = await _submit_check(client, sess["id"], camp["id"], skill="investigation")
+
+    await client.post(
+        f"/v1/sessions/{sess['id']}/turns/{turn_id}/resolve",
+        headers={"X-User-Id": "user_a"},
+        json={"roll": 14},
+    )
+
+    facts, _ = await _discovered_facts(camp["id"])
+    assert not any("footprints" in f for f in facts)

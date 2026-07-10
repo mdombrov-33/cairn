@@ -259,7 +259,7 @@ class SceneTransition(TypedDict):
 class ScenePreOutput(TypedDict):
     combat_trigger: CombatTrigger | None
     scene_transition_pull: SceneTransition | None
-    pacing_nudge: str | None  # always None in this slice — schema slot for later
+    pacing_nudge: str | None  # deterministic soft guidance for the narrator; None when fine
 
 
 class ScenePostOutput(TypedDict):
@@ -267,11 +267,59 @@ class ScenePostOutput(TypedDict):
     scene_transition_push: SceneTransition | None
     time_advance_hours: int  # 0 unless scene_transition_push is also set
     act_progress: bool  # true if the DM narrated a core_event resolution
+    # Scene-depth deltas (Slice 8). All default-empty — most turns change nothing.
+    tension_delta: int  # signed; clamped into 0-10 by the writer
+    mood: SceneMood | None  # None = unchanged
+    discovered: list[str]  # free-form facts noticed without a roll
+    threads_added: list[str]
+    threads_resolved: list[str]
+    npc_updates: list[NpcPresence]  # merged by npc_id onto existing presence (agenda/doing shifts)
+    npc_departures: list[str]  # npc_ids that left the scene
 
 
 # Session.pending_transition — scene-boundary detection-to-application handoff.
 # Same shape as SceneTransition; named distinctly for the column's intent.
 PendingTransition = SceneTransition
+
+
+# Scene depth — a scene is a layered situation, not a description. Authored content
+# is parsed into `Scene.authored` (JSONB, read-mostly); discovery/pacing state lives
+# in dedicated columns + JSONB lists. Hidden details need a check to surface; secrets
+# need an unlock condition. The narrator is only ever handed what the party has earned.
+
+SceneMood = Literal["quiet", "charged", "hostile", "intimate"]
+
+
+class HiddenDetail(TypedDict):
+    check: str  # skill name, e.g. "investigation"
+    dc: int
+    reveals: str  # full reveal text — withheld from the narrator until the check passes
+
+
+class SceneSecret(TypedDict):
+    unlocked_by: str | list[str]  # discovered_facts key(s) that must be present
+    content: str  # withheld from the narrator until unlocked
+
+
+class SceneHook(TypedDict, total=False):
+    hook: Required[str]
+    to: str  # where this hook leads (act/thread id)
+
+
+class AuthoredScene(TypedDict, total=False):
+    atmosphere: str
+    surface_details: list[str]
+    hidden: list[HiddenDetail]
+    secrets: list[SceneSecret]
+    threads_in_air: list[str]
+    hooks_out: list[SceneHook]
+
+
+class NpcPresence(TypedDict, total=False):
+    npc_id: Required[str]
+    doing: str
+    attentive_to: list[str]
+    agenda: str  # what this NPC is trying to do right now, in-scene
 
 
 # Session.pending_recovery — narrative-mode death recovery handoff.

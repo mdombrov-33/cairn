@@ -67,6 +67,12 @@ agents:
     frontier:
       primary: openai/gpt-5.4
       fallback: openai/gpt-5.4-mini
+  scene_builder:
+    local:
+      primary: ollama/qwen2.5:latest
+    frontier:
+      primary: openai/gpt-5.4
+      fallback: openai/gpt-5.4-mini
   recruiter:
     local:
       primary: ollama/qwen2.5:latest

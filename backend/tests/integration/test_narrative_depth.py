@@ -77,12 +77,16 @@ async def test_context_carries_scene_npc_profile(client: AsyncClient) -> None:
     async with db_client.get_session() as db:
         scene = await scene_queries.get_current_scene(db, uuid.UUID(camp["id"]))
         assert scene is not None and scene.location_id is not None
-        await npc_queries.create_npc(
+        harl = await npc_queries.create_npc(
             db,
             campaign_id=uuid.UUID(camp["id"]),
             name="Harl",
             location_id=scene.location_id,
             narrative_profile={"name": "Harl", "personality": "Keeps a filthy ledger.", "voice": {}},
+        )
+        # Presence is earned per-scene now, not the live location roster: seed npcs_present.
+        await scene_queries.set_npcs_present(
+            db, scene.id, [{"npc_id": str(harl.id), "doing": "counting coppers", "agenda": "skim the till"}]
         )
         await db.commit()
 
@@ -91,6 +95,8 @@ async def test_context_carries_scene_npc_profile(client: AsyncClient) -> None:
 
     assert "Harl" in context
     assert "filthy ledger" in context
+    assert "counting coppers" in context  # in-the-moment presence state reaches the narrator
+    assert "skim the till" in context
 
 
 async def test_dialogue_disposition_change_writes_world_bible(client: AsyncClient) -> None:

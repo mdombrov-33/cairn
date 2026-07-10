@@ -13,6 +13,7 @@ from cairn.agents import (
     intent_router,
     recruiter,
     rules_lawyer,
+    scene_builder,
     scene_director,
     scene_summarizer,
 )
@@ -29,6 +30,7 @@ from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import NotFoundError
 from cairn.domain.services import campaign_view, companions, recruitment, scene_director_context
 from cairn.domain.services import npcs as npc_service
+from cairn.domain.services import scenes as scene_service
 from cairn.domain.services.combat import state as combat_state_service
 from cairn.pipelines.checkpointer import get_checkpointer
 from cairn.types import CheckData, DialogueEntity, HelperRef, ScenePreOutput
@@ -338,6 +340,28 @@ async def _combat_terminus(state: TurnState) -> dict[str, Any]:
     return {"intent": "combat_action"}
 
 
+async def _build_unauthored_scene(db: Any, campaign: Any, template: Any, location: Any) -> None:
+    """First entry to a location the world never authored: generate a layered scene once and
+    persist it to `Location.authored_scene`, so every later entry re-enters the authored path with
+    no regeneration. Parse-fail safe — on failure the location stays thin and open_scene falls back
+    to a roster-only scene."""
+    act = campaign_view.act_at(template, campaign.current_act_index) or {"title": "", "premise": ""}
+    npcs = await npc_queries.list_by_location(db, campaign.id, location.id)
+    roster = [{"name": n.name, "role": n.class_ or "", "disposition": n.disposition} for n in npcs]
+    raw = await scene_builder.build(
+        location_name=location.name,
+        location_description=location.description,
+        act_title=act["title"],
+        act_premise=act["premise"],
+        time_label="",
+        roster=roster,
+    )
+    if raw:
+        location.authored_scene = raw
+        await db.flush()
+        log.info("scene_built", location=location.name)
+
+
 async def _scene_create(state: TurnState) -> dict[str, Any]:
     """Apply a scene transition: summarize and close the old scene, open the new one.
 
@@ -377,11 +401,13 @@ async def _scene_create(state: TurnState) -> dict[str, Any]:
             summary = await scene_summarizer.run(old_loc_name, old_scene.summary or "", scene_turns)
             await scene_queries.close_scene(db, old_scene.id, summary=summary, ended_at=datetime.now(UTC))
 
-        campaign = await campaign_queries.get_campaign(db, campaign_id)
-        new_scene = await scene_queries.create_scene(
+        campaign, template, _ = await campaign_view.world_chain(db, campaign_id)
+        if not location.authored_scene:
+            await _build_unauthored_scene(db, campaign, template, location)
+        new_scene = await scene_service.open_scene(
             db,
             campaign_id=campaign_id,
-            location_id=target_location_id,
+            location=location,
             act_index=campaign.current_act_index,
         )
         turn_id = current_turn_id.get()

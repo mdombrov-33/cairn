@@ -1,0 +1,57 @@
+# Authored scene — the layered-scene reference for the template authoring guide.
+# A scene is a *situation*, not a description. Everything here is parsed at scene birth:
+#   - the six authored buckets below -> Scene.authored (read-mostly, bucketed leak-proof)
+#   - npcs_present + npc_agendas_in_scene -> runtime Scene.npcs_present ({npc_id, doing,
+#     attentive_to, agenda}), NPC references resolved by name to the campaign's NPC rows.
+# NPCs are referenced by name (find_by_name), identity/depth come from their Slice 7 profile.
+scene:
+  id: tavern_back_room
+  location_id: tavern_back_room
+  scene_mode: social
+  safety_level: safe
+  time_of_day: "late evening"
+  atmosphere: |
+    Lamplight and old smoke. The back room is close and warm after the noise of the floor —
+    a writing desk gone soft at the edges with use, a cot that hasn't been slept in tonight,
+    a hearth left cold. A war banner hangs on the back wall, three crows on a black field,
+    the cloth stiff with age. Grim keeps this room the way some men keep a grave: tidy,
+    private, and not for you.
+
+  npcs_present:
+    - npc: "Old Grim"
+      doing: "polishing the same glass he's been polishing for ten minutes"
+      attentive_to: ["the door", "footsteps overhead"]
+    - npc: "The Stranger"
+      doing: "nursing a single ale in the corner, hood up, hasn't turned"
+      attentive_to: ["the door"]
+
+  surface_details: # visible to anyone who enters
+    - "A locked iron chest under the writing desk"
+    - "A faded war banner on the back wall — three crows on a black field, the Iron Vow"
+    - "A row of pewter mugs above the desk, one missing, its hook bare"
+
+  hidden: # require a check; never described unless surfaced
+    - check: investigation
+      dc: 14
+      reveals: "The writing desk has a false drawer along the left rail."
+    - check: perception
+      dc: 16
+      reveals: "Faint footprints in the dust lead from the desk to the war banner — recent, within the day."
+
+  secrets: # require an unlock condition, not just a check
+    - unlocked_by: false_drawer_found
+      content: "Behind the false drawer: a sealed letter addressed to Maren, dated three years ago, never sent."
+
+  threads_in_air: # what's tense or unresolved as the party enters
+    - "The Stranger arrived an hour ago. Ordered one ale. Hasn't spoken."
+    - "Grim is uneasy about the Stranger but won't act first."
+
+  hooks_out: # where this scene can lead
+    - hook: letter_read
+      to: act_2_temple_lead
+    - hook: locked_chest_opened
+      to: side_thread_vineyard_deed
+
+  npc_agendas_in_scene: # what each NPC is trying to do RIGHT NOW
+    "Old Grim": "Keep an eye on the Stranger. Pretend he isn't worried. Get the party out before midnight."
+    "The Stranger": "Wait for his contact. Leave if anyone gets too close."

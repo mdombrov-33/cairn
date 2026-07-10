@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.db.models.scene import Scene
 from cairn.db.models.session import Session
 from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
@@ -106,6 +107,26 @@ async def build_pre_input_context(db: AsyncSession, session_id: uuid.UUID, playe
         "pending_transition": session.pending_transition is not None,
         "current_act": await _current_act(db, session.campaign_id),
         "session_time_label": await _time_label(db, session),
+        "pacing": await _pacing_state(db, session_id, scene),
+    }
+
+
+async def _pacing_state(db: AsyncSession, session_id: uuid.UUID, scene: Scene | None) -> dict[str, Any]:
+    """Scalars the deterministic pacing-nudge math reads. `turns_since_revelation` is the stall
+    signal: turns elapsed since the last discovery, or the full beat count if nothing's been found."""
+    if scene is None:
+        return {"scene_mode": "exploration", "beat_count": 0, "tension_level": 0, "turns_since_revelation": 0}
+    if scene.last_revelation_at_turn is None:
+        turns_since = scene.beat_count
+    else:
+        turns = await turn_queries.list_turns(db, session_id)
+        current_idx = max((t.idx for t in turns), default=0)
+        turns_since = max(0, current_idx - scene.last_revelation_at_turn)
+    return {
+        "scene_mode": scene.scene_mode,
+        "beat_count": scene.beat_count,
+        "tension_level": scene.tension_level,
+        "turns_since_revelation": turns_since,
     }
 
 

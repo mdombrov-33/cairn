@@ -49,14 +49,31 @@ async def _seed_world_cast(
         await _create_npc_from_yaml(db, campaign_id, yaml.safe_load(path.read_text()))
 
 
+def _load_authored_scenes(campaign_dir: Path) -> dict[str, dict[str, Any]]:
+    """Authored scenes keyed by the location slug they belong to (`scenes/*.yaml`)."""
+    scenes_dir = campaign_dir / "scenes"
+    if not scenes_dir.exists():
+        return {}
+    by_location: dict[str, dict[str, Any]] = {}
+    for path in sorted(scenes_dir.glob("*.yaml")):
+        raw = yaml.safe_load(path.read_text()) or {}
+        scene = raw.get("scene", raw)  # authored files nest content under a `scene:` root
+        loc_slug = scene.get("location_id")
+        if loc_slug:
+            by_location[loc_slug] = scene
+    return by_location
+
+
 async def _seed_locations(db: AsyncSession, campaign_id: uuid.UUID, campaign_dir: Path) -> list[Location]:
     path = campaign_dir / "locations.yaml"
     if not path.exists():
         return []
     data = yaml.safe_load(path.read_text())
+    authored_scenes = _load_authored_scenes(campaign_dir)
     locations = []
     for loc_data in data.get("locations", []):
         kwargs = {k: v for k, v in loc_data.items() if k != "id_slug"}
+        kwargs["authored_scene"] = authored_scenes.get(loc_data["id_slug"], {})
         location = await location_queries.create_location(db, campaign_id=campaign_id, **kwargs)
         locations.append(location)
     await db.flush()

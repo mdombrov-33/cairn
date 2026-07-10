@@ -2,7 +2,11 @@ locations:
   - id_slug: tavern_main_room
     name: "Grimwood Tavern — Main Room"
     description: "A dimly lit tavern with rough-hewn timber walls, a long bar along the north wall, and clusters of tables across the floor. A fire crackles in the hearth. The main entrance is to the east."
-    connections: {}
+    connections:
+      back_room:
+        to: tavern_back_room
+        name: "the back room"
+        one_line: "A private room behind the bar, its door usually shut."
     zones:
       - id: center
         name: "center of the room"
@@ -58,3 +62,19 @@ locations:
         adjacent: [center, tables_north]
         escape_route: true
         notes: "Main door. Fleeing is possible from here."
+
+  - id_slug: tavern_back_room
+    name: "Grimwood Tavern — Back Room"
+    description: "A cramped private room behind the bar: a writing desk, a cot, a cold hearth, and a war banner on the back wall. Old Grim keeps it locked."
+    connections:
+      main_room:
+        to: tavern_main_room
+        name: "the main room"
+        one_line: "Back out to the noise and firelight of the tavern floor."
+    zones:
+      - id: room
+        name: "the back room"
+        cover: none
+        difficult_terrain: false
+        elevation: 0
+        adjacent: []
