@@ -8,6 +8,8 @@ runtime validation. Postgres still stores arbitrary JSON.
 
 from typing import Annotated, Any, Literal, NotRequired, Required, TypedDict
 
+from cairn.domain.services.settings import ResolvedCampaignSettings
+
 type ToolUUID = Annotated[str, "UUID as string — converted at the tool boundary"]
 
 # Ability score key — the 6 D&D abilities. Used everywhere we index AbilityScores
@@ -114,7 +116,7 @@ class CheckData(TypedDict):
     total: NotRequired[int]  # set on resolve
     success: NotRequired[bool]  # set on resolve
     loot_intent: NotRequired[LootIntent]  # set when input is a pickpocket attempt
-    settings: NotRequired[dict[str, Any]]  # immutable campaign-settings snapshot for this turn
+    settings: NotRequired[ResolvedCampaignSettings]  # immutable campaign-settings snapshot for this turn
 
 
 class CompanionActionProposal(TypedDict):
@@ -127,7 +129,7 @@ class CompanionActionProposal(TypedDict):
     action: Required[str]
     narration: Required[str]
     prior_context: Required[str]
-    settings: Required[dict[str, Any]]
+    settings: Required[ResolvedCampaignSettings]
 
 
 PendingTurnData = CheckData | CompanionActionProposal

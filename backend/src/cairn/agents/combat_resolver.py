@@ -36,8 +36,8 @@ async def resolve(
 
     initial_state, _ = await fetch_combat_context(session_id)
     cap = len(initial_state.get("combatants", [])) if initial_state else 0
-    settings = current_campaign_settings.get() or {}
-    companion_mode = settings.get("companion", {}).get("combat", "ai")
+    settings = current_campaign_settings.get()
+    companion_mode = settings.companion.combat if settings is not None else "ai"
 
     for _ in range(cap):
         combat_state, party = await fetch_combat_context(session_id)

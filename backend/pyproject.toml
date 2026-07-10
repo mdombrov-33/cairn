@@ -33,6 +33,8 @@ build-backend = "uv_build"
 dev = [
     "httpx>=0.28.1",
     "mypy>=1.20.2",
+    "pyright>=1.1.411",
+    "pyright>=1.1.411",
     "pytest>=9.0.3",
     "pytest-asyncio>=1.3.0",
     "ruff>=0.15.12",
@@ -54,6 +56,11 @@ testpaths = ["tests"]
 
 [tool.pyright]
 reportMissingTypeStubs = false
+typeCheckingMode = "standard"
+# These existing JSONB TypedDicts intentionally model sparse, unvalidated data. Their
+# migration is a later slice; keep standard checking useful while strict coverage grows.
+reportOptionalSubscript = "none"
+reportTypedDictNotRequiredAccess = "none"
 
 [tool.mypy]
 ignore_missing_imports = true

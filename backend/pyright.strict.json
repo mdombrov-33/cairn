@@ -1,0 +1,10 @@
+{
+  "include": [
+    "src/cairn/context.py",
+    "src/cairn/domain/services/settings.py"
+  ],
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": false,
+  "reportOptionalSubscript": "none",
+  "reportTypedDictNotRequiredAccess": "none"
+}

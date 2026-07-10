@@ -160,11 +160,11 @@ async def delete(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> 
 
 async def get_settings(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> dict[str, Any]:
     campaign = await queries.get_campaign_owned_by(db, campaign_id, owner_id)
-    stored = campaign.settings or {}
+    stored = settings_service.parse_stored_settings(campaign.settings)
     return {
-        "preset": stored.get("preset", "narrative"),
-        "overrides": stored.get("overrides", {}),
-        "resolved": settings_service.resolve_settings(stored),
+        "preset": stored.preset,
+        "overrides": stored.overrides.as_json(),
+        "resolved": settings_service.resolve_settings(stored).as_json(),
     }
 
 
@@ -173,16 +173,14 @@ async def update_settings(
     *,
     campaign_id: uuid.UUID,
     owner_id: str,
-    preset: str | None,
-    overrides: dict[str, Any] | None,
+    preset: settings_service.CampaignPreset | None,
+    overrides: settings_service.CampaignSettingsOverrides | None,
 ) -> dict[str, Any]:
     campaign = await queries.get_campaign_owned_by(db, campaign_id, owner_id)
-    current = campaign.settings or {}
-    next_preset = preset if preset is not None else current.get("preset", "narrative")
-    if next_preset not in {"narrative", "balanced", "tactical"}:
-        raise ValidationError("unknown settings preset")
+    current = settings_service.parse_stored_settings(campaign.settings)
+    next_preset = preset if preset is not None else current.preset
 
-    next_overrides = dict(current.get("overrides", {}))
+    next_overrides = current.overrides
     if overrides is not None:
         try:
             settings_service.validate_overrides(overrides)
@@ -190,10 +188,11 @@ async def update_settings(
             raise ValidationError(str(exc)) from exc
         next_overrides = settings_service.merge_overrides(next_overrides, overrides)
 
-    campaign.settings = {"preset": next_preset, "overrides": next_overrides}
+    stored = settings_service.StoredCampaignSettings(preset=next_preset, overrides=next_overrides)
+    campaign.settings = stored.as_json()
     await db.flush()
     return {
         "preset": next_preset,
-        "overrides": next_overrides,
-        "resolved": settings_service.resolve_settings(campaign.settings),
+        "overrides": next_overrides.as_json(),
+        "resolved": settings_service.resolve_settings(stored).as_json(),
     }

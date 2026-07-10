@@ -15,6 +15,7 @@ from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.domain.services import npcs as npc_service
+from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import TurnState, _resolve_dialogue
 from tests._factories import make_campaign, make_session
 
@@ -34,7 +35,7 @@ def _state(session_id: str, campaign_id: str, npc_name: str) -> TurnState:
         "scene_pre_output": None,
         "is_scene_entry": False,
         "combat_just_started": False,
-        "settings": {},
+        "settings": ResolvedCampaignSettings(),
     }
 
 

@@ -60,11 +60,11 @@ fix:
 
 # Run the type checker.
 typecheck:
-	cd backend && uv run mypy .
+	cd backend && uv run mypy . && uv run pyright && uv run pyright --project pyright.strict.json
 
 # Full quality gate — what CI runs. No mutation.
 check:
-	cd backend && uv run ruff format --check . && uv run ruff check . && uv run mypy . && uv run pytest
+	cd backend && uv run ruff format --check . && uv run ruff check . && uv run mypy . && uv run pyright && uv run pyright --project pyright.strict.json && uv run pytest
 
 # Migrations
 

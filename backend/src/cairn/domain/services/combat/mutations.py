@@ -30,7 +30,7 @@ from cairn.types import CombatEffect, ConcentrationData
 async def _death_mode(db: AsyncSession, session_id: uuid.UUID) -> str:
     session = await session_queries.get_session(db, session_id)
     campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-    return resolve_settings(campaign.settings)["death_mode"]
+    return resolve_settings(campaign.settings).death_mode
 
 
 async def _concentration_save(

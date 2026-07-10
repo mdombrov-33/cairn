@@ -167,7 +167,7 @@ async def stream(
     intent = state["intent"]
     is_scene_entry = state["is_scene_entry"]
 
-    with recording_turn(turn.id), using_campaign_settings(state.get("settings", {})):
+    with recording_turn(turn.id), using_campaign_settings(state["settings"]):
         yield _event("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
         if intent == "combat_action":
@@ -178,7 +178,7 @@ async def stream(
                     "status": "pending",
                     **proposal,
                     "prior_context": combat_context,
-                    "settings": state.get("settings", {}),
+                    "settings": state["settings"],
                 }
                 await turn_queries.update_turn_check(db, turn.id, check_data=pending)
                 yield _event(
@@ -236,7 +236,7 @@ async def stream(
                 turn_id=turn.id,
                 check=check,
                 setup_prose="".join(setup_chunks),
-                settings=state.get("settings", {}),
+                settings=state["settings"],
             )
             yield _event("check_required", _check_payload(check))
             return
@@ -335,7 +335,7 @@ async def stream_resolve(
         outcome_context += "\n\nNewly discovered this check (narrate the party finding it):\n" + "\n".join(
             f"- {r}" for r in revealed
         )
-    with using_campaign_settings(check.get("settings", {})):
+    with using_campaign_settings(check.get("settings", settings_service.ResolvedCampaignSettings())):
         outcome_chunks: list[str] = []
         async for chunk in scene_narrator.run(turn.player_input, context=outcome_context):
             outcome_chunks.append(chunk)
@@ -633,7 +633,7 @@ async def save_check_setup(
     turn_id: uuid.UUID,
     check: CheckData,
     setup_prose: str,
-    settings: dict[str, Any],
+    settings: settings_service.ResolvedCampaignSettings,
 ) -> None:
     updated: CheckData = {**check, "setup_prose": setup_prose, "settings": settings}
     await turn_queries.update_turn_check(db, turn_id, check_data=updated)
@@ -710,7 +710,7 @@ async def prepare_resolve(
     if not check or check.get("status") != "pending":
         raise ConflictError("no pending check on this turn", code="no_pending_check")
 
-    return turn, cast(CheckData, check)
+    return turn, cast(CheckData, _hydrate_pause_settings(cast(CheckData, check)))
 
 
 async def prepare_companion_action(
@@ -728,7 +728,11 @@ async def prepare_companion_action(
     proposal = turn.check_data
     if not proposal or proposal.get("kind") != "companion_action" or proposal.get("status") != "pending":
         raise ConflictError("no pending companion action on this turn", code="no_pending_companion_action")
-    return turn, cast(CompanionActionProposal, proposal), campaign.world_bible_namespace
+    return (
+        turn,
+        cast(CompanionActionProposal, _hydrate_pause_settings(cast(CompanionActionProposal, proposal))),
+        campaign.world_bible_namespace,
+    )
 
 
 async def stream_companion_action(
@@ -782,3 +786,14 @@ async def stream_companion_action(
             narrator, db, turn=turn, session_id=session_id, campaign_id=campaign.id, namespace=namespace
         ):
             yield event
+
+
+def _hydrate_pause_settings(data: CheckData | CompanionActionProposal) -> CheckData | CompanionActionProposal:
+    """Restore the immutable snapshot after JSONB deserialization."""
+    settings = data.get("settings")
+    if isinstance(settings, dict):
+        return cast(
+            CheckData | CompanionActionProposal,
+            {**data, "settings": settings_service.ResolvedCampaignSettings.model_validate(settings)},
+        )
+    return data

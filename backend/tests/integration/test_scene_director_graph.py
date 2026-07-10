@@ -16,6 +16,7 @@ from cairn.db.queries import locations as location_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
+from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import (
     TurnState,
     _after_combat_entry,
@@ -41,7 +42,7 @@ def _state(session_id: str, campaign_id: str, pre: ScenePreOutput | None, player
         "scene_pre_output": pre,
         "is_scene_entry": False,
         "combat_just_started": False,
-        "settings": {},
+        "settings": ResolvedCampaignSettings(),
     }
 
 

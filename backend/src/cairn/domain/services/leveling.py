@@ -347,7 +347,7 @@ async def apply_level_up(
     char = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
     if char.is_companion and not _skip_companion_control:
         campaign = await campaign_queries.get_campaign(db, campaign_id)
-        if resolve_settings(campaign.settings)["companion"]["leveling"] != "player":
+        if resolve_settings(campaign.settings).companion.leveling != "player":
             raise ValidationError("companion leveling is AI-controlled for this campaign", code="companion_leveling_ai")
 
     if not has_pending_level_up(char):
@@ -433,7 +433,7 @@ async def _auto_level_companion(db: AsyncSession, char: Character) -> None:
     if not char.is_companion or not has_pending_level_up(char):
         return
     campaign = await campaign_queries.get_campaign(db, char.campaign_id)
-    if resolve_settings(campaign.settings)["companion"]["leveling"] != "ai":
+    if resolve_settings(campaign.settings).companion.leveling != "ai":
         return
 
     while has_pending_level_up(char):

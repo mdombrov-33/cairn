@@ -35,7 +35,7 @@ async def _require_player_equipment_control(db: AsyncSession, char: Character, c
     if not char.is_companion:
         return
     campaign = await campaign_queries.get_campaign(db, campaign_id)
-    if resolve_settings(campaign.settings)["companion"]["equipment"] != "player":
+    if resolve_settings(campaign.settings).companion.equipment != "player":
         raise ValidationError("companion equipment is AI-controlled for this campaign", code="companion_equipment_ai")
 
 

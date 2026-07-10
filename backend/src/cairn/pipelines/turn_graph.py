@@ -32,6 +32,7 @@ from cairn.domain.services import campaign_view, companions, recruitment, scene_
 from cairn.domain.services import npcs as npc_service
 from cairn.domain.services import scenes as scene_service
 from cairn.domain.services.combat import state as combat_state_service
+from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.checkpointer import get_checkpointer
 from cairn.types import CheckData, DialogueEntity, HelperRef, ScenePreOutput
 
@@ -50,7 +51,7 @@ class TurnState(TypedDict):
     scene_pre_output: ScenePreOutput | None  # set by scene_director_pre; None when combat already active
     is_scene_entry: bool  # set by scene_create; consumed by route layer for narration
     combat_just_started: bool  # set by combat_entry when init_state ran
-    settings: dict[str, Any]  # resolved once by turns.prepare; shared snapshot for the whole turn
+    settings: ResolvedCampaignSettings  # resolved once by turns.prepare; shared snapshot for the whole turn
 
 
 async def _route_intent(state: TurnState) -> dict[str, Any]:
@@ -156,7 +157,7 @@ async def _resolve_dialogue(state: TurnState) -> dict[str, Any]:
             if companion is not None:
                 active_settings = current_campaign_settings.get()
                 settings = active_settings if active_settings is not None else state["settings"]
-                if settings.get("companion", {}).get("dialogue", "ai") != "ai":
+                if settings.companion.dialogue != "ai":
                     return {"npc_context": f"[{companion.name}'s dialogue is player-controlled.]"}
                 meta = companion.companion_meta or {}
                 comp_entity: DialogueEntity = {
@@ -493,7 +494,7 @@ async def run(
             scene_pre_output=None,
             is_scene_entry=False,
             combat_just_started=False,
-            settings={},
+            settings=ResolvedCampaignSettings(),
         ),
         config=config,
     )

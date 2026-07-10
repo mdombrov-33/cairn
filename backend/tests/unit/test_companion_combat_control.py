@@ -3,6 +3,7 @@ import pytest
 from cairn.agents import combat_resolver
 from cairn.agents.combat_ai import CompanionProposal
 from cairn.context import using_campaign_settings
+from cairn.domain.services.settings import resolve_settings
 
 
 @pytest.fixture
@@ -41,7 +42,7 @@ async def test_suggest_mode_pauses_before_companion_tools(
     monkeypatch.setattr(combat_resolver, "fetch_combat_context", fake_context)
     monkeypatch.setattr(combat_resolver.combat_ai, "propose", fake_proposal)
 
-    with using_campaign_settings({"companion": {"combat": "suggest"}}):
+    with using_campaign_settings(resolve_settings({"overrides": {"companion": {"combat": "suggest"}}})):
         context, proposal = await combat_resolver.resolve("strike the warden", "session-1")
 
     assert context == "[PLAYER ACTION]\nAldric strikes and advances the turn."
@@ -66,7 +67,7 @@ async def test_player_mode_stops_on_companion_turn(
     monkeypatch.setattr(combat_resolver, "_resolve_mechanics", fake_mechanics)
     monkeypatch.setattr(combat_resolver, "fetch_combat_context", fake_context)
 
-    with using_campaign_settings({"companion": {"combat": "player"}}):
+    with using_campaign_settings(resolve_settings({"overrides": {"companion": {"combat": "player"}}})):
         context, proposal = await combat_resolver.resolve("strike the warden", "session-1")
 
     assert context == "[PLAYER ACTION]\nAldric strikes and advances the turn."

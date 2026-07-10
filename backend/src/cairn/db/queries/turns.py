@@ -1,10 +1,12 @@
 import uuid
+from typing import cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.turn import Turn
 from cairn.domain.exceptions import NotFoundError
+from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.types import PendingTurnData, TurnEvent
 
 
@@ -67,6 +69,10 @@ async def update_turn_check(
     check_data: PendingTurnData,
 ) -> Turn:
     turn = await get_turn(session, turn_id)
-    turn.check_data = check_data
+    serialized = dict(check_data)
+    settings = serialized.get("settings")
+    if isinstance(settings, ResolvedCampaignSettings):
+        serialized["settings"] = settings.as_json()
+    turn.check_data = cast(PendingTurnData, serialized)
     await session.flush()
     return turn

@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from cairn.domain.services.settings import CampaignPreset, CampaignSettingsOverrides
+
 
 class CreateCampaignRequest(BaseModel):
     name: str
@@ -12,8 +14,8 @@ class CreateCampaignRequest(BaseModel):
 
 
 class PatchCampaignSettingsRequest(BaseModel):
-    preset: str | None = None
-    overrides: dict[str, Any] | None = None
+    preset: CampaignPreset | None = None
+    overrides: CampaignSettingsOverrides | None = None
 
 
 class CampaignSettingsResponse(BaseModel):

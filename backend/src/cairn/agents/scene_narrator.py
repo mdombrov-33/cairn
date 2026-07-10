@@ -15,9 +15,9 @@ async def run(
     pacing_nudge: str | None = None,
 ) -> AsyncIterator[str]:
     prompt, model, fallbacks = agent_setup("scene_narrator")
-    settings = current_campaign_settings.get() or {}
-    content = settings.get("content", {})
-    verbosity = settings.get("narration", {}).get("verbosity", "normal")
+    settings = current_campaign_settings.get()
+    content = settings.content.as_json() if settings is not None else {}
+    verbosity = settings.narration.verbosity if settings is not None else "normal"
     max_tokens = {"terse": 450, "normal": 800, "lush": 1200}[verbosity]
 
     async for chunk in stream(
@@ -34,7 +34,7 @@ async def run(
                     pacing_nudge=pacing_nudge,
                     content=content,
                     verbosity=verbosity,
-                    passive_checks=settings.get("checks", {}),
+                    passive_checks=settings.checks.as_json() if settings is not None else {},
                 ),
             }
         ],

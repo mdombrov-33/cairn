@@ -26,7 +26,7 @@ async def resolve_pc_death(db: AsyncSession, session: Session, character: Charac
     Pacifist never reaches here — `apply_damage` clamps the PC's HP first.
     """
     campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-    mode = resolve_settings(campaign.settings)["death_mode"]
+    mode = resolve_settings(campaign.settings).death_mode
 
     if mode == "hardcore":
         campaign.status = "ended_dead"

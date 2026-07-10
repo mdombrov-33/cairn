@@ -1,3 +1,5 @@
+from pydantic import ValidationError
+
 from cairn.domain.services.settings import resolve_settings, validate_overrides
 from cairn.llm.router import get_model
 
@@ -5,19 +7,41 @@ from cairn.llm.router import get_model
 def test_narrative_preset_resolves_campaign_gameplay_defaults() -> None:
     settings = resolve_settings({})
 
-    assert settings["preset"] == "narrative"
-    assert settings["companion"]["combat"] == "ai"
-    assert settings["checks"]["passive_perception"] == "silent"
-    assert settings["death_mode"] == "narrative"
+    assert settings.preset == "narrative"
+    assert settings.companion.combat == "ai"
+    assert settings.checks.passive_perception == "silent"
+    assert settings.death_mode == "narrative"
 
 
 def test_sparse_override_keeps_its_preset() -> None:
     settings = resolve_settings({"preset": "balanced", "overrides": {"companion": {"combat": "player"}}})
 
-    assert settings["preset"] == "balanced"
-    assert settings["companion"]["combat"] == "player"
-    assert settings["companion"]["dialogue"] == "ai"
-    assert settings["checks"]["passive_insight"] == "surfaced"
+    assert settings.preset == "balanced"
+    assert settings.companion.combat == "player"
+    assert settings.companion.dialogue == "ai"
+    assert settings.checks.passive_insight == "surfaced"
+
+
+def test_resolved_settings_are_immutable_and_keep_json_shape() -> None:
+    settings = resolve_settings({"overrides": {"content": {"lines": ["No spiders"]}}})
+
+    assert settings.as_json()["content"]["lines"] == ["No spiders"]
+    try:
+        settings.death_mode = "hardcore"  # type: ignore[misc]
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("resolved settings are mutable")
+
+
+def test_overrides_reject_null_and_unknown_values() -> None:
+    for overrides in ({"content": {"lines": None}}, {"companion": {"combat": "invalid"}}):
+        try:
+            validate_overrides(overrides)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid settings override was accepted")
 
 
 def test_campaign_settings_reject_model_fields() -> None:

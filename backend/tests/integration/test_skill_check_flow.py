@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 from httpx import AsyncClient
 
 from cairn.agents.rules_lawyer import CheckDecision, HelperInfo
+from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import TurnState, _resolve_skill_check
 from tests._factories import make_campaign, make_character, make_session
 
@@ -37,7 +38,7 @@ def _state(session_id: str, campaign_id: str, player_input: str) -> TurnState:
         scene_pre_output=None,
         is_scene_entry=False,
         combat_just_started=False,
-        settings={},
+        settings=ResolvedCampaignSettings(),
     )
 
 

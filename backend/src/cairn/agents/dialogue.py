@@ -24,7 +24,8 @@ async def run(
 ) -> DialogueResult:
     """Voice an NPC or a party companion straight from their narrative profile."""
     prompt, model, fallbacks = agent_setup("dialogue")
-    content = (current_campaign_settings.get() or {}).get("content", {})
+    settings = current_campaign_settings.get()
+    content = settings.content.as_json() if settings is not None else {}
 
     return await complete_to_model(
         model=model,
