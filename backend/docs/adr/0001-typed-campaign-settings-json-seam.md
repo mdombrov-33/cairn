@@ -1,12 +1,6 @@
-# ADR 0001: Typed campaign settings at the JSON seam
+# Typed campaign settings at the JSON seam
 
-## Decision
-
-Campaign settings are immutable, strict Pydantic models in application memory. `Campaign.settings`
-and `Turn.check_data.settings` remain JSON dictionaries, produced with explicit `as_json()` calls
-when written and validated back into `ResolvedCampaignSettings` when a paused turn resumes.
-
-## Consequences
-
-Callers use typed attributes and share one resolved turn snapshot. Existing JSONB rows, HTTP
-responses, and SSE payloads keep their current shape; no migration or client change is required.
+Campaign settings are immutable, strict Pydantic models in application memory, while
+`Campaign.settings` and the settings snapshot inside `Turn.check_data` remain JSON dictionaries.
+Explicit serialization on write and validation on read provide typed callers without migrating
+existing JSONB rows or changing HTTP and SSE payloads.

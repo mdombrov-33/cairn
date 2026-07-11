@@ -1,132 +1,92 @@
-## Project
+# Cairn working instructions
 
-### What this is
-AI Dungeon Master platform. Currently the repo contains only the backend (`backend/`) — frontend will be added later. Players submit text turns; agents classify intent, route through a LangGraph pipeline, and stream DM responses as SSE. Postgres for state, LangGraph for orchestration, LiteLLM as the universal LLM gateway.
+## Start here
 
-Backend working directory: `backend/`. Run everything from the repo root via `make`.
+Cairn is an AI Dungeon Master platform for persistent tabletop campaigns. The repository currently
+contains the Python backend in `backend/`; a frontend is planned but not present.
 
-### Key commands
-```
-make dev          # start API with hot reload
-make test         # run all tests (uv run pytest)
-make check        # full CI gate: format + lint + typecheck + tests
-make migrate      # apply pending migrations
-make revision m="add x table"  # autogenerate migration
-make up / down    # docker-compose infra (postgres + redis)
-```
-**Package management: always `uv add <package>`. Never edit `pyproject.toml` by hand** — uv owns the lockfile.
+Before changing code:
 
-### Layers — don't mix them
-```
-api/v1/routes/     HTTP only. Parse → call service → format. No ORM, no LLM calls.
-domain/services/   Business logic. Zero FastAPI or SQLAlchemy imports (unit-testable in isolation).
-db/queries/        Single source of all DB access. Services, agents, tools — all go through here.
-agents/            One file per agent. Each uses agent_setup() and complete()/complete_with_tools().
-tools/             LangChain @tool functions. Registered in tools/__init__.py.
-pipelines/         LangGraph graphs. Orchestration only — no business logic.
-llm/client.py      All LLM calls. Never import litellm directly anywhere else.
-prompts/           Versioned markdown + Jinja2. Loaded via load_prompt(name, version).
-```
+1. Read the nearest `AGENTS.md` files from the repository root to the target file.
+2. Read `CONTEXT.md` when domain terms or ownership are involved.
+3. Read `backend/docs/roadmap.md` before feature, architecture, or product-contract work.
+4. Read relevant accepted decisions in `backend/docs/adr/`.
+5. Check the working tree and preserve unrelated user changes.
 
-### How a turn flows
-```
-POST /sessions/{id}/turns
-  → turns.service.prepare()
-      if session.combat_active → intent = "combat_action" (bypasses graph)
-      else → turn_graph.run() → IntentRouter classifies intent
-           → each intent maps to a resolver node → pre-processes state (DB, agents)
-  → route streams SSE tokens from SceneNarrator based on resolved state
-  → turn_end SSE event
-  → LoreKeeper fires async (fire-and-forget via asyncio.create_task)
+The roadmap describes planned behavior. It does not prove that behavior is implemented. Verify the
+live code and `backend/docs/architecture.md` before relying on a roadmap statement.
+
+## Commands
+
+Run project commands from the repository root:
+
+```text
+make dev          start the API with hot reload
+make test         run the test suite
+make check        run formatting, lint, type checks, and tests
+make migrate      apply pending migrations
+make revision m="add x table"  generate an Alembic revision
+make up / down    start or stop local infrastructure
 ```
 
-### Adding an agent
-1. `agents/<name>.py` — use `agent_setup(name)` from `llm/router.py` to get `(prompt, model, fallbacks)`
-2. `prompts/<name>/v1.md` — frontmatter: `temperature`, `version`. Body is a Jinja2 template.
-3. `llm/models.yaml` — add entry under `agents:` (primary + fallback per env tier)
-4. Wire into `pipelines/turn_graph.py` as a node, or call directly from another agent/resolver
+Run `uv` commands from `backend/`. Always add packages with `uv add`; never edit dependency lists or
+the lockfile by hand.
 
-### Adding a tool
-1. `tools/<module>.py` — `@tool` decorator from `langchain_core.tools`, `Annotated[type, "description"]` per param
-2. `tools/__init__.py` — import and add to `ALL_TOOLS`. If combat-relevant, also add to `COMBAT_TOOLS`.
-3. Invoke via `await tool.ainvoke({"arg": val})` — never `.coroutine()`
+## Working method
 
-### DB sessions — two contexts
-Routes get an injected `db: DBSession` (one session per request). Services called directly from routes share it — their writes are atomic with the response. Graph nodes (`pipelines/`) open their own sessions via `db_client.get_session()` because they run before streaming starts and must commit independently.
+Before implementation, state a short plan with observable success criteria. Distinguish:
 
-### Shared types
-`cairn/types.py` has shared TypedDicts and result types (`CheckData`, `CharacterRestResult`, `HitDieResult`, etc.). Check there before defining a new dict shape inline.
+- **Current** — verified in code and safe to document as available.
+- **Planned** — specified by the roadmap but not implemented.
+- **Legacy deviation** — present in code but not a pattern for new work.
 
-### Docs
-- `backend/docs/roadmap.md` — slice plan, deferred decisions, and UI/UX context. Read before starting any new feature work.
-- `backend/docs/ui-temp-reference/` — rough UI vision for reference; not a spec, just directional context.
+Make the smallest coherent change that satisfies the request. Do not add speculative abstractions,
+configurability, cleanup, or adjacent fixes. When the work exposes an unrelated bug, report it and
+leave it separate.
 
-### Hard rules
-- All LLM calls through `llm/client.py` only
-- All DB access through `db/queries/` only
-- `domain/` has zero FastAPI / SQLAlchemy imports
-- Migrations are always Alembic-generated (`make revision`) — no hand-written SQL
-- `tools/` is the tool home — there is no `mcp/` directory
+For architecture-only work, preserve runtime behavior unless the user explicitly includes a behavior
+change. HTTP, SSE, JSONB, prompt, persistence, and gameplay contracts are frozen by default.
 
----
+For the established slice workflow, finish one coherent iteration, update the documentation owned by
+that change, run the required checks, commit it, and provide the commit hash and message before the
+user compacts the session.
 
-## 1. Think Before Coding
+## Universal constraints
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+- All LLM provider calls go through `backend/src/cairn/llm/client.py`.
+- Database selection, ORM construction, deletion, and reusable persistence operations live in
+  `backend/src/cairn/db/queries/`; application workflows may coordinate mutation of loaded ORM
+  entities inside their owned transaction.
+- Domain code is pure and has no FastAPI, SQLAlchemy, query, agent, application, or pipeline imports.
+- Database schema changes use Alembic generation; never write standalone migration SQL.
+- Types live with the capability that owns their meaning; do not recreate a global shared-types file.
+- Do not introduce a generic port or repository protocol for a single concrete adapter.
+- Preserve existing public representations at typed JSON, HTTP, SSE, and checkpoint seams.
+- Tools live under `backend/src/cairn/tools/`; do not create a separate `mcp/` tool hierarchy.
 
-Before implementing:
+Backend placement rules, current flows, known deviations, and roadmap-sensitive areas are in
+`backend/AGENTS.md`.
 
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+## Documentation ownership
 
-## 2. Simplicity First
+- `CONTEXT.md` — domain glossary only; no package paths, implementation decisions, or progress log.
+- `AGENTS.md` — imperative working rules; no completed-slice history.
+- `backend/docs/architecture.md` — current implementation only.
+- `backend/docs/development.md` — procedures for stable, currently supported extension points.
+- `backend/docs/adr/` — durable decisions and their reasons, written sparingly.
+- `backend/docs/roadmap.md` — future sequencing, locked specifications, and deferred work.
 
-**Minimum code that solves the problem. Nothing speculative.**
+Do not duplicate the same guidance across these files. Link to its owner.
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+## Verification
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+Match verification to risk:
 
-## 3. Surgical Changes
+- Pure rules: focused unit tests.
+- Persistence and workflows: focused integration tests.
+- HTTP, SSE, JSONB, prompts, or checkpoints: contract tests for the unchanged representation.
+- Import or ownership changes: architecture tests.
+- Persistence movement or schema work: confirm a single clean Alembic head.
 
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+Every completed implementation iteration ends with `make check` and `git diff --check`. Do not weaken
+checks, suppress errors, or change tests merely to make the gate pass.
