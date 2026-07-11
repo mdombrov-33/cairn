@@ -17,3 +17,18 @@ def test_typed_settings_module_has_no_persistence_or_framework_dependencies() ->
         else:
             continue
         assert not any(name == prefix or name.startswith(f"{prefix}.") for name in names for prefix in forbidden)
+
+
+def test_turn_graph_has_no_persistence_or_resolver_agent_dependencies() -> None:
+    path = Path(__file__).parents[2] / "src/cairn/pipelines/turn_graph.py"
+    tree = ast.parse(path.read_text())
+    forbidden = ("cairn.db", "cairn.agents.dialogue", "cairn.agents.recruiter", "cairn.agents.rules_lawyer")
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            names = [node.module or ""]
+        else:
+            continue
+        assert not any(name == prefix or name.startswith(f"{prefix}.") for name in names for prefix in forbidden)

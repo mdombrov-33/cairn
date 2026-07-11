@@ -59,7 +59,7 @@ async def test_recruit_predefined_converts_npc_using_sheet(client: AsyncClient) 
     camp = await make_campaign(client)  # tavern_v1 seeds Bram Ashford (recurring, recruitable + sheet)
     await make_session(client, camp["id"])
 
-    with patch("cairn.pipelines.turn_graph.recruiter.run", new=_decision("accept", "Aye — I'm with you.")):
+    with patch("cairn.application.turns.resolvers.recruiter.run", new=_decision("accept", "Aye — I'm with you.")):
         out = await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Bram"))
 
     assert "joins the party" in out["npc_context"]
@@ -74,7 +74,7 @@ async def test_recruit_predefined_converts_npc_using_sheet(client: AsyncClient) 
 
 async def test_recruit_refuse_keeps_npc(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    with patch("cairn.pipelines.turn_graph.recruiter.run", new=_decision("refuse", "Not a chance.")):
+    with patch("cairn.application.turns.resolvers.recruiter.run", new=_decision("refuse", "Not a chance.")):
         out = await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Bram"))
 
     assert out["npc_context"] == '[Bram Ashford]: "Not a chance."'
@@ -85,7 +85,7 @@ async def test_recruit_refuse_keeps_npc(client: AsyncClient) -> None:
 async def test_recruit_conditional_records_condition(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     with patch(
-        "cairn.pipelines.turn_graph.recruiter.run",
+        "cairn.application.turns.resolvers.recruiter.run",
         new=_decision("conditional", "Prove it first.", condition="clear the crows off the north road"),
     ):
         await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Bram"))
@@ -114,7 +114,7 @@ async def test_recruit_dynamic_stats_up_from_npc_columns(client: AsyncClient) ->
         )
         await db.commit()
 
-    with patch("cairn.pipelines.turn_graph.recruiter.run", new=_decision("accept", "Fine. I'm in.")):
+    with patch("cairn.application.turns.resolvers.recruiter.run", new=_decision("accept", "Fine. I'm in.")):
         await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Wyn"))
 
     assert await _find_npc(camp["id"], "Wyn") is None
@@ -135,7 +135,7 @@ async def test_party_full_blocks_recruit(client: AsyncClient) -> None:
             narrative_profile={**_COMPANION_PROFILE, "name": f"Companion {i}"},
         )
 
-    with patch("cairn.pipelines.turn_graph.recruiter.run", new=_decision("accept", "I'll come.")):
+    with patch("cairn.application.turns.resolvers.recruiter.run", new=_decision("accept", "I'll come.")):
         out = await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Bram"))
 
     assert "must step aside" in out["npc_context"]
@@ -155,7 +155,7 @@ async def test_background_npc_not_recruitable_skips_agent(client: AsyncClient) -
         )
         await db.commit()
 
-    with patch("cairn.pipelines.turn_graph.recruiter.run", new=AsyncMock()) as mock_run:
+    with patch("cairn.application.turns.resolvers.recruiter.run", new=AsyncMock()) as mock_run:
         out = await _resolve_recruitment(_state(camp["id"], "recruit_attempt", "Pib"))
 
     mock_run.assert_not_awaited()  # a plain background walk-on isn't eligible

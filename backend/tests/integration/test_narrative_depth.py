@@ -115,7 +115,7 @@ async def test_dialogue_disposition_change_writes_world_bible(client: AsyncClien
         await db.commit()
 
     with patch(
-        "cairn.pipelines.turn_graph.dialogue_agent.run",
+        "cairn.application.turns.resolvers.dialogue_agent.run",
         new=AsyncMock(return_value=DialogueResult(dialogue="Get out.", disposition_change="hostile")),
     ):
         await _resolve_dialogue(_dialogue_state(sess["id"], camp["id"], "Old Grim"))
@@ -144,7 +144,7 @@ async def test_dialogue_no_disposition_change_writes_nothing(client: AsyncClient
         await db.commit()
 
     with patch(
-        "cairn.pipelines.turn_graph.dialogue_agent.run",
+        "cairn.application.turns.resolvers.dialogue_agent.run",
         new=AsyncMock(return_value=DialogueResult(dialogue="Aye, what'll it be?", disposition_change=None)),
     ):
         await _resolve_dialogue(_dialogue_state(sess["id"], camp["id"], "Old Grim"))

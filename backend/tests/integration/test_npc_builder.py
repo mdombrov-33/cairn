@@ -82,7 +82,7 @@ async def test_dialogue_miss_builds_background_npc(client: AsyncClient) -> None:
     with (
         patch("cairn.agents.npc_builder.build_background", new=AsyncMock(return_value=profile)) as mock_build,
         patch(
-            "cairn.pipelines.turn_graph.dialogue_agent.run",
+            "cairn.application.turns.resolvers.dialogue_agent.run",
             new=AsyncMock(return_value=DialogueResult(dialogue="Y-yes? What is it?")),
         ),
     ):
@@ -104,7 +104,7 @@ async def test_dialogue_miss_instantiates_world_cast_not_builder(client: AsyncCl
     with (
         patch("cairn.agents.npc_builder.build_background", new=AsyncMock()) as mock_build,
         patch(
-            "cairn.pipelines.turn_graph.dialogue_agent.run",
+            "cairn.application.turns.resolvers.dialogue_agent.run",
             new=AsyncMock(return_value=DialogueResult(dialogue="State your business.")),
         ),
     ):
