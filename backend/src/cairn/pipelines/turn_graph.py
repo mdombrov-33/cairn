@@ -10,9 +10,10 @@ from langgraph.graph import END, START, StateGraph
 from cairn.agents import intent_router
 from cairn.application.turns import resolvers as turn_resolvers
 from cairn.application.turns import transitions as turn_transitions
+from cairn.application.turns.types import CheckData
 from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.checkpointer import get_checkpointer
-from cairn.types import CheckData, ScenePreOutput
+from cairn.types import ScenePreOutput
 
 log = structlog.get_logger()
 

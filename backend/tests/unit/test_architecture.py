@@ -34,6 +34,14 @@ def test_turn_graph_has_no_persistence_or_resolver_agent_dependencies() -> None:
         assert not any(name == prefix or name.startswith(f"{prefix}.") for name in names for prefix in forbidden)
 
 
+def test_turn_routes_cross_the_foreground_runtime_seam() -> None:
+    path = Path(__file__).parents[2] / "src/cairn/api/v1/routes/turns.py"
+    tree = ast.parse(path.read_text())
+    imports = [node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)]
+
+    assert "cairn.application.turns.runtime" in imports
+
+
 def test_campaign_scene_and_npc_domain_modules_have_no_runtime_dependencies() -> None:
     root = Path(__file__).parents[2] / "src/cairn/domain/services"
     forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.agents", "cairn.pipelines")

@@ -13,5 +13,8 @@ Character creation, equipment, progression, resources, and rest workflows also l
 `application/`; inventory, AC derivation, and feat effects remain pure domain rules.
 Narrative context, lore, time, companions, recruitment, sessions, loot, inspiration, death, and
 day-roll workflows now also live in `application/`; companion standing/mood, profiles, settings,
-and seeded RNG remain pure domain rules. `application/turns/service.py` is the current turn
-workflow seam; its runtime refinement is deferred to Architecture 5.
+and seeded RNG remain pure domain rules. `application/turns/runtime.py` now presents the foreground
+turn-runtime seam to HTTP routes: it prepares, continues, and resumes turns while preserving the
+existing `Turn.check_data` JSONB and SSE contracts. Check and companion pauses are tagged only
+inside that runtime; their persisted shapes remain unchanged. Post-turn work remains in
+`application/turns/service.py` pending its dedicated epilogue slice.

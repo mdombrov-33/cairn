@@ -8,8 +8,6 @@ runtime validation. Postgres still stores arbitrary JSON.
 
 from typing import Annotated, Any, Literal, NotRequired, Required, TypedDict
 
-from cairn.domain.services.settings import ResolvedCampaignSettings
-
 type ToolUUID = Annotated[str, "UUID as string — converted at the tool boundary"]
 
 # Ability score key — the 6 D&D abilities. Used everywhere we index AbilityScores
@@ -88,51 +86,6 @@ class Resource(TypedDict):
     current: int
     max: int
     resets_on: Literal["short_rest", "long_rest"]
-
-
-# Skill check data on Turn
-# The resolve route reads `modifier`, `dc`, `helper`. Status flows pending → resolved.
-
-
-class HelperRef(TypedDict):
-    character_id: str
-    name: str
-
-
-class LootIntent(TypedDict):
-    npc_id: str
-    item_name: str
-
-
-class CheckData(TypedDict):
-    skill: Required[str]
-    dc: Required[int]
-    modifier: Required[int]
-    roll_type: Required[Literal["d20", "advantage", "disadvantage"]]
-    status: Required[Literal["pending", "resolved"]]
-    helper: NotRequired[HelperRef]
-    setup_prose: NotRequired[str]  # set after pre-roll narration
-    roll: NotRequired[int]  # set on resolve
-    total: NotRequired[int]  # set on resolve
-    success: NotRequired[bool]  # set on resolve
-    loot_intent: NotRequired[LootIntent]  # set when input is a pickpocket attempt
-    settings: NotRequired[ResolvedCampaignSettings]  # immutable campaign-settings snapshot for this turn
-
-
-class CompanionActionProposal(TypedDict):
-    """A paused companion turn. The action is replayed through CombatResolver on confirmation."""
-
-    kind: Required[Literal["companion_action"]]
-    status: Required[Literal["pending", "resolved"]]
-    combatant_id: Required[str]
-    combatant_name: Required[str]
-    action: Required[str]
-    narration: Required[str]
-    prior_context: Required[str]
-    settings: Required[ResolvedCampaignSettings]
-
-
-PendingTurnData = CheckData | CompanionActionProposal
 
 
 # Concentration

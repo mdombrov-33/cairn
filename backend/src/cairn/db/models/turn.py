@@ -6,8 +6,9 @@ from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from cairn.application.turns.types import PendingTurnData
 from cairn.db.base import Base
-from cairn.types import PendingTurnData, TurnEvent
+from cairn.types import TurnEvent
 
 
 class Turn(Base):

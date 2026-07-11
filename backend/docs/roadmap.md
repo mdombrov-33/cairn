@@ -2,6 +2,11 @@
 
 > Replaces v4. v4 archived as `v4(old).md`. Each slice is a self-contained unit: build, decide, fix bugs, verify. Open design questions resolved (see "Decisions resolved 2026-05" log at bottom).
 
+> Architecture progress: foreground HTTP turn handling now crosses
+> `application/turns/runtime.py`. It owns preparation, continuation, and check/companion resumption;
+> typed tagged suspension outcomes are internal, while `Turn.check_data` JSONB and SSE event shapes
+> remain unchanged. The owned post-turn epilogue is a later architecture slice.
+
 ---
 
 ## What this is

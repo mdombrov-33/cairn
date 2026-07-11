@@ -6,9 +6,8 @@ from fastapi.responses import StreamingResponse
 
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import CompanionActionResolutionRequest, ResolveRequest, SubmitTurnRequest, TurnResponse
-from cairn.application import inspiration as inspiration_service
 from cairn.application.turns import service
-from cairn.domain.exceptions import ValidationError
+from cairn.application.turns.runtime import turn_runtime
 from cairn.sse.events import sse
 
 router = APIRouter(prefix="/v1/sessions", tags=["turns"])
@@ -21,12 +20,10 @@ async def submit(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, state, namespace = await service.prepare(
-        db, session_id=session_id, owner_id=user_id, player_input=body.player_input
-    )
+    prepared = await turn_runtime.prepare(db, session_id=session_id, owner_id=user_id, player_input=body.player_input)
 
     async def generate() -> AsyncGenerator[str]:
-        async for event in service.stream(db, turn=turn, state=state, namespace=namespace):
+        async for event in turn_runtime.continue_turn(db, prepared):
             yield sse(event["type"], event["data"])
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=201)
@@ -40,35 +37,18 @@ async def resolve(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, check = await service.prepare_resolve(db, session_id=session_id, turn_id=turn_id, owner_id=user_id)
-    campaign_id, namespace = await service.get_campaign_info(db, session_id=session_id)
-    active = await service.get_active_character(db, session_id=session_id)
-
-    # Inspiration grants advantage: take the better of the two client-submitted d20s. The spend
-    # happens here, before streaming starts, so a "no inspiration" rejection can surface as 422.
-    effective_roll = body.roll
-    advantage = False
-    if body.use_inspiration:
-        if active is None or not active.has_inspiration:
-            raise ValidationError("character has no inspiration to spend", code="no_inspiration")
-        await inspiration_service.spend(db, character_id=active.id)
-        effective_roll = max(body.roll, body.inspiration_roll or body.roll)
-        advantage = True
+    resumption = await turn_runtime.prepare_check_resumption(
+        db,
+        session_id=session_id,
+        turn_id=turn_id,
+        owner_id=user_id,
+        roll=body.roll,
+        use_inspiration=body.use_inspiration,
+        inspiration_roll=body.inspiration_roll,
+    )
 
     async def generate() -> AsyncGenerator[str]:
-        async for event in service.stream_resolve(
-            db,
-            turn=turn,
-            check=check,
-            active=active,
-            effective_roll=effective_roll,
-            advantage=advantage,
-            raw_roll=body.roll,
-            inspiration_roll=body.inspiration_roll,
-            session_id=session_id,
-            campaign_id=campaign_id,
-            namespace=namespace,
-        ):
+        async for event in turn_runtime.resume_check(db, resumption):
             yield sse(event["type"], event["data"])
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
@@ -82,20 +62,17 @@ async def resolve_companion_action(
     user_id: CurrentUserId,
     db: DBSession,
 ) -> StreamingResponse:
-    turn, proposal, namespace = await service.prepare_companion_action(
-        db, session_id=session_id, turn_id=turn_id, owner_id=user_id
+    resumption = await turn_runtime.prepare_companion_action_resumption(
+        db,
+        session_id=session_id,
+        turn_id=turn_id,
+        owner_id=user_id,
+        decision=body.decision,
+        override=body.override,
     )
 
     async def generate() -> AsyncGenerator[str]:
-        async for event in service.stream_companion_action(
-            db,
-            turn=turn,
-            proposal=proposal,
-            session_id=session_id,
-            namespace=namespace,
-            decision=body.decision,
-            override=body.override,
-        ):
+        async for event in turn_runtime.resume_companion_action(db, resumption):
             yield sse(event["type"], event["data"])
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
