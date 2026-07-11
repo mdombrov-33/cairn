@@ -8,7 +8,7 @@ from httpx import AsyncClient
 
 from cairn.application import narrative_context
 from cairn.application.turns import service as turns_service
-from cairn.application.turns.service import _apply_director_time
+from cairn.application.turns.epilogue import _apply_director_time
 from cairn.db import client as db_client
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries

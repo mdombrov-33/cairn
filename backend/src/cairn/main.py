@@ -16,6 +16,7 @@ from cairn.api.v1.routes import (
     srd,
     turns,
 )
+from cairn.application.turns.epilogue import post_turn_epilogue
 from cairn.config import get_settings
 from cairn.observability.logging import configure_logging
 from cairn.pipelines.checkpointer import lifespan_checkpointer
@@ -26,7 +27,10 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     async with lifespan_checkpointer(settings.database_url):
-        yield
+        try:
+            yield
+        finally:
+            await post_turn_epilogue.shutdown()
 
 
 def create_app() -> FastAPI:

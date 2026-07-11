@@ -16,5 +16,5 @@ day-roll workflows now also live in `application/`; companion standing/mood, pro
 and seeded RNG remain pure domain rules. `application/turns/runtime.py` now presents the foreground
 turn-runtime seam to HTTP routes: it prepares, continues, and resumes turns while preserving the
 existing `Turn.check_data` JSONB and SSE contracts. Check and companion pauses are tagged only
-inside that runtime; their persisted shapes remain unchanged. Post-turn work remains in
-`application/turns/service.py` pending its dedicated epilogue slice.
+inside that runtime; their persisted shapes remain unchanged. `application/turns/epilogue.py`
+owns the in-process post-turn work and its lifecycle; streaming only schedules it.

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch
 
 from httpx import AsyncClient
 
-from cairn.application.turns import service as turns_service
+from cairn.application.turns.epilogue import PostTurnEpilogue
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import scenes as scene_queries
@@ -50,7 +50,7 @@ async def test_no_companion_present_is_a_noop(client: AsyncClient) -> None:
     session_id, turn_id = await _seed_turn(client)
 
     with patch("cairn.agents.companion_reflector.run", new=AsyncMock()) as mock_run:
-        await turns_service.run_companion_reflector(uuid.UUID(session_id), turn_id)
+        await PostTurnEpilogue()._run_companion_reflector(uuid.UUID(session_id), turn_id)
 
     mock_run.assert_not_awaited()  # guarded out before the LLM is ever called
 
@@ -73,7 +73,7 @@ async def test_returned_delta_is_applied_to_approval(client: AsyncClient) -> Non
 
     deltas = [{"companion_id": str(cid), "delta": 18, "reason": "Spared the deserter"}]
     with patch("cairn.agents.companion_reflector.run", new=AsyncMock(return_value=deltas)):
-        await turns_service.run_companion_reflector(uuid.UUID(sess["id"]), turn_id)
+        await PostTurnEpilogue()._run_companion_reflector(uuid.UUID(sess["id"]), turn_id)
 
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
@@ -102,7 +102,7 @@ async def test_unknown_id_and_zero_delta_are_dropped(client: AsyncClient) -> Non
         {"companion_id": str(cid), "delta": 0, "reason": "no move"},  # zero delta
     ]
     with patch("cairn.agents.companion_reflector.run", new=AsyncMock(return_value=deltas)):
-        await turns_service.run_companion_reflector(uuid.UUID(sess["id"]), turn_id)
+        await PostTurnEpilogue()._run_companion_reflector(uuid.UUID(sess["id"]), turn_id)
 
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch
 
 from httpx import AsyncClient
 
-from cairn.application.turns import service as turns_service
+from cairn.application.turns.epilogue import PostTurnEpilogue
 from cairn.db import client as db_client
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import turns as turn_queries
@@ -65,8 +65,8 @@ async def _seed_turn(campaign_id: str, session_id: str) -> uuid.UUID:
 
 
 async def _run_post(session_id: str, turn_id: uuid.UUID, post: ScenePostOutput) -> None:
-    with patch("cairn.application.turns.service.scene_director.run_post", new=AsyncMock(return_value=post)):
-        await turns_service.run_scene_director_post(uuid.UUID(session_id), turn_id)
+    with patch("cairn.application.turns.epilogue.scene_director.run_post", new=AsyncMock(return_value=post)):
+        await PostTurnEpilogue()._run_scene_director_post(uuid.UUID(session_id), turn_id)
 
 
 # --- beat_count -------------------------------------------------------------------

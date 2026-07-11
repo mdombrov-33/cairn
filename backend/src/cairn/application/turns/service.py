@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 from typing import Any, cast
@@ -8,37 +7,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.agents import (
     combat_resolver,
-    companion_reflector,
-    lore_keeper,
-    scene_director,
     scene_narrator,
-    scene_summarizer,
 )
-from cairn.application import companions as companions_service
 from cairn.application import loot as loot_service
-from cairn.application import narrative_context, scene_director_context
-from cairn.application import time as time_service
+from cairn.application import narrative_context
+from cairn.application.turns.epilogue import post_turn_epilogue
 from cairn.application.turns.types import CheckData, CompanionActionProposal, LootIntent
 from cairn.context import recording_turn, using_campaign_settings
-from cairn.db import client as db_client
 from cairn.db.models.character import Character
-from cairn.db.models.scene import Scene
-from cairn.db.models.session import Session
 from cairn.db.models.turn import Turn
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
-from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
-from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError, ValidationError
-from cairn.domain.services import campaign_view
 from cairn.domain.services import settings as settings_service
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
-from cairn.types import NpcPresence, ScenePostOutput
 
 log = structlog.get_logger()
 
@@ -117,17 +104,6 @@ def _check_payload(check: CheckData) -> dict[str, Any]:
     return payload
 
 
-def _schedule_post_turn(
-    dm_response: str, *, session_id: uuid.UUID, campaign_id: uuid.UUID, namespace: str, turn_id: uuid.UUID
-) -> None:
-    """Shared post-narration epilogue: fire the LoreKeeper, Scene Director post-pass, reflector,
-    and (for a long scene) the mid-scene compression summarizer."""
-    schedule_lore_keeper(dm_response, campaign_id, namespace, turn_id)
-    schedule_scene_director_post(session_id, turn_id)
-    schedule_companion_reflector(session_id, turn_id)
-    schedule_scene_summarizer(session_id)
-
-
 async def _narrate(
     narrator: AsyncIterator[str],
     db: AsyncSession,
@@ -146,7 +122,7 @@ async def _narrate(
     dm_response = "".join(chunks)
     await save_turn_narrative(db, turn_id=turn.id, dm_response=dm_response)
     yield _event("turn_end", {"turn_id": str(turn.id)})
-    _schedule_post_turn(
+    post_turn_epilogue.schedule(
         dm_response, session_id=session_id, campaign_id=campaign_id, namespace=namespace, turn_id=turn.id
     )
 
@@ -355,248 +331,9 @@ async def stream_resolve(
             dm_response=dm_response,
         )
         yield _event("turn_end", {"turn_id": str(turn.id)})
-        _schedule_post_turn(
+        post_turn_epilogue.schedule(
             dm_response, session_id=session_id, campaign_id=campaign_id, namespace=namespace, turn_id=turn.id
         )
-
-
-async def run_lore_keeper(
-    dm_response: str,
-    campaign_id: uuid.UUID,
-    namespace: str,
-    source_turn_id: uuid.UUID,
-) -> None:
-    """Extract and persist world bible entries from a completed DM response. Fire-and-forget."""
-
-    try:
-        async with db_client.get_sessionmaker()() as session:
-            existing = await world_bible_queries.list_by_campaign(session, campaign_id)
-        existing_keys = [e.key for e in existing]
-
-        entries = await lore_keeper.run(dm_response, existing_keys=existing_keys)
-        if not entries:
-            return
-        async with db_client.get_sessionmaker()() as session, session.begin():
-            for entry in entries:
-                await world_bible_queries.upsert_entry(
-                    session,
-                    campaign_id=campaign_id,
-                    namespace=namespace,
-                    type_=entry.type,
-                    key=entry.key,
-                    content=entry.content,
-                    source_turn_id=source_turn_id,
-                )
-        log.info("lore_keeper_done", count=len(entries), campaign_id=str(campaign_id))
-    except Exception as exc:
-        log.error("lore_keeper_failed", error=str(exc), campaign_id=str(campaign_id))
-
-
-def schedule_lore_keeper(
-    dm_response: str,
-    campaign_id: uuid.UUID,
-    namespace: str,
-    source_turn_id: uuid.UUID,
-) -> None:
-    asyncio.create_task(run_lore_keeper(dm_response, campaign_id, namespace, source_turn_id), name="cairn-bg")
-
-
-async def run_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
-    """Observe the completed turn and apply the Scene Director's post-pass decisions.
-
-    Fire-and-forget, mirroring the LoreKeeper. A scene-transition push is recorded as
-    Session.pending_transition (applied on the next turn's pre-pass); act progress advances
-    the campaign's act index. A DM-narrated time skip (only set alongside a push) advances the
-    clock here — unless this turn was a rest that already advanced time, to avoid double-counting.
-    """
-    try:
-        async with db_client.get_sessionmaker()() as db:
-            context = await scene_director_context.build_post_response_context(db, session_id, turn_id)
-
-        post = await scene_director.run_post(context)
-        if not _post_has_effect(post):
-            return
-
-        async with db_client.get_sessionmaker()() as db, db.begin():
-            session = await session_queries.get_session(db, session_id)
-            scene = await scene_queries.get_current_scene(db, session.campaign_id)
-            if scene is not None:
-                turn = await turn_queries.get_turn(db, turn_id)
-                await _apply_scene_deltas(db, scene, post, turn_idx=turn.idx)
-            if post["scene_transition_push"] is not None:
-                session.pending_transition = post["scene_transition_push"]
-            if post["act_progress"]:
-                campaign = await campaign_queries.get_campaign(db, session.campaign_id)
-                campaign.current_act_index += 1
-            if post["time_advance_hours"] > 0:
-                await _apply_director_time(db, session, turn_id, post["time_advance_hours"])
-        log.info("scene_director_post_done", session_id=str(session_id))
-    except Exception as exc:
-        log.error("scene_director_post_failed", error=str(exc), session_id=str(session_id))
-
-
-def _post_has_effect(post: ScenePostOutput) -> bool:
-    """Whether the post-pass changed anything worth opening a write transaction for."""
-    return bool(
-        post["scene_transition_push"]
-        or post["act_progress"]
-        or post["tension_delta"]
-        or post["mood"]
-        or post["discovered"]
-        or post["threads_added"]
-        or post["threads_resolved"]
-        or post["npc_updates"]
-        or post["npc_departures"]
-    )
-
-
-async def _apply_scene_deltas(db: AsyncSession, scene: Scene, post: ScenePostOutput, *, turn_idx: int) -> None:
-    """Apply the Scene Director's post-pass scene-depth deltas via the service-only writers.
-
-    Free-form discoveries stamp the revelation clock like check-gated ones; presence changes merge
-    onto existing NPCs by id (arrivals of brand-new NPCs are not the director's job — they enter via
-    dialogue or the scene builder)."""
-    if post["tension_delta"]:
-        await scene_queries.apply_tension(db, scene.id, post["tension_delta"])
-    if post["mood"] is not None:
-        await scene_queries.set_mood(db, scene.id, post["mood"])
-    for fact in post["discovered"]:
-        await scene_queries.mark_discovered(db, scene.id, fact, turn_index=turn_idx)
-    for thread in post["threads_added"]:
-        await scene_queries.add_thread(db, scene.id, thread)
-    for thread in post["threads_resolved"]:
-        await scene_queries.resolve_thread(db, scene.id, thread)
-    if post["npc_updates"] or post["npc_departures"]:
-        merged = _merge_presence(scene.npcs_present, post["npc_updates"], post["npc_departures"])
-        await scene_queries.set_npcs_present(db, scene.id, merged)
-
-
-def _merge_presence(current: list[NpcPresence], updates: list[NpcPresence], departures: list[str]) -> list[NpcPresence]:
-    """Drop departed NPCs, then merge in-scene state shifts (doing/attentive_to/agenda) by id."""
-    departed = set(departures)
-    by_id: dict[str, dict[str, Any]] = {p["npc_id"]: dict(p) for p in current if p["npc_id"] not in departed}
-    for upd in updates:
-        present = by_id.get(upd["npc_id"])
-        if present is not None:  # only shift NPCs already in the scene
-            present.update({k: v for k, v in upd.items() if k != "npc_id"})
-    return cast(list[NpcPresence], list(by_id.values()))
-
-
-async def _apply_director_time(db: AsyncSession, session: Session, turn_id: uuid.UUID, hours: int) -> None:
-    """Advance the clock for a DM-narrated time skip, guarding against double-counting a rest.
-
-    If this turn already advanced time (e.g. a rest emitted `time_advanced`), the Scene Director's
-    skip is a redundant restatement of the same passage of time, so we skip it.
-    """
-    turn = await turn_queries.get_turn(db, turn_id)
-    if any(e.get("type") == "time_advanced" for e in (turn.events or [])):
-        log.info("scene_director_time_skip_double_count", turn_id=str(turn_id), hours=hours)
-        return
-    # No recording scope in this background task; bind one so advance_time's event lands on the turn.
-    with recording_turn(turn_id):
-        await time_service.advance_time(db, session, hours=hours, source="scene_director")
-
-
-def schedule_scene_director_post(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
-    asyncio.create_task(run_scene_director_post(session_id, turn_id), name="cairn-bg")
-
-
-async def run_scene_summarizer(session_id: uuid.UUID) -> None:
-    """Regenerate a long scene's `scene_progress_summary` from the turns that have fallen out of the
-    verbatim window. Fire-and-forget, mirroring the LoreKeeper. No-op until the scene passes the
-    compression threshold, and then only every SUMMARY_REGEN_EVERY beats — so most turns do nothing.
-    """
-    try:
-        async with db_client.get_sessionmaker()() as db:
-            session = await session_queries.get_session(db, session_id)
-            scene = await scene_queries.get_current_scene(db, session.campaign_id)
-            if scene is None or scene.beat_count < narrative_context.COMPRESSION_BEAT_THRESHOLD:
-                return
-            if scene.beat_count % narrative_context.SUMMARY_REGEN_EVERY != 0:
-                return
-            all_turns = await turn_queries.list_turns(db, session_id)
-            older = campaign_view.scene_turn_views(all_turns, scene.id)[: -narrative_context.RECENT_TURNS]
-            if not older:
-                return
-            scene_id = scene.id
-            beat = scene.beat_count
-            authored_summary = scene.summary or ""
-            location_name = ""
-            if scene.location_id is not None:
-                location = await location_queries.get_location(db, scene.location_id)
-                location_name = location.name if location else ""
-
-        summary = await scene_summarizer.run(location_name, authored_summary, older)
-
-        async with db_client.get_sessionmaker()() as db, db.begin():
-            await scene_queries.set_progress_summary(db, scene_id, summary)
-        log.info("scene_progress_summary_written", session_id=str(session_id), beat=beat)
-    except Exception as exc:
-        log.error("scene_summarizer_failed", error=str(exc), session_id=str(session_id))
-
-
-def schedule_scene_summarizer(session_id: uuid.UUID) -> None:
-    asyncio.create_task(run_scene_summarizer(session_id), name="cairn-bg")
-
-
-def _companion_view(character: Character) -> dict[str, Any]:
-    """The reflector's view of a companion: who they are + their current standing."""
-    profile = character.narrative_profile or {}
-    meta = character.companion_meta or {}
-    return {
-        "id": str(character.id),
-        "name": character.name,
-        "personality": profile.get("personality", ""),
-        "prejudices": profile.get("prejudices", []),
-        "personal_goal": meta.get("personal_goal", ""),
-        "approval": meta.get("approval", 0),
-        "mood": meta.get("mood", "content"),
-    }
-
-
-async def run_companion_reflector(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
-    """Judge a completed turn per-companion and apply approval deltas. Fire-and-forget.
-
-    Reads the committed turn (player input, narration, events) and the party's companions;
-    if none are present it does nothing. Deltas that name an unknown companion or move by 0
-    are dropped before they reach the approval service.
-    """
-    try:
-        async with db_client.get_sessionmaker()() as db:
-            party = await character_queries.get_party_for_session(db, session_id)
-            companions = [c for c in party if c.is_companion]
-            if not companions:
-                return
-            turn = await turn_queries.get_turn(db, turn_id)
-            player_input = turn.player_input
-            dm_response = turn.dm_response or ""
-            events = list(turn.events or [])
-            views = [_companion_view(c) for c in companions]
-
-        deltas = await companion_reflector.run(
-            player_input=player_input, dm_response=dm_response, events=events, companions=views
-        )
-        valid_ids = {str(c.id) for c in companions}
-        applied = [d for d in deltas if d["companion_id"] in valid_ids and d["delta"] != 0]
-        if not applied:
-            return
-
-        async with db_client.get_sessionmaker()() as db, db.begin():
-            for delta in applied:
-                await companions_service.adjust_approval(
-                    db,
-                    character_id=uuid.UUID(delta["companion_id"]),
-                    delta=delta["delta"],
-                    reason=delta["reason"],
-                    turn_id=turn_id,
-                )
-        log.info("companion_reflector_done", count=len(applied), session_id=str(session_id))
-    except Exception as exc:
-        log.error("companion_reflector_failed", error=str(exc), session_id=str(session_id))
-
-
-def schedule_companion_reflector(session_id: uuid.UUID, turn_id: uuid.UUID) -> None:
-    asyncio.create_task(run_companion_reflector(session_id, turn_id), name="cairn-bg")
 
 
 async def consume_death_recovery(db: AsyncSession, *, session_id: uuid.UUID) -> bool:

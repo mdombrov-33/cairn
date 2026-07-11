@@ -5,7 +5,9 @@
 > Architecture progress: foreground HTTP turn handling now crosses
 > `application/turns/runtime.py`. It owns preparation, continuation, and check/companion resumption;
 > typed tagged suspension outcomes are internal, while `Turn.check_data` JSONB and SSE event shapes
-> remain unchanged. The owned post-turn epilogue is a later architecture slice.
+> remain unchanged. `application/turns/epilogue.py` owns the in-process post-turn work: it
+> schedules LoreKeeper, Scene Director, scene summarization, and companion reflection without
+> delaying narration; it also tracks and cancels outstanding work during application shutdown.
 
 ---
 
