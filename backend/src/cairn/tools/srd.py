@@ -3,7 +3,7 @@ from typing import Annotated
 from langchain_core.tools import tool
 
 from cairn import srd as rules
-from cairn.srd import _load_list, list_all_feats
+from cairn.srd import list_all_feats
 
 
 @tool
@@ -157,7 +157,7 @@ async def list_spells_for_class(
     max_level: Annotated[int, "Only return spells of this level or lower (1-9). Default 9."] = 9,
 ) -> list:
     """List all SRD spells available to a class, optionally filtered by max spell level."""
-    all_spells = _load_list("spells")
+    all_spells = rules.list_spells()
     key = class_name.lower()
     matching = [
         {"name": s["name"], "level": s["level"], "school": s.get("school", {}).get("name")}

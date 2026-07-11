@@ -16,16 +16,8 @@ from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import AuthError, ValidationError
 from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.leveling import SUBCLASS_LEVEL, initialize_resources
-from cairn.srd import (
-    get_armor,
-    get_background,
-    get_class,
-    get_class_levels,
-    get_proficiencies_for_race,
-    get_race,
-    get_subclass,
-    get_subrace,
-)
+from cairn.srd.catalog import catalog
+from cairn.srd.models import AbilityBonus, ClassLevelRecord, ClassRecord
 from cairn.types import AbilityScores, InventoryItem, NarrativeProfile
 
 log = structlog.get_logger()
@@ -53,7 +45,7 @@ _WEAPON_CATEGORY_MAP: dict[str, str] = {
 
 
 def _extract_proficiencies(
-    cls_data: dict,
+    cls_data: ClassRecord,
     race_index: str,
     subrace_index: str | None,
 ) -> tuple[list[str], list[str]]:
@@ -66,8 +58,8 @@ def _extract_proficiencies(
     armor_profs: list[str] = []
     weapon_profs: list[str] = []
 
-    for p in cls_data.get("proficiencies", []):
-        idx = p.get("index", "")
+    for p in cls_data.proficiencies:
+        idx = p.index
         if idx in _ARMOR_PROF_MAP:
             for cat in _ARMOR_PROF_MAP[idx]:
                 if cat not in armor_profs:
@@ -83,16 +75,16 @@ def _extract_proficiencies(
             weapon_profs.append(idx)
 
     # Race / subrace weapon proficiencies from proficiencies.json
-    for p in get_proficiencies_for_race(race_index, subrace_index):
-        if p.get("type") == "Weapons":
-            idx = p.get("index", "")
+    for proficiency in catalog.proficiencies_for_race(race_index, subrace_index):
+        if proficiency.type == "Weapons":
+            idx = proficiency.index
             if idx and idx not in weapon_profs:
                 weapon_profs.append(idx)
 
     return armor_profs, weapon_profs
 
 
-def _build_inventory(cls_data: dict) -> list[InventoryItem]:
+def _build_inventory(cls_data: ClassRecord) -> list[InventoryItem]:
     """
     Build the starting inventory list. Items from starting_equipment get an
     srd_index field so the equip service can do reliable SRD lookups.
@@ -102,18 +94,17 @@ def _build_inventory(cls_data: dict) -> list[InventoryItem]:
     equipped_armor = False
     equipped_shield = False
 
-    for entry in cls_data.get("starting_equipment", []):
-        eq = entry.get("equipment", {})
-        srd_index = eq.get("index", "")
-        name = eq.get("name", srd_index)
+    for entry in cls_data.starting_equipment:
+        srd_index = entry.equipment.index
+        name = entry.equipment.name
 
-        armor_data = get_armor(srd_index) if srd_index else None
+        armor_data = catalog.armor(srd_index)
         auto_equip = False
         if armor_data is not None:
-            if armor_data.get("armor_category") == "Shield" and not equipped_shield:
+            if armor_data.armor_category == "Shield" and not equipped_shield:
                 auto_equip = True
                 equipped_shield = True
-            elif armor_data.get("armor_category") != "Shield" and not equipped_armor:
+            elif armor_data.armor_category != "Shield" and not equipped_armor:
                 auto_equip = True
                 equipped_armor = True
 
@@ -121,7 +112,7 @@ def _build_inventory(cls_data: dict) -> list[InventoryItem]:
             {
                 "name": name,
                 "srd_index": srd_index,
-                "quantity": entry.get("quantity", 1),
+                "quantity": entry.quantity,
                 "weight": 0,
                 "notes": "",
                 "equipped": auto_equip,
@@ -131,37 +122,28 @@ def _build_inventory(cls_data: dict) -> list[InventoryItem]:
     return inventory
 
 
-def _extract_skill_choices(cls_data: dict) -> tuple[int, list[str]]:
+def _extract_skill_choices(cls_data: ClassRecord) -> tuple[int, list[str]]:
     """Return (num_required, allowed_skill_names) from class proficiency_choices."""
     total = 0
     allowed: list[str] = []
-    for group in cls_data.get("proficiency_choices", []):
-        opts = group.get("from", {}).get("options", [])
-        skill_opts = [
-            o["item"]["name"].replace("Skill: ", "")
-            for o in opts
-            if o.get("option_type") == "reference" and o.get("item", {}).get("index", "").startswith("skill-")
-        ]
+    for group in cls_data.proficiency_choices:
+        skill_opts = group.skill_names()
         if skill_opts:
-            total += group.get("choose", 0)
+            total += group.choose
             allowed.extend(skill_opts)
     return total, allowed
 
 
-def _apply_ability_bonuses(scores: dict[str, int], bonuses: list[dict]) -> dict[str, int]:
+def _apply_ability_bonuses(scores: dict[str, int], bonuses: list[AbilityBonus]) -> dict[str, int]:
     result = dict(scores)
     for b in bonuses:
-        key = b["ability_score"]["index"]
-        result[key] = result.get(key, 0) + b["bonus"]
+        key = b.ability_score.index
+        result[key] = result.get(key, 0) + b.bonus
     return result
 
 
-def _build_spell_slots(level_data: dict) -> dict[str, int] | None:
-    sc = level_data.get("spellcasting")
-    if not sc:
-        return None
-    slots = {str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0}
-    return slots or None
+def _build_spell_slots(level_data: ClassLevelRecord | None) -> dict[str, int] | None:
+    return level_data.spell_slots() if level_data else None
 
 
 async def create(
@@ -186,26 +168,26 @@ async def create(
 
     await campaign_queries.get_campaign_owned_by(db, campaign_id, owner_id)
 
-    cls_data = get_class(character_class)
+    cls_data = catalog.class_(character_class)
     if cls_data is None:
         raise ValidationError(f"unknown class: {character_class}")
-    race_data = get_race(race)
+    race_data = catalog.race(race)
     if race_data is None:
         raise ValidationError(f"unknown race: {race}")
-    bg_data = get_background(background.lower().replace(" ", "-"))
+    bg_data = catalog.background(background)
     if bg_data is None:
         raise ValidationError(f"unknown background: {background}")
 
     subrace_data = None
     if subrace:
-        subrace_data = get_subrace(subrace.lower().replace(" ", "-"))
+        subrace_data = catalog.subrace(subrace)
         if subrace_data is None:
             raise ValidationError(f"unknown subrace: {subrace}")
 
     # Subclass: validate if provided, require for classes that pick at level 1
     if subclass is not None:
-        sub_data = get_subclass(subclass.lower().replace(" ", "-"))
-        if sub_data is None or sub_data.get("class", {}).get("index") != character_class:
+        sub_data = catalog.subclass(subclass)
+        if sub_data is None or sub_data.class_.index != character_class:
             raise ValidationError(f"invalid subclass for {character_class}: {subclass!r}")
     if SUBCLASS_LEVEL.get(character_class) == 1 and not subclass:
         raise ValidationError(f"{character_class} requires subclass selection at character creation")
@@ -221,35 +203,38 @@ async def create(
         raise ValidationError(f"invalid skill choice(s) for {character_class}: {invalid}")
 
     # Derive stats from SRD
-    hit_die_size: int = cls_data["hit_die"]
-    saving_throw_proficiencies = [st["index"] for st in cls_data.get("saving_throws", [])]
+    hit_die_size = cls_data.hit_die
+    saving_throw_proficiencies = [saving_throw.index for saving_throw in cls_data.saving_throws]
 
-    sc_info = cls_data.get("spellcasting")
-    spellcasting_ability: str | None = sc_info["spellcasting_ability"]["index"] if sc_info else None
+    spellcasting_ability = (
+        cls_data.spellcasting.spellcasting_ability.index
+        if cls_data.spellcasting and cls_data.spellcasting.spellcasting_ability
+        else None
+    )
 
-    class_levels = get_class_levels(character_class)
-    level_data = class_levels[0] if class_levels else {}
-    features = [{"index": f["index"], "name": f["name"]} for f in level_data.get("features", [])]
+    class_levels = catalog.class_levels(character_class)
+    level_data = class_levels[0] if class_levels else None
+    features = [
+        {"index": feature.index, "name": feature.name} for feature in (level_data.features if level_data else [])
+    ]
     spell_slots = _build_spell_slots(level_data)
 
-    speed: int = race_data.get("speed", 30)
-    race_traits = [{"index": t["index"], "name": t["name"]} for t in race_data.get("traits", [])]
+    speed = race_data.speed
+    race_traits = [{"index": trait.index, "name": trait.name} for trait in race_data.traits]
     subrace_traits = (
-        [{"index": t["index"], "name": t["name"]} for t in subrace_data.get("racial_traits", [])]
-        if subrace_data
-        else []
+        [{"index": trait.index, "name": trait.name} for trait in subrace_data.racial_traits] if subrace_data else []
     )
     if any(trait["index"] == "fleet-of-foot" for trait in subrace_traits):
         speed += 5
     features = features + race_traits + subrace_traits
 
-    bg_skills: list[str] = bg_data.get("skill_proficiencies", [])
-    tool_proficiencies: list[str] = bg_data.get("tool_proficiencies", [])
+    bg_skills = bg_data.skill_proficiencies
+    tool_proficiencies = bg_data.tool_proficiencies
     skill_proficiencies = list(dict.fromkeys(skill_choices + bg_skills))
 
-    final_scores = _apply_ability_bonuses(ability_scores, race_data.get("ability_bonuses", []))
+    final_scores = _apply_ability_bonuses(ability_scores, race_data.ability_bonuses)
     if subrace_data:
-        final_scores = _apply_ability_bonuses(final_scores, subrace_data.get("ability_bonuses", []))
+        final_scores = _apply_ability_bonuses(final_scores, subrace_data.ability_bonuses)
 
     con_mod = _modifier(final_scores.get("con", 10))
     max_hp = hit_die_size + con_mod

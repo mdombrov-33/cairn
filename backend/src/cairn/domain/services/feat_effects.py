@@ -14,7 +14,7 @@ import structlog
 from cairn.db.models.character import Character
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services.combat.helpers import get_ability_score
-from cairn.srd import get_feat
+from cairn.srd.catalog import catalog
 from cairn.types import AbilityKey, AbilityScores, Resource
 
 log = structlog.get_logger()
@@ -274,7 +274,7 @@ def apply_feat(char: Character, feat_index: str, options: dict | None = None) ->
     if registered, and always appends the feat to char.feats so it's visible
     to the LLM (which reads the SRD description for behavioral effects).
     """
-    feat_data = get_feat(feat_index)
+    feat_data = catalog.feat(feat_index)
     if feat_data is None:
         raise ValidationError(f"unknown feat: {feat_index}")
 
@@ -285,4 +285,4 @@ def apply_feat(char: Character, feat_index: str, options: dict | None = None) ->
     else:
         log.info("feat_no_handler", feat=feat_index, character_id=str(char.id))
 
-    char.feats = list(char.feats) + [{"index": feat_index, "name": feat_data["name"], "options": options}]
+    char.feats = list(char.feats) + [{"index": feat_index, "name": feat_data.name, "options": options}]

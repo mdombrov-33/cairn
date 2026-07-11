@@ -23,7 +23,7 @@ from cairn.domain.exceptions import NotFoundError, ValidationError
 from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.inventory import copy_inventory, find_item, srd_index_of
 from cairn.domain.services.settings import resolve_settings
-from cairn.srd import get_armor
+from cairn.srd.catalog import catalog
 
 if TYPE_CHECKING:
     from cairn.api.v1.schemas.characters import EquipRequest
@@ -40,13 +40,13 @@ async def _require_player_equipment_control(db: AsyncSession, char: Character, c
 
 
 def is_armor(srd_index: str) -> bool:
-    item = get_armor(srd_index)
-    return item is not None and item.get("armor_category") != "Shield"
+    item = catalog.armor(srd_index)
+    return item is not None and item.armor_category != "Shield"
 
 
 def is_shield(srd_index: str) -> bool:
-    item = get_armor(srd_index)
-    return item is not None and item.get("armor_category") == "Shield"
+    item = catalog.armor(srd_index)
+    return item is not None and item.armor_category == "Shield"
 
 
 async def equip(
@@ -70,10 +70,10 @@ async def equip(
         log.info("equip_already_equipped", character_id=str(character_id), item=body.item_name)
         return char
 
-    armor_data = get_armor(srd_index_of(target))
+    armor_data = catalog.armor(srd_index_of(target))
 
     if armor_data is not None:
-        category = armor_data.get("armor_category")
+        category = armor_data.armor_category
         if category == "Shield":
             for item in inventory:
                 if item is not target and item.get("equipped") and is_shield(srd_index_of(item)):

@@ -14,15 +14,8 @@ from cairn.domain.services import feat_effects
 from cairn.domain.services.ac import AcInput, derive_ac
 from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.domain.services.settings import resolve_settings
-from cairn.srd import (
-    get_class_levels,
-    get_feat,
-    get_subclass,
-    get_subclass_features_at_level,
-    list_all_feats,
-    list_spells,
-    list_subclasses_for_class,
-)
+from cairn.srd.catalog import catalog
+from cairn.srd.models import ClassLevelRecord
 from cairn.types import AbilityKey, AbilityScores, FeatureEntry
 
 log = structlog.get_logger()
@@ -125,8 +118,8 @@ def _proficiency_bonus_for_level(level: int) -> int:
     return 2 + ((level - 1) // 4)
 
 
-def _level_data(class_index: str, level: int) -> dict | None:
-    levels = get_class_levels(class_index)
+def _level_data(class_index: str, level: int) -> ClassLevelRecord | None:
+    levels = catalog.class_levels(class_index)
     if not levels or level < 1 or level > len(levels):
         return None
     return levels[level - 1]
@@ -140,18 +133,14 @@ def _is_asi_level(class_index: str, target_level: int) -> bool:
     prev = _level_data(class_index, target_level - 1)
     if target is None or prev is None:
         return False
-    return target.get("ability_score_bonuses", 0) > prev.get("ability_score_bonuses", 0)
+    return target.ability_score_bonuses > prev.ability_score_bonuses
 
 
 def _spell_slots_for_level(class_index: str, level: int) -> dict[str, int] | None:
     data = _level_data(class_index, level)
     if data is None:
         return None
-    sc = data.get("spellcasting")
-    if not sc:
-        return None
-    slots = {str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0}
-    return slots or None
+    return data.spell_slots()
 
 
 def initialize_resources(class_index: str, level: int, ability_scores: dict[str, int] | None = None) -> dict[str, dict]:
@@ -159,7 +148,7 @@ def initialize_resources(class_index: str, level: int, ability_scores: dict[str,
     data = _level_data(class_index, level)
     if data is None:
         return {}
-    cs = data.get("class_specific") or {}
+    cs = data.class_specific
     resources: dict[str, dict] = {}
     for srd_key, (name, reset) in RESOURCE_MAP.items():
         value = cs.get(srd_key)
@@ -179,16 +168,18 @@ def expected_spell_picks(class_index: str, target_level: int) -> int:
     if target is None:
         return 0
     prev = _level_data(class_index, target_level - 1) if target_level >= 2 else None
-    target_sc = target.get("spellcasting") or {}
-    prev_sc = (prev or {}).get("spellcasting") or {}
+    target_sc = target.spellcasting
+    prev_sc = prev.spellcasting if prev else None
 
-    cantrips_delta = (target_sc.get("cantrips_known") or 0) - (prev_sc.get("cantrips_known") or 0)
+    cantrips_delta = (
+        (target_sc.cantrips_known or 0) - ((prev_sc.cantrips_known if prev_sc else None) or 0) if target_sc else 0
+    )
 
     # Wizard: +2 spells per level into spellbook (not encoded in SRD spells_known).
     if class_index == "wizard" and target_level >= 2:
         spells_delta = 2
-    elif target_sc.get("spells_known") is not None:
-        spells_delta = (target_sc.get("spells_known") or 0) - (prev_sc.get("spells_known") or 0)
+    elif target_sc and target_sc.spells_known is not None:
+        spells_delta = (target_sc.spells_known or 0) - ((prev_sc.spells_known if prev_sc else None) or 0)
     else:
         # Prepared casters (cleric, druid, paladin) don't pick on level-up.
         spells_delta = 0
@@ -228,14 +219,18 @@ def build_level_up_preview(char: Character) -> dict | None:
 
     available_subclasses: list[dict] = []
     if needs_subclass:
-        available_subclasses = [{"index": s["index"], "name": s["name"]} for s in list_subclasses_for_class(cls)]
+        available_subclasses = [
+            {"index": subclass.index, "name": subclass.name}
+            for subclass in catalog.subclasses()
+            if subclass.class_.index == cls
+        ]
 
     available_feats: list[dict] = []
     if asi_or_feat:
         available_feats = [
-            {"index": f["index"], "name": f["name"], "type": f.get("type", "general")}
-            for f in list_all_feats()
-            if f.get("type") in {"general", "epic-boon"} and f["index"] != "ability-score-improvement"
+            {"index": feat.index, "name": feat.name, "type": feat.type}
+            for feat in catalog.feats
+            if feat.type in {"general", "epic-boon"} and feat.index != "ability-score-improvement"
         ]
 
     return {
@@ -249,7 +244,7 @@ def build_level_up_preview(char: Character) -> dict | None:
         "subclass_required": needs_subclass,
         "available_subclasses": available_subclasses,
         "available_feats": available_feats,
-        "new_features": [{"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])],
+        "new_features": [{"index": feature.index, "name": feature.name} for feature in target_data.features],
         "new_spell_slots": _spell_slots_for_level(cls, target_level),
         "spells_to_choose": expected_spell_picks(cls, target_level),
         "proficiency_bonus": _proficiency_bonus_for_level(target_level),
@@ -398,11 +393,13 @@ async def apply_level_up(
 
     # 6. New features — class features + subclass features at this level
     new_features: list[FeatureEntry] = [
-        {"index": f["index"], "name": f["name"]} for f in target_data.get("features", [])
+        {"index": feature.index, "name": feature.name} for feature in target_data.features
     ]
     if char.subclass_name:
-        subclass_feats = get_subclass_features_at_level(char.subclass_name, target_level)
-        new_features += cast(list[FeatureEntry], [{"index": f["index"], "name": f["name"]} for f in subclass_feats])
+        subclass_feats = catalog.subclass_features_at_level(char.subclass_name, target_level)
+        new_features += cast(
+            list[FeatureEntry], [{"index": feature.index, "name": feature.name} for feature in subclass_feats]
+        )
     char.features = list(char.features) + new_features
 
     # 7. Bookkeeping: level, prof bonus, hit dice
@@ -458,23 +455,25 @@ def _balanced_companion_choices(char: Character) -> LevelUpChoices:
         if asi is None:
             available = [
                 f
-                for f in list_all_feats()
-                if f.get("type") in {"general", "epic-boon"} and f["index"] != "ability-score-improvement"
+                for f in catalog.feats
+                if f.type in {"general", "epic-boon"} and f.index != "ability-score-improvement"
             ]
-            feat = available[0]["index"] if available else None
+            feat = available[0].index if available else None
 
     subclass: str | None = None
     if SUBCLASS_LEVEL.get(cls) == target_level and not char.subclass_name:
-        subclasses = list_subclasses_for_class(cls)
-        subclass = subclasses[0]["index"] if subclasses else None
+        subclasses = [subclass for subclass in catalog.subclasses() if subclass.class_.index == cls]
+        subclass = subclasses[0].index if subclasses else None
 
     pick_count = expected_spell_picks(cls, target_level)
     known = {spell.casefold() for spell in char.spells_known}
     max_spell_level = max((_spell_slots_for_level(cls, target_level) or {"0": 0}), key=int)
     candidates = [
-        spell["name"]
-        for spell in list_spells(class_index=cls, max_level=int(max_spell_level))
-        if spell["name"].casefold() not in known
+        spell.name
+        for spell in catalog.spells
+        if any(spell_class.index == cls for spell_class in spell.classes)
+        and spell.level <= int(max_spell_level)
+        and spell.name.casefold() not in known
     ]
 
     return LevelUpChoices(
@@ -545,12 +544,12 @@ def _validate_choices_against_preview(char: Character, choices: LevelUpChoices, 
         if asi_set == feat_set:
             raise ValidationError("must choose exactly one of asi or feat at this level")
         if feat_set and choices.feat is not None:
-            feat_data = get_feat(choices.feat)
+            feat_data = catalog.feat(choices.feat)
             if feat_data is None:
                 raise ValidationError(f"unknown feat: {choices.feat}")
-            if feat_data.get("type") not in {"general", "epic-boon"}:
+            if feat_data.type not in {"general", "epic-boon"}:
                 raise ValidationError(
-                    f"feat {choices.feat!r} (type={feat_data.get('type', 'general')}) "
+                    f"feat {choices.feat!r} (type={feat_data.type}) "
                     f"is not available at ASI levels — only general and epic-boon feats"
                 )
     else:
@@ -561,8 +560,8 @@ def _validate_choices_against_preview(char: Character, choices: LevelUpChoices, 
     if needs_subclass:
         if choices.subclass is None:
             raise ValidationError("subclass choice required at this level")
-        sub = get_subclass(choices.subclass)
-        if sub is None or sub.get("class", {}).get("index") != cls:
+        sub = catalog.subclass(choices.subclass)
+        if sub is None or sub.class_.index != cls:
             raise ValidationError(f"invalid subclass for {cls}: {choices.subclass!r}")
     elif choices.subclass is not None:
         raise ValidationError("subclass not chosen at this level")
