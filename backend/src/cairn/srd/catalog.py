@@ -7,6 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, TypeAdapter
 
 from cairn.srd.models import (
+    ArmorRecord,
     BackgroundRecord,
     ClassLevelRecord,
     ClassRecord,
@@ -43,6 +44,16 @@ def _records[Record: BaseModel](name: str, record_type: type[Record]) -> tuple[R
 @lru_cache
 def _index[Record: BaseModel](name: str, record_type: type[Record]) -> dict[str, Record]:
     return {record.index: record for record in _records(name, record_type)}  # type: ignore[attr-defined]
+
+
+@lru_cache
+def _equipment_records() -> tuple[EquipmentRecord | ArmorRecord, ...]:
+    return tuple(TypeAdapter(list[ArmorRecord | EquipmentRecord]).validate_python(_read("equipment")))
+
+
+@lru_cache
+def _equipment_index() -> dict[str, EquipmentRecord | ArmorRecord]:
+    return {record.index: record for record in _equipment_records()}
 
 
 class Catalog:
@@ -82,19 +93,19 @@ class Catalog:
         return _index("backgrounds", BackgroundRecord).get(_key(name))
 
     @property
-    def equipment(self) -> tuple[EquipmentRecord, ...]:
-        return _records("equipment", EquipmentRecord)
+    def equipment(self) -> tuple[EquipmentRecord | ArmorRecord, ...]:
+        return _equipment_records()
 
-    def equipment_item(self, name: str) -> EquipmentRecord | None:
-        return _index("equipment", EquipmentRecord).get(_key(name))
+    def equipment_item(self, name: str) -> EquipmentRecord | ArmorRecord | None:
+        return _equipment_index().get(_key(name))
 
     def weapon(self, name: str) -> EquipmentRecord | None:
         item = self.equipment_item(name)
         return item if item and item.equipment_category.index == "weapon" else None
 
-    def armor(self, name: str) -> EquipmentRecord | None:
+    def armor(self, name: str) -> ArmorRecord | None:
         item = self.equipment_item(name)
-        return item if item and item.equipment_category.index == "armor" else None
+        return item if isinstance(item, ArmorRecord) else None
 
     @property
     def monsters(self) -> tuple[MonsterRecord, ...]:

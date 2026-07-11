@@ -13,7 +13,9 @@ from typing import Any
 import structlog
 
 from cairn.domain.characters import AbilityScores, FeatEntry, InventoryItem
-from cairn.srd import get_armor
+from cairn.domain.services.inventory import srd_index_of
+from cairn.srd.catalog import catalog
+from cairn.srd.models import ArmorRecord
 
 log = structlog.get_logger()
 
@@ -51,36 +53,34 @@ def mod(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
-def _equipped_armor_and_shield(char: AcInput) -> tuple[dict | None, dict | None]:
-    equipped_armor: dict | None = None
-    equipped_shield: dict | None = None
-    for item in char.inventory or []:
+def _equipped_armor_and_shield(char: AcInput) -> tuple[ArmorRecord | None, ArmorRecord | None]:
+    equipped_armor: ArmorRecord | None = None
+    equipped_shield: ArmorRecord | None = None
+    for item in char.inventory:
         if not item.get("equipped"):
             continue
-        srd_index = item.get("srd_index") or item.get("name", "").lower().replace(" ", "-")
-        armor_data = get_armor(srd_index)
-        if armor_data is None:
+        armor = catalog.armor(srd_index_of(item))
+        if armor is None:
             continue
-        category = armor_data.get("armor_category", "")
-        if category == "Shield":
+        if armor.armor_category == "Shield":
             if equipped_shield is None:
-                equipped_shield = armor_data
+                equipped_shield = armor
         elif equipped_armor is None:
-            equipped_armor = armor_data
+            equipped_armor = armor
     return equipped_armor, equipped_shield
 
 
 def _unarmored_base(char: AcInput, dex_mod: int) -> int:
     cls = (char.class_ or "").lower()
     if cls == "barbarian":
-        return 10 + dex_mod + mod(char.ability_scores.get("con", 10))
+        return 10 + dex_mod + mod(char.ability_scores["con"])
     if cls == "monk":
-        return 10 + dex_mod + mod(char.ability_scores.get("wis", 10))
+        return 10 + dex_mod + mod(char.ability_scores["wis"])
     return 10 + dex_mod
 
 
-def _feat_ac_bonus(char: AcInput, equipped_armor: dict | None) -> int:
-    feat_indices = {f["index"] for f in (char.feats or [])}
+def _feat_ac_bonus(char: AcInput, equipped_armor: ArmorRecord | None) -> int:
+    feat_indices = {feat["index"] for feat in char.feats}
     if "defense" in feat_indices and equipped_armor is not None:
         return 1
     return 0
@@ -88,22 +88,22 @@ def _feat_ac_bonus(char: AcInput, equipped_armor: dict | None) -> int:
 
 def derive_ac(char: AcInput) -> int:
     """Compute and return AC from equipped items + ability scores + feats."""
-    dex_mod = mod(char.ability_scores.get("dex", 10))
+    dex_mod = mod(char.ability_scores["dex"])
     equipped_armor, equipped_shield = _equipped_armor_and_shield(char)
 
     if equipped_armor is None:
         base = _unarmored_base(char, dex_mod)
     else:
-        ac_data = equipped_armor["armor_class"]
-        base_ac: int = ac_data["base"]
-        if ac_data.get("dex_bonus"):
-            max_bonus = ac_data.get("max_bonus")
+        armor_class = equipped_armor.armor_class
+        base_ac = armor_class.base
+        if armor_class.dex_bonus:
+            max_bonus = armor_class.max_bonus
             dex_contribution = min(dex_mod, max_bonus) if max_bonus is not None else dex_mod
             base = base_ac + dex_contribution
         else:
             base = base_ac
 
-    shield_bonus = equipped_shield["armor_class"]["base"] if equipped_shield else 0
+    shield_bonus = equipped_shield.armor_class.base if equipped_shield else 0
     feat_bonus = _feat_ac_bonus(char, equipped_armor)
 
     ac = base + shield_bonus + feat_bonus
@@ -111,7 +111,7 @@ def derive_ac(char: AcInput) -> int:
         "ac_derived",
         character_id=str(char.id),
         ac=ac,
-        armor=equipped_armor.get("index") if equipped_armor else None,
-        shield=equipped_shield.get("index") if equipped_shield else None,
+        armor=equipped_armor.index if equipped_armor else None,
+        shield=equipped_shield.index if equipped_shield else None,
     )
     return ac

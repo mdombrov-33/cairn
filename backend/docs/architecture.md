@@ -107,7 +107,7 @@ dictionary representations:
 - Campaign settings are strict immutable Pydantic models in memory and dictionaries in JSONB/HTTP.
 - Turn suspensions are tagged runtime values adapted to the existing `Turn.check_data` JSONB shape.
 - Character, combat, scene, and narrative JSONB dictionaries use owner-local typed definitions.
-- SRD JSON is validated once by the cached catalog and returned through typed records.
+- SRD JSON is validated once by the cached catalog and returned through typed records, including armor-class data.
 - SSE events remain dictionary payloads encoded centrally by `sse/events.py`.
 
 Architecture refactors preserve these representations unless a feature specification explicitly

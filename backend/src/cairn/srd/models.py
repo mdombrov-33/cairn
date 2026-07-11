@@ -109,10 +109,20 @@ class EquipmentRecord(SRDRecord):
     index: str
     name: str
     equipment_category: Reference
-    armor_category: str | None = None
     weapon_range: str | None = None
     properties: list[Reference] = Field(default_factory=list)
     damage: dict[str, Any] | None = None
+
+
+class ArmorClassRecord(SRDRecord):
+    base: int
+    dex_bonus: bool
+    max_bonus: int | None = None
+
+
+class ArmorRecord(EquipmentRecord):
+    armor_category: str
+    armor_class: ArmorClassRecord
 
 
 class MonsterAction(SRDRecord):

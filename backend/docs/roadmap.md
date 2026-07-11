@@ -14,25 +14,22 @@ acceptance criteria of a planned slice, read the linked section of the
   recipe to copy into unrelated work.
 - **Deferred** has no implementation commitment in the current sequence.
 
-The architecture-improvement campaign is complete. Before Slice 10.5, finish
-the remaining audited typed-SRD convergence repair. It does not introduce
-combat, reaction, or MCP behavior. Slice 10.5's archived file map is historical:
-use today's package owners from `architecture.md` and `AGENTS.md`, while
-preserving the contracts below.
+The architecture-improvement campaign is complete. Slice 10.5's archived file
+map is historical: use today's package owners from `architecture.md` and
+`AGENTS.md`, while preserving the contracts below.
 
 ## Ordered work
 
 | Order | Status | Slice | Purpose and dependency | Full specification |
 | --- | --- | --- | --- | --- |
-| 1 | **Next** | Typed armor catalog migration | Finish the audited typed-SRD caller conversion outside frozen combat code. | — |
-| 2 | Planned | 10.5 | Deterministic combat execution and reactions; depends on the existing zones and campaign settings. | [Reaction engine](archive/design-v5.md#slice-105--reaction-engine) |
-| 3 | Planned | 10.7 | Tool registry and FastMCP server; begins only after the 10.5 combat surface is final. | [MCP server + tool registry](archive/design-v5.md#slice-107--mcp-server--tool-registry) |
-| 4 | Planned | 11 | Operational hardening before evaluation and frontend SSE work. | [Operational hardening](archive/design-v5.md#slice-11--operational-hardening) |
-| 5 | Planned | 12 | Eval suite and CI gate; depends on Slice 11's complete event history. | [Eval suite + CI gate](archive/design-v5.md#slice-12--eval-suite--ci-gate) |
-| 6 | Planned | 13 | World-bible retrieval; depends on the Slice 12 baseline for tuning. | [World bible retrieval](archive/design-v5.md#slice-13--world-bible-retrieval-rag) |
-| 7 | Planned, Phase B | 14 | Authentication and cost controls. | [Auth + cost controls](archive/design-v5.md#slice-14--auth--cost-controls) |
-| 8 | Planned, Phase B | 14.5 | Plans and entitlements; depends on account identity from Slice 14. | [Plans & entitlements](archive/design-v5.md#slice-145--plans--entitlements) |
-| 9 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Frontend product spec](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) · [v4 build brief](ui-temp-reference/v4-build-brief.md) |
+| 1 | **Next** | 10.5 | Deterministic combat execution and reactions; depends on the existing zones and campaign settings. | [Reaction engine](archive/design-v5.md#slice-105--reaction-engine) |
+| 2 | Planned | 10.7 | Tool registry and FastMCP server; begins only after the 10.5 combat surface is final. | [MCP server + tool registry](archive/design-v5.md#slice-107--mcp-server--tool-registry) |
+| 3 | Planned | 11 | Operational hardening before evaluation and frontend SSE work. | [Operational hardening](archive/design-v5.md#slice-11--operational-hardening) |
+| 4 | Planned | 12 | Eval suite and CI gate; depends on Slice 11's complete event history. | [Eval suite + CI gate](archive/design-v5.md#slice-12--eval-suite--ci-gate) |
+| 5 | Planned | 13 | World-bible retrieval; depends on the Slice 12 baseline for tuning. | [World bible retrieval](archive/design-v5.md#slice-13--world-bible-retrieval-rag) |
+| 6 | Planned, Phase B | 14 | Authentication and cost controls. | [Auth + cost controls](archive/design-v5.md#slice-14--auth--cost-controls) |
+| 7 | Planned, Phase B | 14.5 | Plans and entitlements; depends on account identity from Slice 14. | [Plans & entitlements](archive/design-v5.md#slice-145--plans--entitlements) |
+| 8 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Frontend product spec](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) · [v4 build brief](ui-temp-reference/v4-build-brief.md) |
 
 Slice 15's Phase A does **not** wait for Slice 14: it uses the development
 `X-User-Id` header behind its swappable frontend auth seam. Login, billing, and
