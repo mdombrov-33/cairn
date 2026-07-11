@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.npcs import NPCResponse
-from cairn.domain.services import npcs as service
+from cairn.application import npcs as service
 
 router = APIRouter(prefix="/v1/campaigns", tags=["npcs"])
 

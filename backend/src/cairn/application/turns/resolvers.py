@@ -13,6 +13,8 @@ import structlog
 
 from cairn.agents import dialogue as dialogue_agent
 from cairn.agents import recruiter, rules_lawyer
+from cairn.application import campaign_context
+from cairn.application import npcs as npc_service
 from cairn.context import current_campaign_settings, current_turn_id
 from cairn.db import client as db_client
 from cairn.db.queries import campaigns as campaign_queries
@@ -21,8 +23,7 @@ from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import ConflictError
-from cairn.domain.services import campaign_view, companions, recruitment
-from cairn.domain.services import npcs as npc_service
+from cairn.domain.services import companions, recruitment
 from cairn.domain.services import rests as rest_service
 from cairn.types import CheckData, DialogueEntity, HelperRef
 
@@ -126,7 +127,7 @@ async def resolve_dialogue(state: TurnState) -> dict[str, Any]:
                 result = await dialogue_agent.run(state["player_input"], comp_entity)
                 return {"npc_context": f'[{companion.name}]: "{result.dialogue}"'}
 
-            _, _, world = await campaign_view.world_chain(db, campaign_id)
+            _, _, world = await campaign_context.world_chain(db, campaign_id)
             npc = await npc_service.instantiate_world_cast(db, campaign_id=campaign_id, world_key=world.key, name=name)
             if npc is None:
                 npc = await npc_service.generate_background_npc(db, campaign_id=campaign_id, name=name, scene=scene)

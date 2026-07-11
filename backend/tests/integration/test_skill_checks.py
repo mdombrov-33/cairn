@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 from httpx import AsyncClient
 
+from cairn.application import scenes as scene_service
 from cairn.db import client as db_client
 from cairn.db.queries import locations as location_queries
 from cairn.db.queries import scenes as scene_queries
-from cairn.domain.services import scenes as scene_service
 from tests._factories import make_campaign, make_session, parse_sse
 
 

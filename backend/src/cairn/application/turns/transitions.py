@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 import structlog
 
 from cairn.agents import scene_builder, scene_director, scene_summarizer
+from cairn.application import campaign_context
+from cairn.application import scenes as scene_service
 from cairn.context import current_turn_id
 from cairn.db import client as db_client
 from cairn.db.queries import locations as location_queries
@@ -18,7 +20,6 @@ from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.domain.exceptions import NotFoundError
 from cairn.domain.services import campaign_view, scene_director_context
-from cairn.domain.services import scenes as scene_service
 from cairn.domain.services.combat import state as combat_state_service
 
 if TYPE_CHECKING:
@@ -124,7 +125,7 @@ async def scene_create(state: TurnState) -> dict[str, Any]:
             summary = await scene_summarizer.run(old_loc_name, old_scene.summary or "", scene_turns)
             await scene_queries.close_scene(db, old_scene.id, summary=summary, ended_at=datetime.now(UTC))
 
-        campaign, template, _ = await campaign_view.world_chain(db, campaign_id)
+        campaign, template, _ = await campaign_context.world_chain(db, campaign_id)
         if not location.authored_scene:
             await _build_unauthored_scene(db, campaign, template, location)
         new_scene = await scene_service.open_scene(

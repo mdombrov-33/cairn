@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock, patch
 from httpx import AsyncClient
 
 from cairn.agents.dialogue import DialogueResult
+from cairn.application import npcs as npc_service
 from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
-from cairn.domain.services import npcs as npc_service
 from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import TurnState, _resolve_dialogue
 from tests._factories import make_campaign, make_session

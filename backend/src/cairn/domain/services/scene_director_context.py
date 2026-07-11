@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application import campaign_context
 from cairn.db.models.scene import Scene
 from cairn.db.models.session import Session
 from cairn.db.queries import locations as location_queries
@@ -38,7 +39,7 @@ _TIME_OF_DAY = (
 
 
 async def _time_label(db: AsyncSession, session: Session) -> str:
-    _, _, world = await campaign_view.world_chain(db, session.campaign_id)
+    _, _, world = await campaign_context.world_chain(db, session.campaign_id)
     hours_per_day = int((world.calendar or {}).get("hours_per_day") or 24)
 
     day = session.in_game_hours_elapsed // hours_per_day + 1
@@ -48,7 +49,7 @@ async def _time_label(db: AsyncSession, session: Session) -> str:
 
 
 async def _current_act(db: AsyncSession, campaign_id: uuid.UUID) -> dict[str, Any]:
-    campaign, template, _ = await campaign_view.world_chain(db, campaign_id)
+    campaign, template, _ = await campaign_context.world_chain(db, campaign_id)
     return campaign_view.act_at(template, campaign.current_act_index) or {
         "title": "",
         "premise": "",

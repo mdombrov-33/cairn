@@ -1,3 +1,5 @@
+"""Campaign persistence workflows."""
+
 import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -14,19 +16,16 @@ from cairn.db.queries import world_bible as world_bible_queries
 from cairn.db.queries import worlds as world_queries
 from cairn.domain.exceptions import NotFoundError, ValidationError
 from cairn.domain.services import settings as settings_service
+from cairn.domain.services.npcs import blueprint_kwargs
 
 if TYPE_CHECKING:
     from cairn.db.models.location import Location
 
-_SEED_DIR = Path(__file__).parent.parent.parent / "seed" / "worlds"
+_SEED_DIR = Path(__file__).parent.parent / "seed" / "worlds"
 
 
 async def _create_npc_from_yaml(db: AsyncSession, campaign_id: uuid.UUID, data: dict[str, Any]) -> None:
-    kwargs = dict(data)
-    kwargs.setdefault("hp", kwargs.get("max_hp", 1))
-    if "class" in kwargs:
-        kwargs["class_"] = kwargs.pop("class")
-    await npc_queries.create_npc(db, campaign_id=campaign_id, **kwargs)
+    await npc_queries.create_npc(db, campaign_id=campaign_id, **blueprint_kwargs(data))
 
 
 async def _seed_npcs(db: AsyncSession, campaign_id: uuid.UUID, campaign_dir: Path) -> None:

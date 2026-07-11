@@ -3,13 +3,13 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application import campaigns as campaign_service
+from cairn.application import scenes as scene_service
 from cairn.db.models.session import Session
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError
-from cairn.domain.services import campaigns as campaign_service
-from cairn.domain.services import scenes as scene_service
 
 
 async def start(db: AsyncSession, *, campaign_id: uuid.UUID, owner_id: str) -> Session:

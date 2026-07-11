@@ -101,7 +101,7 @@ async def test_day_roll_idempotent(client: AsyncClient) -> None:
 
 async def test_advance_act_moves_to_next_act(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    from cairn.domain.services import campaigns as campaign_service
+    from cairn.application import campaigns as campaign_service
 
     async with db_client.get_session() as db:
         updated = await campaign_service.advance_act(db, campaign_id=uuid.UUID(camp["id"]))
@@ -113,7 +113,7 @@ async def test_advance_act_moves_to_next_act(client: AsyncClient) -> None:
 
 async def test_advance_act_concludes_campaign(client: AsyncClient) -> None:
     camp = await make_campaign(client)
-    from cairn.domain.services import campaigns as campaign_service
+    from cairn.application import campaigns as campaign_service
 
     async with db_client.get_session() as db:
         await campaign_service.advance_act(db, campaign_id=uuid.UUID(camp["id"]))  # -> final act

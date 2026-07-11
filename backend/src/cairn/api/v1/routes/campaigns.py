@@ -11,7 +11,7 @@ from cairn.api.v1.schemas.campaigns import (
 )
 from cairn.api.v1.schemas.lore import WorldBibleEntryResponse
 from cairn.api.v1.schemas.sessions import SessionResponse
-from cairn.domain.services import campaigns as service
+from cairn.application import campaigns as service
 from cairn.domain.services import lore as lore_service
 from cairn.domain.services import sessions as session_service
 

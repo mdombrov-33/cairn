@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application import campaign_context
 from cairn.db.models.scene import Scene
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
@@ -60,8 +61,8 @@ def _scene_situation_section(scene: Scene | None) -> str | None:
     discovered = list(scene.discovered_facts or [])
     parts: list[str] = []
 
-    if authored.get("atmosphere"):
-        parts.append(authored["atmosphere"].strip())
+    if atmosphere := authored.get("atmosphere"):
+        parts.append(atmosphere.strip())
 
     surface = authored.get("surface_details") or []
     if surface:
@@ -135,12 +136,12 @@ async def _present_cast_section(db: AsyncSession, session_id: uuid.UUID, scene: 
             continue  # presence referencing a removed NPC — skip rather than crash the hot path
         header = f"### {npc.name} — NPC (disposition: {npc.disposition})"
         situ: list[str] = []
-        if entry.get("doing"):
-            situ.append(f"Right now: {entry['doing']}")
-        if entry.get("attentive_to"):
-            situ.append("Watching: " + ", ".join(entry["attentive_to"]))
-        if entry.get("agenda"):
-            situ.append(f"Agenda this scene: {entry['agenda']}")
+        if doing := entry.get("doing"):
+            situ.append(f"Right now: {doing}")
+        if attentive_to := entry.get("attentive_to"):
+            situ.append("Watching: " + ", ".join(attentive_to))
+        if agenda := entry.get("agenda"):
+            situ.append(f"Agenda this scene: {agenda}")
         body = format_profile(npc.narrative_profile, include_private=False)
         blocks.append("\n".join(p for p in (header, body, *situ) if p))
 
@@ -168,7 +169,7 @@ async def build_dm_context(db: AsyncSession, session_id: uuid.UUID) -> str:
       7. Recent turns verbatim (last RECENT_TURNS completed).
     """
     session = await session_queries.get_session(db, session_id)
-    campaign, template, world = await campaign_view.world_chain(db, session.campaign_id)
+    campaign, template, world = await campaign_context.world_chain(db, session.campaign_id)
     scene = await scene_queries.get_current_scene(db, campaign.id)
 
     sections: list[str] = []
