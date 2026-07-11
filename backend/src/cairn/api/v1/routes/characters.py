@@ -14,11 +14,11 @@ from cairn.api.v1.schemas.characters import (
     PrepareSpellsRequest,
     XpAwardResponse,
 )
-from cairn.domain.services import characters as service
-from cairn.domain.services import equipment as equipment_service
-from cairn.domain.services import leveling
-from cairn.domain.services import rests as rest_service
-from cairn.domain.services.leveling import LevelUpChoices
+from cairn.application import characters as service
+from cairn.application import equipment as equipment_service
+from cairn.application import leveling
+from cairn.application import rests as rest_service
+from cairn.application.leveling import LevelUpChoices
 
 router = APIRouter(prefix="/v1/campaigns", tags=["characters"])
 

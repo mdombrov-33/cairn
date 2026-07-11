@@ -48,3 +48,19 @@ def test_campaign_scene_and_npc_domain_modules_have_no_runtime_dependencies() ->
             else:
                 continue
             assert not any(name == prefix or name.startswith(f"{prefix}.") for name in names for prefix in forbidden)
+
+
+def test_character_domain_rules_have_no_runtime_dependencies() -> None:
+    root = Path(__file__).parents[2] / "src/cairn/domain/services"
+    forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.agents", "cairn.pipelines")
+
+    for filename in ("ac.py", "feat_effects.py", "inventory.py"):
+        tree = ast.parse((root / filename).read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""]
+            else:
+                continue
+            assert not any(name == prefix or name.startswith(f"{prefix}.") for name in names for prefix in forbidden)

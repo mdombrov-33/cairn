@@ -10,12 +10,12 @@ if TYPE_CHECKING:
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application.leveling import SUBCLASS_LEVEL, initialize_resources
 from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import AuthError, ValidationError
 from cairn.domain.services.ac import AcInput, derive_ac
-from cairn.domain.services.leveling import SUBCLASS_LEVEL, initialize_resources
 from cairn.srd.catalog import catalog
 from cairn.srd.models import AbilityBonus, ClassLevelRecord, ClassRecord
 from cairn.types import AbilityScores, InventoryItem, NarrativeProfile

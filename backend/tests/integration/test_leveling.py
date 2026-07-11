@@ -3,16 +3,17 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from cairn.db import client as db_client
-from cairn.db.queries import characters as character_queries
-from cairn.domain.exceptions import ValidationError
-from cairn.domain.services import feat_effects, leveling
-from cairn.domain.services.leveling import (
+from cairn.application import leveling
+from cairn.application.leveling import (
     LevelUpChoices,
     build_level_up_preview,
     initialize_resources,
     level_for_xp,
 )
+from cairn.db import client as db_client
+from cairn.db.queries import characters as character_queries
+from cairn.domain.exceptions import ValidationError
+from cairn.domain.services import feat_effects
 from cairn.types import AbilityScores
 from tests._factories import make_campaign, make_character
 

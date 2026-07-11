@@ -8,16 +8,12 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import Any
 
 import structlog
 
 from cairn.srd import get_armor
 from cairn.types import AbilityScores, FeatEntry, InventoryItem
-
-if TYPE_CHECKING:
-    from cairn.db.models.character import Character
-    from cairn.db.models.npc import NPC
 
 log = structlog.get_logger()
 
@@ -39,7 +35,7 @@ class AcInput:
     feats: list[FeatEntry] = field(default_factory=list)
 
     @classmethod
-    def from_row(cls, row: Character | NPC) -> AcInput:
+    def from_row(cls, row: Any) -> AcInput:
         # Character exposes class_name (derived from classes[0]); NPC keeps a class_ column.
         class_name = getattr(row, "class_name", None) or getattr(row, "class_", None)
         return cls(

@@ -7,11 +7,10 @@ They're appended to char.feats and the LLM reads the SRD description at runtime.
 """
 
 from collections.abc import Callable
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import structlog
 
-from cairn.db.models.character import Character
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.srd.catalog import catalog
@@ -19,7 +18,7 @@ from cairn.types import AbilityKey, AbilityScores, Resource
 
 log = structlog.get_logger()
 
-FeatHandler = Callable[[Character, dict], None]
+FeatHandler = Callable[[Any, dict], None]
 FEAT_HANDLERS: dict[str, FeatHandler] = {}
 
 _ABILITY_KEYS = {"str", "dex", "con", "int", "wis", "cha"}
@@ -39,8 +38,8 @@ def _register(*indices: str) -> Callable[[FeatHandler], FeatHandler]:
 # Helpers
 
 
-def _bump_ability(char: Character, ability: str, by: int = 1, cap: int = 20) -> None:
-    new_scores: AbilityScores = {**char.ability_scores}
+def _bump_ability(char: Any, ability: str, by: int = 1, cap: int = 20) -> None:
+    new_scores = cast(AbilityScores, {**char.ability_scores})
     current = get_ability_score(new_scores, ability)
     new_scores[cast(AbilityKey, ability)] = min(cap, current + by)
     char.ability_scores = new_scores
@@ -54,7 +53,7 @@ def _require_ability_choice(options: dict, allowed: set[str]) -> str:
 
 
 def _grant_resource(
-    char: Character,
+    char: Any,
     name: str,
     count: int,
     resets_on: Literal["short_rest", "long_rest"],
@@ -65,7 +64,7 @@ def _grant_resource(
     char.resources = resources
 
 
-def _grant_armor_prof(char: Character, categories: list[str]) -> None:
+def _grant_armor_prof(char: Any, categories: list[str]) -> None:
     profs = list(char.armor_proficiencies or [])
     for cat in categories:
         if cat not in profs:
@@ -77,7 +76,7 @@ def _grant_armor_prof(char: Character, categories: list[str]) -> None:
 
 
 @_register("alert")
-def _alert(char: Character, options: dict) -> None:
+def _alert(char: Any, options: dict) -> None:
     """+proficiency_bonus to initiative — applied by leveling.recompute_derived_stats
     based on the feat's presence in char.feats. No direct mutation here so that
     re-deriving initiative after future ability changes stays consistent."""
@@ -85,7 +84,7 @@ def _alert(char: Character, options: dict) -> None:
 
 
 @_register("defense")
-def _defense(char: Character, options: dict) -> None:
+def _defense(char: Any, options: dict) -> None:
     """Fighting style: +1 AC while wearing armor.
     The bonus is computed by ac.feat_ac_bonus() at derive_ac time, so it
     correctly appears/disappears as armor is equipped or removed. No mutation here."""
@@ -93,13 +92,13 @@ def _defense(char: Character, options: dict) -> None:
 
 
 @_register("mobile")
-def _mobile(char: Character, options: dict) -> None:
+def _mobile(char: Any, options: dict) -> None:
     """+10 speed."""
     char.speed = char.speed + 10
 
 
 @_register("tough")
-def _tough(char: Character, options: dict) -> None:
+def _tough(char: Any, options: dict) -> None:
     """+2 max HP per character level (retroactive at time of taking)."""
     bump = 2 * char.level
     char.max_hp = char.max_hp + bump
@@ -110,13 +109,13 @@ def _tough(char: Character, options: dict) -> None:
 
 
 @_register("lucky")
-def _lucky(char: Character, options: dict) -> None:
+def _lucky(char: Any, options: dict) -> None:
     """3 luck points per long rest."""
     _grant_resource(char, "luck_points", count=3, resets_on="long_rest")
 
 
 @_register("martial-adept")
-def _martial_adept(char: Character, options: dict) -> None:
+def _martial_adept(char: Any, options: dict) -> None:
     """One superiority die per short rest. Maneuvers are stored in feat options."""
     maneuvers = options.get("maneuvers") or []
     if not isinstance(maneuvers, list) or len(maneuvers) != 2:
@@ -128,28 +127,28 @@ def _martial_adept(char: Character, options: dict) -> None:
 
 
 @_register("durable")
-def _durable(char: Character, options: dict) -> None:
+def _durable(char: Any, options: dict) -> None:
     _bump_ability(char, "con")
 
 
 @_register("keen-mind")
-def _keen_mind(char: Character, options: dict) -> None:
+def _keen_mind(char: Any, options: dict) -> None:
     _bump_ability(char, "int")
 
 
 @_register("actor")
-def _actor(char: Character, options: dict) -> None:
+def _actor(char: Any, options: dict) -> None:
     _bump_ability(char, "cha")
 
 
 @_register("heavily-armored")
-def _heavily_armored(char: Character, options: dict) -> None:
+def _heavily_armored(char: Any, options: dict) -> None:
     _bump_ability(char, "str")
     _grant_armor_prof(char, ["heavy"])
 
 
 @_register("heavy-armor-master")
-def _heavy_armor_master(char: Character, options: dict) -> None:
+def _heavy_armor_master(char: Any, options: dict) -> None:
     _bump_ability(char, "str")
     _grant_armor_prof(char, ["heavy"])
     # Damage tool checks this flag to reduce non-magical B/P/S damage by 3
@@ -160,27 +159,27 @@ def _heavy_armor_master(char: Character, options: dict) -> None:
 
 
 @_register("athlete")
-def _athlete(char: Character, options: dict) -> None:
+def _athlete(char: Any, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "dex"})
     _bump_ability(char, ability)
 
 
 @_register("lightly-armored")
-def _lightly_armored(char: Character, options: dict) -> None:
+def _lightly_armored(char: Any, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "dex"})
     _bump_ability(char, ability)
     _grant_armor_prof(char, ["light"])
 
 
 @_register("moderately-armored")
-def _moderately_armored(char: Character, options: dict) -> None:
+def _moderately_armored(char: Any, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "dex"})
     _bump_ability(char, ability)
     _grant_armor_prof(char, ["medium", "shield"])
 
 
 @_register("weapon-master")
-def _weapon_master(char: Character, options: dict) -> None:
+def _weapon_master(char: Any, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "dex"})
     _bump_ability(char, ability)
     weapons = options.get("weapons") or []
@@ -194,20 +193,20 @@ def _weapon_master(char: Character, options: dict) -> None:
 
 
 @_register("tavern-brawler")
-def _tavern_brawler(char: Character, options: dict) -> None:
+def _tavern_brawler(char: Any, options: dict) -> None:
     ability = _require_ability_choice(options, {"str", "con"})
     _bump_ability(char, ability)
 
 
 @_register("observant")
-def _observant(char: Character, options: dict) -> None:
+def _observant(char: Any, options: dict) -> None:
     """+1 INT or WIS. +5 passive perception is applied by leveling.recompute_derived_stats."""
     ability = _require_ability_choice(options, {"int", "wis"})
     _bump_ability(char, ability)
 
 
 @_register("resilient")
-def _resilient(char: Character, options: dict) -> None:
+def _resilient(char: Any, options: dict) -> None:
     """+1 to chosen ability + save proficiency in that ability."""
     ability = _require_ability_choice(options, _ABILITY_KEYS)
     _bump_ability(char, ability)
@@ -221,7 +220,7 @@ def _resilient(char: Character, options: dict) -> None:
 
 
 @_register("skilled")
-def _skilled(char: Character, options: dict) -> None:
+def _skilled(char: Any, options: dict) -> None:
     """3 picks — each pick is a skill or a tool. Skills → skill_proficiencies, tools → tool_proficiencies."""
     picks = options.get("picks") or []
     if not isinstance(picks, list) or len(picks) != 3:
@@ -245,7 +244,7 @@ def _skilled(char: Character, options: dict) -> None:
 
 
 @_register("magic-initiate")
-def _magic_initiate(char: Character, options: dict) -> None:
+def _magic_initiate(char: Any, options: dict) -> None:
     """2 cantrips + 1 first-level spell. Grants one free 1st-level cast per long rest."""
     spells = options.get("spells") or []
     if not isinstance(spells, list) or len(spells) != 3:
@@ -255,7 +254,7 @@ def _magic_initiate(char: Character, options: dict) -> None:
 
 
 @_register("spell-sniper")
-def _spell_sniper(char: Character, options: dict) -> None:
+def _spell_sniper(char: Any, options: dict) -> None:
     """Gain one cantrip from sorcerer/warlock/wizard list. Other effects are behavioral."""
     cantrip = options.get("cantrip")
     if not isinstance(cantrip, str) or not cantrip:
@@ -266,7 +265,7 @@ def _spell_sniper(char: Character, options: dict) -> None:
 # Entrypoint
 
 
-def apply_feat(char: Character, feat_index: str, options: dict | None = None) -> None:
+def apply_feat(char: Any, feat_index: str, options: dict | None = None) -> None:
     """
     Apply a feat to a character.
 

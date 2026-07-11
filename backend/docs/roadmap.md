@@ -381,6 +381,8 @@ Ship rest mechanics and the level-up flow. Services exist (Slice 2); this slice 
 
 **Verify:** Defeat enemy → XP awarded → threshold crossed → `level_up_pending` event → preview returns correct features → submit choices → Character updated. Short rest restores Action Surge but not Hit Dice on the same trigger. Long rest re-prep prompts wizard; sorcerer skipped. Rest in active combat is rejected. Mid-combat level-up works.
 
+**Known implementation gaps (observed during Architecture 4):** Rest safety currently checks only combat, not the current scene's `safety_level`; AI-controlled companions still enter the player spell-preparation flow after a long rest; and spell preparation validates the count but not SRD class-list legality. These are runtime behavior changes and remain outside the architecture campaign.
+
 ---
 
 ### Slice 5 — World restructure + auxiliary schema — DONE

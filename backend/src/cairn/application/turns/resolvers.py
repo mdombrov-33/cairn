@@ -15,6 +15,7 @@ from cairn.agents import dialogue as dialogue_agent
 from cairn.agents import recruiter, rules_lawyer
 from cairn.application import campaign_context
 from cairn.application import npcs as npc_service
+from cairn.application import rests as rest_service
 from cairn.context import current_campaign_settings, current_turn_id
 from cairn.db import client as db_client
 from cairn.db.queries import campaigns as campaign_queries
@@ -24,7 +25,6 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import ConflictError
 from cairn.domain.services import companions, recruitment
-from cairn.domain.services import rests as rest_service
 from cairn.types import CheckData, DialogueEntity, HelperRef
 
 if TYPE_CHECKING:
