@@ -1,6 +1,6 @@
 # Cairn App v4 — Build Brief (self-contained)
 
-**Purpose:** everything needed to build `docs/ui-temp-reference/project/Cairn App v4.html` in one place, so a post-compaction session can build without reconstructing decisions. Full rationale lives in `docs/roadmap.md` → **Slice 15** (Decisions 9–11); this file is the executable summary. v4 supersedes `v3-build-brief.md` (kept as history) after the second user review round: same tokens, same signature, revised interaction patterns.
+**Purpose:** everything needed to build `docs/ui-temp-reference/project/Cairn App v4.html` in one place, so a post-compaction session can build without reconstructing decisions. The active roadmap links to the locked Slice 15 rationale and sequencing; this file is the executable summary. v4 supersedes `v3-build-brief.md` (kept as history) after the second user review round: same tokens, same signature, revised interaction patterns.
 
 **Deliverable:** a single static `Cairn App v4.html` (keep v2/v3 as history) with a screen-switcher so every screen is clickable. Static/mock data — a *viewable visual spec*, not a wired app. Apply the `frontend-design` skill. Direction = **"Cartographer's Table."**
 

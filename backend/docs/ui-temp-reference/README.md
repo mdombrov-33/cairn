@@ -1,22 +1,24 @@
-# CODING AGENTS: READ THIS FIRST
+# Cairn UI reference
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+This directory contains planned frontend design material. The frontend does not
+exist in the repository yet, so none of these artifacts proves a current HTTP
+contract or implementation.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+For frontend work, read in this order:
 
-## What you should do — IMPORTANT
+1. [../roadmap.md](../roadmap.md) for ordering, backend dependencies, and the
+   Phase-A/Phase-B boundary.
+2. [v4-build-brief.md](v4-build-brief.md) for the current product and visual
+   specification.
+3. `project/Cairn App v4.html` as the visual companion to the v4 brief.
+4. Current backend routes and schemas before relying on a mockup interaction.
 
-**Read `cairn/project/Cairn App v2.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+`v3-build-brief.md`, all earlier HTML files, the exported JSX files, and
+`project/uploads/` are historical design inputs. In particular,
+`project/uploads/v5.md` is an imported copy of an old design document, not the
+roadmap. Do not reconstruct a frontend from those files or infer a new backend
+endpoint from a visual affordance.
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
-
-## About the design files
-
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
-
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
-
-## Bundle contents
-
-- `cairn/README.md` — this file
-- `cairn/project/` — the `cairn` project files (HTML prototypes, assets, components)
+The v4 brief and the linked archived Slice 15/15.5 specifications control
+intent. The active roadmap controls sequencing: Phase A uses the development
+identity shim; authentication, billing, and the admin surface remain Phase B.

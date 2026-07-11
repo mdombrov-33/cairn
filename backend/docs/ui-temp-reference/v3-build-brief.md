@@ -1,4 +1,7 @@
-# Cairn App v3 — Build Brief (self-contained)
+# Cairn App v3 — Build Brief (historical)
+
+> Superseded by `v4-build-brief.md`. Retained only as design history; do not
+> use it to build the frontend or infer backend contracts.
 
 **Purpose:** everything needed to build `docs/ui-temp-reference/project/Cairn App v3.html` in one place, so a post-compaction session can build without reconstructing decisions. Full rationale lives in `docs/roadmap.md` → **Slice 15**; this file is the executable summary.
 
