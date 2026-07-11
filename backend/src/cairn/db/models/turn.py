@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.application.turns.types import PendingTurnData
 from cairn.db.base import Base
-from cairn.types import TurnEvent
+from cairn.domain.combat import TurnEvent
 
 
 class Turn(Base):

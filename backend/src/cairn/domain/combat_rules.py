@@ -1,8 +1,7 @@
 from typing import cast
 
-from cairn.types import (
-    AbilityKey,
-    AbilityScores,
+from cairn.domain.characters import AbilityKey, AbilityScores
+from cairn.domain.combat import (
     Combatant,
     CombatState,
     MonsterCombatant,

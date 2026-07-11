@@ -15,9 +15,9 @@ import structlog
 from pydantic import BaseModel
 
 from cairn.domain.exceptions import AgentError
+from cairn.domain.narrative import ApprovalDelta
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import ApprovalDelta
 
 log = structlog.get_logger()
 

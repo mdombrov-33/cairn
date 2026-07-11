@@ -6,7 +6,7 @@ from langchain_core.tools import tool
 import cairn.application.resources as resource_service
 import cairn.application.rests as rest_service
 from cairn.db import client as db_client
-from cairn.types import ToolUUID
+from cairn.tools.types import ToolUUID
 
 
 @tool

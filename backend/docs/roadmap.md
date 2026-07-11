@@ -8,6 +8,10 @@
 > remain unchanged. `application/turns/epilogue.py` owns the in-process post-turn work: it
 > schedules LoreKeeper, Scene Director, scene summarization, and companion reflection without
 > delaying narration; it also tracks and cancels outstanding work during application shutdown.
+> Final convergence removes the global shared-types module: types now sit with their character,
+> combat, scene, narrative, turn, rest, or tool owner. The existing combat runtime moved intact to
+> `application/combat/`, leaving only pure combat values and calculations in `domain/`. Strict
+> Pyright now covers all production source, and architecture tests enforce the final layer rules.
 
 ---
 

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.context import current_turn_id
 from cairn.db.queries import turns as turn_queries
-from cairn.types import TurnEvent
+from cairn.domain.combat import TurnEvent
 
 log = structlog.get_logger()
 

@@ -12,8 +12,8 @@ from typing import Any
 
 import structlog
 
+from cairn.domain.characters import AbilityScores, FeatEntry, InventoryItem
 from cairn.srd import get_armor
-from cairn.types import AbilityScores, FeatEntry, InventoryItem
 
 log = structlog.get_logger()
 

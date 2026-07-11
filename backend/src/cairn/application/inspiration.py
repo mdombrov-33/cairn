@@ -3,9 +3,9 @@ import uuid
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application.combat.emitter import emit
 from cairn.db.queries import characters as character_queries
 from cairn.domain.exceptions import ConflictError
-from cairn.domain.services.combat.emitter import emit
 
 log = structlog.get_logger()
 

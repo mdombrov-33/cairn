@@ -1,14 +1,14 @@
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application.combat.emitter import emit
 from cairn.db.models.character import Character
 from cairn.db.models.session import Session
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
-from cairn.domain.services.combat.emitter import emit
+from cairn.domain.scenes import NarrativeRecovery
 from cairn.domain.services.settings import resolve_settings
-from cairn.types import NarrativeRecovery
 
 log = structlog.get_logger()
 

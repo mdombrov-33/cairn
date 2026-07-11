@@ -16,8 +16,8 @@ from cairn.db.models.location import Location
 from cairn.db.models.scene import Scene
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
+from cairn.domain.scenes import AuthoredScene, NpcPresence
 from cairn.domain.services.scenes import split_authored
-from cairn.types import AuthoredScene, NpcPresence
 
 log = structlog.get_logger(__name__)
 

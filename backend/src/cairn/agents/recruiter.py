@@ -11,10 +11,10 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel
 
+from cairn.domain.narrative import NarrativeProfile
 from cairn.domain.services.narrative_profile import format_profile
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import NarrativeProfile
 
 log = structlog.get_logger()
 

@@ -18,3 +18,11 @@ turn-runtime seam to HTTP routes: it prepares, continues, and resumes turns whil
 existing `Turn.check_data` JSONB and SSE contracts. Check and companion pauses are tagged only
 inside that runtime; their persisted shapes remain unchanged. `application/turns/epilogue.py`
 owns the in-process post-turn work and its lifecycle; streaming only schedules it.
+
+Final convergence removes the global `cairn/types.py`: character, combat, scene, narrative,
+turn, rest-result, and tool-boundary types now live with their owners. The combat runtime is in
+`application/combat/`; its pure values and calculations remain in `domain/`. Strict Pyright
+includes all production source, with only diagnostics for intentionally unvalidated external
+JSON/tool boundaries suppressed. Architecture tests enforce that domain code has no persistence,
+agent, application, pipeline, or framework imports; pipelines do not access persistence or call
+the LLM client; and LiteLLM is confined to `llm/client.py`.

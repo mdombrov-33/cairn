@@ -24,8 +24,8 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
+from cairn.domain.scenes import NpcPresence, ScenePostOutput
 from cairn.domain.services import campaign_view
-from cairn.types import NpcPresence, ScenePostOutput
 
 log = structlog.get_logger()
 

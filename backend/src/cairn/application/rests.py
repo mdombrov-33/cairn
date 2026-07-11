@@ -1,7 +1,7 @@
 import math
 import random
 import uuid
-from typing import cast
+from typing import TypedDict, cast
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,14 +11,33 @@ from cairn.db.models.character import Character
 from cairn.db.models.session import Session
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.combat_rules import exhaustion_level
 from cairn.domain.exceptions import ConflictError, NotFoundError
-from cairn.domain.services.combat.helpers import exhaustion_level
-from cairn.types import CharacterRestResult, HitDieResult
 
 log = structlog.get_logger()
 
 # Classes whose spell lists require active daily preparation (long rest re-prep).
 PREPARED_CASTERS = {"cleric", "druid", "paladin", "wizard"}
+
+
+class CharacterRestResult(TypedDict):
+    character_id: str
+    name: str
+    hp_restored: int
+    hp_new: int
+    resources_reset: list[str]
+    spell_slots_restored: bool
+    prepared_spells_cleared: bool
+
+
+class HitDieResult(TypedDict):
+    character_id: str
+    die_size: int
+    roll: int
+    con_modifier: int
+    hp_gained: int
+    hp_new: int
+    hit_dice_remaining: int
 
 
 def _ability_modifier(score: int) -> int:

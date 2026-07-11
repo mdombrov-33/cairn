@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.models.scene import Scene
 from cairn.domain.exceptions import NotFoundError
-from cairn.types import AuthoredScene, NpcPresence, SceneMood
+from cairn.domain.scenes import AuthoredScene, NpcPresence, SceneMood
 
 
 async def create_scene(

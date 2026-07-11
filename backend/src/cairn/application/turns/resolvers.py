@@ -25,8 +25,8 @@ from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import ConflictError
+from cairn.domain.narrative import DialogueEntity
 from cairn.domain.services import companions
-from cairn.types import DialogueEntity
 
 if TYPE_CHECKING:
     from cairn.pipelines.turn_graph import TurnState

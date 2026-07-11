@@ -6,7 +6,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
-from cairn.types import CombatState, NarrativeRecovery, PendingTransition
+from cairn.domain.combat import CombatState
+from cairn.domain.scenes import NarrativeRecovery, PendingTransition
 
 
 class Session(Base):

@@ -3,8 +3,8 @@
 import re
 from typing import Literal
 
-from cairn.domain.services.combat.helpers import find_combatant
-from cairn.types import CombatState
+from cairn.domain.combat import CombatState
+from cairn.domain.combat_rules import find_combatant
 
 type RangeCategory = Literal["self", "touch", "close", "far", "out_of_range"]
 

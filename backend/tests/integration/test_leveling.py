@@ -12,9 +12,9 @@ from cairn.application.leveling import (
 )
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
+from cairn.domain.characters import AbilityScores
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import feat_effects
-from cairn.types import AbilityScores
 from tests._factories import make_campaign, make_character
 
 # Class presets — pass as `**WIZARD` to override the default fighter

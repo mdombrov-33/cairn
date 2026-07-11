@@ -7,8 +7,8 @@ from cairn.application import rests as rest_service
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.combat_rules import empty_combat_state
 from cairn.domain.exceptions import ConflictError
-from cairn.domain.services.combat.helpers import empty_combat_state
 from tests._factories import make_campaign, make_character, make_session, parse_sse
 
 FIGHTER: dict = {}  # default make_character is a fighter

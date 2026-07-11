@@ -11,10 +11,10 @@ from typing import Any, Literal, cast
 
 import structlog
 
+from cairn.domain.characters import AbilityKey, AbilityScores, Resource
+from cairn.domain.combat_rules import get_ability_score
 from cairn.domain.exceptions import ValidationError
-from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.srd.catalog import catalog
-from cairn.types import AbilityKey, AbilityScores, Resource
 
 log = structlog.get_logger()
 

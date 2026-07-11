@@ -6,10 +6,10 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel, Field
 
+from cairn.domain.combat import CombatZone, ZoneSeed
 from cairn.domain.exceptions import AgentError, LLMError
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import CombatZone, ZoneSeed
 
 log = structlog.get_logger()
 

@@ -6,25 +6,25 @@ from typing import cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
+from cairn.application.combat.emitter import emit
+from cairn.application.combat.rolls import (
+    parse_and_roll,
+    roll_d20,
+    save_modifier,
+)
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services.combat.emitter import emit
-from cairn.domain.services.combat.helpers import (
+from cairn.domain.combat import CombatEffect, ConcentrationData
+from cairn.domain.combat_range import range_feet_to_category, target_in_range, zone_in_range
+from cairn.domain.combat_rules import (
     empty_combat_state,
     exhaustion_level,
     find_combatant,
     find_monster,
 )
-from cairn.domain.services.combat.range import range_feet_to_category, target_in_range, zone_in_range
-from cairn.domain.services.combat.rolls import (
-    parse_and_roll,
-    roll_d20,
-    save_modifier,
-)
 from cairn.domain.services.settings import resolve_settings
-from cairn.types import CombatEffect, ConcentrationData
 
 
 async def _death_mode(db: AsyncSession, session_id: uuid.UUID) -> str:
@@ -239,7 +239,7 @@ async def apply_damage(
                 db,
                 session_id=session_id,
                 name=combatant["name"],
-                rec=cast(ConcentrationData, conc),
+                rec=conc,
                 con_score=con_score,
                 damage=effective,
                 incapacitated=new_hp == 0,

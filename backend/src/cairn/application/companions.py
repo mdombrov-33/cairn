@@ -3,8 +3,8 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.queries import characters as character_queries
+from cairn.domain.narrative import ApprovalLogEntry, CompanionMeta
 from cairn.domain.services.companions import approval_band, derive_mood
-from cairn.types import ApprovalLogEntry, CompanionMeta
 
 APPROVAL_LOG_LIMIT = 20
 

@@ -20,11 +20,11 @@ from pydantic import BaseModel
 
 from cairn.config import get_settings
 from cairn.domain.exceptions import AgentError
+from cairn.domain.narrative import NarrativeProfile
 from cairn.domain.services.narrative_profile import format_profile
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import get_model
 from cairn.prompts.registry import load_prompt, resolve_version
-from cairn.types import NarrativeProfile
 
 log = structlog.get_logger()
 

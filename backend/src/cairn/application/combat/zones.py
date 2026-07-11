@@ -5,14 +5,15 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
+from cairn.application.combat.emitter import emit
+from cairn.application.combat.rolls import mod, parse_and_roll
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services.combat.emitter import emit
-from cairn.domain.services.combat.helpers import find_combatant, get_ability_score
-from cairn.domain.services.combat.rolls import mod, parse_and_roll
+from cairn.domain.characters import InventoryItem
+from cairn.domain.combat import Combatant, CombatState, CombatZone, ZoneSeed
+from cairn.domain.combat_rules import find_combatant, get_ability_score
 from cairn.domain.services.rng import session_rng
-from cairn.types import Combatant, CombatState, CombatZone, InventoryItem, ZoneSeed
 
 OPEN_GROUND: CombatZone = {
     "id": "open_ground",
@@ -116,7 +117,7 @@ async def _opportunity_attacks(
     state: CombatState,
 ) -> list[dict]:
     """Resolve automatic melee opportunity attacks before the mover exits its current zone."""
-    from cairn.domain.services.combat import mutations
+    from cairn.application.combat import mutations
 
     session = await session_queries.get_session(db, session_id)
     rng = session_rng(session)

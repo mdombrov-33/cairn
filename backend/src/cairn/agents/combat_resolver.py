@@ -5,10 +5,10 @@ from typing import Literal, TypedDict
 import structlog
 
 from cairn.agents import combat_ai, scene_narrator
+from cairn.application.combat.emitter import emit
 from cairn.context import current_campaign_settings
 from cairn.db import client as db_client
 from cairn.domain.exceptions import AgentError
-from cairn.domain.services.combat.emitter import emit
 from cairn.llm.client import complete_with_tools
 from cairn.llm.router import agent_setup
 from cairn.tools import COMBAT_TOOLS, fetch_combat_context

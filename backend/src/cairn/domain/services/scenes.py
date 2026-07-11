@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from cairn.types import AuthoredScene
+from cairn.domain.scenes import AuthoredScene
 
 _AUTHORED_KEYS = ("atmosphere", "surface_details", "hidden", "secrets", "threads_in_air", "hooks_out")
 

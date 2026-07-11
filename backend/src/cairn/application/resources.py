@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services.combat.helpers import empty_combat_state
-from cairn.types import CombatState, TurnEconomy
+from cairn.domain.combat import CombatState, TurnEconomy
+from cairn.domain.combat_rules import empty_combat_state
 
 
 async def consume_spell_slot(

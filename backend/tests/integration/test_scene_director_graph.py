@@ -16,6 +16,7 @@ from cairn.db.queries import locations as location_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
+from cairn.domain.scenes import ScenePreOutput
 from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import (
     TurnState,
@@ -25,7 +26,6 @@ from cairn.pipelines.turn_graph import (
     _scene_create,
     _scene_director_pre,
 )
-from cairn.types import ScenePreOutput
 from tests._factories import make_campaign, make_character, make_session
 
 

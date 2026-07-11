@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Literal
 import structlog
 from pydantic import BaseModel
 
+from cairn.domain.characters import AbilityKey, AbilityScores, FeatEntry, FeatureEntry
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import AbilityKey, AbilityScores, FeatEntry, FeatureEntry
 
 if TYPE_CHECKING:
     from cairn.db.models.character import Character

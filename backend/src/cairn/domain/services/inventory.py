@@ -1,6 +1,6 @@
 import copy
 
-from cairn.types import InventoryItem
+from cairn.domain.characters import InventoryItem
 
 
 def find_item(inventory: list[InventoryItem], item_name: str) -> InventoryItem | None:

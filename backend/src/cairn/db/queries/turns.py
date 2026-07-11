@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn.application.turns.types import PendingTurnData
 from cairn.db.models.turn import Turn
+from cairn.domain.combat import TurnEvent
 from cairn.domain.exceptions import NotFoundError
 from cairn.domain.services.settings import ResolvedCampaignSettings
-from cairn.types import TurnEvent
 
 
 async def create_turn(

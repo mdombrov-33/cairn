@@ -1,6 +1,6 @@
 import pytest
 
-from cairn.domain.services.combat.range import srd_range_to_category
+from cairn.domain.combat_range import srd_range_to_category
 
 
 @pytest.mark.parametrize(

@@ -9,14 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.db.models.character import Character
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
+from cairn.domain.characters import AbilityKey, AbilityScores, FeatureEntry
+from cairn.domain.combat_rules import get_ability_score
 from cairn.domain.exceptions import ValidationError
 from cairn.domain.services import feat_effects
 from cairn.domain.services.ac import AcInput, derive_ac
-from cairn.domain.services.combat.helpers import get_ability_score
 from cairn.domain.services.settings import resolve_settings
 from cairn.srd.catalog import catalog
 from cairn.srd.models import ClassLevelRecord
-from cairn.types import AbilityKey, AbilityScores, FeatureEntry
 
 log = structlog.get_logger()
 

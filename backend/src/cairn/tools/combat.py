@@ -4,8 +4,8 @@ from typing import Annotated
 
 from langchain_core.tools import tool
 
+import cairn.application.combat as combat_service
 import cairn.application.leveling as leveling_service
-import cairn.domain.services.combat as combat_service
 from cairn.db import client as db_client
 
 

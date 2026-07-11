@@ -14,7 +14,7 @@ from cairn.application.turns.epilogue import PostTurnEpilogue
 from cairn.db import client as db_client
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import turns as turn_queries
-from cairn.types import NpcPresence, ScenePostOutput
+from cairn.domain.scenes import NpcPresence, ScenePostOutput
 from tests._factories import make_campaign, make_session
 
 

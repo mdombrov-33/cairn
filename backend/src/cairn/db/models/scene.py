@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
-from cairn.types import AuthoredScene, NpcPresence
+from cairn.domain.scenes import AuthoredScene, NpcPresence
 
 
 class Scene(Base):
@@ -24,7 +24,7 @@ class Scene(Base):
 
     # Scene depth + pacing (a scene is a layered situation). Authored content is
     # read-mostly; runtime state is written through the resolver + Scene Director
-    # passes — never mid-stream tools. See cairn/types.py for the JSONB shapes.
+    # passes — never mid-stream tools. See cairn/domain/scenes.py for the JSONB shapes.
     authored: Mapped[AuthoredScene] = mapped_column(JSONB, default=dict, server_default="{}")
     beat_count: Mapped[int] = mapped_column(default=0, server_default="0")
     tension_level: Mapped[int] = mapped_column(default=0, server_default="0")

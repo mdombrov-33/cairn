@@ -14,9 +14,9 @@ import structlog
 from pydantic import BaseModel, Field
 
 from cairn.domain.exceptions import AgentError
+from cairn.domain.scenes import CombatTrigger, NpcPresence, SceneMood, ScenePostOutput, ScenePreOutput, SceneTransition
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import CombatTrigger, NpcPresence, SceneMood, ScenePostOutput, ScenePreOutput, SceneTransition
 
 log = structlog.get_logger()
 

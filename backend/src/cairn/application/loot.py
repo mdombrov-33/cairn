@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.characters import Currency, InventoryItem
 from cairn.domain.exceptions import NotFoundError, ValidationError
 from cairn.domain.services.inventory import copy_inventory, find_item
-from cairn.types import Currency, InventoryItem
 
 COIN_KEYS = ("gp", "sp", "cp")
 

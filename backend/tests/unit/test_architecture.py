@@ -3,6 +3,48 @@
 import ast
 from pathlib import Path
 
+ROOT = Path(__file__).parents[2] / "src/cairn"
+
+
+def _imports(path: Path) -> list[str]:
+    tree = ast.parse(path.read_text())
+    names: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            names.append(node.module or "")
+    return names
+
+
+def _forbids(path: Path, prefixes: tuple[str, ...]) -> bool:
+    return any(name == prefix or name.startswith(f"{prefix}.") for name in _imports(path) for prefix in prefixes)
+
+
+def test_domain_has_no_runtime_dependencies() -> None:
+    forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.agents", "cairn.pipelines", "cairn.application")
+
+    for path in (ROOT / "domain").rglob("*.py"):
+        assert not _forbids(path, forbidden), path
+
+
+def test_pipelines_do_not_access_persistence_or_call_llms() -> None:
+    forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.llm.client")
+
+    for path in (ROOT / "pipelines").glob("*.py"):
+        assert not _forbids(path, forbidden), path
+
+
+def test_litellm_is_confined_to_the_client() -> None:
+    for path in ROOT.rglob("*.py"):
+        if path == ROOT / "llm/client.py":
+            continue
+        assert "litellm" not in _imports(path), path
+
+
+def test_shared_types_module_is_eliminated() -> None:
+    assert not (ROOT / "types.py").exists()
+
 
 def test_typed_settings_module_has_no_persistence_or_framework_dependencies() -> None:
     path = Path(__file__).parents[2] / "src/cairn/domain/services/settings.py"

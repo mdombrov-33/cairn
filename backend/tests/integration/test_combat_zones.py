@@ -9,6 +9,7 @@ from httpx import AsyncClient
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
+from cairn.domain.combat import ZoneSeed
 from cairn.tools.combat import (
     apply_aoe_damage,
     apply_condition,
@@ -19,7 +20,6 @@ from cairn.tools.combat import (
     move_combatant,
     start_combat,
 )
-from cairn.types import ZoneSeed
 from tests._factories import make_campaign, make_character, make_session
 
 TAVERN_ZONES: ZoneSeed = {

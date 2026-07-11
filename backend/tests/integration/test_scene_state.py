@@ -11,7 +11,7 @@ from httpx import AsyncClient
 
 from cairn.db import client as db_client
 from cairn.db.queries import scenes as scene_queries
-from cairn.types import AuthoredScene, NpcPresence
+from cairn.domain.scenes import AuthoredScene, NpcPresence
 from tests._factories import make_campaign
 
 

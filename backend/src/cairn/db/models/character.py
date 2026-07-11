@@ -6,18 +6,17 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
-from cairn.types import (
+from cairn.domain.characters import (
     AbilityScores,
-    CompanionMeta,
-    ConcentrationData,
     Currency,
     FeatEntry,
     FeatureEntry,
     InventoryItem,
-    NarrativeProfile,
     Resource,
     SpellSlots,
 )
+from cairn.domain.combat import ConcentrationData
+from cairn.domain.narrative import CompanionMeta, NarrativeProfile
 
 
 class Character(Base):
@@ -98,7 +97,7 @@ class Character(Base):
     # Keyed by resource name → Resource shape.
     resources: Mapped[dict[str, Resource]] = mapped_column(JSONB, default=dict, server_default="{}")
 
-    # JSONB — typed shapes live in cairn/types.py
+    # JSONB — typed shapes live in cairn/domain/characters.py.
     ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
     spell_slots: Mapped[SpellSlots | None] = mapped_column(JSONB)
     spells_known: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")

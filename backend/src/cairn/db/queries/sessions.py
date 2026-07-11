@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from cairn.db.models.session import Session
+from cairn.domain.combat import CombatState
 from cairn.domain.exceptions import NotFoundError
-from cairn.types import CombatState
 
 
 async def create_session(

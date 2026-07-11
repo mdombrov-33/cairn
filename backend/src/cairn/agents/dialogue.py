@@ -4,10 +4,10 @@ import structlog
 from pydantic import BaseModel
 
 from cairn.context import current_campaign_settings
+from cairn.domain.narrative import DialogueEntity
 from cairn.domain.services.narrative_profile import format_profile
 from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.types import DialogueEntity
 
 log = structlog.get_logger()
 

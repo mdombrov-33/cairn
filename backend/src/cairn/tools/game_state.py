@@ -12,8 +12,9 @@ from cairn.db.models.npc import NPC
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services.combat.helpers import empty_combat_state
-from cairn.types import CombatState, InventoryItem
+from cairn.domain.characters import InventoryItem
+from cairn.domain.combat import CombatState
+from cairn.domain.combat_rules import empty_combat_state
 
 
 def character_to_dict(c: Character) -> dict:

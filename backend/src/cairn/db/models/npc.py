@@ -6,16 +6,16 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
-from cairn.types import (
+from cairn.domain.characters import (
     AbilityScores,
-    ConcentrationData,
     Currency,
     FeatEntry,
     FeatureEntry,
     InventoryItem,
-    NarrativeProfile,
     SpellSlots,
 )
+from cairn.domain.combat import ConcentrationData
+from cairn.domain.narrative import NarrativeProfile
 
 
 class NPC(Base):
@@ -73,7 +73,7 @@ class NPC(Base):
     # {spell_name, level, source_effect_id} — same shape as Character.concentration.
     concentration: Mapped[ConcentrationData | None] = mapped_column(JSONB, nullable=True)
 
-    # JSONB — typed shapes live in cairn/types.py
+    # JSONB — typed shapes live in cairn/domain/characters.py.
     ability_scores: Mapped[AbilityScores] = mapped_column(JSONB, default=dict, server_default="{}")
     saving_throw_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     skill_proficiencies: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
