@@ -1,19 +1,19 @@
 """Tactical-zone invariants for theater-of-mind combat."""
 
+import re
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cairn import srd as rules
 from cairn.application.combat.emitter import emit
-from cairn.application.combat.rolls import mod, parse_and_roll
+from cairn.application.combat.rolls import mod
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.characters import InventoryItem
-from cairn.domain.combat import Combatant, CombatState, CombatZone, ZoneSeed
+from cairn.domain.combat import Combatant, CombatZone, ZoneSeed
 from cairn.domain.combat_rules import find_combatant, get_ability_score
-from cairn.domain.services.rng import session_rng
 
 OPEN_GROUND: CombatZone = {
     "id": "open_ground",
@@ -58,21 +58,36 @@ def _damage_expression(dice: str, modifier: int) -> str:
     return f"{dice}{modifier:+d}"
 
 
-async def _melee_attack(db: AsyncSession, combatant: Combatant) -> dict | None:
-    """Return the combatant's first usable melee weapon in a uniform shape."""
+async def attack_profile(
+    db: AsyncSession,
+    combatant: Combatant,
+    attack_name: str | None = None,
+    *,
+    melee_only: bool = False,
+) -> dict | None:
+    """Return one authoritative weapon attack in a uniform engine shape."""
     if combatant["type"] == "monster":
+        actions = [
+            item
+            for item in combatant.get("actions", [])
+            if "Weapon Attack" in item.get("desc", "")
+            and (not melee_only or item.get("desc", "").startswith("Melee Weapon Attack"))
+        ]
         action = next(
-            (item for item in combatant.get("actions", []) if item.get("desc", "").startswith("Melee Weapon Attack")),
+            (item for item in actions if item.get("name", "").casefold() == (attack_name or "").casefold()),
             None,
         )
+        action = action or (actions[0] if actions else None)
         if action is None or not action.get("damage"):
             return None
         damage = action["damage"][0]
+        range_match = re.search(r"range (\d+)", action.get("desc", ""))
         return {
             "name": action["name"],
             "attack_bonus": action.get("attack_bonus", 0),
             "damage_dice": damage["damage_dice"],
             "damage_type": damage["damage_type"]["index"],
+            "range_ft": int(range_match.group(1)) if range_match else 5,
         }
 
     entity = (
@@ -83,11 +98,15 @@ async def _melee_attack(db: AsyncSession, combatant: Combatant) -> dict | None:
     candidates: list[tuple[InventoryItem, dict]] = []
     for item in entity.inventory or []:
         weapon = rules.get_weapon(item.get("srd_index") or item["name"])
-        if weapon is not None and weapon.get("weapon_range") == "Melee":
+        if weapon is not None and (not melee_only or weapon.get("weapon_range") == "Melee"):
             candidates.append((item, weapon))
     if not candidates:
         return None
-    _, weapon = next((pair for pair in candidates if pair[0].get("equipped")), candidates[0])
+    named = next(
+        (pair for pair in candidates if pair[1]["name"].casefold() == (attack_name or "").casefold()),
+        None,
+    )
+    _, weapon = named or next((pair for pair in candidates if pair[0].get("equipped")), candidates[0])
     properties = {item.get("index") for item in weapon.get("properties", [])}
     strength = mod(get_ability_score(entity.ability_scores, "str"))
     dexterity = mod(get_ability_score(entity.ability_scores, "dex"))
@@ -98,81 +117,20 @@ async def _melee_attack(db: AsyncSession, combatant: Combatant) -> dict | None:
         "attack_bonus": ability_modifier + entity.proficiency_bonus,
         "damage_dice": _damage_expression(damage["damage_dice"], ability_modifier),
         "damage_type": damage["damage_type"]["index"],
+        "range_ft": int((weapon.get("range") or {}).get("normal", 5)),
     }
 
 
-async def _armor_class(db: AsyncSession, combatant: Combatant) -> int:
+async def melee_attack(db: AsyncSession, combatant: Combatant, attack_name: str | None = None) -> dict | None:
+    return await attack_profile(db, combatant, attack_name, melee_only=True)
+
+
+async def armor_class(db: AsyncSession, combatant: Combatant) -> int:
     if combatant["type"] == "monster":
         return combatant["ac"]
     if combatant["type"] == "character":
         return (await character_queries.get_character(db, uuid.UUID(combatant["id"]))).ac
     return (await npc_queries.get_npc(db, uuid.UUID(combatant["id"]))).ac
-
-
-async def _opportunity_attacks(
-    db: AsyncSession,
-    *,
-    session_id: uuid.UUID,
-    mover: Combatant,
-    state: CombatState,
-) -> list[dict]:
-    """Resolve automatic melee opportunity attacks before the mover exits its current zone."""
-    from cairn.application.combat import mutations
-
-    session = await session_queries.get_session(db, session_id)
-    rng = session_rng(session)
-    economy = state.setdefault("turn_economy", {})
-    results: list[dict] = []
-    for attacker in state["combatants"]:
-        if (
-            attacker["id"] == mover["id"]
-            or attacker["team"] == mover["team"]
-            or attacker["zone"] != mover["zone"]
-            or not attacker["is_alive"]
-            or not attacker["is_conscious"]
-        ):
-            continue
-        entry = economy.setdefault(
-            attacker["id"],
-            {
-                "action_used": False,
-                "bonus_action_used": False,
-                "reaction_used": False,
-                "movement_remaining": attacker["speed"],
-            },
-        )
-        if entry["reaction_used"]:
-            continue
-        attack = await _melee_attack(db, attacker)
-        if attack is None:
-            continue
-
-        entry["reaction_used"] = True
-        attack_roll = rng.randint(1, 20)
-        attack_total = attack_roll + attack["attack_bonus"]
-        hit = attack_roll == 20 or (attack_roll != 1 and attack_total >= await _armor_class(db, mover))
-        damage = parse_and_roll(attack["damage_dice"], rng) if hit else 0
-        if hit:
-            await mutations.apply_damage(
-                db,
-                session_id=session_id,
-                combatant_id=mover["id"],
-                combatant_type=mover["type"],
-                amount=damage,
-                damage_type=attack["damage_type"],
-            )
-        result = {
-            "attacker_id": attacker["id"],
-            "attacker": attacker["name"],
-            "attack": attack["name"],
-            "attack_roll": attack_roll,
-            "attack_total": attack_total,
-            "hit": hit,
-            "damage": damage,
-        }
-        results.append(result)
-        await emit(db, {"type": "opportunity_attack", "target_id": mover["id"], **result})
-    return results
 
 
 async def move_combatant(db: AsyncSession, *, session_id: uuid.UUID, combatant_id: str, target_zone_id: str) -> dict:
@@ -219,7 +177,6 @@ async def move_combatant(db: AsyncSession, *, session_id: uuid.UUID, combatant_i
     if cost > remaining:
         return {"error": f"{target['name']} costs {cost}ft; only {remaining}ft of movement remains."}
 
-    opportunity_attacks = await _opportunity_attacks(db, session_id=session_id, mover=combatant, state=state)
     combatant["zone"] = target_zone_id
     entry["movement_remaining"] = remaining - cost
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
@@ -230,10 +187,9 @@ async def move_combatant(db: AsyncSession, *, session_id: uuid.UUID, combatant_i
         "to_zone": target_zone_id,
         "movement_spent": cost,
         "movement_remaining": entry["movement_remaining"],
-        "opportunity_attacks": opportunity_attacks,
+        "opportunity_attacks": [],
     }
     await emit(db, {"type": "combatant_moved", **result})
-    await db.commit()
     return result
 
 

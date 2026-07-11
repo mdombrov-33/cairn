@@ -96,6 +96,48 @@ class TurnEconomy(TypedDict):
     movement_remaining: int
 
 
+ReactionDecision = Literal["take", "decline"]
+ReactionName = Literal[
+    "opportunity_attack",
+    "shield",
+    "absorb_elements",
+    "counterspell",
+    "readied_action",
+    "sentinel",
+]
+
+
+class ReactionOption(TypedDict):
+    name: ReactionName
+    label: str
+
+
+class ReactionRecommendation(TypedDict):
+    decision: ReactionDecision
+    chosen_reaction: str | None
+
+
+class PendingReaction(TypedDict):
+    checkpoint_id: str
+    trigger: str
+    description: str
+    options: list[ReactionOption]
+    recommendation: ReactionRecommendation
+    plan_queue: list[dict[str, Any]]
+    execution_cursor: int
+    reaction_stack: list[dict[str, Any]]
+    depth: int
+    facts: list[str]
+    frame: dict[str, Any]
+
+
+class ReadiedAction(TypedDict):
+    reactor_id: str
+    trigger: dict[str, Any]
+    operation: dict[str, Any]
+    expires_round: int
+
+
 class CombatState(TypedDict, total=False):
     round: Required[int]
     turn_index: Required[int]
@@ -103,6 +145,8 @@ class CombatState(TypedDict, total=False):
     effects: Required[list[CombatEffect]]
     zones: Required[list[CombatZone]]
     turn_economy: dict[str, TurnEconomy]
+    pending_reaction: PendingReaction
+    readied_actions: list[ReadiedAction]
 
 
 TurnEvent = dict[str, Any]

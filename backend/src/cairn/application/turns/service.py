@@ -11,6 +11,7 @@ from cairn.agents import (
 )
 from cairn.application import loot as loot_service
 from cairn.application import narrative_context
+from cairn.application.combat import executor as combat_executor
 from cairn.application.turns.epilogue import post_turn_epilogue
 from cairn.application.turns.types import CheckData, CompanionActionProposal, LootIntent
 from cairn.context import recording_turn, using_campaign_settings
@@ -149,13 +150,33 @@ async def stream(
         yield _event("turn_start", {"turn_id": str(turn.id), "intent": intent})
 
         if intent == "combat_action":
-            combat_context, proposal = await combat_resolver.resolve(state["player_input"], str(session_id))
+            resolution = await combat_resolver.resolve(state["player_input"], str(session_id))
+            if resolution.suspension is not None:
+                db_session = await session_queries.get_session(db, session_id)
+                assert db_session.combat_state is not None
+                pending_reaction = db_session.combat_state.get("pending_reaction")
+                assert pending_reaction is not None
+                pending_reaction["frame"].update(
+                    {
+                        "turn_id": str(turn.id),
+                        "namespace": namespace,
+                        "player_input": state["player_input"],
+                        "settings": state["settings"].as_json(),
+                    }
+                )
+                await session_queries.update_combat_state(
+                    db, session_id, combat_state=db_session.combat_state, combat_active=True
+                )
+                await db.commit()
+                yield _event("reaction_prompt", combat_executor.reaction_prompt_data(pending_reaction))
+                return
+            proposal = resolution.proposal
             if proposal is not None:
                 pending: CompanionActionProposal = {
                     "kind": "companion_action",
                     "status": "pending",
                     **proposal,
-                    "prior_context": combat_context,
+                    "prior_context": resolution.context,
                     "settings": state["settings"],
                 }
                 await turn_queries.update_turn_check(db, turn.id, check_data=pending)
@@ -171,7 +192,7 @@ async def stream(
                     },
                 )
                 return
-            narrator = scene_narrator.run(state["player_input"], context=combat_context)
+            narrator = scene_narrator.run(state["player_input"], context=resolution.context)
             async for event in _narrate(
                 narrator, db, turn=turn, session_id=session_id, campaign_id=campaign_id, namespace=namespace
             ):
@@ -492,17 +513,37 @@ async def stream_companion_action(
     db_session = await session_queries.get_session(db, session_id)
     campaign = await campaign_queries.get_campaign(db, db_session.campaign_id)
     with using_campaign_settings(proposal["settings"]), recording_turn(turn.id):
-        narrative_context, next_proposal = await combat_resolver.resolve(
+        resolution = await combat_resolver.resolve(
             instruction,
             str(session_id),
             prior_context=proposal["prior_context"],
         )
+        if resolution.suspension is not None:
+            db_session = await session_queries.get_session(db, session_id)
+            assert db_session.combat_state is not None
+            pending_reaction = db_session.combat_state.get("pending_reaction")
+            assert pending_reaction is not None
+            pending_reaction["frame"].update(
+                {
+                    "turn_id": str(turn.id),
+                    "namespace": namespace,
+                    "player_input": instruction,
+                    "settings": proposal["settings"].as_json(),
+                }
+            )
+            await session_queries.update_combat_state(
+                db, session_id, combat_state=db_session.combat_state, combat_active=True
+            )
+            await db.commit()
+            yield _event("reaction_prompt", combat_executor.reaction_prompt_data(pending_reaction))
+            return
+        next_proposal = resolution.proposal
         if next_proposal is not None:
             pending: CompanionActionProposal = {
                 "kind": "companion_action",
                 "status": "pending",
                 **next_proposal,
-                "prior_context": narrative_context,
+                "prior_context": resolution.context,
                 "settings": proposal["settings"],
             }
             await turn_queries.update_turn_check(db, turn.id, check_data=pending)
@@ -520,7 +561,7 @@ async def stream_companion_action(
             return
         resolved: CompanionActionProposal = {**proposal, "status": "resolved"}
         await turn_queries.update_turn_check(db, turn.id, check_data=resolved)
-        narrator = scene_narrator.run(instruction, context=narrative_context)
+        narrator = scene_narrator.run(instruction, context=resolution.context)
         async for event in _narrate(
             narrator, db, turn=turn, session_id=session_id, campaign_id=campaign.id, namespace=namespace
         ):
@@ -536,3 +577,90 @@ def _hydrate_pause_settings(data: CheckData | CompanionActionProposal) -> CheckD
             {**data, "settings": settings_service.ResolvedCampaignSettings.model_validate(settings)},
         )
     return data
+
+
+async def resume_reaction(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    owner_id: str,
+    checkpoint_id: str,
+    decision: str,
+    chosen_reaction: str | None,
+) -> tuple[combat_executor.ExecutionOutcome, Turn, uuid.UUID, str, str]:
+    """Validate and apply one persisted reaction decision before streaming continuation."""
+    db_session = await session_queries.get_session(db, session_id)
+    pending = db_session.combat_state.get("pending_reaction") if db_session.combat_state else None
+    if pending is None or pending["checkpoint_id"] != checkpoint_id:
+        # Executor owns the canonical ownership/state error; call it to preserve that contract.
+        await combat_executor.resume_reaction(
+            db,
+            session_id=session_id,
+            owner_id=owner_id,
+            checkpoint_id=checkpoint_id,
+            decision=decision,
+            chosen_reaction=chosen_reaction,
+        )
+        raise AssertionError("unreachable")
+    frame = pending["frame"]
+    turn_id = frame.get("turn_id")
+    if not isinstance(turn_id, str):
+        raise ConflictError("reaction checkpoint has no owning turn", code="stale_reaction")
+    campaign = await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
+    turn = await turn_queries.get_turn(db, uuid.UUID(turn_id))
+    outcome = await combat_executor.resume_reaction(
+        db,
+        session_id=session_id,
+        owner_id=owner_id,
+        checkpoint_id=checkpoint_id,
+        decision=decision,
+        chosen_reaction=chosen_reaction,
+    )
+    if isinstance(outcome, combat_executor.ExecutionSuspended):
+        resumed_session = await session_queries.get_session(db, session_id)
+        assert resumed_session.combat_state is not None
+        resumed_pending = resumed_session.combat_state.get("pending_reaction")
+        assert resumed_pending is not None
+        resumed_pending["frame"].update(
+            {
+                "turn_id": str(turn.id),
+                "namespace": campaign.world_bible_namespace,
+                "player_input": str(frame.get("player_input", turn.player_input)),
+                "settings": frame.get("settings", settings_service.resolve_settings(campaign.settings).as_json()),
+            }
+        )
+        await session_queries.update_combat_state(
+            db,
+            session_id,
+            combat_state=resumed_session.combat_state,
+            combat_active=True,
+        )
+        await db.commit()
+    return outcome, turn, campaign.id, campaign.world_bible_namespace, str(frame.get("player_input", turn.player_input))
+
+
+async def stream_reaction(
+    db: AsyncSession,
+    *,
+    outcome: combat_executor.ExecutionOutcome,
+    turn: Turn,
+    session_id: uuid.UUID,
+    campaign_id: uuid.UUID,
+    namespace: str,
+    player_input: str,
+) -> AsyncGenerator[dict[str, Any]]:
+    if isinstance(outcome, combat_executor.ExecutionSuspended):
+        yield _event("reaction_prompt", combat_executor.reaction_prompt_data(outcome.prompt))
+        return
+    campaign = await campaign_queries.get_campaign(db, campaign_id)
+    with using_campaign_settings(settings_service.resolve_settings(campaign.settings)), recording_turn(turn.id):
+        narrator = scene_narrator.run(player_input, context="\n".join(outcome.facts))
+        async for event in _narrate(
+            narrator,
+            db,
+            turn=turn,
+            session_id=session_id,
+            campaign_id=campaign_id,
+            namespace=namespace,
+        ):
+            yield event

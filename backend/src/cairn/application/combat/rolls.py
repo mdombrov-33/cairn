@@ -2,6 +2,7 @@ import math
 import random
 import re
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +23,47 @@ from cairn.domain.services.rng import session_rng
 
 # A Random | None — when None, fall back to the module-level random (non-deterministic).
 type Rng = random.Random | None
+
+
+@dataclass(frozen=True)
+class AttackRoll:
+    rolls: tuple[int, ...]
+    natural: int
+    modifier: int
+    total: int
+    target_ac: int
+    cover_bonus: int
+    hit: bool
+    critical: bool
+
+
+def roll_attack(
+    *,
+    to_hit_bonus: int,
+    target_ac: int,
+    cover_ac_bonus: int = 0,
+    advantage: bool = False,
+    disadvantage: bool = False,
+    rng: Rng = None,
+) -> AttackRoll:
+    """Resolve one authoritative attack roll, including hard cover AC."""
+    roll_type = "normal"
+    if advantage != disadvantage:
+        roll_type = "advantage" if advantage else "disadvantage"
+    rolled, natural = roll_d20(roll_type, rng)
+    effective_ac = target_ac + max(0, cover_ac_bonus)
+    total = natural + to_hit_bonus
+    hit = natural == 20 or (natural != 1 and total >= effective_ac)
+    return AttackRoll(
+        rolls=tuple(rolled),
+        natural=natural,
+        modifier=to_hit_bonus,
+        total=total,
+        target_ac=effective_ac,
+        cover_bonus=max(0, cover_ac_bonus),
+        hit=hit,
+        critical=natural == 20,
+    )
 
 
 def _roll_die(sides: int, rng: Rng = None) -> int:
@@ -106,7 +148,6 @@ async def roll_death_save(
         "hp": char.hp,
     }
     await emit(db, {"type": "death_save_rolled", **result})
-    await db.commit()
     return result
 
 

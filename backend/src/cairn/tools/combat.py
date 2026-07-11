@@ -6,6 +6,7 @@ from langchain_core.tools import tool
 
 import cairn.application.combat as combat_service
 import cairn.application.leveling as leveling_service
+from cairn.application.combat import executor as combat_executor
 from cairn.db import client as db_client
 
 
@@ -40,7 +41,7 @@ async def move_combatant(
 ) -> dict:
     """Move a combatant to a reachable tactical zone using its remaining Speed."""
     async with db_client.get_session() as db:
-        return await combat_service.zones.move_combatant(
+        return await combat_executor.execute_move(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,

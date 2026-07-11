@@ -101,8 +101,23 @@ live ORM mutation loop.
 4. Keep the route responsible only for HTTP input and SSE encoding.
 5. Add contract tests for event name/payload, persisted JSON, ownership checks, and resumption.
 
-Slice 10.5 applies this pattern to reactions. Its exact plan/executor/checkpoint contract takes
-precedence over a generic implementation inferred from current skill-check code.
+For combat reactions, persist the complete executor cursor and mechanical frame in
+`CombatState.pending_reaction`, emit only the typed `reaction_prompt`, and resume through the turn
+runtime. Never reroll or ask an LLM to reinterpret a persisted trigger.
+
+## Extend combat execution or reactions
+
+1. Add planner intent as a strict operation beside `application/combat/plan.py`; operations identify
+   authoritative names and targets, not bonuses, dice, DCs, or resource costs.
+2. Derive and validate mechanics inside the executor from loaded actor state and the typed SRD catalog.
+3. Add reactions only to the executor-private registry with a trigger, eligibility, deterministic
+   recommendation, resource spend, and resolver.
+4. Intercept before the affected outcome, persist the exact roll or damage frame when prompting, and
+   resume without replaying completed operations.
+5. Cover pure policy, persisted outcomes, rollback, and exact HTTP/SSE/checkpoint shapes.
+
+Combat agents never receive mutation tools. Reusable combat operations do not commit; the executor or
+standalone tool session is the transaction owner.
 
 ## Add post-turn work
 
@@ -118,8 +133,6 @@ execution.
 
 ## Areas without a creation recipe
 
-- **Combat plans, execution, attacks, and reactions:** wait for or work directly from Slice 10.5. Do
-  not extend the current LLM-controlled mutation loop as a new architecture.
 - **LangChain tools and MCP exposure:** work directly from Slice 10.7. It replaces manual tool lists
   with tagged registration and projects the same definitions through FastMCP; no parallel `mcp/`
   tool tree is allowed.

@@ -5,7 +5,13 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from cairn.api.deps import CurrentUserId, DBSession
-from cairn.api.v1.schemas.turns import CompanionActionResolutionRequest, ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.api.v1.schemas.turns import (
+    CompanionActionResolutionRequest,
+    ReactionResolutionRequest,
+    ResolveRequest,
+    SubmitTurnRequest,
+    TurnResponse,
+)
 from cairn.application.turns import service
 from cairn.application.turns.runtime import turn_runtime
 from cairn.sse.events import sse
@@ -73,6 +79,29 @@ async def resolve_companion_action(
 
     async def generate() -> AsyncGenerator[str]:
         async for event in turn_runtime.resume_companion_action(db, resumption):
+            yield sse(event["type"], event["data"])
+
+    return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)
+
+
+@router.post("/{session_id}/reactions")
+async def resolve_reaction(
+    session_id: uuid.UUID,
+    body: ReactionResolutionRequest,
+    user_id: CurrentUserId,
+    db: DBSession,
+) -> StreamingResponse:
+    resumption = await turn_runtime.prepare_reaction_resumption(
+        db,
+        session_id=session_id,
+        owner_id=user_id,
+        checkpoint_id=body.checkpoint_id,
+        decision=body.decision,
+        chosen_reaction=body.chosen_reaction,
+    )
+
+    async def generate() -> AsyncGenerator[str]:
+        async for event in turn_runtime.resume_reaction(db, resumption):
             yield sse(event["type"], event["data"])
 
     return StreamingResponse(generate(), media_type="text/event-stream", status_code=200)

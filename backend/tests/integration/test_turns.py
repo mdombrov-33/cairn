@@ -147,6 +147,20 @@ async def test_companion_action_requires_a_pending_proposal(client: AsyncClient)
     assert r.status_code == 404
 
 
+async def test_reaction_resume_rejects_stale_checkpoint(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    sess = await make_session(client, camp["id"])
+
+    r = await client.post(
+        f"/v1/sessions/{sess['id']}/reactions",
+        headers={"X-User-Id": "user_a"},
+        json={"checkpoint_id": "stale", "decision": "decline", "chosen_reaction": None},
+    )
+
+    assert r.status_code == 409
+    assert r.json()["error"]["code"] == "stale_reaction"
+
+
 async def test_list_turns_returns_turns_in_order(client: AsyncClient) -> None:
     camp = await make_campaign(client)
     sess = await make_session(client, camp["id"])

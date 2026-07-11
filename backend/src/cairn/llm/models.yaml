@@ -16,6 +16,7 @@ agent_names:
   - combat_resolver
   - enemy_ai
   - ally_ai
+  - readied_parser
 
 profiles:
   development:

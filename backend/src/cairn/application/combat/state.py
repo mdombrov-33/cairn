@@ -172,7 +172,6 @@ async def init_state(
 
     await session_queries.update_combat_state(db, session_id, combat_state=combat_state, combat_active=True)
     await emit(db, {"type": "combat_started", "combatant_count": len(combatants)})
-    await db.commit()
     return combat_state
 
 
@@ -203,7 +202,6 @@ async def end_state(db: AsyncSession, *, session_id: uuid.UUID) -> None:
         if not char.is_companion and _is_pc_dead(char):
             await death_mode.resolve_pc_death(db, session, char)
     await session_queries.update_combat_state(db, session_id, combat_state=None, combat_active=False)
-    await db.commit()
 
 
 async def advance_turn(
@@ -250,6 +248,9 @@ async def advance_turn(
         state["round"] = state.get("round", 1) + 1
 
     current = combatants[state["turn_index"]]
+    state["readied_actions"] = [
+        ready for ready in state.get("readied_actions", []) if ready["reactor_id"] != current["id"]
+    ]
     start_of_turn_ticks = [
         e for e in state["effects"] if e["target_id"] == current["id"] and e.get("tick") == "start_of_target_turn"
     ]
@@ -288,7 +289,6 @@ async def advance_turn(
             "expired_effects": expired_effects,
         },
     )
-    await db.commit()
     return result
 
 
@@ -351,7 +351,6 @@ async def add_combatant(
 
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
     await emit(db, {"type": "combatant_added", "name": entry["name"], "initiative": initiative_roll})
-    await db.commit()
     return {
         "combatant_added": True,
         "combatant": entry["name"],
@@ -389,5 +388,4 @@ async def remove_combatant(
 
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=True)
     await emit(db, {"type": "combatant_removed", "name": removed["name"]})
-    await db.commit()
     return {"combatant_removed": True, "combatant": removed["name"]}

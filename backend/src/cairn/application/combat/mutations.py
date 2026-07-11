@@ -157,7 +157,6 @@ async def apply_damage(
             )
             if broke:
                 char.concentration = None
-        await db.commit()
         return result
 
     if combatant_type == "npc":
@@ -197,7 +196,6 @@ async def apply_damage(
             )
             if broke:
                 npc.concentration = None
-        await db.commit()
         return result
 
     if combatant_type == "monster":
@@ -249,7 +247,6 @@ async def apply_damage(
                 await session_queries.update_combat_state(
                     db, session_id, combat_state=state, combat_active=session.combat_active
                 )
-        await db.commit()
         return result
 
     return {"error": f"Unknown combatant_type '{combatant_type}'."}
@@ -276,7 +273,6 @@ async def apply_healing(
             "is_conscious": char.hp > 0,
         }
         await emit(db, {"type": "healing_applied", "combatant_type": "character", **result})
-        await db.commit()
         return result
 
     if combatant_type == "npc":
@@ -284,7 +280,6 @@ async def apply_healing(
         npc.hp = min(npc.max_hp, npc.hp + amount)
         result = {"combatant": npc.name, "hp": npc.hp, "max_hp": npc.max_hp}
         await emit(db, {"type": "healing_applied", "combatant_type": "npc", **result})
-        await db.commit()
         return result
 
     if combatant_type == "monster":
@@ -305,7 +300,6 @@ async def apply_healing(
             "max_hp": combatant["max_hp"],
         }
         await emit(db, {"type": "healing_applied", "combatant_type": "monster", **result})
-        await db.commit()
         return result
 
     return {"error": f"Unknown combatant_type '{combatant_type}'."}
@@ -329,7 +323,6 @@ async def apply_condition(
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     result = {"combatant": combatant["name"], "conditions": conditions}
     await emit(db, {"type": "condition_applied", "condition": condition, **result})
-    await db.commit()
     return result
 
 
@@ -349,7 +342,6 @@ async def remove_condition(
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     result = {"combatant": combatant["name"], "conditions": combatant["conditions"]}
     await emit(db, {"type": "condition_removed", "condition": condition, **result})
-    await db.commit()
     return result
 
 
@@ -402,7 +394,6 @@ async def apply_effect(
             "duration_rounds": duration_rounds,
         },
     )
-    await db.commit()
     return {"effect_applied": True, "effect": effect}
 
 
@@ -421,7 +412,6 @@ async def remove_effect(
     state["effects"] = [e for e in effects if e["id"] != effect_id]
     await session_queries.update_combat_state(db, session_id, combat_state=state, combat_active=session.combat_active)
     await emit(db, {"type": "effect_removed", "effect_name": removed["name"]})
-    await db.commit()
     return {"effect_removed": True, "effect_name": removed["name"]}
 
 
@@ -503,7 +493,6 @@ async def cast_concentration_spell(
         return {"error": f"Unknown caster_type '{caster_type}'."}
 
     await emit(db, {"type": "concentration_started", "combatant": name, "spell": spell_name})
-    await db.commit()
     return {"concentrating_on": spell_name, "effect_id": effect_id, "effect": effect_result["effect"]}
 
 
@@ -633,7 +622,6 @@ async def add_exhaustion(
     else:
         conditions.append(f"exhaustion-{new_level}")
     char.conditions = conditions
-    await db.commit()
     return {
         "character": char.name,
         "exhaustion_level": new_level,
@@ -657,7 +645,6 @@ async def remove_exhaustion(
     if new_level > 0:
         conditions.append(f"exhaustion-{new_level}")
     char.conditions = conditions
-    await db.commit()
     return {
         "character": char.name,
         "exhaustion_level": new_level,
@@ -679,7 +666,6 @@ async def stabilize_character(
         return {"error": f"{char.name} is not at 0 HP and doesn't need stabilizing."}
     char.death_save_successes = 0
     char.death_save_failures = 0
-    await db.commit()
     return {"stabilized": True, "character": char.name, "hp": char.hp}
 
 
@@ -697,7 +683,6 @@ async def apply_temp_hp(
         replaced = amount > char.temp_hp
         if replaced:
             char.temp_hp = amount
-        await db.commit()
         return {"combatant": char.name, "temp_hp": char.temp_hp, "replaced": replaced}
 
     if combatant_type == "npc":
@@ -705,7 +690,6 @@ async def apply_temp_hp(
         replaced = amount > npc.temp_hp
         if replaced:
             npc.temp_hp = amount
-        await db.commit()
         return {"combatant": npc.name, "temp_hp": npc.temp_hp, "replaced": replaced}
 
     if combatant_type == "monster":
@@ -719,7 +703,6 @@ async def apply_temp_hp(
             await session_queries.update_combat_state(
                 db, session_id, combat_state=state, combat_active=session.combat_active
             )
-            await db.commit()
         return {"combatant": combatant["name"], "temp_hp": combatant.get("temp_hp", 0)}
 
     return {"error": f"Unknown combatant_type: {combatant_type!r}"}

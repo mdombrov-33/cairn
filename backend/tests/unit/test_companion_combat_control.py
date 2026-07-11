@@ -2,6 +2,8 @@ import pytest
 
 from cairn.agents import combat_resolver
 from cairn.agents.combat_ai import CompanionProposal
+from cairn.application.combat.executor import ExecutionComplete
+from cairn.application.combat.plan import CombatPlan
 from cairn.context import using_campaign_settings
 from cairn.domain.services.settings import resolve_settings
 
@@ -29,8 +31,11 @@ async def test_suggest_mode_pauses_before_companion_tools(
     monkeypatch: pytest.MonkeyPatch,
     companion_turn: tuple[dict, list[dict]],
 ) -> None:
-    async def fake_mechanics(*args, **kwargs) -> str:
-        return "Aldric strikes and advances the turn."
+    async def fake_plan(*args, **kwargs) -> CombatPlan:
+        return CombatPlan(operations=())
+
+    async def fake_execute(*args, **kwargs) -> ExecutionComplete:
+        return ExecutionComplete(facts=("Aldric strikes and advances the turn.",))
 
     async def fake_context(session_id: str) -> tuple[dict, list[dict]]:
         return companion_turn
@@ -38,15 +43,16 @@ async def test_suggest_mode_pauses_before_companion_tools(
     async def fake_proposal(session_id: str) -> CompanionProposal:
         return CompanionProposal(action="shoot the warden", narration="Say the word and I loose.")
 
-    monkeypatch.setattr(combat_resolver, "_resolve_mechanics", fake_mechanics)
+    monkeypatch.setattr(combat_resolver, "_plan", fake_plan)
+    monkeypatch.setattr(combat_resolver, "_execute_plan", fake_execute)
     monkeypatch.setattr(combat_resolver, "fetch_combat_context", fake_context)
     monkeypatch.setattr(combat_resolver.combat_ai, "propose", fake_proposal)
 
     with using_campaign_settings(resolve_settings({"overrides": {"companion": {"combat": "suggest"}}})):
-        context, proposal = await combat_resolver.resolve("strike the warden", "session-1")
+        resolution = await combat_resolver.resolve("strike the warden", "session-1")
 
-    assert context == "[PLAYER ACTION]\nAldric strikes and advances the turn."
-    assert proposal == {
+    assert resolution.context == "[PLAYER ACTION]\nAldric strikes and advances the turn."
+    assert resolution.proposal == {
         "combatant_id": "companion-1",
         "combatant_name": "Wrenna",
         "action": "shoot the warden",
@@ -58,17 +64,21 @@ async def test_player_mode_stops_on_companion_turn(
     monkeypatch: pytest.MonkeyPatch,
     companion_turn: tuple[dict, list[dict]],
 ) -> None:
-    async def fake_mechanics(*args, **kwargs) -> str:
-        return "Aldric strikes and advances the turn."
+    async def fake_plan(*args, **kwargs) -> CombatPlan:
+        return CombatPlan(operations=())
+
+    async def fake_execute(*args, **kwargs) -> ExecutionComplete:
+        return ExecutionComplete(facts=("Aldric strikes and advances the turn.",))
 
     async def fake_context(session_id: str) -> tuple[dict, list[dict]]:
         return companion_turn
 
-    monkeypatch.setattr(combat_resolver, "_resolve_mechanics", fake_mechanics)
+    monkeypatch.setattr(combat_resolver, "_plan", fake_plan)
+    monkeypatch.setattr(combat_resolver, "_execute_plan", fake_execute)
     monkeypatch.setattr(combat_resolver, "fetch_combat_context", fake_context)
 
     with using_campaign_settings(resolve_settings({"overrides": {"companion": {"combat": "player"}}})):
-        context, proposal = await combat_resolver.resolve("strike the warden", "session-1")
+        resolution = await combat_resolver.resolve("strike the warden", "session-1")
 
-    assert context == "[PLAYER ACTION]\nAldric strikes and advances the turn."
-    assert proposal is None
+    assert resolution.context == "[PLAYER ACTION]\nAldric strikes and advances the turn."
+    assert resolution.proposal is None

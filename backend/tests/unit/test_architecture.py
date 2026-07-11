@@ -91,6 +91,21 @@ def test_routes_do_not_coordinate_agents_or_queries_directly() -> None:
         assert not _forbids(path, forbidden), path
 
 
+def test_combat_planners_do_not_run_mutation_tool_loops() -> None:
+    for filename in ("combat_resolver.py", "combat_ai.py"):
+        source = (ROOT / "agents" / filename).read_text()
+        assert "complete_with_tools" not in source
+        assert "COMBAT_TOOLS" not in source
+
+
+def test_combat_executor_owns_transaction_boundaries() -> None:
+    combat_root = ROOT / "application/combat"
+    for path in combat_root.glob("*.py"):
+        if path.name == "executor.py":
+            continue
+        assert "await db.commit()" not in path.read_text(), path
+
+
 def test_campaign_scene_and_npc_domain_modules_have_no_runtime_dependencies() -> None:
     root = Path(__file__).parents[2] / "src/cairn/domain/services"
     forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.agents", "cairn.pipelines")

@@ -6,6 +6,7 @@ from httpx import AsyncClient
 
 from cairn.db import client as db_client
 from cairn.db.queries import npcs as npc_queries
+from cairn.tools import fetch_combat_context
 from cairn.tools.combat import advance_turn, apply_damage, apply_effect, start_combat
 from tests._factories import make_campaign, make_character, make_session, parse_sse
 
@@ -211,15 +212,23 @@ async def test_full_combat_turn_emits_sse_events(client: AsyncClient) -> None:
         }
     )
 
-    call_count = {"n": 0}
-
     async def _fake_acompletion(model: str, messages: list, stream: bool = False, **kwargs):  # type: ignore[return]
-        call_count["n"] += 1
         if stream:
             return _fake_stream()
-        if call_count["n"] % 2 == 1:
-            return _tool_call_response("advance_turn", {"session_id": session_id})
-        return _content_response(json.dumps({"resolved": True, "summary": "Fighter swings, goblin takes damage."}))
+        prompt = messages[-1]["content"]
+        actor_id = next(
+            combatant["id"]
+            for combatant in (await fetch_combat_context(session_id))[0]["combatants"]
+            if combatant["name"] in prompt
+        )
+        return _content_response(
+            json.dumps(
+                {
+                    "operations": [{"kind": "advance_turn", "actor_id": actor_id}],
+                    "summary": "Advance after the planned action.",
+                }
+            )
+        )
 
     with patch("litellm.acompletion", side_effect=_fake_acompletion):
         r = await client.post(

@@ -4,12 +4,13 @@ from typing import Literal
 import structlog
 from pydantic import BaseModel
 
+from cairn.application.combat.plan import CombatPlan
 from cairn.domain.exceptions import AgentError
 from cairn.domain.services import companions
 from cairn.domain.services.narrative_profile import format_profile
-from cairn.llm.client import complete_to_model, complete_with_tools
+from cairn.llm.client import complete_to_model
 from cairn.llm.router import agent_setup
-from cairn.tools import COMBAT_TOOLS, fetch_combat_context
+from cairn.tools import fetch_combat_context
 
 log = structlog.get_logger()
 
@@ -40,8 +41,8 @@ def _companion_dispositions(party: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
-async def run(session_id: str, role: Literal["ally", "enemy"]) -> str:
-    """Resolve one AI-controlled combatant turn. Returns a resolution summary string."""
+async def run(session_id: str, role: Literal["ally", "enemy"]) -> CombatPlan:
+    """Plan one AI-controlled combatant turn without mutating combat state."""
     combat_state, party = await fetch_combat_context(session_id)
 
     idx = combat_state.get("turn_index", 0)
@@ -64,10 +65,10 @@ async def run(session_id: str, role: Literal["ally", "enemy"]) -> str:
     )
 
     try:
-        final_text, _ = await complete_with_tools(
+        return await complete_to_model(
             model=model,
             messages=[{"role": "user", "content": rendered}],
-            tools=COMBAT_TOOLS,
+            model_cls=CombatPlan,
             agent=agent_name,
             fallbacks=fallbacks,
             temperature=prompt.temperature,
@@ -75,13 +76,6 @@ async def run(session_id: str, role: Literal["ally", "enemy"]) -> str:
     except Exception as exc:
         log.error("combat_ai_failed", role=role, error=str(exc))
         raise AgentError(f"{role.capitalize()}AI failed: {exc}") from exc
-
-    try:
-        data = json.loads(final_text.strip())
-        return str(data.get("summary", final_text))
-    except json.JSONDecodeError:
-        log.warning("combat_ai_non_json_response", role=role, raw=final_text[:200])
-        return final_text
 
 
 async def propose(session_id: str) -> CompanionProposal:

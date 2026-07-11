@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SubmitTurnRequest(BaseModel):
@@ -19,6 +19,22 @@ class ResolveRequest(BaseModel):
 class CompanionActionResolutionRequest(BaseModel):
     decision: Literal["confirm", "override"]
     override: str | None = None
+
+
+class ReactionResolutionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    checkpoint_id: str
+    decision: Literal["take", "decline"]
+    chosen_reaction: str | None = None
+
+    @model_validator(mode="after")
+    def validate_choice(self) -> ReactionResolutionRequest:
+        if self.decision == "take" and self.chosen_reaction is None:
+            raise ValueError("chosen_reaction is required when taking a reaction")
+        if self.decision == "decline" and self.chosen_reaction is not None:
+            raise ValueError("chosen_reaction must be null when declining a reaction")
+        return self
 
 
 class TurnResponse(BaseModel):

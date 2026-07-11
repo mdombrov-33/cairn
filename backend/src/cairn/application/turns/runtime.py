@@ -52,6 +52,16 @@ class CompanionActionResumption:
     override: str | None
 
 
+@dataclass(frozen=True)
+class ReactionResumption:
+    outcome: Any
+    turn: Turn
+    session_id: uuid.UUID
+    campaign_id: uuid.UUID
+    namespace: str
+    player_input: str
+
+
 class TurnRuntime:
     """Prepare, continue, and resume a foreground player turn."""
 
@@ -151,6 +161,44 @@ class TurnRuntime:
             namespace=resumption.namespace,
             decision=resumption.decision,
             override=resumption.override,
+        )
+
+    async def prepare_reaction_resumption(
+        self,
+        db: AsyncSession,
+        *,
+        session_id: uuid.UUID,
+        owner_id: str,
+        checkpoint_id: str,
+        decision: str,
+        chosen_reaction: str | None,
+    ) -> ReactionResumption:
+        outcome, turn, campaign_id, namespace, player_input = await service.resume_reaction(
+            db,
+            session_id=session_id,
+            owner_id=owner_id,
+            checkpoint_id=checkpoint_id,
+            decision=decision,
+            chosen_reaction=chosen_reaction,
+        )
+        return ReactionResumption(
+            outcome=outcome,
+            turn=turn,
+            session_id=session_id,
+            campaign_id=campaign_id,
+            namespace=namespace,
+            player_input=player_input,
+        )
+
+    def resume_reaction(self, db: AsyncSession, resumption: ReactionResumption) -> AsyncGenerator[dict[str, Any]]:
+        return service.stream_reaction(
+            db,
+            outcome=resumption.outcome,
+            turn=resumption.turn,
+            session_id=resumption.session_id,
+            campaign_id=resumption.campaign_id,
+            namespace=resumption.namespace,
+            player_input=resumption.player_input,
         )
 
 

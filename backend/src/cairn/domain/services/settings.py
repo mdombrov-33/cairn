@@ -14,6 +14,7 @@ type PassiveCheckVisibility = Literal["silent", "surfaced", "on_demand"]
 type DeathMode = Literal["hardcore", "narrative", "pacifist"]
 type ContentLevel = Literal["off", "fade", "on"]
 type NarrationVerbosity = Literal["terse", "normal", "lush"]
+type ReactionControl = Literal["ai", "suggest", "player"]
 
 
 class _SettingsModel(BaseModel):
@@ -76,6 +77,7 @@ class CampaignSettingsOverrides(_SparseSettingsModel):
     death_mode: DeathMode | None = None
     content: ContentOverrides | None = None
     narration: NarrationOverrides | None = None
+    reaction_control: ReactionControl | None = None
 
     def as_json(self) -> dict[str, Any]:
         return self.model_dump(mode="json", exclude_none=True)
@@ -133,6 +135,7 @@ class ResolvedCampaignSettings(_SettingsModel):
     death_mode: DeathMode = "narrative"
     content: ContentSettings = ContentSettings()
     narration: NarrationSettings = NarrationSettings()
+    reaction_control: ReactionControl = "ai"
 
     def as_json(self) -> dict[str, Any]:
         return self.model_dump(mode="json")
@@ -143,11 +146,13 @@ _PRESETS: dict[CampaignPreset, CampaignSettingsOverrides] = {
     "balanced": CampaignSettingsOverrides(
         companion=CompanionOverrides(combat="suggest"),
         checks=CheckOverrides(passive_perception="surfaced", passive_insight="surfaced"),
+        reaction_control="suggest",
     ),
     "tactical": CampaignSettingsOverrides(
         companion=CompanionOverrides(combat="player", equipment="player", leveling="player", checks="player"),
         checks=CheckOverrides(passive_perception="surfaced", passive_insight="surfaced"),
         death_mode="hardcore",
+        reaction_control="suggest",
     ),
 }
 
@@ -176,7 +181,14 @@ def parse_overrides(overrides: Mapping[str, Any] | CampaignSettingsOverrides) ->
 def validate_overrides(overrides: Mapping[str, Any] | CampaignSettingsOverrides) -> None:
     """Validate a sparse override at the HTTP/persistence seam."""
     if isinstance(overrides, Mapping):
-        unknown = set(overrides) - {"companion", "checks", "death_mode", "content", "narration"}
+        unknown = set(overrides) - {
+            "companion",
+            "checks",
+            "death_mode",
+            "content",
+            "narration",
+            "reaction_control",
+        }
         if unknown:
             raise ValueError(f"unknown settings override: {sorted(unknown)[0]}")
     parse_overrides(overrides)

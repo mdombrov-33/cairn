@@ -64,10 +64,15 @@ rest immediately; a hostile scene emits `rest_blocked`; and a risky scene emits
 prepared casters choose spells after a long rest, while AI-controlled companions deterministically
 retain legal preparations and fill remaining slots from the typed SRD catalog.
 
-When combat is active, the current implementation bypasses non-combat intent routing. Combat agents
-run LangChain mutation tools, those tools open independent database sessions, and the completed facts
-are passed to narration. This is current but transitional: Slice 10.5 replaces it with typed plans and
-a deterministic executor. No reaction endpoint or `reaction_prompt` SSE event exists yet.
+When combat is active, combat agents produce strict ordered plans without mutation tools. The combat
+executor derives mechanics from campaign, combat, actor, and SRD state and executes operations
+deterministically. It owns combat commits, engine attack rolls, reaction dispatch, persisted
+checkpoints, and resumption. Completed facts reach Scene Narrator only after execution finishes.
+
+The executor-private reaction registry covers opportunity attacks, Shield, Absorb Elements,
+Counterspell, readied actions, and Sentinel. Player reactions follow `reaction_control`; interactive
+opportunities persist `pending_reaction` in combat-state JSONB and emit `reaction_prompt`.
+`POST /v1/sessions/{id}/reactions` validates the checkpoint and continues the same turn.
 
 ## Post-turn work
 
@@ -92,12 +97,12 @@ transaction.
 Code that runs outside that lifetime opens an explicit session:
 
 - graph and foreground workflows that must persist before streaming;
-- LangChain tools invoked during the current combat loop;
+- standalone LangChain tools;
 - each post-turn epilogue job.
 
 Query adapters execute reads and writes and may flush, but do not commit. The owning workflow defines
-the transaction. Some older application combat/resource/transition functions still commit internally;
-these are legacy semantics, not the preferred interface, and remain frozen until their owning slice.
+the transaction. Reusable combat operations flush without committing; the executor commits completed
+combat work and reaction checkpoints, while standalone combat tools use their outer session context.
 
 ## Typed data seams
 
@@ -120,8 +125,8 @@ structured-output, tool-loop, or streaming interfaces in `llm/client.py`; only t
 LiteLLM. Mechanical calculations remain deterministic code even when an agent chooses or narrates an
 action.
 
-The current combat mutation loop is the notable transitional exception to the intended planner shape.
-It is replaced only by Slice 10.5.
+Combat planners use structured output. Mechanical values, legality, resources, rolls, and mutation are
+owned by deterministic application code rather than prompts.
 
 ## Enforced architecture
 
@@ -142,8 +147,6 @@ gate is `make check`.
 
 The current roadmap locks several future shapes that must not be mistaken for present behavior:
 
-- **Slice 10.5:** typed combat plans, deterministic execution, engine-owned to-hit, reaction registry,
-  reaction suspension/resumption, and a reaction HTTP/SSE contract.
 - **Slice 10.7:** tagged tool registry, symmetric tool consolidation, and a FastMCP server mounted at
   `/mcp`. There is no MCP server today.
 - **Slice 13:** pgvector/FTS/tag hybrid retrieval with RRF and local reranking. There is no vector

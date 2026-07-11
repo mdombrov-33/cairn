@@ -59,9 +59,8 @@ expressed mechanically.
 - New application workflows should make transaction ownership visible at the outer workflow seam.
   Avoid hidden commits in reusable inner functions.
 
-Legacy deviation: several existing combat, resource, resolver, and transition functions commit
-internally. Do not copy this pattern. Slice 10.5 is responsible for consolidating combat mutation and
-transaction policy in its executor; unrelated work must leave those semantics stable.
+Legacy deviation: several existing resource and transition functions commit internally. Do not copy
+this pattern. Combat mutation and transaction policy are consolidated in the combat executor.
 
 Application workflows may coordinate and mutate ORM entities loaded through query adapters when the
 capability requires it, but domain functions receive plain values and return plain results.
@@ -92,9 +91,8 @@ Changing a Python owner does not authorize changing stored JSONB, checkpoint, HT
 - Post-turn LLM work is scheduled only through `application/turns/epilogue.py`, which owns task
   tracking, failure isolation, and shutdown.
 
-Legacy deviation: combat agents currently run a live mutation-tool loop, and `combat_resolver.py`
-owns persistence details. Slice 10.5 replaces that loop with typed planners and a deterministic
-executor. Do not deepen or generalize the current loop outside that slice.
+Combat agents produce typed plans and never own live mutation tools. The deterministic executor owns
+mechanical derivation, reactions, persistence, interruption, and resumption.
 
 ## Roadmap-sensitive areas
 
@@ -102,7 +100,6 @@ The following are locked plans, not current interfaces:
 
 | Area | Current | Planned owner | Instruction before its slice lands |
 | --- | --- | --- | --- |
-| Combat execution and reactions | LLM mutation-tool loop; opportunity attack remains inline | Slice 10.5 typed plans, deterministic executor, internal reaction registry, reaction suspension | Preserve current behavior; do not create a second executor or reaction abstraction |
 | Tool registration and MCP | LangChain tools with hand-maintained lists; no MCP endpoint | Slice 10.7 tagged registry and FastMCP projection from the same tools | Do not add a general tool-creation recipe or a parallel `mcp/` hierarchy |
 | Retrieval | Direct context assembly from authored lore and campaign memory | Slice 13 pgvector + FTS + tag RRF retrieval and local reranking | Do not add an alternate vector database or agentic retrieval loop |
 | Authentication | Development `X-User-Id` header | Phase-B Clerk auth and user-owned limits | Do not treat the shim as production auth or invent a competing auth seam |
