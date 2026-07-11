@@ -1,9 +1,8 @@
 import random
+from typing import Any
 
-from cairn.db.models.session import Session
 
-
-def session_rng(session: Session) -> random.Random:
+def session_rng(session: Any) -> random.Random:
     """Seeded RNG for a session's dice.
 
     v1 returns a fresh Random(seed) each call — it does NOT persist runtime state
@@ -11,4 +10,4 @@ def session_rng(session: Session) -> random.Random:
     is deterministic dice in tests: pass a known rng_seed and a test that builds the
     same Random predicts the sequence.
     """
-    return random.Random(session.rng_seed)
+    return random.Random(int(session.rng_seed))

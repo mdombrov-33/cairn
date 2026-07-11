@@ -3,8 +3,8 @@ from typing import Annotated
 
 from langchain_core.tools import tool
 
+from cairn.application import inspiration as inspiration_service
 from cairn.db import client as db_client
-from cairn.domain.services import inspiration as inspiration_service
 
 
 @tool

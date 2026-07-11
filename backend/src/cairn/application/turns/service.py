@@ -14,6 +14,10 @@ from cairn.agents import (
     scene_narrator,
     scene_summarizer,
 )
+from cairn.application import companions as companions_service
+from cairn.application import loot as loot_service
+from cairn.application import narrative_context, scene_director_context
+from cairn.application import time as time_service
 from cairn.context import recording_turn, using_campaign_settings
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
@@ -29,11 +33,8 @@ from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.db.queries import world_bible as world_bible_queries
 from cairn.domain.exceptions import AgentError, ConflictError, NotFoundError, ValidationError
-from cairn.domain.services import campaign_view, narrative_context, scene_director_context
-from cairn.domain.services import companions as companions_service
-from cairn.domain.services import loot as loot_service
+from cairn.domain.services import campaign_view
 from cairn.domain.services import settings as settings_service
-from cairn.domain.services import time as time_service
 from cairn.pipelines import turn_graph
 from cairn.pipelines.turn_graph import TurnState
 from cairn.types import CheckData, CompanionActionProposal, LootIntent, NpcPresence, ScenePostOutput

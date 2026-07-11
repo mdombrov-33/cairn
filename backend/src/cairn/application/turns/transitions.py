@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import structlog
 
 from cairn.agents import scene_builder, scene_director, scene_summarizer
-from cairn.application import campaign_context
+from cairn.application import campaign_context, scene_director_context
 from cairn.application import scenes as scene_service
 from cairn.context import current_turn_id
 from cairn.db import client as db_client
@@ -19,7 +19,7 @@ from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.db.queries import turns as turn_queries
 from cairn.domain.exceptions import NotFoundError
-from cairn.domain.services import campaign_view, scene_director_context
+from cairn.domain.services import campaign_view
 from cairn.domain.services.combat import state as combat_state_service
 
 if TYPE_CHECKING:

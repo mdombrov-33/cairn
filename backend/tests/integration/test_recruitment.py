@@ -12,10 +12,10 @@ from unittest.mock import AsyncMock, patch
 from httpx import AsyncClient
 
 from cairn.agents.recruiter import RecruitDecision
+from cairn.application import recruitment
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
-from cairn.domain.services import recruitment
 from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import TurnState, _resolve_dismissal, _resolve_recruitment
 from tests._factories import make_campaign, make_character, make_session

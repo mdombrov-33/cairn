@@ -6,12 +6,12 @@ from typing import cast
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application import time as time_service
 from cairn.db.models.character import Character
 from cairn.db.models.session import Session
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError, NotFoundError
-from cairn.domain.services import time as time_service
 from cairn.domain.services.combat.helpers import exhaustion_level
 from cairn.types import CharacterRestResult, HitDieResult
 

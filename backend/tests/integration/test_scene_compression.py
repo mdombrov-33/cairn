@@ -9,11 +9,11 @@ import uuid
 
 from httpx import AsyncClient
 
+from cairn.application import narrative_context
+from cairn.application.narrative_context import COMPRESSION_BEAT_THRESHOLD, RECENT_TURNS
 from cairn.db import client as db_client
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import turns as turn_queries
-from cairn.domain.services import narrative_context
-from cairn.domain.services.narrative_context import COMPRESSION_BEAT_THRESHOLD, RECENT_TURNS
 from tests._factories import make_campaign, make_session
 
 

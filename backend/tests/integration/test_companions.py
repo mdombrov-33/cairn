@@ -4,9 +4,9 @@ import uuid
 
 from httpx import AsyncClient
 
+from cairn.application import companions
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
-from cairn.domain.services import companions
 from tests._factories import DEFAULT_CHARACTER, make_campaign, make_character
 
 _PROFILE = {"name": "Bram", "personality": "Loyal and blunt.", "voice": {"accent": "rough"}}

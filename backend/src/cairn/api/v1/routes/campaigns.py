@@ -12,8 +12,8 @@ from cairn.api.v1.schemas.campaigns import (
 from cairn.api.v1.schemas.lore import WorldBibleEntryResponse
 from cairn.api.v1.schemas.sessions import SessionResponse
 from cairn.application import campaigns as service
-from cairn.domain.services import lore as lore_service
-from cairn.domain.services import sessions as session_service
+from cairn.application import lore as lore_service
+from cairn.application import sessions as session_service
 
 router = APIRouter(prefix="/v1/campaigns", tags=["campaigns"])
 

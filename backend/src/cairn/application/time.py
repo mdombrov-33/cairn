@@ -1,8 +1,8 @@
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.application import day_roll
 from cairn.db.models.session import Session
-from cairn.domain.services import day_roll
 from cairn.domain.services.combat.emitter import emit
 
 log = structlog.get_logger()

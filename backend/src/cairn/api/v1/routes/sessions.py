@@ -8,10 +8,10 @@ from cairn.agents import scene_narrator
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.sessions import SessionResponse
 from cairn.application import rests as rest_service
+from cairn.application import sessions as service
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.exceptions import ConflictError
-from cairn.domain.services import sessions as service
 from cairn.sse.events import sse
 
 router = APIRouter(prefix="/v1/sessions", tags=["sessions"])

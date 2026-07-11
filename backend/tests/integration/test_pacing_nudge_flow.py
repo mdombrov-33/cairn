@@ -50,7 +50,7 @@ async def test_nudge_reaches_narrator(client: AsyncClient) -> None:
 
     with (
         patch("cairn.pipelines.turn_graph.run", new=_state_with_nudge),
-        patch("cairn.domain.services.turns.scene_narrator.run", new=_fake_narrator),
+        patch("cairn.application.turns.service.scene_narrator.run", new=_fake_narrator),
     ):
         r = await client.post(
             f"/v1/sessions/{sess['id']}/turns",

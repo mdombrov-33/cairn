@@ -9,12 +9,12 @@ import uuid
 
 from httpx import AsyncClient
 
+from cairn.application import narrative_context
 from cairn.application import scenes as scene_service
 from cairn.db import client as db_client
 from cairn.db.queries import locations as location_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
-from cairn.domain.services import narrative_context
 from tests._factories import make_campaign, make_session
 
 

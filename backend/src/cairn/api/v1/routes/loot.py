@@ -4,9 +4,9 @@ from fastapi import APIRouter
 
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.loot import LootRequest, LootResponse
+from cairn.application import loot as loot_service
 from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services import loot as loot_service
 
 router = APIRouter(prefix="/v1/sessions", tags=["loot"])
 

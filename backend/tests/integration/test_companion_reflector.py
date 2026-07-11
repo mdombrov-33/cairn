@@ -10,11 +10,11 @@ from unittest.mock import AsyncMock, patch
 
 from httpx import AsyncClient
 
+from cairn.application.turns import service as turns_service
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import turns as turn_queries
-from cairn.domain.services import turns as turns_service
 from tests._factories import DEFAULT_CHARACTER, make_campaign, make_character, make_session
 
 _PROFILE = {"name": "Bram", "personality": "Loyal and blunt.", "voice": {"accent": "rough"}}

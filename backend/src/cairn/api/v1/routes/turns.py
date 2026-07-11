@@ -6,9 +6,9 @@ from fastapi.responses import StreamingResponse
 
 from cairn.api.deps import CurrentUserId, DBSession
 from cairn.api.v1.schemas.turns import CompanionActionResolutionRequest, ResolveRequest, SubmitTurnRequest, TurnResponse
+from cairn.application import inspiration as inspiration_service
+from cairn.application.turns import service
 from cairn.domain.exceptions import ValidationError
-from cairn.domain.services import inspiration as inspiration_service
-from cairn.domain.services import turns as service
 from cairn.sse.events import sse
 
 router = APIRouter(prefix="/v1/sessions", tags=["turns"])

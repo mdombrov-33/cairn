@@ -2,10 +2,10 @@ import uuid
 
 from httpx import AsyncClient
 
+from cairn.application import day_roll
 from cairn.db import client as db_client
 from cairn.db.models.session import Session
 from cairn.db.queries import characters as character_queries
-from cairn.domain.services import day_roll
 from cairn.domain.services.rng import session_rng
 from tests._factories import make_campaign, make_character, make_session
 

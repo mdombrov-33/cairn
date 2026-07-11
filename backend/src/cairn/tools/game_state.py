@@ -5,13 +5,13 @@ from langchain_core.tools import tool
 
 from cairn.api.v1.schemas.characters import CharacterResponse
 from cairn.api.v1.schemas.npcs import NPCResponse
+from cairn.application import loot as loot_service
 from cairn.db import client as db_client
 from cairn.db.models.character import Character
 from cairn.db.models.npc import NPC
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
-from cairn.domain.services import loot as loot_service
 from cairn.domain.services.combat.helpers import empty_combat_state
 from cairn.types import CombatState, InventoryItem
 

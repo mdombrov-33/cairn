@@ -13,12 +13,12 @@ from httpx import AsyncClient
 
 from cairn.agents.combat_ai import _companion_dispositions
 from cairn.agents.dialogue import DialogueResult
+from cairn.application import narrative_context
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import world_bible as world_bible_queries
-from cairn.domain.services import narrative_context
 from cairn.domain.services.settings import ResolvedCampaignSettings
 from cairn.pipelines.turn_graph import TurnState, _resolve_dialogue
 from tests._factories import make_campaign, make_character, make_session
