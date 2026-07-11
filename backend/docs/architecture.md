@@ -132,6 +132,7 @@ It is replaced only by Slice 10.5.
 - LiteLLM confinement;
 - absence of a global shared-types module;
 - the foreground turn-runtime seam;
+- v1 route isolation from direct agent and query coordination;
 - purity of migrated domain capabilities.
 
 The source is checked by mypy and Pyright; strict Pyright covers all production modules. The full CI

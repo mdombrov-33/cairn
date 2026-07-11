@@ -84,6 +84,13 @@ def test_turn_routes_cross_the_foreground_runtime_seam() -> None:
     assert "cairn.application.turns.runtime" in imports
 
 
+def test_routes_do_not_coordinate_agents_or_queries_directly() -> None:
+    forbidden = ("cairn.agents", "cairn.db.queries")
+
+    for path in (ROOT / "api/v1/routes").glob("*.py"):
+        assert not _forbids(path, forbidden), path
+
+
 def test_campaign_scene_and_npc_domain_modules_have_no_runtime_dependencies() -> None:
     root = Path(__file__).parents[2] / "src/cairn/domain/services"
     forbidden = ("sqlalchemy", "fastapi", "cairn.db", "cairn.agents", "cairn.pipelines")

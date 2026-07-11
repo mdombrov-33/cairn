@@ -3,6 +3,8 @@ from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.db.models.session import Session
+from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
 from cairn.db.queries import npcs as npc_queries
 from cairn.db.queries import sessions as session_queries
@@ -13,6 +15,18 @@ from cairn.domain.services.inventory import copy_inventory, find_item
 COIN_KEYS = ("gp", "sp", "cp")
 
 
+async def _get_loot_session(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    owner_id: str | None,
+) -> Session:
+    db_session = await session_queries.get_session(db, session_id)
+    if owner_id is not None:
+        await campaign_queries.get_campaign_owned_by(db, db_session.campaign_id, owner_id)
+    return db_session
+
+
 async def loot_item(
     db: AsyncSession,
     *,
@@ -20,12 +34,13 @@ async def loot_item(
     npc_id: uuid.UUID,
     item_name: str,
     character_id: uuid.UUID,
+    owner_id: str | None = None,
 ) -> InventoryItem:
     """Move item_name from npc.inventory to character.inventory. Returns the looted item.
 
     NPC and character must both belong to the session's campaign.
     """
-    db_session = await session_queries.get_session(db, session_id)
+    db_session = await _get_loot_session(db, session_id=session_id, owner_id=owner_id)
     npc = await npc_queries.get_npc(db, npc_id)
     char = await character_queries.get_character(db, character_id)
 
@@ -56,12 +71,13 @@ async def loot_currency(
     npc_id: uuid.UUID,
     character_id: uuid.UUID,
     currency: dict[str, int],
+    owner_id: str | None = None,
 ) -> dict[str, int]:
     """Move coins from an NPC to a character. Returns the character's new balance.
 
     Validates the NPC holds at least the requested amount of each coin type.
     """
-    db_session = await session_queries.get_session(db, session_id)
+    db_session = await _get_loot_session(db, session_id=session_id, owner_id=owner_id)
     npc = await npc_queries.get_npc(db, npc_id)
     char = await character_queries.get_character(db, character_id)
 

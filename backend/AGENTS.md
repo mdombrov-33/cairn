@@ -43,6 +43,7 @@ adapters exist.
 - LiteLLM is confined to `llm/client.py`.
 - The removed global `cairn/types.py` is not recreated.
 - HTTP turn routes cross `application/turns/runtime.py`.
+- HTTP v1 routes do not coordinate agents or query modules directly.
 
 When adding a new architectural rule, add an architecture test in the same change if it can be
 expressed mechanically.

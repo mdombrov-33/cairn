@@ -31,8 +31,8 @@ real adapters.
 5. Add integration coverage for authorization, invalid input, persisted outcome, and exact transport
    representation.
 
-Do not call an agent or query module directly from a new route. Existing examples that do so are
-legacy deviations, not templates.
+Do not call an agent or query module directly from a route; this is mechanically checked for
+`api/v1/routes/`.
 
 ## Implement an application workflow
 
