@@ -17,3 +17,7 @@ class SessionResponse(BaseModel):
     combat_active: bool
     combat_state: dict[str, Any] | None
     in_game_hours_elapsed: int
+
+
+class RestRequest(BaseModel):
+    confirm_risky: bool = False

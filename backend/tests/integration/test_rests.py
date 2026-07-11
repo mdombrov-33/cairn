@@ -6,6 +6,7 @@ from httpx import AsyncClient
 from cairn.application import rests as rest_service
 from cairn.db import client as db_client
 from cairn.db.queries import characters as character_queries
+from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.combat_rules import empty_combat_state
 from cairn.domain.exceptions import ConflictError
@@ -122,6 +123,22 @@ async def test_short_rest_blocked_in_combat(client: AsyncClient) -> None:
             await rest_service.apply_short_rest(db, session_id=uuid.UUID(sess["id"]))
 
 
+async def test_short_rest_blocked_in_hostile_scene(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
+
+    async with db_client.get_session() as db:
+        scene = await scene_queries.get_current_scene(db, uuid.UUID(camp["id"]))
+        assert scene is not None
+        scene.safety_level = "hostile"
+        await db.commit()
+
+    async with db_client.get_session() as db:
+        with pytest.raises(ConflictError, match="hostile_scene"):
+            await rest_service.apply_short_rest(db, session_id=uuid.UUID(sess["id"]))
+
+
 # Long rest
 
 
@@ -204,6 +221,65 @@ async def test_long_rest_clears_prepared_spells_for_prepared_casters(client: Asy
 
     assert str(cid) in result["spell_prep_required"]
 
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, cid)
+        assert char.prepared_spells == []
+
+
+async def test_long_rest_auto_prepares_ai_companion_spells(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    char_resp = await make_character(
+        client,
+        camp["id"],
+        **WIZARD,
+        is_companion=True,
+        narrative_profile={"name": "Mira", "personality": "Studious", "voice": {"cadence": "precise"}},
+    )
+    sess = await make_session(client, camp["id"])
+    cid = uuid.UUID(char_resp["id"])
+
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, cid)
+        char.spells_known = ["Magic Missile", "Shield", "Charm Person", "Mage Armor", "Sleep"]
+        char.prepared_spells = ["Shield", "Magic Missile", "Charm Person", "Mage Armor", "Sleep"]
+        await db.commit()
+
+    async with db_client.get_session() as db:
+        result = await rest_service.apply_long_rest(db, session_id=uuid.UUID(sess["id"]))
+
+    assert str(cid) not in result["spell_prep_required"]
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, cid)
+        assert char.prepared_spells == ["Shield", "Magic Missile", "Charm Person", "Mage Armor"]
+
+
+async def test_long_rest_clears_spells_for_player_controlled_companion(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    settings_response = await client.patch(
+        f"/v1/campaigns/{camp['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"overrides": {"companion": {"leveling": "player"}}},
+    )
+    assert settings_response.status_code == 200
+    char_resp = await make_character(
+        client,
+        camp["id"],
+        **WIZARD,
+        is_companion=True,
+        narrative_profile={"name": "Mira", "personality": "Studious", "voice": {"cadence": "precise"}},
+    )
+    sess = await make_session(client, camp["id"])
+    cid = uuid.UUID(char_resp["id"])
+
+    async with db_client.get_session() as db:
+        char = await character_queries.get_character(db, cid)
+        char.prepared_spells = ["Shield"]
+        await db.commit()
+
+    async with db_client.get_session() as db:
+        result = await rest_service.apply_long_rest(db, session_id=uuid.UUID(sess["id"]))
+
+    assert str(cid) in result["spell_prep_required"]
     async with db_client.get_session() as db:
         char = await character_queries.get_character(db, cid)
         assert char.prepared_spells == []
@@ -372,6 +448,21 @@ async def test_prepare_spells_exceeds_max_raises(client: AsyncClient) -> None:
     assert r.status_code == 422
 
 
+@pytest.mark.parametrize("spells", [["Bless"], ["Fireball"], ["Unknown Spell"], ["Magic Missile", "magic missile"]])
+async def test_prepare_spells_rejects_illegal_choices(client: AsyncClient, spells: list[str]) -> None:
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"], **WIZARD)
+    cid = uuid.UUID(char_resp["id"])
+
+    r = await client.post(
+        f"/v1/campaigns/{camp['id']}/characters/{cid}/prepare-spells",
+        headers={"X-User-Id": "user_a"},
+        json={"spells": spells},
+    )
+
+    assert r.status_code == 422
+
+
 # Routes smoke tests
 
 
@@ -403,3 +494,51 @@ async def test_long_rest_route(client: AsyncClient) -> None:
     assert "token" in types
     assert types[-1] == "rest_end"
     assert events[0]["data"]["rest_type"] == "long"
+
+
+async def test_risky_rest_requires_explicit_confirmation(client: AsyncClient) -> None:
+    camp = await make_campaign(client)
+    char_resp = await make_character(client, camp["id"])
+    sess = await make_session(client, camp["id"])
+    session_id = uuid.UUID(sess["id"])
+    character_id = uuid.UUID(char_resp["id"])
+
+    async with db_client.get_session() as db:
+        scene = await scene_queries.get_current_scene(db, uuid.UUID(camp["id"]))
+        assert scene is not None
+        scene.safety_level = "risky"
+        char = await character_queries.get_character(db, character_id)
+        char.hp = 1
+        await db.commit()
+
+    warning = await client.post(f"/v1/sessions/{session_id}/long-rest", headers={"X-User-Id": "user_a"})
+    assert warning.status_code == 200
+    events = parse_sse(warning.text)
+    assert events[0] == {
+        "type": "rest_confirmation_required",
+        "data": {
+            "rest_type": "long",
+            "reason": "risky_scene",
+            "message": "This scene is risky. Are you sure you want to rest? You might be ambushed.",
+        },
+    }
+
+    async with db_client.get_session() as db:
+        session = await session_queries.get_session(db, session_id)
+        char = await character_queries.get_character(db, character_id)
+        assert session.in_game_hours_elapsed == 0
+        assert char.hp == 1
+
+    confirmed = await client.post(
+        f"/v1/sessions/{session_id}/long-rest",
+        headers={"X-User-Id": "user_a"},
+        json={"confirm_risky": True},
+    )
+    assert confirmed.status_code == 200
+    assert parse_sse(confirmed.text)[0]["type"] == "rest_applied"
+
+    async with db_client.get_session() as db:
+        session = await session_queries.get_session(db, session_id)
+        char = await character_queries.get_character(db, character_id)
+        assert session.in_game_hours_elapsed == 8
+        assert char.hp == char.max_hp

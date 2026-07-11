@@ -1,23 +1,32 @@
 import math
 import random
 import uuid
-from typing import TypedDict, cast
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass
+from typing import Any, Literal, TypedDict, cast
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cairn.agents import scene_narrator
 from cairn.application import time as time_service
 from cairn.db.models.character import Character
 from cairn.db.models.session import Session
+from cairn.db.queries import campaigns as campaign_queries
 from cairn.db.queries import characters as character_queries
+from cairn.db.queries import scenes as scene_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.domain.combat_rules import exhaustion_level
 from cairn.domain.exceptions import ConflictError, NotFoundError
+from cairn.domain.services.settings import resolve_settings
+from cairn.srd.catalog import catalog
+from cairn.srd.models import SpellRecord
 
 log = structlog.get_logger()
 
 # Classes whose spell lists require active daily preparation (long rest re-prep).
 PREPARED_CASTERS = {"cleric", "druid", "paladin", "wizard"}
+type RestType = Literal["short", "long"]
 
 
 class CharacterRestResult(TypedDict):
@@ -40,15 +49,44 @@ class HitDieResult(TypedDict):
     hit_dice_remaining: int
 
 
+class RestStreamEvent(TypedDict):
+    type: Literal["rest_applied", "rest_blocked", "rest_confirmation_required", "token", "rest_end"]
+    data: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class PreparedRest:
+    """A validated rest outcome ready for transport-neutral narration."""
+
+    rest_type: RestType
+    event_type: Literal["rest_applied", "rest_blocked", "rest_confirmation_required"]
+    event_data: dict[str, Any]
+    context: str
+
+
 def _ability_modifier(score: int) -> int:
     return math.floor((score - 10) / 2)
 
 
-def _can_rest(session: Session) -> tuple[bool, str]:
+async def _rest_block_reason(db: AsyncSession, session: Session, *, confirm_risky: bool) -> str | None:
     if session.combat_active:
-        return False, "in_combat"
-    # TODO Slice 6: check scene.safety_level — hostile environment blocks rest, risky warns
-    return True, ""
+        return "in_combat"
+
+    scene = await scene_queries.get_current_scene(db, session.campaign_id)
+    if scene is None or scene.safety_level == "safe":
+        return None
+    if scene.safety_level == "hostile":
+        return "hostile_scene"
+    if scene.safety_level == "risky" and not confirm_risky:
+        return "risky_scene"
+    return None
+
+
+def _spell_slots_at_current_level(char: Character) -> dict[str, int] | None:
+    levels = catalog.class_levels(char.class_name)
+    if not 1 <= char.level <= len(levels):
+        return None
+    return levels[char.level - 1].spell_slots()
 
 
 def _reset_character_short_rest(char: Character) -> CharacterRestResult:
@@ -63,17 +101,10 @@ def _reset_character_short_rest(char: Character) -> CharacterRestResult:
     # Warlock spell slots recharge on short rest
     slots_restored = False
     if char.class_name == "warlock" and char.spell_slots:
-        from cairn.srd import get_class_levels
-
-        levels = get_class_levels("warlock")
-        if char.level >= 1 and char.level <= len(levels):
-            sc = levels[char.level - 1].get("spellcasting") or {}
-            full_slots = {
-                str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0
-            }
-            if full_slots:
-                char.spell_slots = full_slots
-                slots_restored = True
+        full_slots = _spell_slots_at_current_level(char)
+        if full_slots:
+            char.spell_slots = full_slots
+            slots_restored = True
 
     return CharacterRestResult(
         character_id=str(char.id),
@@ -86,7 +117,7 @@ def _reset_character_short_rest(char: Character) -> CharacterRestResult:
     )
 
 
-def _reset_character_long_rest(char: Character) -> CharacterRestResult:
+def _reset_character_long_rest(char: Character, *, auto_prepare: bool) -> CharacterRestResult:
     hp_before = char.hp
     char.hp = char.max_hp
 
@@ -102,17 +133,10 @@ def _reset_character_long_rest(char: Character) -> CharacterRestResult:
     # Full spell slots restored for all casters
     slots_restored = False
     if char.spell_slots is not None:
-        from cairn.srd import get_class_levels
-
-        levels = get_class_levels(char.class_name)
-        if char.level >= 1 and char.level <= len(levels):
-            sc = levels[char.level - 1].get("spellcasting") or {}
-            full_slots = {
-                str(i): sc[f"spell_slots_level_{i}"] for i in range(1, 10) if sc.get(f"spell_slots_level_{i}", 0) > 0
-            }
-            if full_slots:
-                char.spell_slots = full_slots
-                slots_restored = True
+        full_slots = _spell_slots_at_current_level(char)
+        if full_slots:
+            char.spell_slots = full_slots
+            slots_restored = True
 
     # Restore half max hit dice (min 1)
     max_hd = char.level
@@ -128,13 +152,15 @@ def _reset_character_long_rest(char: Character) -> CharacterRestResult:
             conditions.append(f"exhaustion-{new_level}")
         char.conditions = conditions
 
-    # Clear prepared spells for prepared casters — player re-preps after long rest.
-    # TODO Slice 10: companions with settings.companion.leveling == "ai" should auto-re-prepare
-    # instead of entering the spell_prep_required flow; skip clearing and pick spells server-side.
+    # Player-controlled prepared casters choose a new list after resting. AI-controlled
+    # companions retain legal spells first, then fill the remaining choices deterministically.
     prepared_cleared = False
     if char.class_name in PREPARED_CASTERS:
-        char.prepared_spells = []
-        prepared_cleared = True
+        if auto_prepare:
+            char.prepared_spells = _default_prepared_spells(char)
+        else:
+            char.prepared_spells = []
+            prepared_cleared = True
 
     return CharacterRestResult(
         character_id=str(char.id),
@@ -151,10 +177,11 @@ async def apply_short_rest(
     db: AsyncSession,
     *,
     session_id: uuid.UUID,
+    confirm_risky: bool = False,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    ok, reason = _can_rest(session)
-    if not ok:
+    reason = await _rest_block_reason(db, session, confirm_risky=confirm_risky)
+    if reason is not None:
         raise ConflictError(f"cannot rest: {reason}", code=reason)
 
     party = await character_queries.get_party_for_session(db, session_id)
@@ -172,23 +199,88 @@ async def apply_long_rest(
     db: AsyncSession,
     *,
     session_id: uuid.UUID,
+    confirm_risky: bool = False,
 ) -> dict:
     session = await session_queries.get_session(db, session_id)
-    ok, reason = _can_rest(session)
-    if not ok:
+    reason = await _rest_block_reason(db, session, confirm_risky=confirm_risky)
+    if reason is not None:
         raise ConflictError(f"cannot rest: {reason}", code=reason)
+
+    campaign = await campaign_queries.get_campaign(db, session.campaign_id)
+    settings = resolve_settings(campaign.settings)
 
     party = await character_queries.get_party_for_session(db, session_id)
     if not party:
         raise NotFoundError("no party members in session", code="no_party")
 
-    results = [_reset_character_long_rest(char) for char in party]
+    results = [
+        _reset_character_long_rest(
+            char,
+            auto_prepare=char.is_companion and settings.companion.leveling == "ai",
+        )
+        for char in party
+    ]
 
     await time_service.advance_time(db, session, hours=8, source="long_rest")  # long rest = 8 hours
     log.info("long_rest_applied", session_id=str(session_id), party_size=len(party))
 
     needs_spell_prep = [r["character_id"] for r in results if r["prepared_spells_cleared"]]
     return {"rest_type": "long", "results": results, "spell_prep_required": needs_spell_prep}
+
+
+async def prepare_rest(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    owner_id: str,
+    rest_type: RestType,
+    confirm_risky: bool = False,
+) -> PreparedRest:
+    """Authorize and apply one rest, leaving the route only SSE formatting work."""
+
+    session = await session_queries.get_session(db, session_id)
+    await campaign_queries.get_campaign_owned_by(db, session.campaign_id, owner_id)
+
+    try:
+        result = (
+            await apply_long_rest(db, session_id=session_id, confirm_risky=confirm_risky)
+            if rest_type == "long"
+            else await apply_short_rest(db, session_id=session_id, confirm_risky=confirm_risky)
+        )
+    except ConflictError as error:
+        if error.code == "risky_scene":
+            return PreparedRest(
+                rest_type=rest_type,
+                event_type="rest_confirmation_required",
+                event_data={
+                    "rest_type": rest_type,
+                    "reason": error.code,
+                    "message": "This scene is risky. Are you sure you want to rest? You might be ambushed.",
+                },
+                context=build_confirmation_context(rest_type),
+            )
+        return PreparedRest(
+            rest_type=rest_type,
+            event_type="rest_blocked",
+            event_data={"reason": error.code},
+            context=build_blocked_context(error.code),
+        )
+
+    return PreparedRest(
+        rest_type=rest_type,
+        event_type="rest_applied",
+        event_data={"rest_type": rest_type, **result},
+        context=build_rest_context(rest_type, result),
+    )
+
+
+async def stream(prepared: PreparedRest) -> AsyncGenerator[RestStreamEvent]:
+    """Narrate a prepared rest as semantic events; SSE encoding belongs to the route."""
+
+    yield {"type": prepared.event_type, "data": prepared.event_data}
+    async for chunk in scene_narrator.run(f"{prepared.rest_type} rest", context=prepared.context):
+        yield {"type": "token", "data": {"text": chunk}}
+    yield {"type": "rest_end", "data": {}}
 
 
 async def roll_hit_die(
@@ -233,12 +325,17 @@ async def prepare_spells(
     if char.class_name not in PREPARED_CASTERS:
         raise ValidationError(f"{char.class_name} does not prepare spells")
 
-    # Validate all spells are in spells_known (or class list for clerics/druids/paladins)
-    # For now validate count only — full legality check requires SRD class spell list lookup
-    # TODO Slice 5: validate each spell is on the class spell list
     max_prepared = _max_prepared_spells(char)
     if len(spells) > max_prepared:
         raise ValidationError(f"may prepare at most {max_prepared} spells, got {len(spells)}")
+    if len({spell.casefold() for spell in spells}) != len(spells):
+        raise ValidationError("prepared spells cannot contain duplicates")
+
+    legal_spell_names = {spell.name.casefold() for spell in _legal_prepared_spells(char)}
+    for spell_name in spells:
+        record = catalog.spell(spell_name)
+        if record is None or record.name.casefold() not in legal_spell_names:
+            raise ValidationError(f"{spell_name} cannot be prepared by this character")
 
     char.prepared_spells = list(spells)
     log.info("spells_prepared", character_id=str(char.id), count=len(spells))
@@ -266,8 +363,17 @@ def build_rest_context(rest_type: str, result: dict) -> str:
 def build_blocked_context(reason: str) -> str:
     detail = {
         "in_combat": "The party is engaged in combat.",
+        "hostile_scene": "The current scene is too hostile for the party to rest.",
     }.get(reason, f"Rest is not possible right now ({reason}).")
     return f"[Rest Blocked — {reason}]\n{detail}"
+
+
+def build_confirmation_context(rest_type: RestType) -> str:
+    label = "Short" if rest_type == "short" else "Long"
+    return (
+        f"[{label} Rest — Confirmation Required]\n"
+        "This scene is risky. Ask whether the party is sure they want to rest and warn that they might be ambushed."
+    )
 
 
 def _max_prepared_spells(char: Character) -> int:
@@ -279,3 +385,54 @@ def _max_prepared_spells(char: Character) -> int:
     ability_key = {"wizard": "int", "cleric": "wis", "druid": "wis"}.get(char.class_name, "int")
     mod = _ability_modifier(scores.get(ability_key, 10))
     return max(1, mod + char.level)
+
+
+def _legal_prepared_spells(char: Character) -> tuple[SpellRecord, ...]:
+    """Return the leveled spells this character may prepare at the current level."""
+
+    slots = _spell_slots_at_current_level(char)
+    max_spell_level = max((int(level) for level in slots or {}), default=0)
+    if max_spell_level == 0:
+        return ()
+
+    if char.class_name == "wizard":
+        known_spells = {spell.casefold() for spell in char.spells_known}
+        return tuple(
+            spell
+            for spell in catalog.spells
+            if 0 < spell.level <= max_spell_level and spell.name.casefold() in known_spells
+        )
+
+    return tuple(
+        spell
+        for spell in catalog.spells
+        if 0 < spell.level <= max_spell_level
+        and any(spell_class.index == char.class_name for spell_class in spell.classes)
+    )
+
+
+def _default_prepared_spells(char: Character) -> list[str]:
+    """Choose stable legal preparations for an AI-controlled companion without an LLM call."""
+
+    legal = _legal_prepared_spells(char)
+    max_prepared = _max_prepared_spells(char)
+    legal_by_name = {spell.name.casefold(): spell for spell in legal}
+    selected: list[str] = []
+    selected_names: set[str] = set()
+
+    for spell_name in char.prepared_spells:
+        if len(selected) >= max_prepared:
+            break
+        record = legal_by_name.get(spell_name.casefold())
+        if record is not None and record.name.casefold() not in selected_names:
+            selected.append(record.name)
+            selected_names.add(record.name.casefold())
+
+    for spell in legal:
+        if len(selected) >= max_prepared:
+            break
+        if spell.name.casefold() not in selected_names:
+            selected.append(spell.name)
+            selected_names.add(spell.name.casefold())
+
+    return selected

@@ -57,6 +57,13 @@ Check and companion endpoints prepare a resumption through the runtime, validate
 and persisted pause data, then continue the same turn. Route code does not interpret suspension
 payloads.
 
+Standalone rest endpoints cross the rest workflow before SSE formatting. A safe scene applies the
+rest immediately; a hostile scene emits `rest_blocked`; and a risky scene emits
+`rest_confirmation_required` without changing state. Repeating that request with
+`{"confirm_risky": true}` explicitly accepts the ambush risk and applies the rest. Player-controlled
+prepared casters choose spells after a long rest, while AI-controlled companions deterministically
+retain legal preparations and fill remaining slots from the typed SRD catalog.
+
 When combat is active, the current implementation bypasses non-combat intent routing. Combat agents
 run LangChain mutation tools, those tools open independent database sessions, and the completed facts
 are passed to narration. This is current but transitional: Slice 10.5 replaces it with typed plans and
