@@ -1,121 +1,100 @@
-# Backend working instructions
+# Backend coding instructions
 
 These instructions apply under `backend/` in addition to the repository root `AGENTS.md`.
 
-## Establish the time boundary
+## Evidence before design
 
-Use three labels consistently when reasoning about the backend:
+- **Current** means verified in production source and tests and documented in `docs/architecture.md`.
+- **Planned** means specified in `docs/roadmap.md` but not yet implemented.
+- Never present planned work as an available interface.
+- A roadmap outcome may be locked while its old file map or suggested internal mechanism is stale.
+  Re-derive the smallest implementation from current code. Ask before changing the locked outcome or
+  public contract, not before simplifying unused internal machinery.
+- Before adding a module or seam, identify its callers, the complexity it hides, the variation it
+  serves, and the interface-level test. If those are absent, keep the implementation direct.
 
-- **Current** means verified in production source and tests.
-- **Planned** means locked or proposed in `docs/roadmap.md` but not yet implemented.
-- **Legacy deviation** means current code that violates the preferred shape and must not be copied.
-
-Never present planned work as an available interface. Never describe a legacy deviation as the
-creation recipe. Before implementing a roadmap slice, re-check every path in its old file map because
-the architecture campaign moved many owners from `domain/services/` into `application/`.
-
-## Current package ownership
+## Package ownership
 
 | Package | Owns | Must not own |
 | --- | --- | --- |
-| `api/` | HTTP parsing, authentication dependencies, schemas, response and SSE formatting | New business rules, direct agent coordination, new query orchestration |
-| `application/` | Use-case workflows, persistence coordination, transaction decisions, agent coordination | HTTP formatting, reusable pure calculations |
-| `domain/` | Pure values, calculations, invariants, and capability-owned types | SQLAlchemy, FastAPI, queries, agents, application, pipelines |
+| `api/` | HTTP parsing, authentication dependencies, schemas, response and SSE formatting | Business rules, agent coordination, query orchestration |
+| `application/` | Use-case workflows, persistence coordination, transactions, agent coordination | HTTP formatting, reusable pure calculations |
+| `domain/` | Pure values, calculations, invariants, capability-owned types | SQLAlchemy, FastAPI, queries, agents, application, pipelines |
 | `db/models/` | SQLAlchemy persistence representations | Gameplay and workflow decisions |
-| `db/queries/` | Database selection, ORM construction, deletion, reusable persistence mutations, flush, and lookup errors | Commits, LLM calls, cross-capability workflows |
-| `agents/` | Prompt assembly and typed interpretation, classification, or narration | New persistence ownership or live ORM mutation |
-| `tools/` | Thin LangChain adapters registered once and projected to FastMCP | Duplicated rules, orchestration, or a second tool definition |
-| `pipelines/` | LangGraph construction, routing, and delegation | Persistence, direct LLM calls, business logic |
-| `prompts/` | Versioned LLM instructions and Jinja inputs | Mechanical truth that deterministic code can enforce |
-| `srd/` | Validated, cached rules catalog and SRD-owned records | Campaign or session state |
-| `sse/` | Encoding typed workflow events for transport | Workflow decisions |
+| `db/queries/` | Selection, ORM construction, deletion, reusable persistence mutations, flush, lookup errors | Commits, LLM calls, cross-capability workflows |
+| `agents/` | Prompt assembly and typed interpretation, classification, narration | Persistence ownership, live ORM mutation |
+| `tools/` | Thin LangChain adapters registered once and projected to FastMCP | Rules, orchestration, a second tool definition |
+| `pipelines/` | LangGraph construction, routing, delegation | Persistence, direct LLM calls, business logic |
+| `prompts/` | Versioned LLM instructions and Jinja inputs | Deterministic mechanics |
+| `srd/` | Validated cached rules catalog and SRD-owned records | Campaign or session state |
+| `sse/` | Typed workflow-event transport encoding | Workflow decisions |
 
 Prefer deep application modules: callers cross a small interface while persistence, agent
-coordination, and sequencing remain inside. Do not add a port or repository protocol unless two real
-adapters exist.
+coordination, and sequencing remain inside. Do not expose internal seams merely for tests.
 
-## Enforced constraints
+## Hard constraints
 
-`tests/unit/test_architecture.py` enforces the constraints that are hard today:
+- All LLM provider calls go through `src/cairn/llm/client.py`.
+- Database selection, ORM construction, deletion, and reusable persistence operations live in
+  `src/cairn/db/queries/`.
+- Domain code stays pure and imports no FastAPI, SQLAlchemy, queries, agents, application code, or
+  pipelines.
+- Database schema changes use generated Alembic revisions; never add standalone migration SQL.
+- Types live beside the capability that owns their meaning; do not create `cairn/types.py`.
+- Tools live under `src/cairn/tools/`; do not create a parallel `mcp/` tool hierarchy.
+- Do not add a generic port or repository protocol for one concrete adapter.
+- Preserve existing typed JSON, HTTP, SSE, JSONB, prompt, and checkpoint representations unless a
+  contract change is explicitly in scope.
 
-- `domain/` has no persistence, application, agent, pipeline, or framework imports.
-- `pipelines/` has no persistence or direct LLM client imports.
-- LiteLLM is confined to `llm/client.py`.
-- The removed global `cairn/types.py` is not recreated.
-- HTTP turn routes cross `application/turns/runtime.py`.
-- HTTP v1 routes do not coordinate agents or query modules directly.
-
-When adding a new architectural rule, add an architecture test in the same change if it can be
-expressed mechanically.
+`tests/unit/test_architecture.py` mechanically enforces domain purity, pipeline isolation, exclusive
+LiteLLM ownership, route/application seams, and the absence of a global types module. Add an
+architecture test with any new rule that can be expressed mechanically.
 
 ## Persistence and transactions
 
-- Query modules accept an `AsyncSession`, perform database operations, and may `flush`; they do not
+- Query functions accept an `AsyncSession`, perform database operations, and may `flush`; they do not
   commit.
-- Ordinary HTTP workflows share the request session. `api/deps.py` commits after a successful request
-  and rolls back on failure.
-- Graph nodes, tools, and post-turn work open their own sessions because they execute outside the
-  ordinary request transaction; their owning application workflow defines the atomic unit.
-- New application workflows should make transaction ownership visible at the outer workflow seam.
-  Avoid hidden commits in reusable inner functions.
-
-Legacy deviation: several existing resource and transition functions commit internally. Do not copy
-this pattern. Combat mutation and transaction policy are consolidated in the combat executor.
-
-Application workflows may coordinate and mutate ORM entities loaded through query adapters when the
-capability requires it, but domain functions receive plain values and return plain results.
+- Ordinary HTTP workflows share the request session. `api/deps.py` commits successful requests and
+  rolls back failures.
+- Graph nodes, tools, and post-turn work open their own sessions because they run outside the request
+  transaction. Their owning application workflow defines the atomic unit.
+- Make transaction ownership visible at the outer workflow seam. Do not add hidden commits to
+  reusable inner functions.
+- Application workflows may coordinate mutation of loaded ORM entities. Domain functions receive
+  plain values and return plain results.
 
 ## Types and representation seams
 
-- Put a type beside the capability that defines it: character types in `domain/characters.py`, combat
-  types in combat modules, turn types in `application/turns/`, and transport schemas in `api/` or
-  `sse/`.
-- Use immutable strict Pydantic models for validated configuration and agent structured output.
-- Use `TypedDict` for owned dictionary-shaped JSON contracts when their storage representation must
-  remain a dictionary.
-- Optional `TypedDict` keys must be read with `.get()` or an explicit membership check.
-- Validate external JSON once at its seam. The typed SRD catalog is the model for static rule data.
-- Convert typed values explicitly at JSONB and HTTP seams; do not leak ORM models or unvalidated
-  dictionaries into pure rules.
+- Use immutable strict Pydantic models for validated configuration and structured agent output.
+- Use `TypedDict` for owned dictionary-shaped JSON contracts that must remain dictionaries.
+- Read optional `TypedDict` keys with `.get()` or an explicit membership check.
+- Validate external JSON once at its seam and convert explicitly at JSONB and HTTP seams.
+- Do not leak ORM models or unvalidated dictionaries into pure rules.
 
-Changing a Python owner does not authorize changing stored JSONB, checkpoint, HTTP, or SSE shapes.
+Moving Python ownership does not authorize changing a stored or transported representation.
 
 ## LLM, agents, and prompts
 
-- Agents obtain prompt/model/fallback policy through `agent_setup()` and call only interfaces in
-  `llm/client.py`.
-- Prefer structured Pydantic output for decisions that application code consumes.
+- Agents obtain prompt, model, and fallback policy through `agent_setup()` and call only interfaces
+  in `llm/client.py`.
+- New agent tools have one clear, non-overlapping intent, validated inputs, and explicit failures.
+  Reducing tool count alone does not justify replacing intent-named operations with mode flags or
+  signed deltas.
+- Prefer structured Pydantic output for decisions consumed by application code.
 - Agents interpret, classify, plan, or narrate. Deterministic code owns mechanics and mutation.
-- Prompt files are versioned and selected through `LLM_PROMPT_VERSIONS`; keep their input contract
-  synchronized with the calling agent and cover material prompt behavior with tests.
-- Post-turn LLM work is scheduled only through `application/turns/epilogue.py`, which owns task
-  tracking, failure isolation, and shutdown.
+- Keep versioned prompt inputs synchronized with callers and test material prompt behavior.
+- Schedule post-turn LLM work only through `application/turns/epilogue.py`.
+- Combat agents produce typed plans and never receive live mutation tools. The deterministic executor
+  owns derivation, reactions, persistence, interruption, and resumption.
 
-Combat agents produce typed plans and never own live mutation tools. The deterministic executor owns
-mechanical derivation, reactions, persistence, interruption, and resumption.
+## Verification
 
-## Roadmap-sensitive areas
-
-The following are locked plans, not current interfaces:
-
-| Area | Current | Planned owner | Instruction before its slice lands |
-| --- | --- | --- | --- |
-| Retrieval | Direct context assembly from authored lore and campaign memory | Slice 13 pgvector + FTS + tag RRF retrieval and local reranking | Do not add an alternate vector database or agentic retrieval loop |
-| Authentication | Development `X-User-Id` header | Phase-B Clerk auth and user-owned limits | Do not treat the shim as production auth or invent a competing auth seam |
-| Entitlements | Account-tier model bundles are configuration only | Slice 14.5 user entitlements and enforcement | Campaign settings never choose a model tier |
-| Frontend | No frontend package | Slices 15/15.5 Vite React SPA | Do not invent backend contracts from the visual mockups; follow locked dependencies in the roadmap |
-
-After one of these slices lands, move its stable creation guidance into `docs/development.md`, update
-`docs/architecture.md`, and remove its warning row here in the same commit.
-
-## Testing and verification
-
-- Unit tests exercise pure domain interfaces and deterministic mapping logic.
+- Unit tests exercise pure domain interfaces and deterministic mappings.
 - Integration tests exercise application workflows with Postgres and verify persisted outcomes.
-- Route tests assert status, response models, authorization, and SSE event contracts.
+- Route tests assert status, response models, authorization, and SSE contracts.
 - Agent tests patch the LLM client interface, not LiteLLM.
-- Tests for a deepened module cross the same interface as production callers; do not preserve tests of
-  obsolete shallow internals after replacement coverage exists.
+- Tests for a deepened module cross the same interface as production callers; remove obsolete tests of
+  shallow internals after replacement coverage exists.
 
-Run focused tests while iterating. Before committing, run `make check` from the repository root,
-`git diff --check`, and an Alembic head check whenever persistence ownership or schema changes.
+Run focused tests while iterating. Before committing, run `make check` and `git diff --check` from the
+repository root, plus an Alembic head check for schema or persistence movement.

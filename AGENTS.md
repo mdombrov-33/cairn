@@ -1,20 +1,61 @@
-# Cairn working instructions
+# Cairn coding instructions
 
-## Start here
+Cairn is an AI Dungeon Master platform for persistent tabletop campaigns. The Python backend lives
+in `backend/`; no frontend package exists yet.
 
-Cairn is an AI Dungeon Master platform for persistent tabletop campaigns. The repository currently
-contains the Python backend in `backend/`; a frontend is planned but not present.
-
-Before changing code:
+## Read before acting
 
 1. Read the nearest `AGENTS.md` files from the repository root to the target file.
-2. Read `CONTEXT.md` when domain terms or ownership are involved.
-3. Read `backend/docs/roadmap.md` before feature, architecture, or product-contract work.
-4. Read relevant accepted decisions in `backend/docs/adr/`.
-5. Check the working tree and preserve unrelated user changes.
+2. Check the working tree and preserve unrelated user changes.
+3. Read `CONTEXT.md` when domain language or ownership matters.
+4. Read `backend/docs/architecture.md` for current implementation, `backend/docs/roadmap.md` for
+   feature or product-contract work, and only the relevant accepted ADRs.
 
-The roadmap describes planned behavior. It does not prove that behavior is implemented. Verify the
-live code and `backend/docs/architecture.md` before relying on a roadmap statement.
+Code and tests are evidence of what exists. The roadmap specifies intended outcomes and constraints;
+it does not prove that a feature, file map, or proposed internal mechanism is still appropriate.
+
+## Working principles
+
+### Think before coding
+
+- Before implementation, state a short plan with observable success criteria.
+- Surface assumptions, ambiguities, and contract risks. Do not silently choose a materially different
+  behavior.
+- Distinguish **Current** behavior verified in code from **Planned** behavior specified only in the
+  roadmap.
+- Re-check callers and current ownership before following an older design. If the proposed machinery
+  no longer earns its keep, use the simpler design that still satisfies the required outcome.
+
+### Simplicity first
+
+- Make the smallest coherent change that satisfies the current request.
+- Do not add speculative abstractions, metadata, configuration, extension points, or compatibility
+  layers.
+- An abstraction must hide meaningful complexity or serve real current variation. One concrete
+  adapter does not justify a generic port or repository protocol.
+- Apply the deletion test: if removing a module makes complexity disappear rather than reappear in
+  callers, the module is probably unnecessary.
+- Prefer a direct implementation until a seam is demonstrated by callers, tests, or multiple
+  adapters.
+
+### Change surgically
+
+- Do not mix feature work with unrelated cleanup. Report adjacent problems separately.
+- Local inspection, scoped edits, and tests may proceed autonomously. Ask before deployment, external
+  communication, destructive data operations, or work outside the requested contract.
+- Preserve runtime behavior during architecture work unless behavior change is explicitly in scope.
+- Treat HTTP, SSE, typed JSON, JSONB, prompt, checkpoint, persistence, and gameplay representations
+  as frozen unless the request authorizes a contract change.
+- Never weaken checks, suppress errors, or rewrite tests merely to make a gate pass. Fail loudly and
+  report the mismatch.
+
+### Execute against outcomes
+
+- Test through the interface callers use and match verification depth to risk.
+- Update only the documentation that owns the changed fact.
+- Finish one coherent iteration before starting another.
+- The diff, owned documentation, and commit are the audit trail. Do not create session-memory or
+  progress-log files.
 
 ## Commands
 
@@ -29,64 +70,28 @@ make revision m="add x table"  generate an Alembic revision
 make up / down    start or stop local infrastructure
 ```
 
-Run `uv` commands from `backend/`. Always add packages with `uv add`; never edit dependency lists or
-the lockfile by hand.
-
-## Working method
-
-Before implementation, state a short plan with observable success criteria. Distinguish:
-
-- **Current** — verified in code and safe to document as available.
-- **Planned** — specified by the roadmap but not implemented.
-- **Legacy deviation** — present in code but not a pattern for new work.
-
-Make the smallest coherent change that satisfies the request. Do not add speculative abstractions,
-configurability, cleanup, or adjacent fixes. When the work exposes an unrelated bug, report it and
-leave it separate.
-
-For architecture-only work, preserve runtime behavior unless the user explicitly includes a behavior
-change. HTTP, SSE, JSONB, prompt, persistence, and gameplay contracts are frozen by default.
-
-For the established slice workflow, finish one coherent iteration, update the documentation owned by
-that change, run the required checks, commit it, and provide the commit hash and message before the
-user compacts the session.
-
-## Universal constraints
-
-- All LLM provider calls go through `backend/src/cairn/llm/client.py`.
-- Database selection, ORM construction, deletion, and reusable persistence operations live in
-  `backend/src/cairn/db/queries/`; application workflows may coordinate mutation of loaded ORM
-  entities inside their owned transaction.
-- Domain code is pure and has no FastAPI, SQLAlchemy, query, agent, application, or pipeline imports.
-- Database schema changes use Alembic generation; never write standalone migration SQL.
-- Types live with the capability that owns their meaning; do not recreate a global shared-types file.
-- Do not introduce a generic port or repository protocol for a single concrete adapter.
-- Preserve existing public representations at typed JSON, HTTP, SSE, and checkpoint seams.
-- Tools live under `backend/src/cairn/tools/`; do not create a separate `mcp/` tool hierarchy.
-
-Backend placement rules, current flows, known deviations, and roadmap-sensitive areas are in
-`backend/AGENTS.md`.
+Run `uv` commands from `backend/`. Add packages with `uv add`; never edit dependency lists or the
+lockfile by hand.
 
 ## Documentation ownership
 
-- `CONTEXT.md` — domain glossary only; no package paths, implementation decisions, or progress log.
-- `AGENTS.md` — imperative working rules; no completed-slice history.
-- `backend/docs/architecture.md` — current implementation only.
-- `backend/docs/development.md` — procedures for stable, currently supported extension points.
+- `CONTEXT.md` — domain glossary only.
+- `AGENTS.md` — imperative working rules only.
+- `backend/docs/architecture.md` — current implementation.
+- `backend/docs/development.md` — stable, currently supported extension procedures.
 - `backend/docs/adr/` — durable decisions and their reasons, written sparingly.
-- `backend/docs/roadmap.md` — future sequencing, locked specifications, and deferred work.
+- `backend/docs/roadmap.md` — future sequencing, product constraints, and deferred work.
 
-Do not duplicate the same guidance across these files. Link to its owner.
+Link to the owner instead of duplicating guidance. Do not record completed-slice history in active
+instructions.
 
-## Verification
-
-Match verification to risk:
+## Completion gate
 
 - Pure rules: focused unit tests.
 - Persistence and workflows: focused integration tests.
-- HTTP, SSE, JSONB, prompts, or checkpoints: contract tests for the unchanged representation.
+- HTTP, SSE, JSONB, prompts, or checkpoints: contract tests.
 - Import or ownership changes: architecture tests.
-- Persistence movement or schema work: confirm a single clean Alembic head.
+- Persistence movement or schema changes: confirm one clean Alembic head.
 
-Every completed implementation iteration ends with `make check` and `git diff --check`. Do not weaken
-checks, suppress errors, or change tests merely to make the gate pass.
+Every completed implementation iteration ends with `make check`, `git diff --check`, an intentional
+commit, and a report of the commit hash and message.
