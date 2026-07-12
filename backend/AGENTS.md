@@ -24,7 +24,7 @@ the architecture campaign moved many owners from `domain/services/` into `applic
 | `db/models/` | SQLAlchemy persistence representations | Gameplay and workflow decisions |
 | `db/queries/` | Database selection, ORM construction, deletion, reusable persistence mutations, flush, and lookup errors | Commits, LLM calls, cross-capability workflows |
 | `agents/` | Prompt assembly and typed interpretation, classification, or narration | New persistence ownership or live ORM mutation |
-| `tools/` | Thin LangChain adapters around application capabilities | Duplicated rules and orchestration |
+| `tools/` | Thin LangChain adapters registered once and projected to LangChain and FastMCP | Duplicated rules, orchestration, or a second tool definition |
 | `pipelines/` | LangGraph construction, routing, and delegation | Persistence, direct LLM calls, business logic |
 | `prompts/` | Versioned LLM instructions and Jinja inputs | Mechanical truth that deterministic code can enforce |
 | `srd/` | Validated, cached rules catalog and SRD-owned records | Campaign or session state |
@@ -100,7 +100,6 @@ The following are locked plans, not current interfaces:
 
 | Area | Current | Planned owner | Instruction before its slice lands |
 | --- | --- | --- | --- |
-| Tool registration and MCP | LangChain tools with hand-maintained lists; no MCP endpoint | Slice 10.7 tagged registry and FastMCP projection from the same tools | Do not add a general tool-creation recipe or a parallel `mcp/` hierarchy |
 | Retrieval | Direct context assembly from authored lore and campaign memory | Slice 13 pgvector + FTS + tag RRF retrieval and local reranking | Do not add an alternate vector database or agentic retrieval loop |
 | Authentication | Development `X-User-Id` header | Phase-B Clerk auth and user-owned limits | Do not treat the shim as production auth or invent a competing auth seam |
 | Entitlements | Account-tier model bundles are configuration only | Slice 14.5 user entitlements and enforcement | Campaign settings never choose a model tier |

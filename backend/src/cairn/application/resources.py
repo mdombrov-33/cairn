@@ -1,3 +1,4 @@
+import copy
 import math
 import random
 import uuid
@@ -16,14 +17,15 @@ async def consume_spell_slot(
     *,
     character_id: uuid.UUID,
     level: int,
+    count: int = 1,
 ) -> dict:
     char = await character_queries.get_character(db, character_id)
     slots = dict(char.spell_slots or {})
     key = str(level)
     remaining = slots.get(key, 0)
-    if remaining <= 0:
+    if remaining < count:
         return {"error": f"{char.name} has no level {level} spell slots remaining."}
-    slots[key] = remaining - 1
+    slots[key] = remaining - count
     char.spell_slots = slots
     await db.commit()
     return {
@@ -57,7 +59,7 @@ async def use_resource(
     count: int = 1,
 ) -> dict:
     char = await character_queries.get_character(db, character_id)
-    resources = dict(char.resources or {})
+    resources = copy.deepcopy(char.resources or {})
     r = resources.get(resource)
     if r is None:
         return {"error": f"{char.name} does not have the resource '{resource}'."}
@@ -84,7 +86,7 @@ async def restore_resource(
     count: int = 1,
 ) -> dict:
     char = await character_queries.get_character(db, character_id)
-    resources = dict(char.resources or {})
+    resources = copy.deepcopy(char.resources or {})
     r = resources.get(resource)
     if r is None:
         return {"error": f"{char.name} does not have the resource '{resource}'."}

@@ -2,15 +2,14 @@ import json
 import uuid
 from typing import Annotated
 
-from langchain_core.tools import tool
-
 import cairn.application.combat as combat_service
 import cairn.application.leveling as leveling_service
 from cairn.application.combat import executor as combat_executor
 from cairn.db import client as db_client
+from cairn.tools.registry import register
 
 
-@tool
+@register(tags={"state", "mutation"})
 async def start_combat(
     session_id: Annotated[str, "The session UUID."],
     enemies_json: Annotated[
@@ -33,7 +32,7 @@ async def start_combat(
     return {"combat_started": True, "combat_state": combat_state}
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def move_combatant(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant ID to move."],
@@ -49,7 +48,7 @@ async def move_combatant(
         )
 
 
-@tool
+@register(tags={"combat", "readonly"})
 async def get_combatants_in_zone(
     session_id: Annotated[str, "The session UUID."],
     zone_id: Annotated[str, "The zone id whose occupants to return."],
@@ -59,7 +58,7 @@ async def get_combatants_in_zone(
         return await combat_service.zones.combatants_in_zone(db, session_id=uuid.UUID(session_id), zone_id=zone_id)
 
 
-@tool
+@register(tags={"combat", "readonly"})
 async def get_zones_in_range(
     session_id: Annotated[str, "The session UUID."],
     from_zone: Annotated[str, "The origin zone id."],
@@ -75,7 +74,7 @@ async def get_zones_in_range(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def end_combat(
     session_id: Annotated[str, "The session UUID."],
     outcome: Annotated[str, '"victory", "defeat", "retreat", or "resolved" (peaceful end).'],
@@ -86,7 +85,7 @@ async def end_combat(
     return {"combat_ended": True, "outcome": outcome}
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def apply_damage(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's ID (UUID for character/npc, generated id for monster)."],
@@ -118,7 +117,7 @@ async def apply_damage(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def apply_healing(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID or monster id."],
@@ -136,18 +135,20 @@ async def apply_healing(
         )
 
 
-@tool
-async def apply_condition(
+@register(tags={"combat", "mutation"})
+async def set_condition(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID or monster id."],
     condition: Annotated[str, "The condition name."],
+    active: Annotated[bool, "True to apply the condition; false to remove it."],
 ) -> dict:
-    """Apply a condition to a combatant (e.g. "poisoned", "blinded", "prone", "stunned").
+    """Apply or remove a condition from a combatant.
 
     Tracked in combat_state for all combatant types.
     """
     async with db_client.get_session() as db:
-        return await combat_service.mutations.apply_condition(
+        mutation = combat_service.mutations.apply_condition if active else combat_service.mutations.remove_condition
+        return await mutation(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
@@ -155,23 +156,7 @@ async def apply_condition(
         )
 
 
-@tool
-async def remove_condition(
-    session_id: Annotated[str, "The session UUID."],
-    combatant_id: Annotated[str, "The combatant's UUID or monster id."],
-    condition: Annotated[str, "The condition to remove."],
-) -> dict:
-    """Remove a condition from a combatant."""
-    async with db_client.get_session() as db:
-        return await combat_service.mutations.remove_condition(
-            db,
-            session_id=uuid.UUID(session_id),
-            combatant_id=combatant_id,
-            condition=condition,
-        )
-
-
-@tool
+@register(tags={"combat", "mutation"})
 async def roll_death_save(
     session_id: Annotated[str, "The session UUID."],
     character_id: Annotated[str, "The character's UUID."],
@@ -188,7 +173,7 @@ async def roll_death_save(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def advance_turn(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
@@ -200,7 +185,7 @@ async def advance_turn(
         return await combat_service.state.advance_turn(db, session_id=uuid.UUID(session_id))
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def apply_effect(
     session_id: Annotated[str, "The session UUID."],
     target_id: Annotated[str, "Combatant ID the effect applies to."],
@@ -237,7 +222,7 @@ async def apply_effect(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def remove_effect(
     session_id: Annotated[str, "The session UUID."],
     effect_id: Annotated[str, "The effect's UUID (from the apply_effect response)."],
@@ -254,7 +239,7 @@ async def remove_effect(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def cast_concentration_spell(
     session_id: Annotated[str, "The session UUID."],
     caster_id: Annotated[str, "The caster's combatant ID (UUID for character/npc, monster id for monsters)."],
@@ -299,7 +284,7 @@ async def cast_concentration_spell(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def roll_saving_throw(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID (character/npc) or monster id."],
@@ -321,7 +306,7 @@ async def roll_saving_throw(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def add_combatant(
     session_id: Annotated[str, "The session UUID."],
     combatant_type: Annotated[str, '"character", "npc", or "monster".'],
@@ -347,7 +332,7 @@ async def add_combatant(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def remove_combatant(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's combat-state id to remove."],
@@ -364,7 +349,7 @@ async def remove_combatant(
         )
 
 
-@tool
+@register(tags={"resource", "mutation"})
 async def award_xp(
     character_id: Annotated[str, "The character's UUID."],
     amount: Annotated[int, "XP to award. Must be non-negative."],
@@ -374,27 +359,25 @@ async def award_xp(
         return await leveling_service._award_xp(db, character_id=uuid.UUID(character_id), amount=amount)
 
 
-@tool
-async def add_exhaustion(
+@register(tags={"combat", "mutation"})
+async def adjust_exhaustion(
     character_id: Annotated[str, "The character's UUID."],
-    levels: Annotated[int, "Number of exhaustion levels to add. Default 1."] = 1,
+    delta: Annotated[int, "Positive to add exhaustion levels; negative to remove them."],
 ) -> dict:
-    """Add exhaustion levels to a character (stored as 'exhaustion-N' in conditions). Level 6 kills the character."""
+    """Add or remove exhaustion levels. Delta must not be zero."""
+    if delta == 0:
+        return {"error": "delta must not be zero."}
     async with db_client.get_session() as db:
-        return await combat_service.mutations.add_exhaustion(db, character_id=character_id, levels=levels)
+        if delta > 0:
+            return await combat_service.mutations.add_exhaustion(
+                db,
+                character_id=character_id,
+                levels=delta,
+            )
+        return await combat_service.mutations.remove_exhaustion(db, character_id=character_id, levels=-delta)
 
 
-@tool
-async def remove_exhaustion(
-    character_id: Annotated[str, "The character's UUID."],
-    levels: Annotated[int, "Number of exhaustion levels to remove. Default 1."] = 1,
-) -> dict:
-    """Remove exhaustion levels from a character (e.g. after a long rest or Greater Restoration)."""
-    async with db_client.get_session() as db:
-        return await combat_service.mutations.remove_exhaustion(db, character_id=character_id, levels=levels)
-
-
-@tool
+@register(tags={"combat", "mutation"})
 async def stabilize_character(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
@@ -406,7 +389,7 @@ async def stabilize_character(
         return await combat_service.mutations.stabilize_character(db, character_id=character_id)
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def apply_temp_hp(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID (character/npc) or monster combat-state id."],
@@ -427,7 +410,7 @@ async def apply_temp_hp(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def apply_aoe_damage(
     session_id: Annotated[str, "The session UUID."],
     targets_json: Annotated[
@@ -470,7 +453,7 @@ async def apply_aoe_damage(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def resolve_contest(
     session_id: Annotated[str, "The session UUID."],
     attacker_id: Annotated[str, "Attacker's UUID (character/npc) or monster combat-state id."],
@@ -497,7 +480,7 @@ async def resolve_contest(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def roll_initiative(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[
@@ -521,7 +504,7 @@ async def roll_initiative(
         )
 
 
-@tool
+@register(tags={"combat", "mutation"})
 async def roll_skill_check(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID (character/npc) or monster id."],

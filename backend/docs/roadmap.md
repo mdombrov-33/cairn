@@ -14,20 +14,19 @@ acceptance criteria of a planned slice, read the linked section of the
   recipe to copy into unrelated work.
 - **Deferred** has no implementation commitment in the current sequence.
 
-The architecture-improvement campaign and Slice 10.5 are complete. Archived file maps are historical;
+The architecture-improvement campaign and Slices 10.5 and 10.7 are complete. Archived file maps are historical;
 use today's package owners from `architecture.md` and `AGENTS.md`.
 
 ## Ordered work
 
 | Order | Status | Slice | Purpose and dependency | Full specification |
 | --- | --- | --- | --- | --- |
-| 1 | **Next** | 10.7 | Tool registry and FastMCP server; the Slice 10.5 combat surface is final. | [MCP server + tool registry](archive/design-v5.md#slice-107--mcp-server--tool-registry) |
-| 2 | Planned | 11 | Operational hardening before evaluation and frontend SSE work. | [Operational hardening](archive/design-v5.md#slice-11--operational-hardening) |
-| 3 | Planned | 12 | Eval suite and CI gate; depends on Slice 11's complete event history. | [Eval suite + CI gate](archive/design-v5.md#slice-12--eval-suite--ci-gate) |
-| 4 | Planned | 13 | World-bible retrieval; depends on the Slice 12 baseline for tuning. | [World bible retrieval](archive/design-v5.md#slice-13--world-bible-retrieval-rag) |
-| 5 | Planned, Phase B | 14 | Authentication and cost controls. | [Auth + cost controls](archive/design-v5.md#slice-14--auth--cost-controls) |
-| 6 | Planned, Phase B | 14.5 | Plans and entitlements; depends on account identity from Slice 14. | [Plans & entitlements](archive/design-v5.md#slice-145--plans--entitlements) |
-| 7 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Frontend product spec](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) · [v4 build brief](ui-temp-reference/v4-build-brief.md) |
+| 1 | **Next** | 11 | Operational hardening before evaluation and frontend SSE work. | [Operational hardening](archive/design-v5.md#slice-11--operational-hardening) |
+| 2 | Planned | 12 | Eval suite and CI gate; depends on Slice 11's complete event history. | [Eval suite + CI gate](archive/design-v5.md#slice-12--eval-suite--ci-gate) |
+| 3 | Planned | 13 | World-bible retrieval; depends on the Slice 12 baseline for tuning. | [World bible retrieval](archive/design-v5.md#slice-13--world-bible-retrieval-rag) |
+| 4 | Planned, Phase B | 14 | Authentication and cost controls. | [Auth + cost controls](archive/design-v5.md#slice-14--auth--cost-controls) |
+| 5 | Planned, Phase B | 14.5 | Plans and entitlements; depends on account identity from Slice 14. | [Plans & entitlements](archive/design-v5.md#slice-145--plans--entitlements) |
+| 6 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Frontend product spec](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) · [v4 build brief](ui-temp-reference/v4-build-brief.md) |
 
 Slice 15's Phase A does **not** wait for Slice 14: it uses the development
 `X-User-Id` header behind its swappable frontend auth seam. Login, billing, and
@@ -35,17 +34,6 @@ admin screens are visual-only until Phase B. This explicit dependency takes
 precedence over older wording in the archive.
 
 ## Later locked work
-
-### Slice 10.7 — tool registry and MCP
-
-The tool change is deferred until the combat surface is final. It replaces the
-hand-maintained tool lists with a tagged registry and projects the same tool
-definition into LangChain and FastMCP. It is a **server-only**, single-process,
-streamable-HTTP server mounted at `/mcp`; agents continue to call tools
-in-process. There is no `mcp/` tool hierarchy, no client integration, and no
-internet exposure before Phase B authentication. Follow the [full locked
-specification](archive/design-v5.md#slice-107--mcp-server--tool-registry),
-including the known Phase-A concurrency risk.
 
 ### Slices 11–13 — reliability, evaluation, and retrieval
 

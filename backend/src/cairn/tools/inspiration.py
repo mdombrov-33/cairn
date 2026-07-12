@@ -1,13 +1,12 @@
 import uuid
 from typing import Annotated
 
-from langchain_core.tools import tool
-
 from cairn.application import inspiration as inspiration_service
 from cairn.db import client as db_client
+from cairn.tools.registry import register
 
 
-@tool
+@register(tags={"narrative", "mutation", "combat"})
 async def grant_inspiration(
     character_id: Annotated[str, "The character's UUID."],
     reason: Annotated[str, "Short reason the inspiration was earned (clever play, dramatic roleplay)."],

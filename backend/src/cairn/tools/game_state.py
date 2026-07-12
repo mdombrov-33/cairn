@@ -1,8 +1,6 @@
 import uuid
 from typing import Annotated
 
-from langchain_core.tools import tool
-
 from cairn.api.v1.schemas.characters import CharacterResponse
 from cairn.api.v1.schemas.npcs import NPCResponse
 from cairn.application import loot as loot_service
@@ -15,6 +13,7 @@ from cairn.db.queries import sessions as session_queries
 from cairn.domain.characters import InventoryItem
 from cairn.domain.combat import CombatState
 from cairn.domain.combat_rules import empty_combat_state
+from cairn.tools.registry import register
 
 
 def character_to_dict(c: Character) -> dict:
@@ -29,7 +28,7 @@ def npc_to_dict(n: NPC) -> dict:
     return data
 
 
-@tool
+@register(tags={"state", "readonly"})
 async def get_character(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
@@ -39,7 +38,7 @@ async def get_character(
         return character_to_dict(char)
 
 
-@tool
+@register(tags={"state", "readonly", "combat"})
 async def get_npc(
     npc_id: Annotated[str, "The NPC's UUID."],
 ) -> dict:
@@ -49,7 +48,7 @@ async def get_npc(
         return npc_to_dict(npc)
 
 
-@tool
+@register(tags={"state", "readonly"})
 async def get_party(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
@@ -59,7 +58,7 @@ async def get_party(
         return {"party": [character_to_dict(c) for c in characters]}
 
 
-@tool
+@register(tags={"state", "readonly"})
 async def get_combat_state(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
@@ -71,7 +70,7 @@ async def get_combat_state(
         return {"combat_active": True, "combat_state": session.combat_state}
 
 
-@tool
+@register(tags={"state", "mutation", "combat"})
 async def loot_item(
     session_id: Annotated[str, "The session UUID."],
     npc_id: Annotated[str, "The NPC's UUID to loot from."],

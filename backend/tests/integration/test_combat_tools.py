@@ -9,14 +9,13 @@ from cairn.db.queries import characters as character_queries
 from cairn.db.queries import sessions as session_queries
 from cairn.tools.combat import (
     add_combatant,
-    add_exhaustion,
+    adjust_exhaustion,
     advance_turn,
     apply_aoe_damage,
     apply_damage,
     apply_temp_hp,
     award_xp,
     remove_combatant,
-    remove_exhaustion,
     resolve_contest,
     roll_initiative,
     roll_saving_throw,
@@ -314,28 +313,28 @@ async def test_remove_combatant_before_active_decrements_turn_index(client: Asyn
     assert state["combatants"][0]["id"] == second["id"]
 
 
-# add_exhaustion / remove_exhaustion
+# adjust_exhaustion
 
 
-async def test_add_exhaustion_tracks_level_in_conditions(client: AsyncClient) -> None:
-    """add_exhaustion stores exhaustion-N in conditions and reports the level."""
+async def test_adjust_exhaustion_tracks_level_in_conditions(client: AsyncClient) -> None:
+    """Positive exhaustion deltas store exhaustion-N and report the level."""
     camp = await make_campaign(client)
     char = await make_character(client, camp["id"])
 
-    result = await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 2})
+    result = await adjust_exhaustion.ainvoke({"character_id": char["id"], "delta": 2})
 
     assert result["exhaustion_level"] == 2
     assert result["dead"] is False
     assert "exhaustion-2" in result["conditions"]
 
 
-async def test_add_exhaustion_level_6_kills_character(client: AsyncClient) -> None:
+async def test_adjust_exhaustion_level_6_kills_character(client: AsyncClient) -> None:
     """Reaching exhaustion 6 sets hp=0 and status=dead on the character."""
     camp = await make_campaign(client)
     char = await make_character(client, camp["id"])
 
-    await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 5})
-    result = await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 1})
+    await adjust_exhaustion.ainvoke({"character_id": char["id"], "delta": 5})
+    result = await adjust_exhaustion.ainvoke({"character_id": char["id"], "delta": 1})
 
     assert result["exhaustion_level"] == 6
     assert result["dead"] is True
@@ -346,13 +345,13 @@ async def test_add_exhaustion_level_6_kills_character(client: AsyncClient) -> No
     assert char_db.status == "dead"
 
 
-async def test_remove_exhaustion_reduces_level(client: AsyncClient) -> None:
-    """remove_exhaustion decrements the exhaustion-N condition by the given amount."""
+async def test_adjust_exhaustion_negative_delta_reduces_level(client: AsyncClient) -> None:
+    """Negative exhaustion deltas decrement the exhaustion level."""
     camp = await make_campaign(client)
     char = await make_character(client, camp["id"])
 
-    await add_exhaustion.ainvoke({"character_id": char["id"], "levels": 3})
-    result = await remove_exhaustion.ainvoke({"character_id": char["id"], "levels": 2})
+    await adjust_exhaustion.ainvoke({"character_id": char["id"], "delta": 3})
+    result = await adjust_exhaustion.ainvoke({"character_id": char["id"], "delta": -2})
 
     assert result["exhaustion_level"] == 1
     assert "exhaustion-1" in result["conditions"]

@@ -37,7 +37,8 @@ Query adapters know storage, while application workflows know when and why queri
 - `pipelines/` — LangGraph construction and routing.
 - `prompts/` — versioned markdown/Jinja prompts.
 - `srd/` — cached typed catalog over static rules JSON.
-- `tools/` — current LangChain-callable adapters.
+- `tools/` — tagged LangChain-callable adapters and their shared registry.
+- `api/mcp.py` — the FastMCP projection of registered tools.
 - `sse/` — SSE event serialization.
 
 Types live with these owners. There is no global `cairn/types.py`.
@@ -87,6 +88,22 @@ in-process jobs:
 Scheduling is non-blocking. The epilogue owns task tracking, consistent failure logging, cancellation,
 and graceful shutdown through the FastAPI lifespan. It is deliberately in-process; no durable queue or
 outbox exists.
+
+## Tool registry and MCP server
+
+Every LLM-callable tool is decorated with `tools.registry.register`. The registry creates the
+LangChain tool, records its tags and MCP eligibility, and derives `ALL_TOOLS` plus the legacy
+`COMBAT_TOOLS` subset. The latter has no current production consumer after the plan-based combat
+slice, but remains a compatibility export.
+
+`api/mcp.py` projects the same registered async coroutine into FastMCP; it does not wrap or
+reimplement a tool. When `MCP_ENABLED` is enabled (by default only in `ENV=dev`), the FastAPI app
+mounts a single-process Streamable HTTP server at `/mcp` and runs its session manager inside the
+application lifespan alongside the checkpointer and post-turn shutdown.
+
+The MCP server exposes the full stateful engine without authentication for local Phase-A use only.
+Do not expose it to the internet before Phase-B authentication. Concurrent MCP and internal writes
+to one `combat_state` row can lose an update; locking or optimistic concurrency remains Phase-B work.
 
 ## Persistence and transaction contexts
 
@@ -147,8 +164,6 @@ gate is `make check`.
 
 The current roadmap locks several future shapes that must not be mistaken for present behavior:
 
-- **Slice 10.7:** tagged tool registry, symmetric tool consolidation, and a FastMCP server mounted at
-  `/mcp`. There is no MCP server today.
 - **Slice 13:** pgvector/FTS/tag hybrid retrieval with RRF and local reranking. There is no vector
   retrieval path today.
 - **Phase B:** operational hardening, eval gates, Clerk authentication, entitlements, and deployment

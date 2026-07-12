@@ -1,64 +1,64 @@
 import uuid
-from typing import Annotated
-
-from langchain_core.tools import tool
+from typing import Annotated, Literal
 
 import cairn.application.resources as resource_service
 import cairn.application.rests as rest_service
 from cairn.db import client as db_client
+from cairn.tools.registry import register
 from cairn.tools.types import ToolUUID
 
 
-@tool
-async def consume_spell_slot(
+@register(tags={"resource", "mutation", "combat"})
+async def adjust_spell_slot(
     character_id: Annotated[str, "The character's UUID."],
-    level: Annotated[int, "Spell slot level to consume (1-9)."],
+    level: Annotated[int, "Spell slot level to adjust (1-9)."],
+    delta: Annotated[int, "Negative to consume slots; positive to restore slots."],
 ) -> dict:
-    """Consume one spell slot of the given level. Call whenever a character casts a leveled spell (not cantrips)."""
+    """Consume or restore spell slots of one level. Delta must not be zero."""
+    if delta == 0:
+        return {"error": "delta must not be zero."}
     async with db_client.get_session() as db:
-        return await resource_service.consume_spell_slot(db, character_id=uuid.UUID(character_id), level=level)
-
-
-@tool
-async def restore_spell_slot(
-    character_id: Annotated[str, "The character's UUID."],
-    level: Annotated[int, "Spell slot level to restore (1-9)."],
-    count: Annotated[int, "Number of slots to restore. Default 1."] = 1,
-) -> dict:
-    """Restore spell slots of the given level (e.g. Arcane Recovery, short rest for Warlock)."""
-    async with db_client.get_session() as db:
+        if delta < 0:
+            return await resource_service.consume_spell_slot(
+                db,
+                character_id=uuid.UUID(character_id),
+                level=level,
+                count=-delta,
+            )
         return await resource_service.restore_spell_slot(
-            db, character_id=uuid.UUID(character_id), level=level, count=count
+            db,
+            character_id=uuid.UUID(character_id),
+            level=level,
+            count=delta,
         )
 
 
-@tool
-async def use_resource(
+@register(tags={"resource", "mutation", "combat"})
+async def adjust_resource(
     character_id: Annotated[str, "The character's UUID."],
     resource: Annotated[str, 'Resource key, e.g. "action_surge", "ki", "rage", "bardic_inspiration".'],
-    count: Annotated[int, "Number of uses to spend. Default 1."] = 1,
+    delta: Annotated[int, "Negative to spend uses; positive to restore uses."],
 ) -> dict:
-    """Spend uses of a class resource (Action Surge, Ki, Rage, Superiority Dice, Second Wind, etc.)."""
+    """Spend or restore uses of a class resource. Delta must not be zero."""
+    if delta == 0:
+        return {"error": "delta must not be zero."}
     async with db_client.get_session() as db:
-        return await resource_service.use_resource(
-            db, character_id=uuid.UUID(character_id), resource=resource, count=count
-        )
-
-
-@tool
-async def restore_resource(
-    character_id: Annotated[str, "The character's UUID."],
-    resource: Annotated[str, "Resource key to restore."],
-    count: Annotated[int, "Number of uses to restore. Default 1."] = 1,
-) -> dict:
-    """Restore uses of a class resource (e.g. after a short or long rest, or from a feature)."""
-    async with db_client.get_session() as db:
+        if delta < 0:
+            return await resource_service.use_resource(
+                db,
+                character_id=uuid.UUID(character_id),
+                resource=resource,
+                count=-delta,
+            )
         return await resource_service.restore_resource(
-            db, character_id=uuid.UUID(character_id), resource=resource, count=count
+            db,
+            character_id=uuid.UUID(character_id),
+            resource=resource,
+            count=delta,
         )
 
 
-@tool
+@register(tags={"resource", "mutation", "combat"})
 async def set_concentration(
     character_id: Annotated[str, "The character's UUID."],
     spell_name: Annotated[str, 'Name of the spell, e.g. "Bless", "Haste", "Hold Person".'],
@@ -68,7 +68,7 @@ async def set_concentration(
         return await resource_service.set_concentration(db, character_id=uuid.UUID(character_id), spell_name=spell_name)
 
 
-@tool
+@register(tags={"resource", "mutation", "combat"})
 async def drop_concentration(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
@@ -80,7 +80,7 @@ async def drop_concentration(
         return await resource_service.drop_concentration(db, character_id=uuid.UUID(character_id))
 
 
-@tool
+@register(tags={"resource", "mutation", "combat"})
 async def roll_concentration_check(
     character_id: Annotated[str, "The character's UUID."],
     damage_taken: Annotated[int, "Total damage taken that triggered the check."],
@@ -95,52 +95,31 @@ async def roll_concentration_check(
         )
 
 
-@tool
-async def use_action(
+@register(tags={"resource", "mutation", "combat"})
+async def use_economy(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
+    economy_type: Annotated[
+        Literal["action", "bonus_action", "reaction"],
+        "The turn-economy resource to spend.",
+    ],
 ) -> dict:
-    """Mark a combatant's action as used for this turn (Attack, Cast a Spell, Dash, etc.)."""
-    async with db_client.get_session() as db:
-        return await resource_service.spend_economy(
-            db, session_id=uuid.UUID(session_id), combatant_id=combatant_id, field="action_used"
-        )
-
-
-@tool
-async def use_bonus_action(
-    session_id: Annotated[str, "The session UUID."],
-    combatant_id: Annotated[str, "The combatant's UUID."],
-) -> dict:
-    """Mark a combatant's bonus action as used for this turn (Off-hand Attack, Misty Step, Healing Word, etc.)."""
+    """Mark an action, bonus action, or reaction as used for a combatant."""
+    fields: dict[str, resource_service.EconomyFlag] = {
+        "action": "action_used",
+        "bonus_action": "bonus_action_used",
+        "reaction": "reaction_used",
+    }
     async with db_client.get_session() as db:
         return await resource_service.spend_economy(
             db,
             session_id=uuid.UUID(session_id),
             combatant_id=combatant_id,
-            field="bonus_action_used",
+            field=fields[economy_type],
         )
 
 
-@tool
-async def use_reaction(
-    session_id: Annotated[str, "The session UUID."],
-    combatant_id: Annotated[str, "The combatant's UUID."],
-) -> dict:
-    """Mark a combatant's reaction as used until the start of their next turn.
-
-    Examples: Opportunity Attack, Shield, Counterspell.
-    """
-    async with db_client.get_session() as db:
-        return await resource_service.spend_economy(
-            db,
-            session_id=uuid.UUID(session_id),
-            combatant_id=combatant_id,
-            field="reaction_used",
-        )
-
-
-@tool
+@register(tags={"resource", "mutation", "combat"})
 async def spend_movement(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
@@ -153,7 +132,7 @@ async def spend_movement(
         )
 
 
-@tool
+@register(tags={"rest", "mutation"})
 async def apply_short_rest(
     session_id: Annotated[ToolUUID, "The session UUID."],
 ) -> dict:
@@ -166,7 +145,7 @@ async def apply_short_rest(
         return await rest_service.apply_short_rest(db, session_id=uuid.UUID(session_id))
 
 
-@tool
+@register(tags={"rest", "mutation"})
 async def apply_long_rest(
     session_id: Annotated[ToolUUID, "The session UUID."],
 ) -> dict:
@@ -180,7 +159,7 @@ async def apply_long_rest(
         return await rest_service.apply_long_rest(db, session_id=uuid.UUID(session_id))
 
 
-@tool
+@register(tags={"rest", "mutation"})
 async def roll_hit_die(
     character_id: Annotated[ToolUUID, "The character's UUID."],
 ) -> dict:

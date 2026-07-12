@@ -12,12 +12,12 @@ from cairn.db.queries import sessions as session_queries
 from cairn.domain.combat import ZoneSeed
 from cairn.tools.combat import (
     apply_aoe_damage,
-    apply_condition,
     apply_damage,
     cast_concentration_spell,
     get_combatants_in_zone,
     get_zones_in_range,
     move_combatant,
+    set_condition,
     start_combat,
 )
 from tests._factories import make_campaign, make_character, make_session
@@ -120,13 +120,30 @@ async def test_grappled_combatant_cannot_move(client: AsyncClient) -> None:
     with patch("cairn.agents.zone_seeder.run", new=AsyncMock(return_value=TAVERN_ZONES)):
         await start_combat.ainvoke({"session_id": sess["id"], "enemies_json": "[]"})
 
-    await apply_condition.ainvoke({"session_id": sess["id"], "combatant_id": fighter["id"], "condition": "grappled"})
+    await set_condition.ainvoke(
+        {
+            "session_id": sess["id"],
+            "combatant_id": fighter["id"],
+            "condition": "grappled",
+            "active": True,
+        }
+    )
 
     result = await move_combatant.ainvoke(
         {"session_id": sess["id"], "combatant_id": fighter["id"], "target_zone": "behind_bar"}
     )
 
     assert result == {"error": "Ser Aldric cannot move while grappled."}
+
+    removed = await set_condition.ainvoke(
+        {
+            "session_id": sess["id"],
+            "combatant_id": fighter["id"],
+            "condition": "grappled",
+            "active": False,
+        }
+    )
+    assert removed["conditions"] == []
 
 
 async def test_zone_queries_expose_occupants_and_reachable_regions(client: AsyncClient) -> None:

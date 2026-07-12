@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     env: Literal["dev", "test", "prod"] = "dev"
     app_name: str = "cairn"
     log_level: str = "INFO"
+    mcp_enabled: bool | None = None
 
     database_url: str
 
@@ -22,6 +23,10 @@ class Settings(BaseSettings):
     # the authenticated user's current account tier at turn start.
     llm_tier: Literal["free", "plus", "pro"] = "free"
     llm_prompt_versions: str = "{}"  # JSON map e.g. '{"intent_router": "v2"}'
+
+    def is_mcp_enabled(self) -> bool:
+        """Default MCP on only for local development; explicit configuration wins."""
+        return self.mcp_enabled if self.mcp_enabled is not None else self.env == "dev"
 
 
 @lru_cache
