@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#0A0806;}
+a{color:#D6A452;text-decoration:none}
+a:hover{color:#EBC98A}
+@keyframes glowP{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes caretB{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+</helmet>
+
+<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
+
+  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">THEME SYSTEM</span>
+    <sc-for list="{{ themeButtons }}" as="t" hint-placeholder-count="5">
+      <button onClick="{{ t.go }}" style="{{ t.style }}"><span style="{{ t.swatch }}"></span>{{ t.label }}</button>
+    </sc-for>
+    <span style="flex:1"></span>
+    <a href="Cairn App - Play.dc.html" style="flex:none;color:#8A7D63;margin-right:12px">play ↗</a>
+    <a href="Cairn Landing.dc.html" style="flex:none;color:#8A7D63">landing ↗</a>
+  </div>
+
+  <div style="flex:1;overflow:auto;padding:34px 40px">
+    <div style="max-width:1100px;margin:0 auto">
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:#F3E8CD">{{ themeName }}</div>
+        <span style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63">{{ themeTagline }}</span>
+      </div>
+      <p style="margin:10px 0 26px;font-size:14px;line-height:1.65;color:#8A7D63;max-width:640px">One structure, five lights. Click a theme above — every color below is a token; nothing else changes. Painted art is shared across themes; only the UI glass around it re-tints. This is the wiring the app ships: a token table per theme, swapped at runtime, per device.</p>
+
+      <!-- ===== LIVE MOCK — all colors are theme tokens ===== -->
+      <div data-tk="mockFrame" style="border:1px solid #3A2C18;border-radius:10px;overflow:hidden;background:#0C0906;box-shadow:0 30px 80px rgba(0,0,0,.45)">
+        <div style="display:flex;min-height:430px">
+          <div data-tk="railStyle" style="width:200px;flex:none;background:#0E0B07;border-right:1px solid #2C2214;padding:20px 16px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:22px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+                <div data-tk="cairnTop" style="width:7px;height:4px;border-radius:2px;background:#D6A452"></div>
+                <div data-tk="cairnMid" style="width:13px;height:4px;border-radius:2px;background:#8A7D63"></div>
+                <div data-tk="cairnBot" style="width:18px;height:5px;border-radius:2px;background:#6E675A"></div>
+              </div>
+              <span data-tk="wordmark" style="font-weight:600;letter-spacing:.34em;font-size:12px;color:#E6DABB;font-family:'Space Grotesk',sans-serif">CAIRN</span>
+            </div>
+            <div data-tk="railHeading" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;color:#6E675A;margin-bottom:16px">THE SILENT FORD</div>
+            <div data-tk="actLine" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:#B7A987;padding:8px 0 6px">ACT II — WHAT THE RIVER KEEPS</div>
+            <div data-tk="waypointDone" style="font-size:12px;color:#8A7D63;padding:5px 0 5px 14px;border-left:1px solid #2C2214">The toll ledger</div>
+            <div data-tk="waypointHere" style="font-size:12px;color:#F3E8CD;padding:5px 0 5px 14px;border-left:2px solid #C84B2F">The Drowned Chapel<div data-tk="hereTag" style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.16em;color:#C84B2F;margin-top:2px">YOU ARE HERE</div></div>
+            <div style="flex:1"></div>
+            <div data-tk="navActive" style="padding:8px 10px;border-radius:4px;border-left:2px solid #C84B2F;background:rgba(200,75,47,.13);color:#F3E8CD;font-size:13px;font-weight:500">Play</div>
+            <div data-tk="navIdle" style="padding:8px 10px;border-left:2px solid transparent;color:#8A7D63;font-size:13px">Character</div>
+            <div data-tk="navIdle" style="padding:8px 10px;border-left:2px solid transparent;color:#8A7D63;font-size:13px">Codex</div>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <div data-tk="sceneHead" style="flex:none;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:18px 30px 14px;border-bottom:1px solid #2C2214">
+              <span data-tk="sceneTitle" style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#F3E8CD">The Drowned Chapel — nave</span>
+              <span data-tk="sceneMeta" style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:#8A7D63">DAY 14 · LATE EVENING · RAIN ON THE RIVER</span>
+            </div>
+            <div style="flex:1;display:flex;min-height:0">
+              <div style="flex:1;padding:26px 34px">
+                <p data-tk="prose" style="margin:0;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:#E6DABB">The chapel took the flood of '31 and never gave it back. Water stands ankle-deep between the pews, black and patient, and every candle Casimir lights leans away from the altar.</p>
+                <p data-tk="proseMore" style="margin:12px 0 0;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:#E6DABB">Somewhere above, the third bell begins to swing without a hand on the rope.<span data-tk="caret" style="display:inline-block;width:8px;height:18px;background:#D6A452;margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></p>
+              </div>
+              <div data-tk="notesPane" style="width:210px;flex:none;border-left:1px solid #2C2214;padding:20px 18px;background:rgba(14,11,7,.53)">
+                <div data-tk="notesHead" style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.22em;color:#8A7D63;margin-bottom:14px">FIELD NOTES</div>
+                <div data-tk="noteTime" style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">22:43</div>
+                <div data-tk="noteBody" style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987;margin-top:2px;margin-bottom:12px">perception 17 vs DC 13 ✓</div>
+                <div data-tk="noteMarked" style="font-family:'Space Mono',monospace;font-size:10px;color:#E6DABB;border-left:2px solid #D6A452;padding-left:8px">codex · The Drowned Chapel — updated</div>
+              </div>
+            </div>
+            <div data-tk="band" style="flex:none;border-top:1px solid #2C2214;background:#0E0B07;padding:12px 26px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <div data-tk="avatar" style="width:38px;height:38px;border-radius:5px;background:#14100A;border:1px solid #3A2C18;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px;color:#D6A452">A</div>
+              <div><div data-tk="charName" style="font-size:13px;font-weight:600;color:#F3E8CD;font-family:'Space Grotesk',sans-serif">Ser Aldric</div><div data-tk="charMeta" style="font-family:'Space Mono',monospace;font-size:9px;color:#8A7D63">FIGHTER 3 · AC 17</div></div>
+              <div style="display:flex;align-items:center;gap:8px"><span data-tk="hpLabel" style="font-family:'Space Mono',monospace;font-size:11px;color:#E6DABB">HP 19/31</span><div data-tk="hpTrack" style="width:70px;height:5px;border-radius:3px;background:#2C2214"><div data-tk="hpFill" style="width:61%;height:100%;border-radius:3px;background:linear-gradient(90deg,#9A8E5C,#D6A452)"></div></div></div>
+              <span data-tk="chipDanger" style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F;border:1px solid rgba(200,75,47,.53);border-radius:11px;padding:3px 9px;border-bottom-style:dotted">Exhaustion 1</span>
+              <span data-tk="chipGood" style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C;border:1px solid rgba(154,142,92,.53);border-radius:11px;padding:3px 9px;border-bottom-style:dotted">Bless · conc.</span>
+              <div style="flex:1"></div>
+              <span data-tk="levelBtn" style="font-family:'Space Mono',monospace;font-size:10px;color:#171106;background:#D6A452;border-radius:3px;padding:5px 10px;font-weight:700">▲ LEVEL 4 WAITS</span>
+            </div>
+            <div data-tk="inputRow" style="flex:none;padding:0 26px 18px;background:#0E0B07;display:flex;gap:10px">
+              <div data-tk="inputBox" style="flex:1;background:#14100A;border:1px solid #3A2C18;border-radius:5px;padding:12px 15px;font-family:'Newsreader',serif;font-size:14px;font-style:italic;color:#8A7D63">What do you do?</div>
+              <div data-tk="sendBtn" style="width:44px;border-radius:5px;background:#C84B2F;display:flex;align-items:center;justify-content:center;color:#F8EEDD;font-size:17px">→</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TOKEN TABLE ===== -->
+      <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">THE TOKEN TABLE — WHAT A THEME ACTUALLY IS</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px">
+        <sc-for list="{{ tokens }}" as="tk" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;border:1px solid #241C10;border-radius:6px;padding:10px 14px;background:#0F0B07">
+            <span style="{{ tk.chip }}"></span>
+            <div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987">{{ tk.name }}</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342">{{ tk.value }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:18px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A;max-width:700px">daylight is the accessibility escape hatch — same tokens, inverted values. The painted panoramas stay dark-first; in daylight they render inside plates with heavier scrims rather than full-bleed.</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { theme: (typeof localStorage !== 'undefined' && localStorage.getItem('cairn-ref-theme')) || 'ember' };
+
+  themes() {
+    return {
+      ember: {
+        name: 'Ember', tagline: 'the default — gold and candle-smoke on near-black',
+        bg: '#0C0906', bg2: '#0E0B07', panel: '#14100A', line: '#2C2214', line2: '#3A2C18',
+        text: '#F3E8CD', text2: '#E6DABB', mut: '#B7A987', dim: '#8A7D63', faint: '#6E675A',
+        accent: '#D6A452', accentInk: '#171106', danger: '#C84B2F', good: '#9A8E5C',
+        serif: "'Cormorant Garamond',serif",
+      },
+      lamplight: {
+        name: 'Lamplight', tagline: 'vermilion warmth — the 1B direction kept as a theme',
+        bg: '#191510', bg2: '#1B1610', panel: '#211B13', line: '#2E2517', line2: '#3C3122',
+        text: '#F0E8CE', text2: '#E3D9BD', mut: '#B9AE93', dim: '#8A7D63', faint: '#6E675A',
+        accent: '#D6552B', accentInk: '#1B1006', danger: '#D6552B', good: '#8A9166',
+        serif: "'Newsreader',serif",
+      },
+      coldwater: {
+        name: 'Coldwater', tagline: 'the folk-horror palette — river-green black, bone and blood',
+        bg: '#0D1110', bg2: '#0F1412', panel: '#131A17', line: '#212B25', line2: '#2A352E',
+        text: '#E3E7D6', text2: '#CBD1C0', mut: '#9BA694', dim: '#7E877C', faint: '#5F6A60',
+        accent: '#C13A2A', accentInk: '#0F0C0B', danger: '#C13A2A', good: '#8C9B7E',
+        serif: "'Cormorant Garamond',serif",
+      },
+      gilt: {
+        name: 'Gilt', tagline: 'brighter gold, warmer panels — for tables that found Ember too grim',
+        bg: '#161005', bg2: '#181206', panel: '#221A0C', line: '#382B12', line2: '#4A3A18',
+        text: '#F7EDD2', text2: '#EFE3C0', mut: '#C9B98F', dim: '#9C8C62', faint: '#7A6C4A',
+        accent: '#E4B45C', accentInk: '#1B1204', danger: '#C84B2F', good: '#A79A5E',
+        serif: "'Cormorant Garamond',serif",
+      },
+      daylight: {
+        name: 'Daylight', tagline: 'the reading-light escape hatch — parchment, not gloom',
+        bg: '#EDE7D6', bg2: '#E8E1CE', panel: '#F5F0E2', line: '#D4CBB2', line2: '#C2B695',
+        text: '#2A2213', text2: '#3A311C', mut: '#6A5E42', dim: '#8A7C5C', faint: '#A5987A',
+        accent: '#BC4720', accentInk: '#FAF5E8', danger: '#A93B22', good: '#6E7A4E',
+        serif: "'Cormorant Garamond',serif",
+      },
+    };
+  }
+
+  go(key) { this.setState({ theme: key }); try { localStorage.setItem('cairn-ref-theme', key); } catch (e) {} }
+
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+
+  applyTheme() {
+    const all = this.themes();
+    const T = all[this.state.theme] || all.ember;
+    const map = this.buildStyles(T);
+    document.querySelectorAll('[data-tk]').forEach((el) => {
+      const st = map[el.getAttribute('data-tk')];
+      if (!st) return;
+      Object.keys(st).forEach((k) => { el.style[k] = st[k]; });
+    });
+  }
+
+  buildStyles(T) {
+    return {
+      mockFrame: { border: '1px solid ' + T.line2, background: T.bg },
+      railStyle: { background: T.bg2, borderRight: '1px solid ' + T.line },
+      cairnTop: { background: T.accent },
+      cairnMid: { background: T.dim },
+      cairnBot: { background: T.faint },
+      wordmark: { color: T.text2 },
+      railHeading: { color: T.faint },
+      actLine: { color: T.mut },
+      waypointDone: { color: T.dim, borderLeft: '1px solid ' + T.line },
+      waypointHere: { color: T.text, borderLeft: '2px solid ' + T.danger },
+      hereTag: { color: T.danger },
+      navActive: { borderLeft: '2px solid ' + T.danger, background: T.danger + '22', color: T.text },
+      navIdle: { color: T.dim },
+      sceneHead: { borderBottom: '1px solid ' + T.line },
+      sceneTitle: { color: T.text, fontFamily: T.serif },
+      sceneMeta: { color: T.dim },
+      prose: { color: T.text2 },
+      proseMore: { color: T.text2 },
+      caret: { background: T.accent },
+      notesPane: { borderLeft: '1px solid ' + T.line, background: T.bg2 + '88' },
+      notesHead: { color: T.dim },
+      noteTime: { color: T.faint },
+      noteBody: { color: T.mut },
+      noteMarked: { color: T.text2, borderLeft: '2px solid ' + T.accent },
+      band: { borderTop: '1px solid ' + T.line, background: T.bg2 },
+      avatar: { background: T.panel, border: '1px solid ' + T.line2, color: T.accent, fontFamily: T.serif },
+      charName: { color: T.text },
+      charMeta: { color: T.dim },
+      hpLabel: { color: T.text2 },
+      hpTrack: { background: T.line },
+      hpFill: { background: 'linear-gradient(90deg,' + T.good + ',' + T.accent + ')' },
+      chipDanger: { color: T.danger, border: '1px solid ' + T.danger + '88', borderBottomStyle: 'dotted' },
+      chipGood: { color: T.good, border: '1px solid ' + T.good + '88', borderBottomStyle: 'dotted' },
+      levelBtn: { color: T.accentInk, background: T.accent },
+      inputRow: { background: T.bg2 },
+      inputBox: { background: T.panel, border: '1px solid ' + T.line2, color: T.dim },
+      sendBtn: { background: T.danger, color: T.accentInk === '#FAF5E8' ? '#FAF5E8' : '#F8EEDD' },
+    };
+  }
+
+  renderVals() {
+    const all = this.themes();
+    const cur = this.state.theme;
+    const T = all[cur] || all.ember;
+    const mono = "'Space Mono',monospace";
+    const grotesk = "'Space Grotesk',sans-serif";
+
+    const themeButtons = Object.keys(all).map((key) => ({
+      label: all[key].name.toLowerCase(),
+      go: () => this.go(key),
+      style: {
+        display: 'flex', alignItems: 'center', gap: '7px', fontFamily: mono, fontSize: '11px', cursor: 'pointer',
+        whiteSpace: 'nowrap', padding: '5px 10px', borderRadius: '3px',
+        border: '1px solid ' + (cur === key ? '#D6A452' : 'transparent'),
+        background: cur === key ? 'rgba(214,164,82,.14)' : 'transparent', color: cur === key ? '#F3E8CD' : '#8A7D63',
+      },
+      swatch: {
+        width: '11px', height: '11px', borderRadius: '50%', flex: 'none',
+        background: 'linear-gradient(135deg,' + all[key].bg + ' 50%,' + all[key].accent + ' 50%)',
+        border: '1px solid #3A2C18',
+      },
+    }));
+
+    const tokens = [
+      ['--bg', T.bg], ['--panel', T.panel], ['--line', T.line2], ['--text', T.text],
+      ['--muted', T.mut], ['--accent', T.accent], ['--danger', T.danger], ['--good', T.good],
+    ].map(([name, value]) => ({
+      name, value,
+      chip: { width: '22px', height: '22px', borderRadius: '5px', background: value, border: '1px solid #33271A', flex: 'none' },
+    }));
+
+    return {
+      themeName: T.name,
+      themeTagline: T.tagline,
+      themeButtons,
+      tokens,
+    };
+  }
+}
+</script>
+</body>
+</html>

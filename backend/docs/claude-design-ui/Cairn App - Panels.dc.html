@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#0A0806;}
+a{color:#D6A452;text-decoration:none}
+a:hover{color:#EBC98A}
+@keyframes glowP{0%,100%{opacity:.55}50%{opacity:1}}
+</style>
+</helmet>
+
+<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
+
+  <!-- switcher -->
+  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">IN-CAMPAIGN PANELS</span>
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="5">
+      <button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button>
+    </sc-for>
+    <span style="flex:1"></span>
+    <a href="Cairn App - Play.dc.html" style="flex:none;color:#8A7D63;margin-right:12px">play ↗</a>
+    <a href="Cairn App - Shell.dc.html" style="flex:none;color:#8A7D63">shell ↗</a>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0;min-width:0">
+
+    <!-- rail -->
+    <div style="width:232px;flex:none;background:#0E0B07;border-right:1px solid #2C2214;padding:22px 18px;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:26px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:7px;height:4px;border-radius:2px;background:#D6A452"></div>
+          <div style="width:13px;height:4px;border-radius:2px;background:#5C5342"></div>
+          <div style="width:18px;height:5px;border-radius:2px;background:#453E31"></div>
+        </div>
+        <span style="font-weight:600;letter-spacing:.34em;font-size:13px;color:#E8DCBE">CAIRN</span>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#6E675A;margin-bottom:22px">THE SILENT FORD · DAY 14</div>
+      <div style="flex:1"></div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <button onClick="{{ goPlayFile }}" style="{{ tabPlay }}">Play</button>
+        <button onClick="{{ goSheet }}" style="{{ tabSheet }}">Character</button>
+        <button onClick="{{ goParty }}" style="{{ tabParty }}">Party</button>
+        <button onClick="{{ goCodex }}" style="{{ tabCodex }}">Codex</button>
+        <button onClick="{{ goMap }}" style="{{ tabMap }}">Map</button>
+        <button onClick="{{ goSettings }}" style="{{ tabSettings }}">Settings</button>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;overflow:auto">
+
+      <!-- ===== CHARACTER SHEET ===== -->
+      <sc-if value="{{ isSheet }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:38px 44px;max-width:1060px">
+          <div style="display:flex;gap:34px;flex-wrap:wrap">
+            <div style="width:190px;flex:none">
+              <div style="width:190px;height:245px;border:1px solid #3A2C18;padding:6px;background:#171009">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="PN-aldric" shape="rect" placeholder="portrait — Ser Aldric" hint-size="100%,100%"></x-import>
+              </div>
+              <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;font-family:'Space Mono',monospace;font-size:11px">
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #33271A;padding-bottom:8px"><span style="color:#8A7D63">AC</span><span style="color:#F3E8CD;font-weight:700">17</span></div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #33271A;padding-bottom:8px"><span style="color:#8A7D63">SPEED</span><span style="color:#F3E8CD;font-weight:700">30 FT</span></div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #33271A;padding-bottom:8px"><span style="color:#8A7D63">PROF</span><span style="color:#F3E8CD;font-weight:700">+2</span></div>
+                <div style="display:flex;justify-content:space-between;border-bottom:1px dashed #33271A;padding-bottom:8px"><span style="color:#8A7D63">INITIATIVE</span><span style="color:#F3E8CD;font-weight:700">+1</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:#8A7D63">HIT DICE</span><span style="color:#F3E8CD;font-weight:700">1/3 d10</span></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:420px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">THE SHEET · READS LIKE A RECORD, COMPUTES LIKE AN ENGINE</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:6px 0 2px">Ser Aldric of Bracken Ford</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:#B7A987">HUMAN · FIGHTER 3 · CHAMPION · SOLDIER · LAWFUL GOOD</div>
+              <div style="display:flex;align-items:center;gap:14px;margin:20px 0 26px">
+                <span style="font-family:'Space Mono',monospace;font-size:15px;color:#E8DCBE">HP <b style="color:#F3E8CD">19</b>/31</span>
+                <div style="width:220px;height:7px;border-radius:4px;background:#2C2214"><div style="width:61%;height:100%;border-radius:4px;background:linear-gradient(90deg,#9A8E5C,#D6A452)"></div></div>
+                <span style="font-family:'Space Mono',monospace;font-size:11px;color:#C84B2F;border:1px solid rgba(200,75,47,.5);border-radius:12px;padding:4px 10px;border-bottom-style:dotted">Exhaustion 1</span>
+                <span style="font-family:'Space Mono',monospace;font-size:11px;color:#9A8E5C;border:1px solid rgba(154,142,92,.5);border-radius:12px;padding:4px 10px;border-bottom-style:dotted">Bless · conc.</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;max-width:560px">
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">STR</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">16</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">+3</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">DEX</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">13</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987">+1</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">CON</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">14</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987">+2</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">INT</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">10</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987">+0</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">WIS</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">12</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987">+1</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#8A7D63">CHA</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:#F3E8CD;margin:4px 0 2px">8</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F">−1</div></div>
+              </div>
+              <div style="display:flex;gap:40px;flex-wrap:wrap;margin-top:30px">
+                <div style="min-width:240px">
+                  <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:12px">FEATURES — EACH OPENS ITS SRD TEXT</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;color:#D9CCA9">
+                    <span style="border-bottom:1px dotted #7A6B4C;width:fit-content">Second Wind <span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">· ready</span></span>
+                    <span style="border-bottom:1px dotted #7A6B4C;width:fit-content">Action Surge <span style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F">· spent</span></span>
+                    <span style="border-bottom:1px dotted #7A6B4C;width:fit-content">Improved Critical</span>
+                    <span style="border-bottom:1px dotted #7A6B4C;width:fit-content">Defense fighting style</span>
+                  </div>
+                </div>
+                <div style="min-width:260px;flex:1">
+                  <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:12px">THE PACK — WEIGHT THE ENGINE COUNTS</div>
+                  <div style="display:flex;flex-direction:column;font-size:14px;color:#B7A987">
+                    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #241C10"><span style="color:#D9CCA9">Longsword <span style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">· 1d8+3</span></span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">3 LB</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #241C10"><span style="color:#D9CCA9">Shield · chain mail</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">61 LB</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #241C10"><span style="color:#D9CCA9">Iron key on a cord <span style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F">· quest</span></span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">—</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="color:#D9CCA9">Waterlogged ledger <span style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F">· quest</span></span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">2 LB</span></div>
+                  </div>
+                  <div style="margin-top:10px;font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">CARRIED 74 / 240 LB · 23 SP · 4 GP</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== PARTY ===== -->
+      <sc-if value="{{ isParty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:38px 44px;max-width:1000px">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">THE PARTY · WHO WALKS WITH YOU</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD;margin:6px 0 30px">Three at the ford</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="border:1px solid #5A4E37;border-radius:10px;background:#14100A;padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+              <div style="width:58px;height:58px;border-radius:6px;background:#241C10;border:1px solid #3A2C18;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:#D6A452">A</div>
+              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:#F3E8CD">Ser Aldric <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#D6A452;border:1px solid #5A4E37;border-radius:3px;padding:2px 7px;margin-left:8px">YOU</span></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63;margin-top:4px">FIGHTER 3 · HP 19/31 · AC 17</div></div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">full sheet under Character</div>
+            </div>
+            <div style="border:1px solid #33271A;border-radius:10px;background:#100C08;padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+              <div style="width:58px;height:58px;border-radius:6px;background:#1B160E;border:1px solid #33271A;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:#9A8E5C">C</div>
+              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:#E8DCBE">Casimir the Lantern</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63;margin-top:4px">CLERIC 3 · HP 22/24 · runs himself under Tactical agency</div></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:10px">
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:4px 10px">keeps candles lit</span>
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:4px 10px">won't touch the font</span>
+              </div>
+            </div>
+            <div style="border:1px solid #33271A;border-radius:10px;background:#100C08;padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+              <div style="width:58px;height:58px;border-radius:6px;background:#1B160E;border:1px solid #33271A;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:#9A8E5C">W</div>
+              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:#E8DCBE">Wrenna</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63;margin-top:4px">RANGER 2 · HP 17/18 · joined at Miller's Rise, day 9</div></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:10px">
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:4px 10px">owes the miller</span>
+                <span style="color:#C84B2F;border:1px dotted rgba(200,75,47,.5);border-radius:12px;padding:4px 10px">distrusts Marrow</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:18px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A">companion tags are codex facts, not stats — they come from play and open the codex entry. Companions level through the same three-step door you do.</div>
+        </div>
+      </sc-if>
+
+      <!-- ===== CODEX ===== -->
+      <sc-if value="{{ isCodex }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;min-height:100%">
+          <div style="width:300px;flex:none;border-right:1px solid #2C2214;padding:26px 20px;background:#0D0A06">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:16px">CODEX — WHAT THE TABLE KNOWS</div>
+            <div style="background:#14100A;border:1px solid #3A2C18;border-radius:5px;padding:10px 14px;font-family:'Newsreader',serif;font-size:14px;font-style:italic;color:#7A6F5A;margin-bottom:20px">search the record…</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;font-family:'Space Mono',monospace;font-size:10px">
+              <span style="color:#171106;background:#D6A452;border-radius:10px;padding:4px 10px;font-weight:700">PEOPLE 12</span>
+              <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 10px">PLACES 8</span>
+              <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 10px">THINGS 6</span>
+              <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 10px">LORE 9</span>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="padding:11px 12px;border-left:2px solid #D6A452;background:rgba(214,164,82,.09);font-size:14px;color:#F3E8CD;font-weight:500">Ilse Marrow <span style="font-family:'Space Mono',monospace;font-size:9px;color:#8A7D63">· D3</span></div>
+              <div style="padding:11px 12px;border-left:2px solid transparent;font-size:14px;color:#9A8F76">The Weigher <span style="font-family:'Space Mono',monospace;font-size:9px;color:#5C5342">· D1</span></div>
+              <div style="padding:11px 12px;border-left:2px solid transparent;font-size:14px;color:#9A8F76">Casimir the Lantern <span style="font-family:'Space Mono',monospace;font-size:9px;color:#5C5342">· D1</span></div>
+              <div style="padding:11px 12px;border-left:2px solid transparent;font-size:14px;color:#9A8F76">Wrenna <span style="font-family:'Space Mono',monospace;font-size:9px;color:#5C5342">· D9</span></div>
+              <div style="padding:11px 12px;border-left:2px solid transparent;font-size:14px;color:#9A8F76">the ferryman <span style="font-family:'Space Mono',monospace;font-size:9px;color:#C84B2F">· ???</span></div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;padding:38px 44px">
+            <div style="max-width:640px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px">
+                <div style="font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#F3E8CD">Ilse Marrow</div>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:#9A8E5C">PERSON · FIRST MET DAY 3</span>
+              </div>
+              <p style="margin:16px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">Toll-keeper's widow at the Silent Ford. Keeps her own ledger — an exact mirror of the toll house's, one entry longer. Offered the eleven days unprompted. Has been on Miller's Rise at night at least once she didn't mention.</p>
+              <div style="margin-top:30px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">THE RECORD — EVERY LINE DATED, NOTHING DELETED</div>
+              <div style="margin-top:14px;border-left:1px solid #2C2214;padding-left:22px;display:flex;flex-direction:column;gap:18px">
+                <div style="position:relative"><span style="position:absolute;left:-27px;top:5px;width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DAY 3 · THE TOLL HOUSE</div><div style="font-size:14px;line-height:1.6;color:#B7A987;margin-top:4px">Introduced by the miller — "don't say the name like a question." Volunteered the eleven days.</div></div>
+                <div style="position:relative"><span style="position:absolute;left:-27px;top:5px;width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DAY 9 · MILLER'S RISE</div><div style="font-size:14px;line-height:1.6;color:#B7A987;margin-top:4px">Seen after the fight with the thralls. Did not stop. Did not ask about the blood.</div></div>
+                <div style="position:relative"><span style="position:absolute;left:-27px;top:5px;width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DAY 12 · THE DEBT ROLL</div><div style="font-size:14px;line-height:1.6;color:#B7A987;margin-top:4px">Name on the mill's roll — struck through, paid in full, the day after the flood of '31.</div></div>
+                <div style="position:relative"><span style="position:absolute;left:-28px;top:4px;width:11px;height:11px;border-radius:50%;background:#C84B2F;box-shadow:0 0 10px rgba(200,75,47,.8)"></span><div style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F">OPEN QUESTION</div><div style="font-size:14px;line-height:1.6;color:#D9CCA9;margin-top:4px">What does the key on the cord open — and why does her hand find it when the ferryman comes up?</div></div>
+              </div>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A">the codex is the DM's memory made inspectable — entries are written by play (extraction pipeline), never hand-edited. ??? entries exist the moment they're referenced.</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== MAP ===== -->
+      <sc-if value="{{ isMap }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:38px 44px;max-width:1060px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">The Silent Ford</div>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:#8A7D63">THE MAP GROWS AS THE STORY WALKS — NOTHING PRE-REVEALED</span>
+          </div>
+          <div style="position:relative;margin-top:26px;height:520px;background:#0E0A07;border:1px solid #3A2C18;border-radius:10px;overflow:hidden">
+            <div style="position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 20% 15%,transparent 0 60px,rgba(231,226,212,.025) 60px 61px)"></div>
+            <div style="position:absolute;left:0;right:0;top:210px;height:74px;pointer-events:none;background:repeating-linear-gradient(94deg,rgba(120,150,175,.10) 0 4px,transparent 4px 14px);border-top:1px solid rgba(120,150,175,.18);border-bottom:1px solid rgba(120,150,175,.18);transform:rotate(-3deg)"></div>
+            <div style="position:absolute;left:40px;top:238px;font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;color:#7E8A94;transform:rotate(-3deg)">the river — it keeps its ledger</div>
+            <div style="position:absolute;left:120px;top:96px;width:170px;border-top:1px dashed #6E5B3B;transform:rotate(24deg)"></div>
+            <div style="position:absolute;left:300px;top:170px;width:150px;border-top:1px dashed #6E5B3B;transform:rotate(-12deg)"></div>
+            <div style="position:absolute;left:430px;top:150px;width:190px;border-top:1px dashed #6E5B3B;transform:rotate(38deg)"></div>
+            <div style="position:absolute;left:590px;top:250px;width:130px;border-top:1px dashed #5C5342;transform:rotate(52deg);opacity:.5"></div>
+            <div style="position:absolute;left:60px;top:60px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:#9A8E5C"></span><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:#B7A987;background:#14100Acc;border:1px solid #33271A;border-radius:3px;padding:3px 8px">THE TOLL HOUSE · D1</span></div>
+            <div style="position:absolute;left:268px;top:128px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:#9A8E5C"></span><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:#B7A987;background:#14100Acc;border:1px solid #33271A;border-radius:3px;padding:3px 8px">MILLER'S RISE · D9</span></div>
+            <div style="position:absolute;left:430px;top:100px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:#9A8E5C"></span><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:#B7A987;background:#14100Acc;border:1px solid #33271A;border-radius:3px;padding:3px 8px">THE WAKE FIELD · D11</span></div>
+            <div style="position:absolute;left:588px;top:196px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:15px;height:15px;border-radius:50%;background:#C84B2F;box-shadow:0 0 14px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:#F3E8CD;background:#1A0F0Acc;border:1px solid rgba(200,75,47,.5);border-radius:3px;padding:3px 8px">THE DROWNED CHAPEL · NOW</span></div>
+            <div style="position:absolute;left:680px;top:330px;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.75"><span style="width:11px;height:11px;border-radius:50%;border:1px dashed #8A7D63"></span><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:#8A7D63;background:#14100Acc;border:1px dashed #33271A;border-radius:3px;padding:3px 8px">??? · SPOKEN OF, NOT SEEN</span></div>
+            <div style="position:absolute;left:120px;top:360px;width:230px;font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;line-height:1.5;color:#6E675A">margin note, day 12 — "the ferryman's bell rings from the wrong bank when the fog sits low."</div>
+            <div style="position:absolute;right:16px;bottom:14px;font-family:'Space Mono',monospace;font-size:9px;color:#5C5342">CARTOGRAPHER'S TABLE · ACT II</div>
+          </div>
+          <div style="margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A">nodes appear when visited (dated), dashed when only referenced (???). Edges are the roads the party actually walked. Clicking a node opens its codex entry.</div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SETTINGS ===== -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:38px 44px;max-width:760px">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Table settings</div>
+          <p style="margin:10px 0 28px;font-size:14px;line-height:1.6;color:#8A7D63">This campaign only. You chose the <b style="color:#B7A987">Tactical</b> bundle at creation — anything below can drift from it, and the bundle name greys out the moment it stops being true.</p>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
+            <div style="font-size:15px;font-weight:600;color:#F3E8CD;margin-bottom:4px">Who rolls the dice?</div>
+            <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#8A7D63">When a check comes up, does the table stop and hand you the roll, or resolve it and tell you what happened?</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:7px 14px;font-weight:700">I roll — the veil stops for me</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:7px 14px">Roll for me, show the result</span>
+            </div>
+          </div>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
+            <div style="font-size:15px;font-weight:600;color:#F3E8CD;margin-bottom:4px">Who runs the companions?</div>
+            <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#8A7D63">Casimir and Wrenna can act on their own in combat, propose plans for your yes/no, or wait for orders.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:7px 14px">They wait for me</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:7px 14px;font-weight:700">They propose, I approve</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:7px 14px">They run themselves</span>
+            </div>
+          </div>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
+            <div style="font-size:15px;font-weight:600;color:#F3E8CD;margin-bottom:4px">Reaction windows</div>
+            <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#8A7D63">When an opportunity attack or a counter-spell moment opens mid-round, how long does the table hold the door?</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:7px 14px">Always ask, no timer</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:7px 14px;font-weight:700">6-second window, then the recommendation</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:7px 14px">Auto-take the recommendation</span>
+            </div>
+          </div>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
+            <div style="font-size:15px;font-weight:600;color:#F3E8CD;margin-bottom:4px">Tone &amp; hard lines</div>
+            <p style="margin:0 0 14px;font-size:13px;line-height:1.6;color:#8A7D63">Set at creation, editable any time. Tone shifts how things are told; hard lines are never crossed regardless.</p>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:7px 14px;font-weight:700">Grim</span>
+              <span style="color:#B7A987;border:1px solid #3A2C18;border-radius:3px;padding:7px 14px">2 hard lines set</span>
+              <span style="color:#8A7D63">edit →</span>
+            </div>
+          </div>
+          <div style="border:1px solid rgba(200,75,47,.35);border-radius:8px;background:#120B0C;padding:24px 28px">
+            <div style="font-size:15px;font-weight:600;color:#E8A08C;margin-bottom:4px">Locked at creation</div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#8A7D63">Death: <b style="color:#B7A987">By the book</b>. The one promise the table doesn't renegotiate — a campaign where death rules can change at 0 HP has no stakes at all.</p>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: (typeof localStorage !== 'undefined' && localStorage.getItem('cairn-ref-panels')) || 'sheet' };
+
+  go(key) { this.setState({ screen: key }); try { localStorage.setItem('cairn-ref-panels', key); } catch (e) {} }
+
+  tabStyle(active) {
+    return {
+      display: 'flex', alignItems: 'center', padding: '10px 12px', width: '100%', textAlign: 'left',
+      background: active ? 'rgba(200,75,47,.13)' : 'transparent', cursor: 'pointer', borderRadius: '4px',
+      border: 'none', borderLeft: '2px solid ' + (active ? '#C84B2F' : 'transparent'),
+      color: active ? '#F3E8CD' : '#9A8F76', fontSize: '14px', fontWeight: active ? 500 : 400,
+      fontFamily: "'Space Grotesk',sans-serif",
+    };
+  }
+
+  renderVals() {
+    const sc = this.state.screen;
+    const defs = [['character sheet', 'sheet'], ['party', 'party'], ['codex', 'codex'], ['map', 'map'], ['settings', 'settings']];
+    const screens = defs.map(([label, key]) => ({
+      label, key,
+      go: () => this.go(key),
+      style: {
+        fontFamily: "'Space Mono',monospace", fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
+        padding: '5px 10px', borderRadius: '3px', border: '1px solid ' + (sc === key ? '#D6A452' : 'transparent'),
+        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? '#F3E8CD' : '#8A7D63',
+      },
+    }));
+    return {
+      screens,
+      isSheet: sc === 'sheet',
+      isParty: sc === 'party',
+      isCodex: sc === 'codex',
+      isMap: sc === 'map',
+      isSettings: sc === 'settings',
+      tabPlay: this.tabStyle(false),
+      tabSheet: this.tabStyle(sc === 'sheet'),
+      tabParty: this.tabStyle(sc === 'party'),
+      tabCodex: this.tabStyle(sc === 'codex'),
+      tabMap: this.tabStyle(sc === 'map'),
+      tabSettings: this.tabStyle(sc === 'settings'),
+      goPlayFile: () => { window.location.href = 'Cairn App - Play.dc.html'; },
+      goSheet: () => this.go('sheet'),
+      goParty: () => this.go('party'),
+      goCodex: () => this.go('codex'),
+      goMap: () => this.go('map'),
+      goSettings: () => this.go('settings'),
+    };
+  }
+}
+</script>
+</body>
+</html>

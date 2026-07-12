@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#0A0806;}
+a{color:#D6A452;text-decoration:none}
+a:hover{color:#EBC98A}
+@keyframes glowP{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes caretB{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+</helmet>
+
+<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
+
+  <!-- switcher -->
+  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">CREATION</span>
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="14">
+      <button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button>
+    </sc-for>
+    <span style="flex:1"></span>
+    <a href="Cairn App — Play.dc.html" style="flex:none;color:#8A7D63;margin-right:12px">play ↗</a>
+    <a href="Cairn Landing.dc.html" style="flex:none;color:#8A7D63">landing ↗</a>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0;min-width:0">
+
+    <!-- ===== CHOICE ===== -->
+    <sc-if value="{{ isChoice }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:28px;padding:40px;flex-wrap:wrap">
+        <button onClick="{{ goPremade }}" style="width:420px;text-align:left;background:#14100A;border:1px solid #33271A;border-radius:10px;padding:38px;cursor:pointer;color:inherit;font-family:inherit">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:#9A8E5C;margin-bottom:16px">THE FAST ROAD</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#F3E8CD">Take a premade</div>
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#B7A987">Four characters written into this scenario — history, kit, and a voice already at the table. Expand a dossier, take one, play in two minutes.</p>
+        </button>
+        <button onClick="{{ goRace }}" style="width:420px;text-align:left;background:#171009;border:1px solid #5A4E37;border-radius:10px;padding:38px;cursor:pointer;color:inherit;font-family:inherit;box-shadow:0 24px 70px rgba(0,0,0,.45)">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:#D6A452;margin-bottom:16px">THE FORGE</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#F3E8CD">Forge your own</div>
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.65;color:#B7A987">Race to portrait, every step a page worth reading — SRD text, granted traits, and what each choice asks next. The road only shows the turns you have to take.</p>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- ===== PREMADE ===== -->
+    <sc-if value="{{ isPremade }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;min-height:0;min-width:0">
+        <div style="width:280px;flex:none;border-right:1px solid #2C2214;background:#0E0B07;padding:26px 20px;display:flex;flex-direction:column;gap:10px;overflow:auto">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:8px">WRITTEN FOR THE SILENT FORD</div>
+          <div style="display:flex;gap:12px;align-items:center;background:#171009;border:1px solid #5A4E37;border-radius:6px;padding:12px"><div style="width:44px;height:44px;border-radius:5px;background:#241C10;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:22px;color:#D6A452">A</div><div><div style="font-size:14px;font-weight:600;color:#F3E8CD">Ser Aldric</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">HUMAN FIGHTER</div></div></div>
+          <div style="display:flex;gap:12px;align-items:center;border:1px solid #241C10;border-radius:6px;padding:12px"><div style="width:44px;height:44px;border-radius:5px;background:#191510;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:22px;color:#8A7D63">I</div><div><div style="font-size:14px;color:#B7A987">Isolde Ferry</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">ELF CLERIC ✦</div></div></div>
+          <div style="display:flex;gap:12px;align-items:center;border:1px solid #241C10;border-radius:6px;padding:12px"><div style="width:44px;height:44px;border-radius:5px;background:#191510;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:22px;color:#8A7D63">B</div><div><div style="font-size:14px;color:#B7A987">Brack</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">HALF-ORC ROGUE</div></div></div>
+          <div style="display:flex;gap:12px;align-items:center;border:1px solid #241C10;border-radius:6px;padding:12px"><div style="width:44px;height:44px;border-radius:5px;background:#191510;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:22px;color:#8A7D63">M</div><div><div style="font-size:14px;color:#B7A987">Maren of the Weir</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">HUMAN WARLOCK ✦</div></div></div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342;margin-top:6px">✦ caster — dossier adds a spell block</div>
+        </div>
+        <div style="flex:1;min-width:0;overflow:auto;padding:40px 48px">
+          <div style="max-width:760px;display:flex;gap:34px;flex-wrap:wrap">
+            <div style="width:210px;flex:none">
+              <div style="width:210px;height:270px;border:1px solid #3A2C18;padding:6px;background:#171009">
+                <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-aldric" shape="rect" placeholder="portrait — Ser Aldric, painted" hint-size="100%,100%"></x-import>
+              </div>
+              <button style="width:100%;margin-top:16px;background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take this one</button>
+            </div>
+            <div style="flex:1;min-width:320px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">DOSSIER</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#F3E8CD;margin:6px 0 2px">Ser Aldric of Bracken Ford</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:#B7A987">HUMAN · FIGHTER · SOLDIER · LAWFUL GOOD</div>
+              <p style="margin:20px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">Twenty years holding the toll bridge. Stayed when the garrison ran. Speaks slowly, swears in toll-house ledger terms, and has never once crossed the river at night.</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;font-family:'Space Mono',monospace;font-size:11px">
+                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">STR 16</span>
+                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">CON 14</span>
+                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">AC 17</span>
+                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">HP 31</span>
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:5px 12px">Second Wind</span>
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:5px 12px">Defense style</span>
+              </div>
+              <div style="margin-top:18px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A">every rules noun above opens its SRD text — dotted border = inspectable. Caster dossiers add a spell block here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== FORGE SHELL ===== -->
+    <sc-if value="{{ isForge }}" hint-placeholder-val="{{ false }}">
+      <div style="width:250px;flex:none;border-right:1px solid #2C2214;background:#0E0B07;padding:26px 20px;overflow:auto">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:8px">THE FORGE — ISOLDE</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342;margin-bottom:18px">elf cleric acolyte, for the spec</div>
+        <div style="display:flex;flex-direction:column;border-left:1px solid #2C2214;margin-left:5px;padding-left:14px">
+          <sc-for list="{{ steps }}" as="st" hint-placeholder-count="11">
+            <button onClick="{{ st.go }}" style="{{ st.style }}"><span style="{{ st.dotStyle }}"></span>{{ st.label }}<span style="{{ st.tagStyle }}">{{ st.tag }}</span></button>
+          </sc-for>
+        </div>
+        <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#5C5342">conditional steps render dimmed until the road calls: subrace for an elf, subclass for a cleric, spells for a caster.</div>
+      </div>
+
+      <div style="flex:1;display:flex;min-height:0;min-width:0">
+
+        <!-- RACE -->
+        <sc-if value="{{ isRace }}" hint-placeholder-val="{{ false }}">
+          <div style="width:270px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">RACE — 9 OF THE SRD</div>
+            <div style="padding:10px 12px;border-radius:4px;color:#B7A987;font-size:14px">Dwarf</div>
+            <div style="padding:10px 12px;border-radius:4px;background:rgba(214,164,82,.12);border-left:2px solid #D6A452;color:#F3E8CD;font-size:14px;font-weight:500">Elf</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Halfling</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Human</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Dragonborn</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Gnome</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Half-Elf</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Half-Orc</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Tiefling</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Elf</div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">Elves are a magical people of otherworldly grace, living in the world but not entirely part of it. They live in places of ethereal beauty — and they remember. An elf at a river ford has seen it flood before.</p>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">GRANTED</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987">
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">+2</span><span>Dexterity increases by 2</span></div>
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">◆</span><span>Darkvision 60 ft · Keen Senses (Perception) · Fey Ancestry · Trance</span></div>
+              </div>
+              <div style="margin-top:26px;border:1px dashed #5A4E37;border-radius:6px;padding:16px 20px">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#D6A452;margin-bottom:8px">WHAT THIS CHOICE ASKS NEXT</div>
+                <div style="font-size:14px;line-height:1.6;color:#B7A987">A subrace — High Elf, Wood Elf, or Drow — joins the road right after this step.</div>
+              </div>
+              <button onClick="{{ goSubrace }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Choose Elf →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SUBRACE -->
+        <sc-if value="{{ isSubrace }}" hint-placeholder-val="{{ false }}">
+          <div style="width:270px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">SUBRACE — SHOWN FOR AN ELF</div>
+            <div style="padding:10px 12px;background:rgba(214,164,82,.12);border-left:2px solid #D6A452;color:#F3E8CD;font-size:14px;font-weight:500">High Elf</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Wood Elf</div>
+            <div style="padding:10px 12px;color:#B7A987;font-size:14px">Drow</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">High Elf</div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">Keen mind and a mastery of at least the basics of magic. Haughty maybe, but a candle in the dark is a candle.</p>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">GRANTED</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987">
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">+1</span><span>Intelligence increases by 1 · longsword/bow proficiency · one extra language</span></div>
+                <div style="display:flex;gap:12px"><span style="color:#C84B2F;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">!</span><span>One wizard cantrip — <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">flagged: the creation service doesn't apply racial spells yet (dep #7)</span></span></div>
+              </div>
+              <button onClick="{{ goClass }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Choose High Elf →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- CLASS -->
+        <sc-if value="{{ isClass }}" hint-placeholder-val="{{ false }}">
+          <div style="width:270px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">CLASS — 12 · ✦ CASTS</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Barbarian</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Bard ✦</div>
+            <div style="padding:9px 12px;background:rgba(214,164,82,.12);border-left:2px solid #D6A452;color:#F3E8CD;font-size:14px;font-weight:500">Cleric ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Druid ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Fighter</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Monk</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Paladin ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Ranger ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Rogue</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Sorcerer ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Warlock ✦</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Wizard ✦</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Cleric</div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">A priestly champion who wields divine magic in service of a higher power. At the Silent Ford, someone has to argue with the river on the dead's behalf.</p>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">GRANTED AT 1</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987">
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">◆</span><span>d8 hit die · WIS spellcasting · <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Spellcasting</span> · <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Divine Domain</span></span></div>
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">◆</span><span>Choose 2 skills from History, Insight, Medicine, Persuasion, Religion</span></div>
+              </div>
+              <div style="margin-top:26px;border:1px dashed #5A4E37;border-radius:6px;padding:16px 20px">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#C84B2F;margin-bottom:8px">WHAT THIS CHOICE ASKS NEXT</div>
+                <div style="font-size:14px;line-height:1.6;color:#B7A987">Subclass <b style="color:#E6DABB">required at creation</b> — the engine refuses the sheet without a Divine Domain. Then cantrips and day-one prepared spells.</div>
+              </div>
+              <button onClick="{{ goSubclass }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Choose Cleric →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SUBCLASS -->
+        <sc-if value="{{ isSubclass }}" hint-placeholder-val="{{ false }}">
+          <div style="width:270px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">DIVINE DOMAIN — FOR A CLERIC</div>
+            <div style="padding:10px 12px;background:rgba(214,164,82,.12);border-left:2px solid #D6A452;color:#F3E8CD;font-size:14px;font-weight:500">Life Domain</div>
+            <div style="margin-top:14px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#5C5342">the SRD ships one domain per class — more arrive with content, not code.</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Life Domain</div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">The Life domain focuses on the vibrant positive energy that sustains all life. At a drowned crossing, that is not a metaphor.</p>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">GRANTED</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987">
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">◆</span><span>Heavy armor · <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Disciple of Life</span> · domain spells always prepared (<span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Bless</span>, <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Cure Wounds</span>)</span></div>
+              </div>
+              <button onClick="{{ goBackground }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take the Life Domain →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- BACKGROUND -->
+        <sc-if value="{{ isBackground }}" hint-placeholder-val="{{ false }}">
+          <div style="width:270px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">BACKGROUND — 13</div>
+            <div style="padding:9px 12px;background:rgba(214,164,82,.12);border-left:2px solid #D6A452;color:#F3E8CD;font-size:14px;font-weight:500">Acolyte</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Charlatan</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Criminal</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Entertainer</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Folk Hero</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Guild Artisan</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Hermit</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Noble</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Outlander</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Sage</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Sailor</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Soldier</div>
+            <div style="padding:9px 12px;color:#B7A987;font-size:14px">Urchin</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Acolyte</div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">You have spent your life in service to a temple. The dead of the Riverlands are ferried, not buried — someone taught you the fare.</p>
+              <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">GRANTED</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987">
+                <div style="display:flex;gap:12px"><span style="color:#9A8E5C;font-family:'Space Mono',monospace;font-size:11px;padding-top:2px">◆</span><span>Insight, Religion · two languages · <span style="border-bottom:1px dotted #7A6B4C;color:#E6DABB">Shelter of the Faithful</span></span></div>
+              </div>
+              <button onClick="{{ goSpells }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take Acolyte →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SPELLS -->
+        <sc-if value="{{ isSpells }}" hint-placeholder-val="{{ false }}">
+          <div style="width:300px;flex:none;border-right:1px solid #2C2214;overflow:auto;padding:22px 16px">
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">CANTRIPS — CHOOSE 3</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 11px;font-weight:700">Sacred Flame ✓</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 11px;font-weight:700">Guidance ✓</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 11px;font-weight:700">Thaumaturgy ✓</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Light</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Mending</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Resistance</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Spare the Dying</span>
+            </div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:14px">DAY-ONE PREPARED — 4</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;font-family:'Space Mono',monospace;font-size:11px">
+              <span style="color:#F3E8CD;border:1px solid #D6A452;border-radius:3px;padding:6px 11px;box-shadow:0 0 10px rgba(214,164,82,.25)">Bless — reading</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 11px;font-weight:700">Cure Wounds ✓</span>
+              <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 11px;font-weight:700">Shield of Faith ✓</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Sanctuary</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Guiding Bolt</span>
+              <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 11px">Detect Magic</span>
+            </div>
+            <div style="margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#5C5342">first click reads, the check commits.</div>
+          </div>
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="display:flex;align-items:baseline;gap:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Bless</div><span style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63">1ST LEVEL · ENCHANTMENT · CONCENTRATION</span></div>
+              <p style="margin:14px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.7;color:#D9CCA9">You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled.</p>
+              <div style="margin-top:26px;border:1px dashed #5A4E37;border-radius:6px;padding:16px 20px">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#D6A452;margin-bottom:8px">AT THE TABLE</div>
+                <div style="font-size:14px;line-height:1.6;color:#B7A987">Life Domain grants Bless always-prepared at cleric 1 — this pane is shown reading it, not spending a slot on it.</div>
+              </div>
+              <button onClick="{{ goAbilities }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Seal the spellbook →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ABILITIES -->
+        <sc-if value="{{ isAbilities }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:680px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Abilities</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63;margin:8px 0 30px">STANDARD ARRAY — ASSIGN [15 · 14 · 13 · 12 · 10 · 8]</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+                <div style="background:#14100A;border:1px solid #5A4E37;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#D6A452">WIS</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">15</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#9A8E5C">+2 · casting</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">CON</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">14</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987">+2</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">STR</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">13</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987">+1</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">CHA</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">12</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987">+1</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">DEX</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">10<span style="font-size:16px;color:#9A8E5C"> +2</span></div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#9A8E5C">elf bonus applied</div></div>
+                <div style="background:#14100A;border:1px solid #33271A;border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">INT</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:#F3E8CD;margin:6px 0">8<span style="font-size:16px;color:#9A8E5C"> +1</span></div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#9A8E5C">high elf bonus</div></div>
+              </div>
+              <button onClick="{{ goSkills }}" style="margin-top:30px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Set the array →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SKILLS -->
+        <sc-if value="{{ isSkills }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Skills</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63;margin:8px 0 26px">CLERIC — CHOOSE 2 · ACOLYTE ALREADY GRANTS INSIGHT + RELIGION</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;font-family:'Space Mono',monospace;font-size:12px">
+                <span style="color:#171106;background:#D6A452;border-radius:3px;padding:8px 14px;font-weight:700">Medicine ✓</span>
+                <span style="color:#171106;background:#D6A452;border-radius:3px;padding:8px 14px;font-weight:700">History ✓</span>
+                <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:8px 14px">Persuasion</span>
+                <span style="color:#6E675A;border:1px solid #241C10;border-radius:3px;padding:8px 14px;text-decoration:line-through">Insight — from Acolyte</span>
+                <span style="color:#6E675A;border:1px solid #241C10;border-radius:3px;padding:8px 14px;text-decoration:line-through">Religion — from Acolyte</span>
+              </div>
+              <div style="margin-top:18px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#6E675A">already-granted options render struck — the engine won't let a pick go to waste.</div>
+              <button onClick="{{ goAlignment }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Keep these →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ALIGNMENT -->
+        <sc-if value="{{ isAlignment }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:560px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Alignment</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px">
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Lawful Good</div>
+                <div style="border:1px solid #D6A452;background:rgba(214,164,82,.1);border-radius:6px;padding:18px;text-align:center;color:#F3E8CD;font-size:13px;font-weight:600">Neutral Good</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Chaotic Good</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Lawful Neutral</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">True Neutral</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Chaotic Neutral</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Lawful Evil</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Neutral Evil</div>
+                <div style="border:1px solid #33271A;border-radius:6px;padding:18px;text-align:center;color:#B7A987;font-size:13px">Chaotic Evil</div>
+              </div>
+              <div style="margin-top:14px;font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">dep #6: alignments.json ships but no route serves it — trivial</div>
+              <button onClick="{{ goIdentity }}" style="margin-top:26px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Neutral Good →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- IDENTITY -->
+        <sc-if value="{{ isIdentity }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:620px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Who is she?</div>
+              <div style="margin-top:24px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">NAME</div>
+              <div style="margin-top:8px;background:#14100A;border:1px solid #3A2C18;border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:18px;color:#F3E8CD">Isolde Ferry</div>
+              <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">CONCEPT — FREE TEXT</div>
+              <div style="margin-top:8px;background:#14100A;border:1px solid #3A2C18;border-radius:5px;padding:16px 18px;font-family:'Newsreader',serif;font-size:16px;font-style:italic;line-height:1.6;color:#D9CCA9">Grew up on the ferry her family has run for six generations. Took orders when the river took her brother. Believes the dead are owed a fare and the living are owed the truth.<span style="display:inline-block;width:8px;height:19px;background:#D6A452;margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
+              <div style="display:flex;gap:12px;margin-top:18px;align-items:center">
+                <span style="font-family:'Space Mono',monospace;font-size:11px;color:#171106;background:#D6A452;border-radius:3px;padding:8px 16px;font-weight:700">✦ WEAVE</span>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">dep #1: agent turns concept → bio / personality / voice traits</span>
+              </div>
+              <div style="margin-top:22px;display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:5px 12px">voice: low, patient</span>
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:5px 12px">counts fares in her head</span>
+                <span style="color:#9A8E5C;border:1px dotted #5A4E37;border-radius:12px;padding:5px 12px">never lies near water</span>
+              </div>
+              <button onClick="{{ goPortrait }}" style="margin-top:28px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">She'll do →</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- PORTRAIT -->
+        <sc-if value="{{ isPortrait }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
+            <div style="max-width:680px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD">Portrait</div>
+              <div style="display:flex;gap:18px;margin-top:26px;flex-wrap:wrap">
+                <div style="width:150px;height:195px;border:1px solid #D6A452;padding:5px;background:#171009;box-shadow:0 0 20px rgba(214,164,82,.2)">
+                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso1" shape="rect" placeholder="gallery pick" hint-size="100%,100%"></x-import>
+                </div>
+                <div style="width:150px;height:195px;border:1px solid #33271A;padding:5px;background:#14100A">
+                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso2" shape="rect" placeholder="gallery" hint-size="100%,100%"></x-import>
+                </div>
+                <div style="width:150px;height:195px;border:1px solid #33271A;padding:5px;background:#14100A">
+                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso3" shape="rect" placeholder="gallery" hint-size="100%,100%"></x-import>
+                </div>
+                <div style="width:150px;height:195px;border:1px dashed #3A2C18;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63"><span style="font-size:22px;color:#5C5342">↑</span>UPLOAD</div>
+              </div>
+              <div style="display:flex;gap:12px;margin-top:22px;align-items:center">
+                <span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;border:1px solid #3A2C18;border-radius:3px;padding:8px 16px">✦ GENERATE</span>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">dep #3: image-gen, Phase B — flagged only</span>
+              </div>
+              <button style="margin-top:30px;background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take Isolde to the ford →</button>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </sc-if>
+
+    <!-- ===== LEVEL-UP ===== -->
+    <sc-if value="{{ isLevelUp }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;overflow:auto;padding:40px 48px;display:flex;justify-content:center">
+        <div style="width:720px;max-width:100%">
+          <div style="display:flex;align-items:baseline;gap:18px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#F3E8CD">Ser Aldric — level 4</div>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:#D6A452">▲ THE PREVIEW NAMES THE ASKS</span>
+          </div>
+          <div style="display:flex;gap:0;margin:26px 0 30px;font-family:'Space Mono',monospace;font-size:11px">
+            <span style="color:#171106;background:#D6A452;padding:8px 18px;border-radius:3px 0 0 3px;font-weight:700">① HIT POINTS</span>
+            <span style="color:#F3E8CD;background:#241C10;padding:8px 18px">② IMPROVE</span>
+            <span style="color:#8A7D63;background:#14100A;padding:8px 18px;border-radius:0 3px 3px 0">③ SEAL</span>
+          </div>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;display:flex;align-items:center;gap:24px">
+            <div style="width:64px;height:64px;background:#241C10;border:1px solid #5A4E37;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;flex:none"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:#D6A452">d10</span></div>
+            <div style="flex:1">
+              <div style="font-size:16px;font-weight:600;color:#F3E8CD">Hit points — decided: average</div>
+              <div style="font-family:'Space Mono',monospace;font-size:12px;color:#B7A987;margin-top:6px">6 (average) + 2 (CON) = <b style="color:#9A8E5C">+8 HP · 39 total</b></div>
+            </div>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:#D6A452;border:1px dotted #5A4E37;border-radius:3px;padding:6px 12px">ROLL INSTEAD — opens the dice veil</span>
+          </div>
+          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-top:16px">
+            <div style="font-size:16px;font-weight:600;color:#F3E8CD;margin-bottom:16px">Improve — ability score or feat</div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap">
+              <div style="flex:1;min-width:260px;border:1px solid #5A4E37;border-radius:6px;padding:18px;background:rgba(214,164,82,.05)">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#D6A452;margin-bottom:12px">2 POINTS · +1 EACH OR +2 ONE · ENGINE-VALIDATED</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:12px">
+                  <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 12px;font-weight:700">STR 16 → 17</span>
+                  <span style="color:#171106;background:#D6A452;border-radius:3px;padding:6px 12px;font-weight:700">CON 14 → 15</span>
+                  <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 12px">DEX 13</span>
+                  <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:3px;padding:6px 12px">WIS 12</span>
+                </div>
+              </div>
+              <div style="flex:1;min-width:220px;border:1px solid #33271A;border-radius:6px;padding:18px">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63;margin-bottom:12px">OR A FEAT</div>
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;color:#B7A987"><span style="border-bottom:1px dotted #7A6B4C;width:fit-content">Grappler</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342">the SRD ships one — more arrive with content</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="border:1px dashed #3A2C18;border-radius:8px;padding:18px 24px;margin-top:16px;font-size:14px;line-height:1.7;color:#8A7D63">
+            <b style="color:#B7A987">What a level doesn't ask for never appears here.</b> No subclass ask — the fighter chose at 3. No spells — he has none. A caster's level walks the same three steps; the asks grow, the screen doesn't change shape. Slots appear unasked — arithmetic, not choices.
+          </div>
+          <div style="display:flex;gap:14px;margin-top:26px">
+            <button style="background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:14px 30px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Seal level 4</button>
+            <span style="align-self:center;font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">companions level through the same door under Tactical agency</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { screen: (typeof localStorage !== 'undefined' && localStorage.getItem('cairn-ref-create')) || 'choice' };
+
+  go(key) { this.setState({ screen: key }); try { localStorage.setItem('cairn-ref-create', key); } catch (e) {} }
+
+  renderVals() {
+    const sc = this.state.screen;
+    const forgeSteps = ['race', 'subrace', 'class', 'subclass', 'background', 'spells', 'abilities', 'skills', 'alignment', 'identity', 'portrait'];
+    const defs = [['choice', 'choice'], ['premade', 'premade']]
+      .concat(forgeSteps.map((k) => [k, k]))
+      .concat([['level-up', 'levelup']]);
+
+    const screens = defs.map(([label, key]) => ({
+      label, key,
+      go: () => this.go(key),
+      style: {
+        fontFamily: "'Space Mono',monospace", fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
+        padding: '5px 9px', borderRadius: '3px', border: '1px solid ' + (sc === key ? '#D6A452' : 'transparent'),
+        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? '#F3E8CD' : '#8A7D63',
+      },
+    }));
+
+    const conditional = { subrace: 'elf', subclass: 'cleric', spells: 'caster' };
+    const curIdx = forgeSteps.indexOf(sc);
+    const steps = forgeSteps.map((k, i) => {
+      const isCur = k === sc;
+      const done = curIdx > -1 && i < curIdx;
+      return {
+        label: k,
+        tag: conditional[k] ? conditional[k] : '',
+        go: () => this.go(k),
+        style: {
+          position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0',
+          background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px',
+          color: isCur ? '#F3E8CD' : done ? '#9A8F76' : '#5C5342', fontWeight: isCur ? 600 : 400,
+        },
+        dotStyle: {
+          position: 'absolute', left: '-20px', top: '13px', width: isCur ? '11px' : '9px', height: isCur ? '11px' : '9px',
+          borderRadius: '50%',
+          background: isCur ? '#C84B2F' : done ? '#9A8E5C' : 'transparent',
+          border: done || isCur ? 'none' : '1px dashed #5C5342',
+          boxShadow: isCur ? '0 0 10px rgba(200,75,47,.8)' : 'none',
+        },
+        tagStyle: {
+          fontFamily: "'Space Mono',monospace", fontSize: '9px', letterSpacing: '.1em',
+          color: '#6E675A', marginLeft: 'auto',
+        },
+      };
+    });
+
+    return {
+      screens, steps,
+      isChoice: sc === 'choice',
+      isPremade: sc === 'premade',
+      isForge: curIdx > -1,
+      isRace: sc === 'race',
+      isSubrace: sc === 'subrace',
+      isClass: sc === 'class',
+      isSubclass: sc === 'subclass',
+      isBackground: sc === 'background',
+      isSpells: sc === 'spells',
+      isAbilities: sc === 'abilities',
+      isSkills: sc === 'skills',
+      isAlignment: sc === 'alignment',
+      isIdentity: sc === 'identity',
+      isPortrait: sc === 'portrait',
+      isLevelUp: sc === 'levelup',
+      goPremade: () => this.go('premade'),
+      goRace: () => this.go('race'),
+      goSubrace: () => this.go('subrace'),
+      goClass: () => this.go('class'),
+      goSubclass: () => this.go('subclass'),
+      goBackground: () => this.go('background'),
+      goSpells: () => this.go('spells'),
+      goAbilities: () => this.go('abilities'),
+      goSkills: () => this.go('skills'),
+      goAlignment: () => this.go('alignment'),
+      goIdentity: () => this.go('identity'),
+      goPortrait: () => this.go('portrait'),
+    };
+  }
+}
+</script>
+</body>
+</html>
