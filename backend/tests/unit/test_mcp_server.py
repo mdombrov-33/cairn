@@ -14,7 +14,7 @@ async def test_mcp_server_projects_registry_and_calls_stateless_tool() -> None:
         listed = await session.list_tools()
         result = await session.call_tool("lookup_spell", {"name": "Fireball"})
 
-    assert {tool.name for tool in listed.tools} == {registered.tool.name for registered in registry.mcp_tools()}
+    assert {tool.name for tool in listed.tools} == {registered_tool.name for registered_tool in registry.all()}
     assert len(listed.tools) == 55
     assert result.isError is False
     assert isinstance(result.content[0], TextContent)

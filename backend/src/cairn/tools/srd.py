@@ -5,7 +5,7 @@ from cairn.srd import list_all_feats
 from cairn.tools.registry import register
 
 
-@register(tags={"srd", "readonly", "combat"})
+@register
 async def lookup_spell(
     name: Annotated[str, 'Spell name, e.g. "fireball", "cure wounds", "hold person".'],
 ) -> dict:
@@ -20,7 +20,7 @@ async def lookup_spell(
     return spell
 
 
-@register(tags={"srd", "readonly", "combat"})
+@register
 async def lookup_monster(
     name: Annotated[str, 'Monster name, e.g. "goblin", "skeleton", "ogre", "adult-red-dragon".'],
 ) -> dict:
@@ -35,7 +35,7 @@ async def lookup_monster(
     return monster
 
 
-@register(tags={"srd", "readonly", "combat"})
+@register
 async def lookup_condition(
     name: Annotated[str, 'Condition name, e.g. "blinded", "poisoned", "prone", "stunned".'],
 ) -> dict:
@@ -46,7 +46,7 @@ async def lookup_condition(
     return condition
 
 
-@register(tags={"srd", "readonly", "combat"})
+@register
 async def lookup_weapon(
     name: Annotated[str, 'Weapon name, e.g. "longsword", "shortbow", "dagger", "hand-crossbow".'],
 ) -> dict:
@@ -57,7 +57,7 @@ async def lookup_weapon(
     return weapon
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def lookup_race(
     name: Annotated[str, 'Race name, e.g. "human", "elf", "dwarf", "half-elf", "tiefling".'],
 ) -> dict:
@@ -68,7 +68,7 @@ async def lookup_race(
     return race
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def lookup_class(
     name: Annotated[str, 'Class name, e.g. "fighter", "wizard", "rogue", "cleric".'],
     level: Annotated[int, "Character level 1-20."] = 1,
@@ -89,7 +89,7 @@ async def lookup_class(
     }
 
 
-@register(tags={"srd", "readonly", "combat"})
+@register
 async def lookup_feature(
     name: Annotated[str, 'Feature name, e.g. "action-surge-1-use", "sneak-attack", "rage".'],
 ) -> dict:
@@ -100,7 +100,7 @@ async def lookup_feature(
     return feature
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def lookup_trait(
     name: Annotated[str, 'Trait name, e.g. "darkvision", "fey-ancestry", "relentless-endurance".'],
 ) -> dict:
@@ -111,7 +111,7 @@ async def lookup_trait(
     return trait
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def lookup_subclass(
     name: Annotated[str, 'Subclass index, e.g. "champion", "thief", "evocation", "life".'],
 ) -> dict:
@@ -122,7 +122,7 @@ async def lookup_subclass(
     return subclass
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def lookup_feat(
     name: Annotated[str, 'Feat name, e.g. "sentinel", "lucky", "war-caster", "sharpshooter".'],
 ) -> dict:
@@ -133,7 +133,7 @@ async def lookup_feat(
     return feat
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def list_feats() -> list:
     """List all available feats with their names, types, and prerequisites.
 
@@ -150,7 +150,7 @@ async def list_feats() -> list:
     ]
 
 
-@register(tags={"srd", "readonly"})
+@register
 async def list_spells_for_class(
     class_name: Annotated[str, 'Class name, e.g. "wizard", "cleric", "sorcerer".'],
     max_level: Annotated[int, "Only return spells of this level or lower (1-9). Default 9."] = 9,

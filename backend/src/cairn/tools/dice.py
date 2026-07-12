@@ -22,7 +22,7 @@ def parse_and_roll(expression: str) -> tuple[list[int], int]:
     return rolls, sum(rolls) + modifier
 
 
-@register(tags={"dice", "readonly", "combat"})
+@register
 async def roll_d20(
     modifier: Annotated[int, "Integer modifier to add (can be negative)."] = 0,
     roll_type: Annotated[str, '"normal", "advantage" (higher of two), or "disadvantage" (lower of two).'] = "normal",
@@ -49,7 +49,7 @@ async def roll_d20(
     }
 
 
-@register(tags={"dice", "readonly", "combat"})
+@register
 async def roll_damage(
     expression: Annotated[str, 'Dice notation, e.g. "8d6", "1d6+2", "2d8-1", "4d6+4".'],
 ) -> dict:
@@ -58,7 +58,7 @@ async def roll_damage(
     return {"expression": expression, "rolls": rolls, "total": max(0, total)}
 
 
-@register(tags={"dice", "readonly"})
+@register
 async def roll_ability_scores() -> dict:
     """Roll a full set of ability scores for character creation using 4d6-drop-lowest."""
     detail = []

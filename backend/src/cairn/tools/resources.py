@@ -8,7 +8,7 @@ from cairn.tools.registry import register
 from cairn.tools.types import ToolUUID
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def adjust_spell_slot(
     character_id: Annotated[str, "The character's UUID."],
     level: Annotated[int, "Spell slot level to adjust (1-9)."],
@@ -33,7 +33,7 @@ async def adjust_spell_slot(
         )
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def adjust_resource(
     character_id: Annotated[str, "The character's UUID."],
     resource: Annotated[str, 'Resource key, e.g. "action_surge", "ki", "rage", "bardic_inspiration".'],
@@ -58,7 +58,7 @@ async def adjust_resource(
         )
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def set_concentration(
     character_id: Annotated[str, "The character's UUID."],
     spell_name: Annotated[str, 'Name of the spell, e.g. "Bless", "Haste", "Hold Person".'],
@@ -68,7 +68,7 @@ async def set_concentration(
         return await resource_service.set_concentration(db, character_id=uuid.UUID(character_id), spell_name=spell_name)
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def drop_concentration(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
@@ -80,7 +80,7 @@ async def drop_concentration(
         return await resource_service.drop_concentration(db, character_id=uuid.UUID(character_id))
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def roll_concentration_check(
     character_id: Annotated[str, "The character's UUID."],
     damage_taken: Annotated[int, "Total damage taken that triggered the check."],
@@ -95,7 +95,7 @@ async def roll_concentration_check(
         )
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def use_economy(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
@@ -119,7 +119,7 @@ async def use_economy(
         )
 
 
-@register(tags={"resource", "mutation", "combat"})
+@register
 async def spend_movement(
     session_id: Annotated[str, "The session UUID."],
     combatant_id: Annotated[str, "The combatant's UUID."],
@@ -132,7 +132,7 @@ async def spend_movement(
         )
 
 
-@register(tags={"rest", "mutation"})
+@register
 async def apply_short_rest(
     session_id: Annotated[ToolUUID, "The session UUID."],
 ) -> dict:
@@ -145,7 +145,7 @@ async def apply_short_rest(
         return await rest_service.apply_short_rest(db, session_id=uuid.UUID(session_id))
 
 
-@register(tags={"rest", "mutation"})
+@register
 async def apply_long_rest(
     session_id: Annotated[ToolUUID, "The session UUID."],
 ) -> dict:
@@ -159,7 +159,7 @@ async def apply_long_rest(
         return await rest_service.apply_long_rest(db, session_id=uuid.UUID(session_id))
 
 
-@register(tags={"rest", "mutation"})
+@register
 async def roll_hit_die(
     character_id: Annotated[ToolUUID, "The character's UUID."],
 ) -> dict:

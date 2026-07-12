@@ -28,7 +28,7 @@ def npc_to_dict(n: NPC) -> dict:
     return data
 
 
-@register(tags={"state", "readonly"})
+@register
 async def get_character(
     character_id: Annotated[str, "The character's UUID."],
 ) -> dict:
@@ -38,7 +38,7 @@ async def get_character(
         return character_to_dict(char)
 
 
-@register(tags={"state", "readonly", "combat"})
+@register
 async def get_npc(
     npc_id: Annotated[str, "The NPC's UUID."],
 ) -> dict:
@@ -48,7 +48,7 @@ async def get_npc(
         return npc_to_dict(npc)
 
 
-@register(tags={"state", "readonly"})
+@register
 async def get_party(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
@@ -58,7 +58,7 @@ async def get_party(
         return {"party": [character_to_dict(c) for c in characters]}
 
 
-@register(tags={"state", "readonly"})
+@register
 async def get_combat_state(
     session_id: Annotated[str, "The session UUID."],
 ) -> dict:
@@ -70,7 +70,7 @@ async def get_combat_state(
         return {"combat_active": True, "combat_state": session.combat_state}
 
 
-@register(tags={"state", "mutation", "combat"})
+@register
 async def loot_item(
     session_id: Annotated[str, "The session UUID."],
     npc_id: Annotated[str, "The NPC's UUID to loot from."],

@@ -17,13 +17,13 @@ def build_mcp_server() -> FastMCP:
         json_response=True,
         streamable_http_path="/",
     )
-    for registered in registry.mcp_tools():
-        coroutine = registered.tool.coroutine
+    for registered_tool in registry.all():
+        coroutine = registered_tool.coroutine
         if coroutine is None:
-            raise TypeError(f"MCP tool {registered.tool.name!r} must be async")
+            raise TypeError(f"MCP tool {registered_tool.name!r} must be async")
         server.add_tool(
             coroutine,
-            name=registered.tool.name,
-            description=registered.tool.description,
+            name=registered_tool.name,
+            description=registered_tool.description,
         )
     return server

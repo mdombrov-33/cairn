@@ -135,13 +135,11 @@ execution.
 
 1. Put the thin async adapter in an existing module under `tools/`; it may call an application
    workflow but must not duplicate its rules or orchestration.
-2. Use `@register(tags={...})` from `tools.registry`, never LangChain's bare `@tool`. Tags describe
-   the v1 capability taxonomy and derive the compatibility `COMBAT_TOOLS` subset.
-3. Leave `mcp=True` unless the tool is deliberately internal-only. Registered async tools are
-   projected to both LangChain and FastMCP from the same coroutine.
-4. If a new tool module is necessary, add it to `tools/__init__.py`'s explicit discovery imports;
+2. Use `@register` from `tools.registry`, never LangChain's bare `@tool`. Registered async tools are
+   projected to FastMCP from the same LangChain coroutine.
+3. If a new tool module is necessary, add it to `tools/__init__.py`'s explicit discovery imports;
    otherwise adding a decorated tool needs no registry-list edit.
-5. Cover registration, tag selection, and the observable application outcome. For MCP-exposed tools,
+4. Cover registration and the observable application outcome. For MCP-exposed tools,
    use an MCP client test rather than a second implementation-specific test seam.
 
 `/mcp` is a local, unauthenticated, single-process Streamable HTTP server. It is enabled by default

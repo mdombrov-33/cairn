@@ -37,7 +37,7 @@ Query adapters know storage, while application workflows know when and why queri
 - `pipelines/` — LangGraph construction and routing.
 - `prompts/` — versioned markdown/Jinja prompts.
 - `srd/` — cached typed catalog over static rules JSON.
-- `tools/` — tagged LangChain-callable adapters and their shared registry.
+- `tools/` — LangChain-callable adapters and their shared MCP registry.
 - `api/mcp.py` — the FastMCP projection of registered tools.
 - `sse/` — SSE event serialization.
 
@@ -91,10 +91,9 @@ outbox exists.
 
 ## Tool registry and MCP server
 
-Every LLM-callable tool is decorated with `tools.registry.register`. The registry creates the
-LangChain tool, records its tags and MCP eligibility, and derives `ALL_TOOLS` plus the legacy
-`COMBAT_TOOLS` subset. The latter has no current production consumer after the plan-based combat
-slice, but remains a compatibility export.
+Every LLM-callable tool is decorated with `tools.registry.register`. The registry creates one
+LangChain tool, rejects duplicate names, and records it for MCP projection. It carries no capability
+taxonomy or eligibility policy because every current tool belongs to the same local MCP surface.
 
 `api/mcp.py` projects the same registered async coroutine into FastMCP; it does not wrap or
 reimplement a tool. When `MCP_ENABLED` is enabled (by default only in `ENV=dev`), the FastAPI app

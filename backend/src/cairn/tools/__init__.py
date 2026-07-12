@@ -1,13 +1,13 @@
-from langchain_core.tools import BaseTool
-
 # Explicit side-effect imports keep registration deterministic.
-from cairn.tools import combat, dice, game_state, inspiration, registry, resources, srd
+from cairn.tools import combat as _combat  # noqa: F401
+from cairn.tools import dice as _dice  # noqa: F401
+from cairn.tools import game_state as _game_state
+from cairn.tools import inspiration as _inspiration  # noqa: F401
+from cairn.tools import registry as registry
+from cairn.tools import resources as _resources  # noqa: F401
+from cairn.tools import srd as _srd  # noqa: F401
 
-_DISCOVERED_MODULES = (combat, dice, game_state, inspiration, resources, srd)
-fetch_combat_context = game_state.fetch_combat_context
-loot_item = game_state.loot_item
+fetch_combat_context = _game_state.fetch_combat_context
+loot_item = _game_state.loot_item
 
-ALL_TOOLS: list[BaseTool] = registry.all()
-COMBAT_TOOLS: list[BaseTool] = registry.select(include={"combat"})
-
-__all__ = ["ALL_TOOLS", "COMBAT_TOOLS", "fetch_combat_context", "loot_item"]
+__all__ = ["fetch_combat_context", "loot_item", "registry"]

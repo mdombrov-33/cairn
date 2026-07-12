@@ -24,7 +24,7 @@ the architecture campaign moved many owners from `domain/services/` into `applic
 | `db/models/` | SQLAlchemy persistence representations | Gameplay and workflow decisions |
 | `db/queries/` | Database selection, ORM construction, deletion, reusable persistence mutations, flush, and lookup errors | Commits, LLM calls, cross-capability workflows |
 | `agents/` | Prompt assembly and typed interpretation, classification, or narration | New persistence ownership or live ORM mutation |
-| `tools/` | Thin LangChain adapters registered once and projected to LangChain and FastMCP | Duplicated rules, orchestration, or a second tool definition |
+| `tools/` | Thin LangChain adapters registered once and projected to FastMCP | Duplicated rules, orchestration, or a second tool definition |
 | `pipelines/` | LangGraph construction, routing, and delegation | Persistence, direct LLM calls, business logic |
 | `prompts/` | Versioned LLM instructions and Jinja inputs | Mechanical truth that deterministic code can enforce |
 | `srd/` | Validated, cached rules catalog and SRD-owned records | Campaign or session state |

@@ -6,7 +6,7 @@ from cairn.db import client as db_client
 from cairn.tools.registry import register
 
 
-@register(tags={"narrative", "mutation", "combat"})
+@register
 async def grant_inspiration(
     character_id: Annotated[str, "The character's UUID."],
     reason: Annotated[str, "Short reason the inspiration was earned (clever play, dramatic roleplay)."],
