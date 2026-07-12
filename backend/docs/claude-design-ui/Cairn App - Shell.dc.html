@@ -106,7 +106,7 @@ a:hover{color:var(--text-soft)}
                     <span style="width:9px;height:9px;border-radius:50%;border:1px dashed var(--faint)"></span>
                   </div>
                   <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">ACT II · DAY 14 · THE DROWNED CHAPEL · last played 2 days ago</div>
-                  <button style="width:100%;margin-top:18px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Continue → recap first</button>
+                  <button onClick="{{ goRecap }}" style="width:100%;margin-top:18px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Continue</button>
                 </div>
               </div>
               <div style="width:440px;border:1px solid var(--line-faint);border-radius:10px;overflow:hidden;background:var(--panel-low)">
@@ -303,7 +303,7 @@ a:hover{color:var(--text-soft)}
               <p style="margin:0;font-family:'Newsreader',serif;font-size:18px;line-height:1.8;color:var(--text-warm)">Forty-one days after she first climbed the stair, the beacon burned again over the Reach. The garrison that returns in spring will find the ledger balanced, the door unbarred, and a cleric's neat hand in the last page of the log: <em style="font-style:italic">fare paid in full.</em></p>
               <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-family:'Space Mono',monospace;font-size:11px">
                 <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">codex — open, read-only</span>
-                <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">map — every ??? resolved</span>
+                <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">map — all known exits visited</span>
                 <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">sheets — final</span>
               </div>
               <div style="margin-top:26px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">the record stays open forever · hardcore variant runs darker (ended_dead)</div>
@@ -366,6 +366,10 @@ class Component extends DCLogic {
       goWorlds: () => this.go('worlds'),
       goNew: () => this.go('new'),
       goEpilogue: () => this.go('epilogue'),
+      goRecap: () => {
+        try { localStorage.setItem('cairn-ref-play', 'recap'); } catch (e) {}
+        window.location.href = 'Cairn App - Play.dc.html';
+      },
     };
   }
 }

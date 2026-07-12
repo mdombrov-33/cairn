@@ -62,7 +62,10 @@ source for the exact persistence, enforcement, and deferred-payment decisions.
 ### Frontend — Slices 15 and 15.5
 
 The current frontend source of truth is the [Ember UI reference](claude-design-ui/README.md)
-and its linked HTML files. It supersedes the archived v4 reference while preserving the
+and its linked HTML files. Review the [Ember frontend contract gaps](claude-design-ui/gaps.md) before
+starting or sequencing Slice 15/15.5. The register records unresolved product/backend seams; the
+mockups do not authorize the frontend to guess across them. Ember supersedes the archived v4
+reference while preserving the
 “Cartographer's Table” product structure: the waymarked rail, narrative-first play,
 and shared exploration/combat map language. Slice 15.5 locks Vite + React 19, TanStack Router/Query, Zustand,
 Tailwind v4, React Aria Components, React Flow, generated OpenAPI types,

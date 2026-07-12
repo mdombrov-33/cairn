@@ -95,7 +95,7 @@ a:hover{color:var(--text-soft)}
     <sc-if value="{{ isForge }}" hint-placeholder-val="{{ false }}">
       <div class="ref-rail" style="width:250px;flex:none;border-right:1px solid var(--line);background:var(--table);padding:26px 20px;overflow:auto">
         <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:8px">THE FORGE — ISOLDE</div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-bottom:18px">elf cleric acolyte, for the spec</div>
+        <div class="ref-annotation" style="margin:0 0 18px">The custom-forge examples use an elf cleric acolyte so conditional Subrace, Subclass, and Spells steps are all visible.</div>
         <div style="display:flex;flex-direction:column;border-left:1px solid var(--line);margin-left:5px;padding-left:14px">
           <sc-for list="{{ steps }}" as="st" hint-placeholder-count="11">
             <button onClick="{{ st.go }}" style="{{ st.style }}"><span style="{{ st.dotStyle }}"></span>{{ st.label }}<span style="{{ st.tagStyle }}">{{ st.tag }}</span></button>
@@ -289,7 +289,16 @@ a:hover{color:var(--text-soft)}
             <div style="max-width:680px">
               <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text)">Abilities</div>
               <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin:8px 0 30px">STANDARD ARRAY — ASSIGN [15 · 14 · 13 · 12 · 10 · 8]</div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px;font-family:'Space Mono',monospace;font-size:11px"><span style="color:var(--dim);margin-right:5px">UNASSIGNED</span><span style="padding:6px 10px;border:1px solid var(--line-strong);border-radius:3px;color:var(--faint)">none · all six placed</span><button style="margin-left:auto;border:0;background:transparent;color:var(--ember);font:10px 'Space Mono',monospace">RESET ARRAY</button></div>
+              <div class="rules-table">
+                <div class="rules-row"><div><b style="color:var(--ember)">Wisdom</b><div class="rules-help">Spellcasting, Perception, Insight, Medicine, Survival</div></div><div class="rules-value">15 + 0 = 15<br><span style="color:var(--lichen)">modifier +2</span></div><div class="rules-help">Primary ability for a cleric. Drag or choose another array value to exchange it.</div></div>
+                <div class="rules-row"><div><b style="color:var(--text-warm)">Constitution</b><div class="rules-help">Hit points, endurance, concentration saves</div></div><div class="rules-value">14 + 0 = 14<br><span style="color:var(--muted)">modifier +2</span></div><div class="rules-help">Raises starting HP and helps maintain concentration.</div></div>
+                <div class="rules-row"><div><b style="color:var(--text-warm)">Strength</b><div class="rules-help">Melee force, Athletics, lifting and shoving</div></div><div class="rules-value">13 + 0 = 13<br><span style="color:var(--muted)">modifier +1</span></div><div class="rules-help">Useful for close combat and heavy physical actions.</div></div>
+                <div class="rules-row"><div><b style="color:var(--text-warm)">Dexterity</b><div class="rules-help">Armor class, initiative, Stealth, ranged attacks</div></div><div class="rules-value">10 + 2 = 12<br><span style="color:var(--lichen)">elf bonus · +1</span></div><div class="rules-help">The submitted standard-array value remains 10; race bonuses are applied by the engine.</div></div>
+                <div class="rules-row"><div><b style="color:var(--text-warm)">Charisma</b><div class="rules-help">Persuasion, Deception, Intimidation, presence</div></div><div class="rules-value">12 + 0 = 12<br><span style="color:var(--muted)">modifier +1</span></div><div class="rules-help">Supports social actions that rely on force of personality.</div></div>
+                <div class="rules-row"><div><b style="color:var(--text-warm)">Intelligence</b><div class="rules-help">History, Arcana, Religion, Investigation</div></div><div class="rules-value">8 + 1 = 9<br><span style="color:var(--lichen)">high elf bonus · −1</span></div><div class="rules-help">Knowledge checks use the final modifier after ancestry bonuses.</div></div>
+              </div>
+              <div style="display:none;grid-template-columns:repeat(3,1fr);gap:16px" aria-hidden="true">
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--ember)">WIS</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);margin:6px 0">15</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--lichen)">+2 · casting</div></div>
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">CON</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);margin:6px 0">14</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)">+2</div></div>
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">STR</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);margin:6px 0">13</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)">+1</div></div>
@@ -297,6 +306,7 @@ a:hover{color:var(--text-soft)}
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">DEX</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);margin:6px 0">10<span style="font-size:16px;color:var(--lichen)"> +2</span></div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--lichen)">elf bonus applied</div></div>
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:20px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">INT</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:var(--text);margin:6px 0">8<span style="font-size:16px;color:var(--lichen)"> +1</span></div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--lichen)">high elf bonus</div></div>
               </div>
+              <div class="ref-annotation">Creation submits each standard-array base value exactly once. Race and subrace bonuses are previewed separately and applied by the engine; point buy and rolled abilities are not Phase-A options.</div>
               <button onClick="{{ goSkills }}" style="margin-top:30px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Set the array →</button>
             </div>
           </div>
@@ -324,19 +334,25 @@ a:hover{color:var(--text-soft)}
         <!-- ALIGNMENT -->
         <sc-if value="{{ isAlignment }}" hint-placeholder-val="{{ false }}">
           <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
-            <div style="max-width:560px">
+            <div style="max-width:720px">
               <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text)">Alignment</div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px">
+              <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:var(--dim)">Choose a starting principle, not a restriction. Actions can contradict it; the label describes how your character usually approaches duty and harm.</p>
+              <div style="display:grid;grid-template-columns:90px repeat(3,1fr);gap:9px;margin-top:24px;align-items:stretch">
+                <div></div><div class="ref-eyebrow" style="text-align:center">Law</div><div class="ref-eyebrow" style="text-align:center">Balance</div><div class="ref-eyebrow" style="text-align:center">Freedom</div>
+                <div class="ref-eyebrow" style="display:flex;align-items:center">Protect</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Lawful Good</div>
                 <div style="border:1px solid var(--ember);background:rgba(214,164,82,.1);border-radius:6px;padding:18px;text-align:center;color:var(--text);font-size:13px;font-weight:600">Neutral Good</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Chaotic Good</div>
+                <div class="ref-eyebrow" style="display:flex;align-items:center">Preserve</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Lawful Neutral</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">True Neutral</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Chaotic Neutral</div>
+                <div class="ref-eyebrow" style="display:flex;align-items:center">Take</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Lawful Evil</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Neutral Evil</div>
                 <div style="border:1px solid var(--line-strong);border-radius:6px;padding:18px;text-align:center;color:var(--muted);font-size:13px">Chaotic Evil</div>
               </div>
+              <div style="margin-top:16px;border-left:2px solid var(--ember);padding:12px 16px;background:var(--panel-low)"><div style="font-size:15px;font-weight:600;color:var(--text)">Neutral Good</div><div style="margin-top:5px;font-size:13px;line-height:1.6;color:var(--muted)">Help where help is needed. Respect useful customs, but do not let a rule outweigh a life.</div></div>
               <div style="margin-top:14px"><span class="ref-status planned">Phase A · alignments route</span></div>
               <button onClick="{{ goIdentity }}" style="margin-top:26px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Neutral Good →</button>
             </div>
@@ -346,21 +362,19 @@ a:hover{color:var(--text-soft)}
         <!-- IDENTITY -->
         <sc-if value="{{ isIdentity }}" hint-placeholder-val="{{ false }}">
           <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
-            <div style="max-width:620px">
+            <div style="max-width:820px">
               <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text)">Who is she?</div>
-              <div style="margin-top:24px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">NAME</div>
-              <div style="margin-top:8px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:18px;color:var(--text)">Isolde Ferry</div>
-              <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">CONCEPT — FREE TEXT</div>
-              <div style="margin-top:8px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:16px 18px;font-family:'Newsreader',serif;font-size:16px;font-style:italic;line-height:1.6;color:var(--text-warm)">Grew up on the ferry her family has run for six generations. Took orders when the river took her brother. Believes the dead are owed a fare and the living are owed the truth.<span style="display:inline-block;width:8px;height:19px;background:var(--ember);margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
-              <div style="display:flex;gap:12px;margin-top:18px;align-items:center">
-                <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember-ink);background:var(--ember);border-radius:3px;padding:8px 16px;font-weight:700">✦ WEAVE</span>
-                <span class="ref-status planned">Phase A soft · Weave agent</span>
+              <p style="margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.6">Write every field yourself. Weave is an optional draft assistant and never changes race, class, abilities, skills, alignment, spells, or equipment.</p>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:16px;margin-top:24px">
+                <div><div class="ref-eyebrow">Name</div><div style="margin-top:7px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 15px;font-family:'Newsreader',serif;font-size:17px;color:var(--text)">Isolde Ferry</div></div>
+                <div><div class="ref-eyebrow">Appearance</div><div style="margin-top:7px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 15px;font-family:'Newsreader',serif;font-size:15px;color:var(--text-warm)">River-grey eyes; copper prayer chain; ferry rope burns across both palms.</div></div>
+                <div style="grid-column:1/-1"><div class="ref-eyebrow">Backstory</div><div style="margin-top:7px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:14px 16px;font-family:'Newsreader',serif;font-size:15px;line-height:1.6;color:var(--text-warm)">Grew up on the ferry her family has run for six generations. Took orders when the river took her brother. She believes the dead are owed a fare and the living are owed the truth.</div></div>
+                <div><div class="ref-eyebrow">Personality</div><div style="margin-top:7px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 15px;font-size:13px;line-height:1.6;color:var(--muted)">Patient under pressure. Counts costs before promises. Direct with people she trusts.</div></div>
+                <div><div class="ref-eyebrow">Goals</div><div style="margin-top:7px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 15px;font-size:13px;line-height:1.6;color:var(--muted)">Immediate: learn why the bell rings. Life: restore safe passage across the ford.</div></div>
               </div>
-              <div style="margin-top:22px;display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px">
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:5px 12px">voice: low, patient</span>
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:5px 12px">counts fares in her head</span>
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:5px 12px">never lies near water</span>
-              </div>
+              <div style="margin-top:18px;border:1px solid var(--line-faint);border-radius:7px;background:var(--panel-low);padding:16px 18px"><div class="ref-eyebrow">Voice</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px;font-size:12px;color:var(--muted)"><div>Accent <b style="display:block;color:var(--text-warm);margin-top:3px">low-river villages</b></div><div>Pace <b style="display:block;color:var(--text-warm);margin-top:3px">slow, deliberate</b></div><div>Vocabulary <b style="display:block;color:var(--text-warm);margin-top:3px">ferry work and funeral rites</b></div><div>Speech quirks <b style="display:block;color:var(--text-warm);margin-top:3px">counts fares under her breath</b></div></div></div>
+              <div style="margin-top:20px;border-top:1px solid var(--line-strong);padding-top:18px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div class="ref-eyebrow">Optional draft assistant</div><span class="ref-status planned">Phase A soft · Weave agent</span></div><div style="margin-top:9px;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 15px;color:var(--dim);font-family:'Newsreader',serif;font-style:italic">Describe a character concept to draft the identity fields above…</div><button style="margin-top:10px;border:1px solid var(--ember);background:transparent;color:var(--ember);border-radius:4px;padding:9px 15px;font:700 11px 'Space Mono',monospace">WEAVE A DRAFT</button></div>
+              <div class="ref-annotation">Manual identity maps to the current structured `narrative_profile`. Weave must return that same editable shape; archived `bio` and `voice_traits` names are obsolete. See gap G5.</div>
               <button onClick="{{ goPortrait }}" style="margin-top:28px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">She'll do →</button>
             </div>
           </div>
@@ -369,25 +383,20 @@ a:hover{color:var(--text-soft)}
         <!-- PORTRAIT -->
         <sc-if value="{{ isPortrait }}" hint-placeholder-val="{{ false }}">
           <div style="flex:1;min-width:0;overflow:auto;padding:36px 44px">
-            <div style="max-width:680px">
+            <div style="max-width:880px">
               <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text)">Portrait</div>
-              <div style="display:flex;gap:18px;margin-top:26px;flex-wrap:wrap">
-                <div style="width:150px;height:195px;border:1px solid var(--ember);padding:5px;background:var(--panel);box-shadow:0 0 20px rgba(214,164,82,.2)">
-                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso1" shape="rect" placeholder="gallery pick" hint-size="100%,100%"></x-import>
+              <p style="margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.6">Choose from the campaign gallery, upload your own image, or continue without one.</p>
+              <div style="display:grid;grid-template-columns:250px 1fr;gap:28px;margin-top:24px">
+                <div><div style="height:322px;border:1px solid var(--ember);padding:7px;background:var(--panel);box-shadow:0 0 24px rgba(214,164,82,.16)"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso-selected" shape="rect" placeholder="selected portrait — crop preview" hint-size="100%,100%"></x-import></div><div style="display:flex;justify-content:space-between;margin-top:9px;font:9px 'Space Mono',monospace;color:var(--dim)"><span>SELECTED</span><span>REPOSITION · CROP</span></div></div>
+                <div>
+                  <div style="display:flex;gap:0;border-bottom:1px solid var(--line-strong);font:10px 'Space Mono',monospace"><span style="padding:9px 14px;color:var(--ember);border-bottom:2px solid var(--ember)">GALLERY</span><span style="padding:9px 14px;color:var(--muted)">UPLOAD</span><span style="padding:9px 14px;color:var(--faint)">GENERATE · PHASE B</span></div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px"><div style="height:132px;border:1px solid var(--ember);padding:4px;background:var(--panel)"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso1" shape="rect" placeholder="gallery portrait" hint-size="100%,100%"></x-import></div><div style="height:132px;border:1px solid var(--line-strong);padding:4px;background:var(--panel)"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso2" shape="rect" placeholder="gallery portrait" hint-size="100%,100%"></x-import></div><div style="height:132px;border:1px solid var(--line-strong);padding:4px;background:var(--panel)"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso3" shape="rect" placeholder="gallery portrait" hint-size="100%,100%"></x-import></div></div>
+                  <div style="margin-top:14px;border:1px dashed var(--line-strong);border-radius:6px;padding:18px;display:flex;align-items:center;gap:14px;color:var(--dim);font-size:12px"><span style="font-size:24px;color:var(--ember)">↑</span><div><b style="display:block;color:var(--text-warm);margin-bottom:4px">Upload an image</b>PNG, JPEG, or WebP · file limits and storage policy pending</div></div>
+                  <div style="margin-top:12px;display:flex;align-items:center;gap:10px"><button disabled style="border:1px solid var(--line-strong);background:transparent;color:var(--faint);border-radius:4px;padding:9px 14px;font:10px 'Space Mono',monospace">GENERATE PORTRAIT</button><span class="ref-status phase-b">Not available in Phase A</span></div>
                 </div>
-                <div style="width:150px;height:195px;border:1px solid var(--line-strong);padding:5px;background:var(--panel)">
-                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso2" shape="rect" placeholder="gallery" hint-size="100%,100%"></x-import>
-                </div>
-                <div style="width:150px;height:195px;border:1px solid var(--line-strong);padding:5px;background:var(--panel)">
-                  <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="C-iso3" shape="rect" placeholder="gallery" hint-size="100%,100%"></x-import>
-                </div>
-                <div style="width:150px;height:195px;border:1px dashed var(--line-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)"><span style="font-size:22px;color:var(--faint)">↑</span>UPLOAD</div>
               </div>
-              <div style="display:flex;gap:12px;margin-top:22px;align-items:center">
-                <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);border:1px solid var(--line-strong);border-radius:3px;padding:8px 16px">✦ GENERATE</span>
-                <span class="ref-status phase-b">Phase B · portrait generation</span>
-              </div>
-              <button style="margin-top:30px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take Isolde to the ford →</button>
+              <div class="ref-annotation">`portrait_url` is currently read-only through the public character contract. Gallery/upload need asset storage and an authorized portrait mutation before this screen can persist; see gap G4. Generation remains separate under G14.</div>
+              <div style="display:flex;gap:14px;margin-top:26px;align-items:center"><button style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Take Isolde to the ford →</button><button style="border:0;background:transparent;color:var(--dim);font-family:'Space Grotesk',sans-serif">Continue without a portrait</button></div>
             </div>
           </div>
         </sc-if>
@@ -401,7 +410,7 @@ a:hover{color:var(--text-soft)}
         <div style="width:720px;max-width:100%">
           <div style="display:flex;align-items:baseline;gap:18px">
             <div style="font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:var(--text)">Ser Aldric — level 4</div>
-            <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember)">▲ THE PREVIEW NAMES THE ASKS</span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember)">▲ LEVEL-UP READY</span>
           </div>
           <div style="display:flex;gap:0;margin:26px 0 30px;font-family:'Space Mono',monospace;font-size:11px">
             <span style="color:var(--ember-ink);background:var(--ember);padding:8px 18px;border-radius:3px 0 0 3px;font-weight:700">① HIT POINTS</span>
@@ -434,12 +443,13 @@ a:hover{color:var(--text-soft)}
               </div>
             </div>
           </div>
-          <div style="border:1px dashed var(--line-strong);border-radius:8px;padding:18px 24px;margin-top:16px;font-size:14px;line-height:1.7;color:var(--dim)">
-            <b style="color:var(--muted)">What a level doesn't ask for never appears here.</b> No subclass ask — the fighter chose at 3. No spells — he has none. A caster's level walks the same three steps; the asks grow, the screen doesn't change shape. Slots appear unasked — arithmetic, not choices.
+          <div style="border:1px solid var(--line-strong);border-radius:8px;padding:18px 24px;margin-top:16px;background:var(--panel-low)">
+            <div class="ref-eyebrow">Applied when you confirm</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;font-size:13px;color:var(--muted)"><div><b style="display:block;color:var(--text-warm);margin-bottom:4px">Maximum HP</b>31 → 39</div><div><b style="display:block;color:var(--text-warm);margin-bottom:4px">Ability scores</b>STR 17 · CON 15</div><div><b style="display:block;color:var(--text-warm);margin-bottom:4px">Hit dice</b>3d10 → 4d10</div></div>
           </div>
+          <div class="ref-annotation">This fighter preview requests HP and ASI/feat only. A subclass choice or new-spell picker appears as an additional step only when `GET …/level-up` requests it; new slots and features are previewed but not selected. Companion auto-leveling uses deterministic choices unless leveling control is Player.</div>
           <div style="display:flex;gap:14px;margin-top:26px">
             <button style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:14px 30px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Seal level 4</button>
-            <span style="align-self:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">companions use this same door when companion leveling is set to player; otherwise they level automatically</span>
+            <span style="align-self:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">HP and both ability increases are final after confirmation</span>
           </div>
         </div>
       </div>

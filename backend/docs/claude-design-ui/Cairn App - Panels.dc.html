@@ -45,7 +45,15 @@ a:hover{color:var(--text-soft)}
         </div>
         <span style="font-weight:600;letter-spacing:.34em;font-size:13px;color:var(--text-soft)">CAIRN</span>
       </div>
-      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:22px">THE SILENT FORD · DAY 14</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:18px">THE SILENT FORD</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--dim);padding:6px 0">ACT I — THE CROSSING <span style="color:var(--lichen)">✓</span></div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--muted);padding:10px 0 4px">ACT II — WHAT THE RIVER KEEPS</div>
+      <div class="ref-trail" style="display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line);margin-left:5px;padding-left:14px">
+        <div style="position:relative;padding:7px 0;font-size:13px;color:var(--dim)"><span style="position:absolute;left:-19px;top:12px;width:9px;height:9px;border-radius:50%;background:var(--lichen)"></span>The toll ledger</div>
+        <div style="position:relative;padding:7px 0;font-size:13px;color:var(--dim)"><span style="position:absolute;left:-19px;top:12px;width:9px;height:9px;border-radius:50%;background:var(--lichen)"></span>Miller's Rise by night</div>
+        <div style="position:relative;padding:7px 0;font-size:13px;color:var(--text)"><span style="position:absolute;left:-20px;top:11px;width:11px;height:11px;border-radius:50%;background:var(--hazard);box-shadow:0 0 10px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span>The Drowned Chapel<div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--hazard);margin-top:2px">YOU ARE HERE</div></div>
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--faint);padding:10px 0 4px">ACT III — THE WEIR ◇</div>
       <div style="flex:1"></div>
       <div style="display:flex;flex-direction:column;gap:2px">
         <button onClick="{{ goPlayFile }}" style="{{ tabPlay }}">Play</button>
@@ -79,6 +87,7 @@ a:hover{color:var(--text-soft)}
               <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">THE SHEET · READS LIKE A RECORD, COMPUTES LIKE AN ENGINE</div>
               <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);margin:6px 0 2px">Ser Aldric of Bracken Ford</div>
               <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--muted)">HUMAN · FIGHTER 3 · CHAMPION · SOLDIER · LAWFUL GOOD</div>
+              <p style="margin:14px 0 0;max-width:720px;font-family:'Newsreader',serif;font-size:17px;line-height:1.68;color:var(--text-warm)">Twenty years holding the toll bridge taught Aldric to read a queue, a threat, and a false weight at a glance. He stayed when the garrison ran. His speech is slow and exact; promises sound like entries in a ledger.</p>
               <div style="display:flex;align-items:center;gap:14px;margin:20px 0 26px">
                 <span style="font-family:'Space Mono',monospace;font-size:15px;color:var(--text-soft)">HP <b style="color:var(--text)">19</b>/31</span>
                 <div style="width:220px;height:7px;border-radius:4px;background:var(--line)"><div style="width:61%;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--lichen),var(--ember))"></div></div>
@@ -93,14 +102,23 @@ a:hover{color:var(--text-soft)}
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--dim)">WIS</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--text);margin:4px 0 2px">12</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)">+1</div></div>
                 <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:12px 8px;text-align:center"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--dim)">CHA</div><div style="font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--text);margin:4px 0 2px">8</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--hazard)">−1</div></div>
               </div>
+              <div class="sheet-section">
+                <div class="ref-eyebrow" style="margin-bottom:12px">Capabilities · what the scores mean at the table</div>
+                <div class="rules-table">
+                  <div class="rules-row"><div><span class="ref-rule-link">Strength</span> · physical force</div><div class="rules-value">16 · +3</div><div class="rules-help"><b style="color:var(--text-warm)">Athletics +5</b> · proficient. Shove, climb, jump, grapple, lift, and resist forced movement. Strength save +5.</div></div>
+                  <div class="rules-row"><div><span class="ref-rule-link">Dexterity</span> · speed and precision</div><div class="rules-value">13 · +1</div><div class="rules-help">Initiative +1. Stealth, balance, sleight of hand, ranged attacks, and Dexterity saves use +1.</div></div>
+                  <div class="rules-row"><div><span class="ref-rule-link">Constitution</span> · endurance</div><div class="rules-value">14 · +2</div><div class="rules-help"><b style="color:var(--text-warm)">Constitution save +4</b> · proficient. Supports 31 maximum HP and concentration saves.</div></div>
+                  <div class="rules-row"><div><span class="ref-rule-link">Wisdom</span> · awareness</div><div class="rules-value">12 · +1</div><div class="rules-help">Perception +1 · passive Perception 11. Also governs Insight, Medicine, Survival, and Animal Handling.</div></div>
+                </div>
+              </div>
               <div style="display:flex;gap:40px;flex-wrap:wrap;margin-top:30px">
                 <div style="min-width:240px">
                   <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:12px">FEATURES — EACH OPENS ITS SRD TEXT</div>
-                  <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--text-warm)">
-                    <span style="border-bottom:1px dotted var(--dim);width:fit-content">Second Wind <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">· ready</span></span>
-                    <span style="border-bottom:1px dotted var(--dim);width:fit-content">Action Surge <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--hazard)">· spent</span></span>
-                    <span style="border-bottom:1px dotted var(--dim);width:fit-content">Improved Critical</span>
-                    <span style="border-bottom:1px dotted var(--dim);width:fit-content">Defense fighting style</span>
+                  <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;color:var(--text-warm)">
+                    <div><span class="ref-rule-link">Second Wind</span> <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">READY</span><div class="rules-help">Bonus action · recover 1d10 + fighter level HP · resets on a short or long rest.</div></div>
+                    <div><span class="ref-rule-link">Action Surge</span> <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--hazard)">SPENT</span><div class="rules-help">Take one additional action on your turn · resets on a short or long rest.</div></div>
+                    <div><span class="ref-rule-link">Improved Critical</span><div class="rules-help">Weapon attacks score a critical hit on a roll of 19 or 20.</div></div>
+                    <div><span class="ref-rule-link">Defense fighting style</span><div class="rules-help">+1 AC while wearing armor. Included in the carried-ledger total.</div></div>
                   </div>
                 </div>
                 <div style="min-width:300px;flex:1">
@@ -133,40 +151,24 @@ a:hover{color:var(--text-soft)}
       <!-- ===== PARTY ===== -->
       <sc-if value="{{ isParty }}" hint-placeholder-val="{{ false }}">
         <div style="padding:38px 44px;max-width:1000px">
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">THE PARTY · WHO WALKS WITH YOU</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">PARTY</div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text);margin:6px 0 30px">Three at the ford</div>
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div style="border:1px solid var(--line-strong);border-radius:10px;background:var(--panel);padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
-              <div style="width:58px;height:58px;border-radius:6px;background:var(--line-faint);border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ember)">A</div>
-              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:var(--text)">Ser Aldric <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ember);border:1px solid var(--line-strong);border-radius:3px;padding:2px 7px;margin-left:8px">YOU</span></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px">FIGHTER 3 · HP 19/31 · AC 17</div></div>
-              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">full sheet under Character</div>
-            </div>
-            <div style="border:1px solid var(--line-strong);border-radius:10px;background:var(--panel-low);padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
-              <div style="width:58px;height:58px;border-radius:6px;background:var(--panel);border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--lichen)">C</div>
-              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:var(--text-soft)">Casimir the Lantern <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--ember);margin-left:6px">SELECTED</span></div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px">CLERIC 3 · HP 22/24 · BALANCED: COMBAT SUGGEST</div></div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:10px">
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 10px">keeps candles lit</span>
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 10px">won't touch the font</span>
-              </div>
-            </div>
-            <div style="border:1px solid var(--line-strong);border-radius:10px;background:var(--panel-low);padding:20px 26px;display:flex;gap:22px;align-items:center;flex-wrap:wrap">
-              <div style="width:58px;height:58px;border-radius:6px;background:var(--panel);border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--lichen)">W</div>
-              <div style="flex:1;min-width:200px"><div style="font-size:16px;font-weight:600;color:var(--text-soft)">Wrenna</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px">RANGER 2 · HP 17/18 · joined at Miller's Rise, day 9</div></div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:10px">
-                <span style="color:var(--lichen);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 10px">owes the miller</span>
-                <span style="color:var(--hazard);border:1px dotted rgba(200,75,47,.5);border-radius:12px;padding:4px 10px">distrusts Marrow</span>
-              </div>
-            </div>
+          <div class="portrait-roster">
+            <button><div class="roster-portrait"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="party-aldric" shape="rect" placeholder="portrait — Ser Aldric" hint-size="100%,100%"></x-import></div><div style="margin-top:9px;font-weight:600;color:var(--text)">Ser Aldric <span style="font:9px 'Space Mono',monospace;color:var(--ember)">YOU</span></div><div style="margin-top:4px;font:9px 'Space Mono',monospace;color:var(--dim)">FIGHTER 3 · 19/31 HP</div></button>
+            <button class="selected"><div class="roster-portrait"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="party-casimir" shape="rect" placeholder="portrait — Casimir" hint-size="100%,100%"></x-import></div><div style="margin-top:9px;font-weight:600;color:var(--text)">Casimir</div><div style="margin-top:4px;font:9px 'Space Mono',monospace;color:var(--lichen)">CLERIC 3 · 22/24 HP · CONTENT</div></button>
+            <button><div class="roster-portrait"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="party-wrenna" shape="rect" placeholder="portrait — Wrenna" hint-size="100%,100%"></x-import></div><div style="margin-top:9px;font-weight:600;color:var(--text)">Wrenna</div><div style="margin-top:4px;font:9px 'Space Mono',monospace;color:var(--dim)">RANGER 2 · 17/18 HP · WATCHFUL</div></button>
           </div>
           <div style="margin-top:26px;border-top:1px solid var(--line-strong);padding-top:28px">
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap"><div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--text)">Casimir the Lantern</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:5px">HUMAN · CLERIC 3 · LIFE DOMAIN · ACOLYTE</div></div><span class="ref-status current">Full character sheet · read-only</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:18px;flex-wrap:wrap"><div><div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--text)">Casimir the Lantern</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:5px">HUMAN · CLERIC 3 · LIFE DOMAIN · ACOLYTE</div><p style="max-width:680px;margin:12px 0 0;font-family:'Newsreader',serif;font-size:16px;line-height:1.65;color:var(--text-warm)">A former lamplighter who treats prayer as maintenance: trim the wick, name the dead, keep watch until morning. He speaks patiently and never jokes at a grave.</p></div><span class="ref-status current">Selected companion</span></div>
+            <div style="margin-top:18px;border:1px solid var(--line-strong);border-radius:7px;background:var(--panel-low);padding:14px 16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap"><div class="ref-eyebrow">Control</div><span style="font:11px 'Space Mono',monospace;color:var(--muted)">COMBAT <b style="color:var(--ember)">SUGGEST</b></span><span style="font:11px 'Space Mono',monospace;color:var(--muted)">DIALOGUE <b style="color:var(--ember)">AI</b></span><span style="font:11px 'Space Mono',monospace;color:var(--muted)">EQUIPMENT <b style="color:var(--ember)">AI</b></span><span style="margin-left:auto;font-size:12px;color:var(--dim)">Change campaign defaults in Settings</span></div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:20px">
               <div style="border:1px solid var(--line-faint);border-radius:7px;padding:16px 18px;background:var(--panel-low)"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--dim)">VITALS &amp; SPELLCASTING</div><div style="display:flex;gap:16px;margin:12px 0;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)"><b style="color:var(--text)">HP 22/24</b><span>AC 18</span><span>WIS +3</span></div><div style="font-size:13px;line-height:1.9;color:var(--text-warm)"><span style="border-bottom:1px dotted var(--dim)">Sacred Flame</span> · <span style="border-bottom:1px dotted var(--dim)">Bless</span> · <span style="border-bottom:1px dotted var(--dim)">Cure Wounds</span></div><div class="ref-note" style="margin-top:8px">Slots 1st: ●●●● · 2nd: ●●</div></div>
               <div style="border:1px solid var(--line-faint);border-radius:7px;padding:16px 18px;background:var(--panel-low)"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--dim)">HOW HE HOLDS YOU</div><div style="margin:12px 0 10px;color:var(--lichen);font-family:'Cormorant Garamond',serif;font-size:24px">Warming toward loyal</div><div style="font-size:12px;line-height:1.65;color:var(--muted)"><span style="color:var(--lichen)">Day 9</span> · You went back for Wrenna after the bridge gave way.<br><span style="color:var(--hazard)">Day 12</span> · You used the chapel font after he asked you not to.</div><div class="ref-note" style="margin-top:8px">Vague band and reasons only. Never show approval totals or numeric deltas.</div></div>
               <div style="border:1px solid var(--line-faint);border-radius:7px;padding:16px 18px;background:var(--panel-low)"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.18em;color:var(--dim)">VOICE &amp; AGENCY</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;font-family:'Space Mono',monospace;font-size:9px"><span style="border:1px dotted var(--line-strong);border-radius:10px;padding:4px 9px;color:var(--muted)">patient</span><span style="border:1px dotted var(--line-strong);border-radius:10px;padding:4px 9px;color:var(--muted)">ritual exactness</span><span style="border:1px dotted var(--line-strong);border-radius:10px;padding:4px 9px;color:var(--muted)">never jokes at a grave</span></div><div style="font-size:12px;color:var(--text-warm)">Combat: <b style="color:var(--ember)">Suggest</b> · Dialogue: <b style="color:var(--ember)">AI</b></div><div class="ref-note" style="margin-top:8px">No companion secret or private facts are player-visible.</div></div>
             </div>
+            <div class="sheet-section"><div class="ref-eyebrow" style="margin-bottom:12px">Companion sheet</div><div class="rules-table"><div class="rules-row"><div><span class="ref-rule-link">Sacred Flame</span></div><div class="rules-value">DEX · DC 13</div><div class="rules-help">60 feet · target takes 1d8 radiant damage on a failed save.</div></div><div class="rules-row"><div><span class="ref-rule-link">Bless</span></div><div class="rules-value">CONCENTRATION</div><div class="rules-help">Up to three creatures add 1d4 to attack rolls and saving throws.</div></div><div class="rules-row"><div><span class="ref-rule-link">Channel Divinity</span></div><div class="rules-value">1 / 1</div><div class="rules-help">Turn Undead or Preserve Life · resets on a short or long rest.</div></div><div class="rules-row"><div>Skills and awareness</div><div class="rules-value">INSIGHT +5</div><div class="rules-help">Medicine +5 · Religion +3 · passive Perception 13.</div></div></div></div>
           </div>
-          <div style="margin-top:18px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">Roster rows are the glance. Selecting a companion opens the same complete sheet language as Character, plus relationship and agency—not a reduced dossier.</div>
+          <div class="ref-annotation">Selecting a portrait swaps the complete sheet. The browser response must omit companion secrets, private facts, raw approval, deltas, and totals; see gap G6.</div>
         </div>
       </sc-if>
 
@@ -228,7 +230,21 @@ a:hover{color:var(--text-soft)}
             <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text)">The Silent Ford</div>
             <span class="ref-status planned">Phase A · location graph read surface needed</span>
           </div>
-          <div style="position:relative;margin-top:26px;height:520px;background:var(--table);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden">
+          <div class="map-plate" style="margin-top:26px">
+            <div style="position:absolute;left:-5%;right:-5%;top:45%;height:68px;transform:rotate(-4deg);border-top:1px solid rgba(110,135,150,.24);border-bottom:1px solid rgba(110,135,150,.18);background:repeating-linear-gradient(94deg,rgba(110,135,150,.08) 0 4px,transparent 4px 15px)"></div>
+            <div style="position:absolute;left:3%;top:48%;font:italic 17px 'Cormorant Garamond',serif;color:var(--dim);transform:rotate(-4deg)">Silent River</div>
+            <div class="route-line" style="left:19%;top:29%;width:24%;transform:rotate(18deg)"></div><div class="route-line" style="left:45%;top:38%;width:22%;transform:rotate(-13deg)"></div><div class="route-line" style="left:63%;top:34%;width:21%;transform:rotate(38deg)"></div><div class="route-line" style="left:70%;top:55%;width:16%;transform:rotate(55deg);opacity:.55"></div>
+            <span class="route-label" style="left:31%;top:27%">OLD MILL ROAD</span><span class="route-label" style="left:52%;top:31%">2 HOURS</span><span class="route-label" style="left:73%;top:49%">FORD</span>
+            <div class="map-place" style="left:7%;top:8%"><div class="map-place-card"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="map-toll" shape="rect" placeholder="ink landmark — toll house and bridge" hint-size="100%,100%"></x-import></div><div class="map-place-name">THE TOLL HOUSE · VISITED DAY 1</div></div>
+            <div class="map-place" style="left:31%;top:22%"><div class="map-place-card"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="map-mill" shape="rect" placeholder="ink landmark — mill on the rise" hint-size="100%,100%"></x-import></div><div class="map-place-name">MILLER'S RISE · VISITED DAY 9</div></div>
+            <div class="map-place" style="left:53%;top:10%"><div class="map-place-card"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="map-field" shape="rect" placeholder="ink landmark — flooded wake field" hint-size="100%,100%"></x-import></div><div class="map-place-name">THE WAKE FIELD · VISITED DAY 11</div></div>
+            <div class="map-place current" style="right:7%;top:34%"><div class="map-place-card"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="map-chapel" shape="rect" placeholder="ink landmark — drowned chapel" hint-size="100%,100%"></x-import></div><div class="map-place-name">THE DROWNED CHAPEL · CURRENT</div></div>
+            <div class="map-place" style="right:1%;bottom:7%;opacity:.7"><div class="map-place-card" style="display:flex;align-items:center;justify-content:center;border-style:dashed;color:var(--dim);font:28px 'Cormorant Garamond',serif">?</div><div class="map-place-name">KNOWN EXIT · NOT VISITED</div></div>
+            <div style="position:absolute;left:8%;bottom:9%;width:270px;padding-left:14px;border-left:2px solid var(--lichen);font:15px/1.55 'Newsreader',serif;color:var(--muted)">Day 12 · The ferryman's bell was heard from the north bank. No route has been confirmed.</div>
+            <div style="position:absolute;right:14px;bottom:12px;font:9px 'Space Mono',monospace;color:var(--faint)">ILLUSTRATED ROUTE CHART · NOT TO SCALE</div>
+          </div>
+          <div class="ref-annotation">Landmark plates and terrain are illustrative; adjacency and discovery state are authoritative. Selecting a place opens known facts and travel eligibility. Accurate geography would require authored coordinates; see gaps G3 and G12.</div>
+          <div style="display:none;position:relative;margin-top:26px;height:520px;background:var(--table);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden" aria-hidden="true">
             <div style="position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 20% 15%,transparent 0 60px,rgba(231,226,212,.025) 60px 61px)"></div>
             <div style="position:absolute;left:0;right:0;top:210px;height:74px;pointer-events:none;background:repeating-linear-gradient(94deg,rgba(120,150,175,.10) 0 4px,transparent 4px 14px);border-top:1px solid rgba(120,150,175,.18);border-bottom:1px solid rgba(120,150,175,.18);transform:rotate(-3deg)"></div>
             <div style="position:absolute;left:40px;top:238px;font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;color:var(--dim);transform:rotate(-3deg)">the river — it keeps its ledger</div>
@@ -244,7 +260,7 @@ a:hover{color:var(--text-soft)}
             <div style="position:absolute;left:120px;top:360px;width:230px;font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;line-height:1.5;color:var(--faint)">margin note, day 12 — "the ferryman's bell rings from the wrong bank when the fog sits low."</div>
             <div style="position:absolute;right:16px;bottom:14px;font-family:'Space Mono',monospace;font-size:9px;color:var(--faint)">CARTOGRAPHER'S TABLE · ACT II</div>
           </div>
-          <div style="margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">Visited locations become solid nodes; known but unvisited exits may appear as ??? stubs. The frontend lays out `Location.connections`; current HTTP routes do not expose that graph yet.</div>
+          <div style="display:none;margin-top:16px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">Visited locations become solid nodes; known but unvisited exits may appear as unknown stubs. The frontend lays out `Location.connections`; current HTTP routes do not expose that graph yet.</div>
         </div>
       </sc-if>
 
@@ -266,9 +282,13 @@ a:hover{color:var(--text-soft)}
               </div>
             </div>
 
-            <div style="padding:22px 0;border-bottom:1px solid var(--line-strong);display:flex;align-items:center;gap:22px;flex-wrap:wrap">
-              <div style="flex:1;min-width:220px"><div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim)">DEATH MODE</div><p style="margin:6px 0 0;font-size:13px;line-height:1.55;color:var(--dim)">Editable at any time. The selected rule governs the next turn.</p></div>
-              <div style="display:flex;border:1px solid var(--line-strong);border-radius:5px;overflow:hidden;font-family:'Space Mono',monospace;font-size:10px"><button style="padding:9px 13px;border:0;background:transparent;color:var(--dim)">Pacifist</button><button style="padding:9px 13px;border:0;border-left:1px solid var(--line-strong);border-right:1px solid var(--line-strong);background:var(--ember);color:var(--ember-ink);font-weight:700">Narrative</button><button style="padding:9px 13px;border:0;background:transparent;color:var(--dim)">Hardcore</button></div>
+            <div style="padding:22px 0;border-bottom:1px solid var(--line-strong)">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim)">DEATH MODE</div><p style="margin:6px 0 14px;font-size:13px;line-height:1.55;color:var(--dim)">Editable at any time. The selected rule governs subsequent damage and death resolution.</p>
+              <div class="setting-choice-grid">
+                <button class="setting-choice"><b>Pacifist</b>Damage cannot reduce your player character below 1 HP. Companions and enemies still follow normal combat rules.</button>
+                <button class="setting-choice selected"><b>Narrative ✓</b>You can fall and make death saves. If you die at combat's end, you survive at 1 HP and the near-death becomes campaign memory.</button>
+                <button class="setting-choice"><b>Hardcore</b>Your death ends the campaign. Its record remains readable, but further campaign changes are blocked.</button>
+              </div>
             </div>
 
             <div style="padding:22px 0;border-bottom:1px solid var(--line-strong)">
@@ -290,22 +310,22 @@ a:hover{color:var(--text-soft)}
 
             <div style="padding:22px 0;border-bottom:1px solid var(--line-strong)">
               <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim);margin-bottom:6px">ADVANCED · PRESET OVERRIDES</div>
-              <p style="margin:0 0 16px;font-size:13px;color:var(--dim)">These controls apply to every companion in this campaign. They are not per-companion secrets or model settings.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px">
-                <div style="border:1px solid var(--line-faint);border-radius:7px;padding:16px 18px;background:var(--panel-low)"><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">Companion agency</div>
+              <p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:var(--dim)"><b style="color:var(--text-warm)">AI</b> decides and continues. <b style="color:var(--text-warm)">Suggest</b> proposes a choice for confirmation. <b style="color:var(--text-warm)">Player</b> waits for your direct decision. These are campaign-wide defaults.</p>
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div style="border:1px solid var(--line-strong);border-radius:8px;padding:20px 22px;background:var(--panel-low)"><div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text);margin-bottom:5px">Companion control</div><p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:var(--dim)">Choose who makes each kind of companion decision. Suggest is available where a proposal can safely suspend play.</p>
                   <div style="display:flex;flex-direction:column;gap:11px;font-family:'Space Mono',monospace;font-size:10px">
-                    <div style="display:flex;justify-content:space-between;gap:14px"><span style="color:var(--muted)">combat</span><span style="color:var(--ember)">ai · <b>suggest</b> · player</span></div>
-                    <div style="display:flex;justify-content:space-between;gap:14px"><span style="color:var(--muted)">dialogue</span><span style="color:var(--ember)"><b>ai</b> · suggest · player</span></div>
-                    <div style="display:flex;justify-content:space-between;gap:14px"><span style="color:var(--muted)">equipment</span><span style="color:var(--ember)"><b>ai</b> · player</span></div>
-                    <div style="display:flex;justify-content:space-between;gap:14px"><span style="color:var(--muted)">leveling</span><span style="color:var(--ember)"><b>ai</b> · player</span></div>
-                    <div style="display:flex;justify-content:space-between;gap:14px"><span style="color:var(--muted)">checks</span><span style="color:var(--ember)"><b>ai</b> · player</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Combat turns</span><span style="color:var(--ember)">AI · <b>SUGGEST</b> · PLAYER</span><span class="rules-help">Suggest pauses on a proposed full turn; you can run it or replace it.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Dialogue</span><span style="color:var(--ember)"><b>AI</b> · SUGGEST · PLAYER</span><span class="rules-help">AI speaks in character. Player waits for you to supply the companion's response.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Equipment</span><span style="color:var(--ember)"><b>AI</b> · PLAYER</span><span class="rules-help">AI manages legal equipment; Player exposes equipment decisions to you.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Leveling</span><span style="color:var(--ember)"><b>AI</b> · PLAYER</span><span class="rules-help">AI applies deterministic balanced choices. Player opens the companion level-up flow.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Checks</span><span style="color:var(--ember)"><b>AI</b> · PLAYER</span><span class="rules-help">Choose who resolves active checks made by a companion.</span></div>
                   </div>
                 </div>
-                <div style="border:1px solid var(--line-faint);border-radius:7px;padding:16px 18px;background:var(--panel-low)"><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">What interrupts play</div>
-                  <div style="display:flex;flex-direction:column;gap:13px;font-family:'Space Mono',monospace;font-size:10px">
-                    <div><div style="color:var(--muted);margin-bottom:5px">passive Perception</div><div style="color:var(--ember)">silent · <b>surfaced</b> · on demand</div></div>
-                    <div><div style="color:var(--muted);margin-bottom:5px">passive Insight</div><div style="color:var(--ember)">silent · <b>surfaced</b> · on demand</div></div>
-                    <div><div style="color:var(--muted);margin-bottom:5px">your reactions</div><div style="color:var(--ember)">ai · <b>suggest</b> · player</div><div style="color:var(--faint);line-height:1.5;margin-top:5px">Interactive prompts carry the engine's current 20-second countdown and recommendation.</div></div>
+                <div style="border:1px solid var(--line-strong);border-radius:8px;padding:20px 22px;background:var(--panel-low)"><div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text);margin-bottom:5px">Checks and reactions</div><p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:var(--dim)">Silent records the result without a field note. Surfaced shows the result when it matters. On demand reports it only when you ask.</p>
+                  <div style="display:flex;flex-direction:column;gap:0;font-family:'Space Mono',monospace;font-size:10px">
+                    <div class="rules-row"><span style="color:var(--muted)">Passive Perception</span><span style="color:var(--ember)">SILENT · <b>SURFACED</b> · ON DEMAND</span><span class="rules-help">Controls visibility, not which character is eligible to notice something.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Passive Insight</span><span style="color:var(--ember)">SILENT · <b>SURFACED</b> · ON DEMAND</span><span class="rules-help">Controls whether passive social reads create a visible field note.</span></div>
+                    <div class="rules-row"><span style="color:var(--muted)">Your reactions</span><span style="color:var(--ember)">AI · <b>SUGGEST</b> · PLAYER</span><span class="rules-help">Interactive prompts hold the combat checkpoint for 20 seconds and may include an engine recommendation.</span></div>
                   </div>
                 </div>
               </div>

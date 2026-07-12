@@ -5,6 +5,10 @@ documents, not evidence that a backend route exists. Current engine behavior is 
 [`../architecture.md`](../architecture.md); sequencing and planned contracts live in
 [`../roadmap.md`](../roadmap.md).
 
+Before frontend planning, read the [Ember frontend contract gaps](gaps.md). It records every known
+place where the visual reference needs a product decision, a player-safe projection, or a backend
+capability before it can be implemented faithfully.
+
 The archived `Cairn App v4.html` remains design history. Its screen inventory and interaction
 research informed this reference, but its Slate Survey palette and exact component treatments are
 superseded by Ember.
@@ -24,8 +28,37 @@ and handled—not decorated like generic fantasy software.
 - **Structure:** prose stays central; mechanics accumulate in the margin or on the table without
   replacing the story.
 
+## Copy and annotation boundary
+
+Ember separates three registers instead of blending them:
+
+- **Narration** may be literary because it is authored campaign output.
+- **Product UI** uses direct player language: exact state, consequence, and action.
+- **Reference annotation** explains endpoints, planned dependencies, motion, and sound outside the
+  player-facing surface.
+
+Do not use atmospheric fragments as labels, rules explanations, errors, or state summaries. A saving
+throw says `d20 + 3 against DC 14`; any scene flavor belongs in the narration around it. Developer
+phrases such as “for the spec,” “the preview names the asks,” and endpoint notes never appear inside
+the production composition.
+
 Gold means guidance or a chosen action, lichen means established/healthy/done, and red means danger,
 interruption, or the current hazardous point. Do not use all three merely to decorate a panel.
+
+### Landing media direction
+
+Spend the landing page's visual budget on one establishing image: an oil-and-charcoal view of a river
+ford at dusk, with a small lantern-lit party crossing and a cairn in the foreground. It must work as a
+still. An optional 8–12 second loop may add only slow fog, water movement, lantern flicker, and a nearly
+imperceptible camera push. Do not animate characters, add trailer cuts, or make comprehension depend on
+video. Reduced-motion mode uses the still.
+
+### Sound direction
+
+The static references specify two optional product cues for later implementation: a restrained low
+impact when `COMBAT` lands, and a dry cartographer's stamp when the 0 HP marker appears. Routine actions
+remain silent. Reduced-motion/sensory settings must also suppress these cues, and the interface never
+depends on sound to communicate state.
 
 ## Contract labels
 
@@ -41,6 +74,7 @@ administrative data. Mock content may demonstrate layout; annotations must state
 
 ## Files
 
+- `gaps.md` — verified UI/backend mismatches and the decision required for each before build.
 - `Cairn Landing.dc.html` — public thesis: one campaign performed down the page.
 - `Cairn App - Shell.dc.html` — login, campaign browser, world/template choice, campaign framing,
   account, plans, and epilogue.

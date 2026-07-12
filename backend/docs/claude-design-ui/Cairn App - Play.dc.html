@@ -57,6 +57,7 @@ a:hover{color:var(--text-soft)}
         <span style="font-weight:600;letter-spacing:.34em;font-size:13px;color:var(--text-soft)">CAIRN</span>
       </div>
       <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:18px">THE SILENT FORD</div>
+      <button onClick="{{ goRecap }}" style="margin:-8px 0 14px;padding:0;border:0;background:transparent;text-align:left;color:var(--dim);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;cursor:pointer">REVIEW RECAP</button>
       <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--dim);padding:6px 0">ACT I — THE CROSSING <span style="color:var(--lichen)">✓</span></div>
       <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--muted);padding:10px 0 4px">ACT II — WHAT THE RIVER KEEPS</div>
       <div class="ref-trail" style="display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line);margin-left:5px;padding-left:14px">
@@ -117,54 +118,53 @@ a:hover{color:var(--text-soft)}
       <!-- ======== INTO-COMBAT (staged transformation) ======== -->
       <sc-if value="{{ isIntoCombat }}" hint-placeholder-val="{{ false }}">
         <div style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative">
+          <div class="combat-word">COMBAT</div>
           <div style="position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(30,10,10,.35),rgba(10,8,6,0) 55%);opacity:0;animation:duskIn 1.4s ease .9s forwards"></div>
-          <div style="flex:none;position:relative;z-index:2;opacity:0;animation:slideDn .8s cubic-bezier(.2,.8,.2,1) 1.7s forwards;display:flex;gap:10px;padding:14px 34px;background:var(--panel-low);border-bottom:1px solid var(--line-strong)">
+          <div style="flex:none;position:relative;z-index:2;opacity:0;animation:slideDn .8s cubic-bezier(.2,.8,.2,1) 1.45s forwards;display:flex;gap:10px;padding:14px 34px;background:var(--panel-low);border-bottom:1px solid var(--line-strong)">
+            <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--hazard);align-self:center;margin-right:4px">ROUND 1</span>
             <span style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;background:rgba(200,75,47,.16);border:1px solid rgba(200,75,47,.5);color:var(--text)">WRENNA · ACTING</span>
             <span style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted)">YOU · 2ND</span>
             <span style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted)">CASIMIR</span>
             <span style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--dim)">MILL THRALL ×2</span>
           </div>
           <div style="flex:1;display:flex;min-height:0">
-            <div style="flex:1;overflow:auto;padding:30px 48px 20px;display:flex;justify-content:center">
-              <div style="width:600px;max-width:100%">
+            <div style="width:42%;min-width:360px;overflow:auto;padding:30px 38px 20px;display:flex;justify-content:center">
+              <div style="width:520px;max-width:100%">
                 <p style="margin:0;font-family:'Newsreader',serif;font-size:19px;line-height:1.7;color:var(--text-soft)">Casimir's candle gutters out. In the dark of the nave, very quietly, something begins to wade toward you from the direction of the font.</p>
                 <div style="display:flex;align-items:center;gap:16px;margin:24px 0">
                   <span style="flex:1;border-top:1px solid var(--line-strong)"></span>
-                  <span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--hazard)">STEEL IS DRAWN — ROUND 1</span>
+                  <span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--hazard)">COMBAT · ROUND 1</span>
                   <span style="flex:1;border-top:1px solid var(--line-strong)"></span>
                 </div>
                 <p style="margin:0;font-family:'Newsreader',serif;font-size:19px;line-height:1.7;color:var(--text-soft)">The warden of the ford rises out of the black water, and the pews between you are suddenly a battlefield you already know the shape of.</p>
               </div>
             </div>
-            <div style="width:340px;flex:none;border-left:1px solid var(--line);padding:22px;overflow:hidden">
-              <div style="opacity:0;transform-origin:top;animation:unfurl .9s cubic-bezier(.2,.8,.2,1) 2.6s forwards">
-                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:12px">THE DM'S NAPKIN — ALL ZONES SEEDED</div>
-                <div style="position:relative;height:390px;background:var(--table);border:1px solid var(--line-strong);border-radius:8px;overflow:hidden">
-                  <div style="position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 82% 10%,transparent 0 46px,rgba(231,226,212,.03) 46px 47px)"></div>
-                  <div style="position:absolute;left:12px;top:10px;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--faint)">THE DROWNED CHAPEL · NAVE</div>
-                  <div style="position:absolute;right:12px;top:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--faint)">N ↑</div>
-                  <div style="position:absolute;left:122px;top:136px;width:78px;border-top:1px dashed var(--line-strong);transform:rotate(-33deg)"></div>
-                  <div style="position:absolute;left:132px;top:258px;width:68px;border-top:1px dashed var(--line-strong);transform:rotate(35deg)"></div>
-                  <div style="position:absolute;left:58px;top:134px;width:42px;border-top:1px dashed var(--line-strong);transform:rotate(-88deg)"></div>
-                  <span style="position:absolute;left:152px;top:108px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">15 FT</span>
-                  <span style="position:absolute;left:152px;top:268px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">10 FT</span>
-                  <span style="position:absolute;left:16px;top:128px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">CLIMB</span>
-                  <div style="position:absolute;left:22px;top:32px;width:110px;height:82px;border:1px solid var(--line-strong);border-radius:55% 45% 50% 50%/48% 55% 45% 52%;background:repeating-radial-gradient(circle at 50% 55%,transparent 0 9px,rgba(231,226,212,.05) 9px 10px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--dim)">BELL STAIR</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">elevated · +2 to spot</div></div>
-                  <div style="position:absolute;left:172px;top:38px;width:118px;height:92px;border:1px solid var(--hazard);border-radius:46% 54% 58% 42%/52% 44% 56% 48%;background:repeating-linear-gradient(180deg,rgba(120,150,175,.09) 0 3px,transparent 3px 11px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--hazard)">THE FONT</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">hazard · deep water</div><div style="display:flex;gap:5px;margin-top:6px"><span style="width:22px;height:22px;border-radius:50%;background:var(--hazard);color:var(--ember-ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(200,75,47,.5)">W</span></div></div>
-                  <div style="position:absolute;left:16px;top:180px;width:152px;height:106px;border:1px solid var(--line-strong);border-radius:44% 56% 52% 48%/55% 46% 54% 45%;background:repeating-linear-gradient(0deg,transparent 0 9px,rgba(214,164,82,.06) 9px 11px);padding:12px 16px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted)">THE NAVE</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">cover · pews</div><div style="display:flex;gap:6px;margin-top:8px"><span style="width:24px;height:24px;border-radius:50%;background:var(--ember);color:var(--ember-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--table),0 0 0 3.5px var(--ember),0 0 14px rgba(214,164,82,.7);animation:glowP 2.6s ease-in-out infinite" title="you">A</span><span style="width:22px;height:22px;border-radius:50%;background:var(--lichen);color:var(--ember-ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">C</span></div></div>
-                  <div style="position:absolute;left:184px;top:262px;width:120px;height:98px;border:1px solid var(--line-strong);border-radius:52% 48% 44% 56%/46% 56% 44% 54%;background:repeating-linear-gradient(55deg,transparent 0 8px,rgba(190,205,195,.06) 8px 9px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted)">FLOODED AISLE</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">difficult · knee-deep</div><div style="display:flex;gap:5px;margin-top:6px"><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--dim);color:var(--muted);font-size:9px;display:flex;align-items:center;justify-content:center">t</span><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--dim);color:var(--muted);font-size:9px;display:flex;align-items:center;justify-content:center">t</span></div></div>
+            <div style="flex:1;border-left:1px solid var(--line);padding:20px 24px;overflow:hidden;min-width:0">
+              <div style="opacity:0;transform-origin:top;animation:unfurl .9s cubic-bezier(.2,.8,.2,1) 1.8s forwards">
+                <div class="ref-eyebrow" style="margin-bottom:10px">Encounter plate · The Drowned Chapel</div>
+                <div class="tactical-plate" style="min-height:370px">
+                  <div class="route-line" style="left:28%;top:36%;width:31%;transform:rotate(9deg)"></div>
+                  <div class="route-line" style="left:25%;top:50%;width:27%;transform:rotate(61deg)"></div>
+                  <div class="route-line" style="left:61%;top:42%;width:26%;transform:rotate(52deg)"></div>
+                  <span class="route-label" style="left:41%;top:31%">CLOSE · 30 FT</span>
+                  <span class="route-label" style="left:31%;top:65%">FAR · 60 FT</span>
+                  <span class="route-label" style="left:70%;top:66%">CLOSE · 60 FT WITH TERRAIN</span>
+                  <div class="zone-card" style="left:5%;top:8%;width:26%;height:116px"><div class="zone-name">BELL STAIR</div><div class="zone-rule">No cover · normal terrain</div></div>
+                  <div class="zone-card current" style="left:38%;top:20%;width:30%;height:150px"><div class="zone-name">THE NAVE</div><div class="zone-rule">Half cover · +2 AC and Dexterity saves</div><div class="zone-occupants"><span class="zone-token player" title="Ser Aldric">A</span><span class="zone-token ally" title="Casimir">C</span></div></div>
+                  <div class="zone-card" style="left:9%;bottom:7%;width:29%;height:126px"><div class="zone-name">FLOODED AISLE</div><div class="zone-rule">Difficult terrain · movement cost ×2</div><div class="zone-occupants"><span class="zone-token foe">T</span><span class="zone-token foe">T</span></div></div>
+                  <div class="zone-card hazard" style="right:5%;bottom:8%;width:27%;height:130px"><div class="zone-name" style="color:var(--hazard)">THE FONT</div><div class="zone-rule">Hazard · deep water</div><div class="zone-occupants"><span class="zone-token foe">W</span></div></div>
                 </div>
               </div>
             </div>
           </div>
-          <div style="flex:none;opacity:0;animation:riseUp .7s cubic-bezier(.2,.8,.2,1) 3.4s forwards;border-top:1px solid var(--line-strong);background:var(--panel-low);padding:12px 34px;display:flex;align-items:center;gap:22px;font-family:'Space Mono',monospace;font-size:11px">
+          <div style="flex:none;opacity:0;animation:riseUp .7s cubic-bezier(.2,.8,.2,1) 2.35s forwards;border-top:1px solid var(--line-strong);background:var(--panel-low);padding:12px 34px;display:flex;align-items:center;gap:22px;font-family:'Space Mono',monospace;font-size:11px">
             <span style="color:var(--dim)">ACTION <b style="color:var(--ember)">●</b></span>
             <span style="color:var(--dim)">BONUS <b style="color:var(--ember)">●</b></span>
             <span style="color:var(--dim)">REACTION <b style="color:var(--faint)">○</b></span>
             <span style="color:var(--dim)">MOVE <b style="color:var(--text-soft)">30 FT</b></span>
-            <span style="flex:1"></span>
-            <span style="color:var(--faint)">combat begins inside the turn — no cut, no modal</span>
+            <span style="flex:1"></span><span style="color:var(--muted)">Your message is your whole turn</span>
           </div>
+          <div style="flex:none;padding:10px 34px 18px;background:var(--table);display:flex;gap:12px"><div style="flex:1;background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:13px 17px;font-family:'Newsreader',serif;font-size:16px;font-style:italic;color:var(--dim)">Describe your turn…</div><div style="width:52px;border-radius:5px;background:var(--hazard);display:flex;align-items:center;justify-content:center;color:var(--text);font-size:19px">→</div></div>
         </div>
       </sc-if>
 
@@ -189,7 +189,7 @@ a:hover{color:var(--text-soft)}
                     <span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--hazard)">SER ALDRIC FALLS — 0 HP</span>
                     <span style="flex:1;border-top:1px solid var(--line-strong)"></span>
                   </div>
-                  <p style="margin:0;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--muted)">The glaive finds the seam under your shield arm and the black water accepts you without comment. The bell keeps ringing. The moment of the fall — the ribbon dims you, the stamp hits the map, and the table's attention moves on without stopping.</p>
+                  <p style="margin:0;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--muted)">The glaive finds the seam under your shield arm and the black water closes over you. The bell keeps ringing. Casimir calls your name from beyond the pews.</p>
                 </sc-if>
                 <sc-if value="{{ isDowned }}" hint-placeholder-val="{{ false }}">
                   <p style="margin:0 0 18px;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--muted)">A round later. You are face-up in the flood, watching candle-light move on the vaulting. Casimir has fought his way three pews closer; Wrenna is between you and the glaive. Your part of the round has narrowed to a single die.</p>
@@ -207,17 +207,37 @@ a:hover{color:var(--text-soft)}
                     <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line-strong)"><span style="flex:1;font-size:14px;color:var(--text-soft)">Glaive of the ford <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">· martial · reach</span></span><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember-ink);background:var(--ember);border-radius:3px;padding:4px 12px;font-weight:700">TAKE</span></div>
                     <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line-strong)"><span style="flex:1;font-size:14px;color:var(--text-soft)">Iron key on a cord <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--hazard)">· quest</span></span><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--lichen);border:1px solid var(--line);border-radius:3px;padding:4px 12px">TAKEN ✓</span></div>
                     <div style="display:flex;align-items:center;gap:12px;padding:9px 0"><span style="flex:1;font-size:14px;color:var(--text-soft)">23 sp · 4 gp <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">· coin, waterlogged</span></span><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember-ink);background:var(--ember);border-radius:3px;padding:4px 12px;font-weight:700">TAKE</span></div>
-                    <div style="display:flex;gap:16px;margin-top:14px;font-family:'Space Mono',monospace;font-size:11px"><span style="color:var(--ember)">Take the rest</span><span style="color:var(--dim)">Leave it</span><span style="flex:1"></span><span style="color:var(--faint)">a result, not a decision — the story can scroll past it</span></div>
+                    <div style="display:flex;gap:16px;margin-top:14px;font-family:'Space Mono',monospace;font-size:11px"><span style="color:var(--ember)">Take remaining items</span><span style="color:var(--dim)">Leave them</span></div>
                   </div>
                 </sc-if>
                 <sc-if value="{{ isReaction }}" hint-placeholder-val="{{ false }}">
                   <p style="margin:18px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--muted)">A thrall breaks from the flooded aisle and wades straight past your guard, toward Casimir's light.</p>
                 </sc-if>
-                <sc-if value="{{ showCombatCaret }}" hint-placeholder-val="{{ true }}"><p style="margin:16px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--text-soft)">Wrenna turns her head toward the bell stair. Your move reaches you in two.<span style="display:inline-block;width:9px;height:20px;background:var(--ember);margin-left:6px;vertical-align:-4px;animation:caretB 1s steps(1) infinite"></span></p></sc-if>
+                  <sc-if value="{{ showCombatCaret }}" hint-placeholder-val="{{ true }}"><p style="margin:16px 0 0;font-family:'Newsreader',serif;font-size:17px;line-height:1.65;color:var(--text-soft)">Wrenna turns toward the bell stair. You are second in initiative.<span style="display:inline-block;width:9px;height:20px;background:var(--ember);margin-left:6px;vertical-align:-4px;animation:caretB 1s steps(1) infinite"></span></p></sc-if>
               </div>
             </div>
-            <div style="width:340px;flex:none;border-left:1px solid var(--line);padding:22px;overflow:auto">
-              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:12px">THE DM'S NAPKIN</div>
+            <div style="width:55%;min-width:500px;flex:none;border-left:1px solid var(--line);padding:20px 24px;overflow:auto">
+              <div class="ref-eyebrow" style="margin-bottom:10px">Encounter plate · The Drowned Chapel</div>
+              <div style="{{ boardStyle }}">
+                <div class="tactical-plate">
+                  <div class="route-line" style="left:28%;top:36%;width:31%;transform:rotate(9deg)"></div>
+                  <div class="route-line" style="left:25%;top:50%;width:27%;transform:rotate(61deg)"></div>
+                  <div class="route-line" style="left:61%;top:42%;width:26%;transform:rotate(52deg)"></div>
+                  <span class="route-label" style="left:41%;top:31%">CLOSE · 30 FT</span>
+                  <span class="route-label" style="left:31%;top:65%">FAR · 60 FT</span>
+                  <span class="route-label" style="left:67%;top:66%">CLOSE · 60 FT WITH TERRAIN</span>
+                  <div class="zone-card" style="left:5%;top:8%;width:26%;height:126px"><div class="zone-name">BELL STAIR</div><div class="zone-rule">No cover · normal terrain</div></div>
+                  <div class="zone-card current" style="left:38%;top:20%;width:30%;height:158px"><div class="zone-name">THE NAVE</div><div class="zone-rule">Half cover · +2 AC and Dexterity saves</div><div class="zone-occupants"><span class="zone-token player" title="Ser Aldric">A</span><span class="zone-token ally" title="Casimir">C</span></div></div>
+                  <div class="zone-card" style="left:9%;bottom:7%;width:29%;height:132px"><div class="zone-name">FLOODED AISLE</div><div class="zone-rule">Difficult terrain · movement cost ×2</div><div class="zone-occupants"><span class="zone-token foe">T</span><span class="zone-token foe">T</span></div></div>
+                  <div class="zone-card hazard" style="right:5%;bottom:8%;width:27%;height:136px"><div class="zone-name" style="color:var(--hazard)">THE FONT</div><div class="zone-rule">Hazard · deep water</div><div class="zone-occupants"><span class="zone-token foe">W</span></div></div>
+                  <sc-if value="{{ isReaction }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:29%;top:58%;width:23%;border-top:2px solid var(--hazard);transform:rotate(-21deg);box-shadow:0 0 8px rgba(200,75,47,.6)"></div><span style="position:absolute;left:28%;top:54%;color:var(--hazard);font-size:14px">◄</span></sc-if>
+                  <sc-if value="{{ isDropOrDowned }}" hint-placeholder-val="{{ false }}"><div style="{{ stampStyle }}"><div style="width:62px;height:62px;border:1px dashed var(--hazard);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--hazard)">0 HP</span><span style="font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;color:var(--hazard)">{{ stampWhen }}</span></div></div></sc-if>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim)"><span>ROUTES show close/far cost</span><span>COVER shows exact bonuses</span><span>SHAPES are illustrative</span></div>
+            </div>
+            <div style="display:none;width:340px;flex:none;border-left:1px solid var(--line);padding:22px;overflow:auto" aria-hidden="true">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:12px">ENCOUNTER PLATE</div>
               <div style="{{ boardStyle }}">
                 <div style="position:relative;height:390px;background:var(--table);border:1px solid var(--line-strong);border-radius:8px;overflow:hidden">
                   <div style="position:absolute;inset:0;pointer-events:none;background:repeating-radial-gradient(circle at 82% 10%,transparent 0 46px,rgba(231,226,212,.03) 46px 47px)"></div>
@@ -226,10 +246,10 @@ a:hover{color:var(--text-soft)}
                   <div style="position:absolute;left:122px;top:136px;width:78px;border-top:1px dashed var(--line-strong);transform:rotate(-33deg)"></div>
                   <div style="position:absolute;left:132px;top:258px;width:68px;border-top:1px dashed var(--line-strong);transform:rotate(35deg)"></div>
                   <div style="position:absolute;left:58px;top:134px;width:42px;border-top:1px dashed var(--line-strong);transform:rotate(-88deg)"></div>
-                  <span style="position:absolute;left:152px;top:108px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">15 FT</span>
-                  <span style="position:absolute;left:152px;top:268px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">10 FT</span>
-                  <span style="position:absolute;left:16px;top:128px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">CLIMB</span>
-                  <div style="position:absolute;left:22px;top:32px;width:110px;height:82px;border:1px solid var(--line-strong);border-radius:55% 45% 50% 50%/48% 55% 45% 52%;background:repeating-radial-gradient(circle at 50% 55%,transparent 0 9px,rgba(231,226,212,.05) 9px 10px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--dim)">BELL STAIR</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">elevated · +2 to spot</div></div>
+                  <span style="position:absolute;left:152px;top:108px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">CLOSE · 30 FT</span>
+                  <span style="position:absolute;left:152px;top:268px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">FAR · 60 FT</span>
+                  <span style="position:absolute;left:16px;top:128px;font-family:'Space Mono',monospace;font-size:8px;color:var(--dim);background:var(--panel);border:1px solid var(--line-strong);border-radius:8px;padding:2px 7px">CLOSE</span>
+                  <div style="position:absolute;left:22px;top:32px;width:110px;height:82px;border:1px solid var(--line-strong);border-radius:55% 45% 50% 50%/48% 55% 45% 52%;background:repeating-radial-gradient(circle at 50% 55%,transparent 0 9px,rgba(231,226,212,.05) 9px 10px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--dim)">BELL STAIR</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">no cover · normal terrain</div></div>
                   <div style="position:absolute;left:172px;top:38px;width:118px;height:92px;border:1px solid var(--hazard);border-radius:46% 54% 58% 42%/52% 44% 56% 48%;background:repeating-linear-gradient(180deg,rgba(120,150,175,.09) 0 3px,transparent 3px 11px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--hazard)">THE FONT</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">hazard · deep water</div><div style="display:flex;gap:5px;margin-top:6px"><span style="width:22px;height:22px;border-radius:50%;background:var(--hazard);color:var(--ember-ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(200,75,47,.5)">W</span></div></div>
                   <div style="position:absolute;left:16px;top:180px;width:152px;height:106px;border:1px solid var(--line-strong);border-radius:44% 56% 52% 48%/55% 46% 54% 45%;background:repeating-linear-gradient(0deg,transparent 0 9px,rgba(214,164,82,.06) 9px 11px);padding:12px 16px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted)">THE NAVE</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">cover · pews</div><div style="display:flex;gap:6px;margin-top:8px"><span style="width:24px;height:24px;border-radius:50%;background:var(--ember);color:var(--ember-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--table),0 0 0 3.5px var(--ember),0 0 14px rgba(214,164,82,.7);animation:glowP 2.6s ease-in-out infinite" title="you">A</span><span style="width:22px;height:22px;border-radius:50%;background:var(--lichen);color:var(--ember-ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">C</span></div></div>
                   <div style="position:absolute;left:184px;top:262px;width:120px;height:98px;border:1px solid var(--line-strong);border-radius:52% 48% 44% 56%/46% 56% 44% 54%;background:repeating-linear-gradient(55deg,transparent 0 8px,rgba(190,205,195,.06) 8px 9px);padding:12px 14px"><div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:var(--muted)">FLOODED AISLE</div><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--faint);margin-top:3px">difficult · knee-deep</div><div style="display:flex;gap:5px;margin-top:6px"><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--dim);color:var(--muted);font-size:9px;display:flex;align-items:center;justify-content:center">t</span><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--dim);color:var(--muted);font-size:9px;display:flex;align-items:center;justify-content:center">t</span></div></div>
@@ -285,21 +305,17 @@ a:hover{color:var(--text-soft)}
         </div>
       </sc-if>
 
-      <!-- ======== INTO-REST (transition) ======== -->
+      <!-- ======== REST CHOOSER ======== -->
       <sc-if value="{{ isIntoRest }}" hint-placeholder-val="{{ false }}">
-        <div style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden">
-          <div style="position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(8,6,4,.0),rgba(8,6,4,.55) 70%,rgba(8,6,4,.85));animation:duskIn 2.2s ease .4s both"></div>
-          <div style="position:absolute;left:-160px;bottom:-180px;width:820px;height:560px;pointer-events:none;z-index:2;background:radial-gradient(closest-side,rgba(255,176,84,.18),rgba(255,176,84,.04) 55%,transparent 78%);animation:flick 7s linear infinite,duskIn 1.8s ease 1.2s both"></div>
-          <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;z-index:3">
-            <div style="width:620px;max-width:90%;text-align:center">
-              <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--dim);animation:duskIn 1s ease both">THE TRAIL LOOSENS ITS GRIP</div>
-              <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);margin:18px 0 22px;line-height:1.15;animation:riseUp .9s cubic-bezier(.2,.8,.2,1) .5s both">The vestry door is barred.<br><em style="font-style:italic;color:var(--ember)">The candles can burn down now.</em></div>
-              <p style="margin:0;font-family:'Newsreader',serif;font-size:18px;line-height:1.7;color:var(--muted);animation:riseUp .9s cubic-bezier(.2,.8,.2,1) 1.1s both">The narration eases, the field notes go quiet, and the timekeeping shifts from rounds to hours. Same page, slower light — combat's transformation, run in reverse.</p>
-              <div style="display:flex;gap:14px;justify-content:center;margin-top:32px;animation:riseUp .9s cubic-bezier(.2,.8,.2,1) 1.7s both">
-                <button onClick="{{ goRest }}" style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">An hour's rest →</button>
-                <button onClick="{{ goExplore }}" style="background:transparent;color:var(--text-soft);font-size:14px;padding:13px 28px;border-radius:4px;border:1px solid var(--line-strong);cursor:pointer;font-family:'Space Grotesk',sans-serif">Not yet — stay on the trail</button>
-              </div>
+        <div style="flex:1;display:flex;align-items:flex-end;justify-content:center;padding:34px;background:linear-gradient(180deg,transparent,rgba(7,5,3,.64))">
+          <div style="width:720px;max-width:100%;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel);padding:24px 26px;box-shadow:0 28px 80px rgba(0,0,0,.55);animation:riseUp .35s cubic-bezier(.2,.8,.2,1) both">
+            <div style="display:flex;justify-content:space-between;gap:18px;align-items:baseline"><div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--text)">Rest</div><button onClick="{{ goExplore }}" style="border:0;background:transparent;color:var(--dim);font-family:'Space Mono',monospace;font-size:11px">CANCEL</button></div>
+            <p style="margin:8px 0 20px;color:var(--dim);font-size:13px;line-height:1.55">Choose a rest. Cairn checks whether this location is safe before applying it.</p>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:12px">
+              <button onClick="{{ goRest }}" class="setting-choice selected"><b>Short rest · 1 hour</b>Spend hit dice automatically and recover short-rest resources.</button>
+              <button class="setting-choice"><b>Long rest · 8 hours</b>Restore health and resources. Prepared casters choose spells before play resumes.</button>
             </div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line-faint);font-size:12px;line-height:1.6;color:var(--dim)"><b style="color:var(--muted)">If the location is risky:</b> Cairn asks for confirmation before changing state. If rest is blocked, the reason appears in Play and the turn input remains available.</div>
           </div>
         </div>
       </sc-if>
@@ -315,9 +331,9 @@ a:hover{color:var(--text-soft)}
               <div style="margin-top:30px;border:1px solid var(--line-strong);border-radius:6px;background:var(--panel-low);padding:18px 22px;display:flex;gap:26px;font-family:'Space Mono',monospace;font-size:11px">
                 <span style="color:var(--lichen)">HD SPENT 2/3 · +11 HP</span>
                 <span style="color:var(--muted)">HP 30/31</span>
-                <span style="color:var(--dim)">no form — hit dice are automatic</span>
+                <span style="color:var(--dim)">ACTION SURGE READY</span>
               </div>
-              <div style="margin-top:14px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">spec: rest_blocked renders here as a field-note line ("the bell will not allow sleep"). A LONG rest for a prepared caster ends on the spell-prep page.</div>
+              <div class="ref-annotation">Successful rest stays in the play log. `rest_blocked` uses the engine's direct reason; risky rests show the confirmation chooser before mutation. A prepared caster's long rest continues to Spell preparation.</div>
             </div>
           </div>
         </div>
@@ -328,7 +344,7 @@ a:hover{color:var(--text-soft)}
         <div style="flex:1;display:flex;min-height:0">
           <div style="flex:1;overflow:auto;padding:44px 48px;display:flex;justify-content:center">
             <div style="width:640px;max-width:100%">
-              <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:var(--ember);margin-bottom:24px">DAY 15 · DAWN · LONG REST ENDS — shown from Isolde's table, for the spec</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:var(--ember);margin-bottom:24px">DAY 15 · DAWN · LONG REST COMPLETE</div>
               <p style="margin:0;font-family:'Newsreader',serif;font-size:20px;line-height:1.75;color:var(--text-soft)">Grey light through the lancet windows. The river has dropped a hand's width overnight, which the miller will call a mercy and Isolde will call a warning. She opens her prayer book against the cold.</p>
               <div style="margin-top:28px;border:1px solid var(--line-strong);border-radius:6px;background:var(--panel-low);padding:22px 26px">
                 <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:16px"><span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--text)">The day's prayers</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">PREPARE 4 — WIS +3, CLERIC 1</span></div>
@@ -347,7 +363,7 @@ a:hover{color:var(--text-soft)}
                   <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">3 OF 4 CHOSEN</span>
                 </div>
               </div>
-              <div style="margin-top:14px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">the last page of the long rest, not a popup. Input waits until the book is sealed. Known-spell casters skip straight to the road.</div>
+              <div class="ref-annotation">This is the final step of a long rest for a player-controlled prepared caster. The turn input remains unavailable until spells are confirmed. Known-spell casters do not see this step.</div>
             </div>
           </div>
         </div>
@@ -370,7 +386,8 @@ a:hover{color:var(--text-soft)}
             <div style="display:flex;justify-content:center;margin-top:34px">
               <button onClick="{{ goExplore }}" style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Return to the trail →</button>
             </div>
-            <div style="margin-top:16px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">the doorway back in — resume only, never mid-session, first session skips it</div>
+            <div style="margin-top:16px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">Opened by Continue · first entry skips this screen</div>
+            <div class="ref-annotation">Campaign Browser → Continue opens Recap. Play's campaign rail offers Review recap on demand. Refreshing or reconnecting during a turn does not reopen it. Data dependency: gaps G1–G2.</div>
           </div>
         </div>
       </sc-if>
@@ -404,9 +421,10 @@ a:hover{color:var(--text-soft)}
       <sc-if value="{{ isDice }}" hint-placeholder-val="{{ false }}">
         <div style="position:absolute;inset:0;z-index:10;background:rgba(7,5,3,.82);display:flex;align-items:center;justify-content:center;animation:veilIn .4s ease both">
           <div style="width:420px;background:var(--panel);border:1px solid var(--line-strong);border-radius:10px;padding:34px;box-shadow:0 40px 120px rgba(0,0,0,.7);animation:riseUp .5s cubic-bezier(.2,.8,.2,1) .1s both">
-            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:var(--ember);text-align:center">THE TABLE ASKS</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:var(--ember);text-align:center">ROLL REQUIRED</div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--text);text-align:center;margin:12px 0 6px">Strength save</div>
-            <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);text-align:center">d20 + 3 vs DC 14 · the water pulls</div>
+            <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);text-align:center">d20 + 3 against DC 14</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);text-align:center;margin-top:7px">SOURCE · FLOOD CURRENT</div>
             <div style="display:flex;justify-content:center;margin:28px 0">
               <div style="width:110px;height:110px;background:var(--line-faint);border:1px solid var(--line-strong);transform:rotate(45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(214,164,82,.15)"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:38px;font-weight:700;color:var(--ember)">?</span></div>
             </div>
@@ -414,7 +432,7 @@ a:hover{color:var(--text-soft)}
             <div style="display:flex;gap:12px;margin-top:26px">
               <button onClick="{{ goExplore }}" style="flex:1;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;letter-spacing:.06em">ROLL</button>
             </div>
-            <div style="margin-top:14px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">The one true veil blocks because play cannot continue. Skill checks are current; using it for death saves is the labeled Phase-A contract change.</div>
+            <div class="ref-annotation" style="text-align:left">The focused roll blocks because the current turn cannot continue without a result. Skill checks are current; player-rolled death saves require gap G10.</div>
           </div>
         </div>
       </sc-if>
@@ -502,13 +520,13 @@ class Component extends DCLogic {
       stampWhen: isDowned ? 'DAY 14 · R5–6' : 'DAY 14 · R5',
       holdDot1: { width: '13px', height: '13px', borderRadius: '50%', border: '1.5px solid var(--lichen)', background: isDowned ? 'var(--lichen)' : 'transparent' },
       failDot1: { width: '13px', height: '13px', borderRadius: '50%', border: '1.5px solid var(--hazard)', background: isDowned ? 'var(--hazard)' : 'transparent' },
-      savesNote: isDowned ? 'one held · one failed · the river is deciding' : 'the track is fresh',
+      savesNote: isDowned ? '1 success · 1 failure' : '0 successes · 0 failures',
       roundNo: isDowned ? 6 : isDropOrDowned ? 5 : 2,
       ribbon,
-      ribbonNote: isDowned ? 'round 6 — the table waits on your save, nothing else' : isDropOrDowned ? 'the ribbon keeps moving — the world does not wait' : 'suggest-mode: proposals ride above the bar',
+      ribbonNote: isDowned ? 'YOUR TURN · DEATH SAVE REQUIRED' : isDropOrDowned ? 'YOU ARE DOWN · INITIATIVE CONTINUES' : 'TURN 1 OF 4',
       boardNote: isDropOrDowned
-        ? 'the board drains — the story keeps its ink. The hazard stamp is a map marker, not a game-over splash.'
-        : 'irregular zones, occupants, cover / difficult / hazard attrs, distance-labeled edges. All seeded at init — nothing hidden.',
+        ? 'Sound cue: hazard-stamp. Restore normal color when the character returns above 0 HP.'
+        : 'Only zone names, attributes, occupants, adjacency, and movement cost are mechanical. The plate geometry is illustrative.',
       boardStyle: isDropOrDowned ? { animation: 'drainB 1.4s ease .4s both' } : {},
       bandStyle: {
         flex: 'none', borderTop: '1px solid var(--line)', background: 'var(--table)', padding: '14px 34px',
@@ -523,6 +541,7 @@ class Component extends DCLogic {
       inputHint: sc === 'prep' ? 'the road waits for the book to be sealed…' : showCombat ? 'Your whole turn, in your words…' : 'What do you do?',
       goDice: () => this.go('dice'),
       goRest: () => this.go('rest'),
+      goRecap: () => this.go('recap'),
       goExplore: () => this.go('explore'),
     };
   }
