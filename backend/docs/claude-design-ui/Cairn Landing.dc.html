@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<link rel="stylesheet" href="./reference.css">
+<script src="./reference-theme.js"></script>
 </head>
 <body>
 <x-dc>
@@ -11,9 +13,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;padding:0;background:#0A0806;}
-a{color:#D6A452;text-decoration:none}
-a:hover{color:#EBC98A}
+html,body{margin:0;padding:0;background:var(--bg-deep);}
+a{color:var(--ember);text-decoration:none}
+a:hover{color:var(--text-soft)}
 @keyframes emberR{0%{transform:translate(0,0) scale(1);opacity:0}12%{opacity:.95}65%{opacity:.55}100%{transform:translate(40px,-460px) scale(.35);opacity:0}}
 @keyframes flick{0%,100%{opacity:.8}9%{opacity:1}23%{opacity:.72}38%{opacity:.94}54%{opacity:.78}71%{opacity:1}86%{opacity:.85}}
 @keyframes caretB{0%,49%{opacity:1}50%,100%{opacity:0}}
@@ -23,7 +25,7 @@ a:hover{color:#EBC98A}
 </style>
 </helmet>
 
-<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;overflow-x:hidden">
+<div style="font-family:'Space Grotesk',sans-serif;background:var(--bg-deep);color:var(--text);overflow-x:hidden">
 
   <!-- ================= HERO ================= -->
   <div style="position:relative;height:100vh;min-height:760px;overflow:hidden">
@@ -42,129 +44,129 @@ a:hover{color:#EBC98A}
     <span style="position:absolute;bottom:185px;left:12%;width:2px;height:2px;border-radius:50%;background:#E8963C;box-shadow:0 0 6px #E8963C;pointer-events:none;animation:emberR 11s ease-out 5.5s infinite"></span>
     <div style="position:absolute;left:0;right:0;bottom:66px;display:flex;flex-direction:column;align-items:center;gap:22px;pointer-events:none">
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <div style="width:12px;height:6px;border-radius:3px;background:#D6A452"></div>
-        <div style="width:24px;height:7px;border-radius:3px;background:#5C5342"></div>
-        <div style="width:34px;height:8px;border-radius:3px;background:#453E31"></div>
+        <div style="width:12px;height:6px;border-radius:3px;background:var(--ember)"></div>
+        <div style="width:24px;height:7px;border-radius:3px;background:var(--faint)"></div>
+        <div style="width:34px;height:8px;border-radius:3px;background:var(--line-strong)"></div>
       </div>
-      <div style="font-size:16px;font-weight:600;letter-spacing:.62em;text-indent:.62em;color:#CDBFA4">CAIRN</div>
-      <h1 style="margin:0;width:100%;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:min(94px,7vw);line-height:1.06;color:#F3E8CD;text-align:center;text-shadow:0 3px 40px rgba(0,0,0,.65)">Your campaign<br>becomes <em style="font-style:italic;color:#D6A452">legend.</em></h1>
-      <p style="margin:0;max-width:560px;text-align:center;font-family:'Newsreader',serif;font-size:20px;line-height:1.55;color:#CFC3A6">An AI Dungeon Master that keeps the ledger — every name, every debt, every bridge you burn. Type what you do. Roll your own dice. The world remembers the rest.</p>
+      <div style="font-size:16px;font-weight:600;letter-spacing:.62em;text-indent:.62em;color:var(--muted)">CAIRN</div>
+      <h1 style="margin:0;width:100%;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:min(94px,7vw);line-height:1.06;color:var(--text);text-align:center;text-shadow:0 3px 40px rgba(0,0,0,.65)">Your campaign<br>becomes <em style="font-style:italic;color:var(--ember)">legend.</em></h1>
+      <p style="margin:0;max-width:560px;text-align:center;font-family:'Newsreader',serif;font-size:20px;line-height:1.55;color:var(--muted)">An AI Dungeon Master that keeps the ledger — every name, every debt, every bridge you burn. Type what you do. Roll your own dice. The world remembers the rest.</p>
       <div style="display:flex;gap:14px;pointer-events:auto;margin-top:6px">
-        <a href="#cta" style="background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:15px 30px;border-radius:4px;letter-spacing:.02em">Start your expedition</a>
-        <a href="#cta" style="border:1px solid #5A4E37;color:#E8DCBE;font-weight:500;font-size:15px;padding:15px 30px;border-radius:4px">Sign in</a>
+        <a href="#cta" style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px 30px;border-radius:4px;letter-spacing:.02em">Start your expedition</a>
+        <a href="#cta" style="border:1px solid var(--line-strong);color:var(--text-soft);font-weight:500;font-size:15px;padding:15px 30px;border-radius:4px">Sign in</a>
       </div>
       <div style="margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:8px">
-        <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:#8A7D63">ONE CAMPAIGN · PERFORMED BELOW</span>
-        <span style="display:block;width:1px;height:34px;background:linear-gradient(180deg,#8A7D63,transparent);animation:glowP 2.4s ease-in-out infinite"></span>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.28em;color:var(--dim)">ONE CAMPAIGN · PERFORMED BELOW</span>
+        <span style="display:block;width:1px;height:34px;background:linear-gradient(180deg,var(--dim),transparent);animation:glowP 2.4s ease-in-out infinite"></span>
       </div>
     </div>
   </div>
 
   <!-- ================= SESSION INTRO ================= -->
   <div style="position:relative;padding:110px 24px 20px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
-    <div data-reveal="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:#D6A452">WHAT FOLLOWS WAS PLAYED, NOT WRITTEN</div>
-    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;max-width:720px;line-height:1.15">Eleven days at a river ford, in four turns.</div>
-    <div data-reveal="1" style="font-family:'Newsreader',serif;font-size:19px;color:#B7A987;max-width:560px;line-height:1.6">Read the story on the left. Watch the margin on the right — that's where Cairn lives.</div>
+    <div data-reveal="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--ember)">WHAT FOLLOWS WAS PLAYED, NOT WRITTEN</div>
+    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);max-width:720px;line-height:1.15">Eleven days at a river ford, in four turns.</div>
+    <div data-reveal="1" style="font-family:'Newsreader',serif;font-size:19px;color:var(--muted);max-width:560px;line-height:1.6">Read the story on the left. Watch the margin on the right — that's where Cairn lives.</div>
   </div>
 
   <!-- ================= PERFORMED SESSION (spine + beats) ================= -->
   <div data-session="1" style="position:relative;max-width:1120px;margin:0 auto;padding:60px 24px 40px">
-    <div style="position:absolute;left:clamp(24px,5vw,52px);top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,#3A2C18 6%,#3A2C18 94%,transparent)"></div>
-    <div data-spinefill="1" style="position:absolute;left:clamp(24px,5vw,52px);top:0;width:1px;height:0;background:linear-gradient(180deg,rgba(214,164,82,.15),#D6A452);box-shadow:0 0 8px rgba(214,164,82,.45);pointer-events:none"></div>
+    <div style="position:absolute;left:clamp(24px,5vw,52px);top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,var(--line-strong) 6%,var(--line-strong) 94%,transparent)"></div>
+    <div data-spinefill="1" style="position:absolute;left:clamp(24px,5vw,52px);top:0;width:1px;height:0;background:linear-gradient(180deg,rgba(214,164,82,.15),var(--ember));box-shadow:0 0 8px rgba(214,164,82,.45);pointer-events:none"></div>
 
     <!-- BEAT 1 -->
     <div style="position:relative;display:flex;flex-wrap:wrap;gap:40px 56px;padding:30px 0 90px;margin-left:clamp(56px,9vw,104px)">
-      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:40px;width:13px;height:13px;border-radius:50%;background:#D6A452;box-shadow:0 0 14px rgba(214,164,82,.7)"></span>
+      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:40px;width:13px;height:13px;border-radius:50%;background:var(--ember);box-shadow:0 0 14px rgba(214,164,82,.7)"></span>
       <div data-reveal="1" style="width:min(560px,100%);flex:none">
-        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:#D6A452;margin-bottom:20px">DAY 3 · THE TOLL LEDGER</div>
-        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:#E6DABB">The toll-keeper's widow doesn't look up when you enter. <span style="color:#F3E8CD;border-bottom:1px dotted #7A6B4C">Ilse Marrow</span>, the miller called her, and told you not to say the name like a question. She is writing in a ledger of her own, and the nib does not pause.</p>
-        <p data-stream="1" style="margin:16px 0 0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:#E6DABB">"Eleven days," she says, "since anyone paid what they owed at this crossing."</p>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:var(--ember);margin-bottom:20px">DAY 3 · THE TOLL LEDGER</div>
+        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:var(--text-soft)">The toll-keeper's widow doesn't look up when you enter. <span style="color:var(--text);border-bottom:1px dotted var(--dim)">Ilse Marrow</span>, the miller called her, and told you not to say the name like a question. She is writing in a ledger of her own, and the nib does not pause.</p>
+        <p data-stream="1" style="margin:16px 0 0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:var(--text-soft)">"Eleven days," she says, "since anyone paid what they owed at this crossing."</p>
       </div>
       <div data-reveal="1" data-reveal-dir="left" style="flex:1;position:relative;padding-top:30px;min-width:280px">
-        <div style="position:absolute;left:-40px;top:52px;width:40px;border-top:1px dashed #5A4E37"></div>
-        <div style="background:#171009;border:1px solid #3A2C18;border-radius:6px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
+        <div style="position:absolute;left:-40px;top:52px;width:40px;border-top:1px dashed var(--line-strong)"></div>
+        <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#F3E8CD">Ilse Marrow</span>
-            <span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">PERSON · NEW</span>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text)">Ilse Marrow</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">PERSON · NEW</span>
           </div>
-          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#B7A987">Toll-keeper's widow at the Silent Ford. Keeps her own ledger. Wasn't asked about the eleven days — offered it.</p>
-          <div style="margin-top:14px;border-top:1px dashed #3A2C18;padding-top:10px;font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63">DAY 3 · ENTERED THE CODEX</div>
+          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:var(--muted)">Toll-keeper's widow at the Silent Ford. Keeps her own ledger. Wasn't asked about the eleven days — offered it.</p>
+          <div style="margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">DAY 3 · ENTERED THE CODEX</div>
         </div>
-        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:#6E675A">the DM took this note — you didn't have to.</div>
+        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:var(--faint)">the DM took this note — you didn't have to.</div>
       </div>
     </div>
 
     <!-- BEAT 2 -->
     <div style="position:relative;display:flex;flex-wrap:wrap;gap:40px 56px;padding:0 0 90px;margin-left:clamp(56px,9vw,104px)">
-      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:10px;width:13px;height:13px;border-radius:50%;background:#9A8E5C"></span>
+      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:10px;width:13px;height:13px;border-radius:50%;background:var(--lichen)"></span>
       <div data-reveal="1" style="width:min(560px,100%);flex:none">
-        <div style="background:#120E08;border:1px solid #33271A;border-radius:6px;padding:16px 20px;margin-bottom:22px">
-          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">YOU</span>
-          <span style="font-family:'Newsreader',serif;font-size:18px;font-style:italic;color:#D9CCA9;margin-left:12px">"She's lying about something. I watch her hands, not her face."</span>
+        <div style="background:var(--panel-low);border:1px solid var(--line-strong);border-radius:6px;padding:16px 20px;margin-bottom:22px">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">YOU</span>
+          <span style="font-family:'Newsreader',serif;font-size:18px;font-style:italic;color:var(--text-warm);margin-left:12px">"She's lying about something. I watch her hands, not her face."</span>
         </div>
-        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:#E6DABB">Her left hand keeps the ledger. Her right hand, below the counter, never stops touching a key on a cord — and when you mention the ferryman, it stops.</p>
+        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:var(--text-soft)">Her left hand keeps the ledger. Her right hand, below the counter, never stops touching a key on a cord — and when you mention the ferryman, it stops.</p>
       </div>
       <div data-reveal="1" data-reveal-dir="left" style="flex:1;position:relative;padding-top:6px;min-width:280px">
-        <div style="position:absolute;left:-40px;top:34px;width:40px;border-top:1px dashed #5A4E37"></div>
-        <div style="background:#171009;border:1px solid #3A2C18;border-radius:6px;padding:18px 22px;display:flex;align-items:center;gap:18px">
-          <div style="width:52px;height:52px;flex:none;background:#241C10;border:1px solid #5A4E37;transform:rotate(45deg);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:#D6A452">17</span></div>
+        <div style="position:absolute;left:-40px;top:34px;width:40px;border-top:1px dashed var(--line-strong)"></div>
+        <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:18px 22px;display:flex;align-items:center;gap:18px">
+          <div style="width:52px;height:52px;flex:none;background:var(--line-faint);border:1px solid var(--line-strong);transform:rotate(45deg);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:17px;font-weight:700;color:var(--ember)">17</span></div>
           <div>
-            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;color:#B7A987">INSIGHT · d20+2 vs DC 13 <span style="color:#9A8E5C">✓</span></div>
-            <div style="margin-top:6px;font-size:13px;line-height:1.5;color:#8A7D63">You pressed the roll. The DM set the check and waited.</div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--muted)">INSIGHT · d20+2 vs DC 13 <span style="color:var(--lichen)">✓</span></div>
+            <div style="margin-top:6px;font-size:13px;line-height:1.5;color:var(--dim)">You pressed the roll. The DM set the check and waited.</div>
           </div>
         </div>
-        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:#6E675A">the roll was yours. Cairn sets the check — it never rolls your fate for you.</div>
+        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:var(--faint)">the roll was yours. Cairn sets the check — it never rolls your fate for you.</div>
       </div>
     </div>
 
     <!-- BEAT 3 — combat brushes the page -->
     <div style="position:relative;padding:0 0 90px;margin-left:clamp(56px,9vw,104px)">
-      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:44px;width:13px;height:13px;border-radius:50%;background:#C84B2F;box-shadow:0 0 14px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span>
-      <div data-reveal="1" style="position:relative;border:1px solid #33271A;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#0E0A07 0%,#120B0C 100%)">
+      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:44px;width:13px;height:13px;border-radius:50%;background:var(--hazard);box-shadow:0 0 14px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span>
+      <div data-reveal="1" style="position:relative;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;background:linear-gradient(180deg,var(--table) 0%,var(--panel-low) 100%)">
         <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(90% 100% at 80% 0%,rgba(120,40,30,.16),transparent 60%)"></div>
         <div style="position:relative;padding:34px 40px 30px">
-          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:#D6A452;margin-bottom:20px">DAY 9 · MILLER'S RISE, BY NIGHT</div>
-          <p data-stream="1" style="margin:0;max-width:640px;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:#E6DABB">The lantern dies between one step and the next. Something that has been holding its breath in the millrace stops holding it.</p>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:var(--ember);margin-bottom:20px">DAY 9 · MILLER'S RISE, BY NIGHT</div>
+          <p data-stream="1" style="margin:0;max-width:640px;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:var(--text-soft)">The lantern dies between one step and the next. Something that has been holding its breath in the millrace stops holding it.</p>
           <div style="display:flex;align-items:center;gap:16px;margin:26px 0">
-            <span style="flex:1;border-top:1px solid #4A2A1E"></span>
-            <span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:#C84B2F">STEEL IS DRAWN — ROUND 1</span>
-            <span style="flex:1;border-top:1px solid #4A2A1E"></span>
+            <span style="flex:1;border-top:1px solid var(--line-strong)"></span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--hazard)">STEEL IS DRAWN — ROUND 1</span>
+            <span style="flex:1;border-top:1px solid var(--line-strong)"></span>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <span data-reveal="1" data-reveal-delay="0" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;background:rgba(200,75,47,.16);border:1px solid rgba(200,75,47,.5);color:#F3E8CD">WRENNA · ACTING</span>
-            <span data-reveal="1" data-reveal-delay="140" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid #3A2C18;color:#B7A987">YOU · 2ND</span>
-            <span data-reveal="1" data-reveal-delay="280" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid #3A2C18;color:#B7A987">CASIMIR</span>
-            <span data-reveal="1" data-reveal-delay="420" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid #3A2C18;color:#8A7D63">MILL THRALL ×2</span>
+            <span data-reveal="1" data-reveal-delay="0" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;background:rgba(200,75,47,.16);border:1px solid rgba(200,75,47,.5);color:var(--text)">WRENNA · ACTING</span>
+            <span data-reveal="1" data-reveal-delay="140" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted)">YOU · 2ND</span>
+            <span data-reveal="1" data-reveal-delay="280" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted)">CASIMIR</span>
+            <span data-reveal="1" data-reveal-delay="420" style="font-family:'Space Mono',monospace;font-size:11px;padding:7px 14px;border-radius:3px;border:1px solid var(--line-strong);color:var(--dim)">MILL THRALL ×2</span>
           </div>
         </div>
       </div>
-      <div data-reveal="1" style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:#6E675A">combat begins inside the turn. The light drops, the initiative ribbon slides in — no cut, no modal. The page becomes the table.</div>
+      <div data-reveal="1" style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:var(--faint)">combat begins inside the turn. The light drops, the initiative ribbon slides in — no cut, no modal. The page becomes the table.</div>
     </div>
 
     <!-- BEAT 4 — the callback -->
     <div style="position:relative;display:flex;flex-wrap:wrap;gap:40px 56px;padding:0 0 40px;margin-left:clamp(56px,9vw,104px)">
-      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:10px;width:13px;height:13px;border-radius:50%;background:#D6A452;box-shadow:0 0 14px rgba(214,164,82,.7)"></span>
+      <span style="position:absolute;left:calc(clamp(24px,5vw,52px) - clamp(56px,9vw,104px) - 30px);top:10px;width:13px;height:13px;border-radius:50%;background:var(--ember);box-shadow:0 0 14px rgba(214,164,82,.7)"></span>
       <div data-reveal="1" style="width:min(560px,100%);flex:none">
-        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:#D6A452;margin-bottom:20px">DAY 14 · THE DROWNED CHAPEL</div>
-        <div style="background:#120E08;border:1px solid #33271A;border-radius:6px;padding:16px 20px;margin-bottom:22px">
-          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63">YOU</span>
-          <span style="font-family:'Newsreader',serif;font-size:18px;font-style:italic;color:#D9CCA9;margin-left:12px">"Before we go down there — what do we actually have on Marrow?"</span>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.24em;color:var(--ember);margin-bottom:20px">DAY 14 · THE DROWNED CHAPEL</div>
+        <div style="background:var(--panel-low);border:1px solid var(--line-strong);border-radius:6px;padding:16px 20px;margin-bottom:22px">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim)">YOU</span>
+          <span style="font-family:'Newsreader',serif;font-size:18px;font-style:italic;color:var(--text-warm);margin-left:12px">"Before we go down there — what do we actually have on Marrow?"</span>
         </div>
-        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:#E6DABB">A widow who keeps her own ledger and volunteered the eleven days. A key she touches when the ferryman comes up. Her name was on the mill's debt roll — struck through, paid in full, the day after the flood. And you two have met since, on the Rise — though you were never introduced.<span style="display:inline-block;width:9px;height:23px;background:#D6A452;margin-left:6px;vertical-align:-4px;animation:caretB 1s steps(1) infinite"></span></p>
+        <p data-stream="1" style="margin:0;font-family:'Newsreader',serif;font-size:21px;line-height:1.72;color:var(--text-soft)">A widow who keeps her own ledger and volunteered the eleven days. A key she touches when the ferryman comes up. Her name was on the mill's debt roll — struck through, paid in full, the day after the flood. And you two have met since, on the Rise — though you were never introduced.<span style="display:inline-block;width:9px;height:23px;background:var(--ember);margin-left:6px;vertical-align:-4px;animation:caretB 1s steps(1) infinite"></span></p>
       </div>
       <div data-reveal="1" data-reveal-dir="left" style="flex:1;position:relative;padding-top:6px;min-width:280px">
-        <div style="position:absolute;left:-40px;top:34px;width:40px;border-top:1px dashed #5A4E37"></div>
-        <div style="background:#171009;border:1px solid #3A2C18;border-radius:6px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
+        <div style="position:absolute;left:-40px;top:34px;width:40px;border-top:1px dashed var(--line-strong)"></div>
+        <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#F3E8CD">Ilse Marrow</span>
-            <span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">PERSON · DAY 3</span>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text)">Ilse Marrow</span>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">PERSON · DAY 3</span>
           </div>
-          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#B7A987">Toll-keeper's widow at the Silent Ford. Keeps her own ledger. Offered the eleven days — wasn't asked.</p>
-          <div style="margin-top:12px;border-left:2px solid #9A8E5C;padding-left:12px;font-size:13px;line-height:1.55;color:#B7A987"><span style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DAY 9 · </span>seen on Miller's Rise after the fight — did not stop.</div>
-          <div style="margin-top:8px;border-left:2px solid #9A8E5C;padding-left:12px;font-size:13px;line-height:1.55;color:#B7A987"><span style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DAY 12 · </span>name on the mill's debt roll, struck through the day after the flood.</div>
-          <div style="margin-top:14px;border-top:1px dashed #3A2C18;padding-top:10px;font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63">THE SAME CARD · ELEVEN DAYS ON</div>
+          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:var(--muted)">Toll-keeper's widow at the Silent Ford. Keeps her own ledger. Offered the eleven days — wasn't asked.</p>
+          <div style="margin-top:12px;border-left:2px solid var(--lichen);padding-left:12px;font-size:13px;line-height:1.55;color:var(--muted)"><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">DAY 9 · </span>seen on Miller's Rise after the fight — did not stop.</div>
+          <div style="margin-top:8px;border-left:2px solid var(--lichen);padding-left:12px;font-size:13px;line-height:1.55;color:var(--muted)"><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">DAY 12 · </span>name on the mill's debt roll, struck through the day after the flood.</div>
+          <div style="margin-top:14px;border-top:1px dashed var(--line-strong);padding-top:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">THE SAME CARD · ELEVEN DAYS ON</div>
         </div>
-        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:#6E675A">eleven days of ledger, answered in one breath. This is the whole pitch.</div>
+        <div style="margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:var(--faint)">eleven days of ledger, answered in one breath. This is the whole pitch.</div>
       </div>
     </div>
   </div>
@@ -174,76 +176,76 @@ a:hover{color:#EBC98A}
     <div style="position:absolute;inset:0">
       <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="L-band" shape="rect" placeholder="GPT: wide painted band — the ford at dusk from the far bank, cairn stones in foreground. Kling: water moves, light holds" hint-size="100%,100%"></x-import>
     </div>
-    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#0A0806 0%,rgba(10,8,6,.15) 30%,rgba(10,8,6,.15) 70%,#0A0806 100%)"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,var(--bg-deep) 0%,rgba(10,8,6,.15) 30%,rgba(10,8,6,.15) 70%,var(--bg-deep) 100%)"></div>
     <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;padding:0 24px">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-style:italic;color:#F3E8CD;text-shadow:0 2px 26px rgba(0,0,0,.7)">"A world that remembers is a world where what you do matters."</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-style:italic;color:var(--text);text-shadow:0 2px 26px rgba(0,0,0,.7)">"A world that remembers is a world where what you do matters."</div>
     </div>
   </div>
 
   <!-- ================= RULES WAYPOINT ================= -->
   <div style="max-width:1120px;margin:0 auto;padding:50px 24px 90px">
-    <div data-reveal="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:#D6A452;text-align:center">OLD RULES · HONEST DICE</div>
-    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;text-align:center;margin:16px 0 46px">The fifth edition you know, kept honestly.</div>
+    <div data-reveal="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--ember);text-align:center">OLD RULES · HONEST DICE</div>
+    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);text-align:center;margin:16px 0 46px">The fifth edition you know, kept honestly.</div>
     <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
-      <div data-reveal="1" style="width:330px;background:#120D08;border:1px solid #33271A;border-radius:8px;padding:28px">
-        <div style="width:40px;height:40px;background:#241C10;border:1px solid #5A4E37;transform:rotate(45deg);margin:6px 0 22px 6px;display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#D6A452">20</span></div>
-        <div style="font-size:18px;font-weight:600;color:#F3E8CD;margin-bottom:10px">Your dice</div>
-        <p style="margin:0;font-size:14px;line-height:1.65;color:#B7A987">Cairn establishes every check — die, DC, modifier — and waits. The roll is yours to make, and yours to watch land. It never rolls your fate behind the screen.</p>
+      <div data-reveal="1" style="width:330px;background:var(--panel-low);border:1px solid var(--line-strong);border-radius:8px;padding:28px">
+        <div style="width:40px;height:40px;background:var(--line-faint);border:1px solid var(--line-strong);transform:rotate(45deg);margin:6px 0 22px 6px;display:flex;align-items:center;justify-content:center"><span style="transform:rotate(-45deg);font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--ember)">20</span></div>
+        <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:10px">Your dice</div>
+        <p style="margin:0;font-size:14px;line-height:1.65;color:var(--muted)">Cairn establishes every check — die, DC, modifier — and waits. The roll is yours to make, and yours to watch land. It never rolls your fate behind the screen.</p>
       </div>
-      <div data-reveal="1" style="width:330px;background:#120D08;border:1px solid #33271A;border-radius:8px;padding:28px">
-        <div style="font-family:'Newsreader',serif;font-size:30px;font-style:italic;color:#D6A452;margin-bottom:16px">"I — "</div>
-        <div style="font-size:18px;font-weight:600;color:#F3E8CD;margin-bottom:10px">Your words are your turn</div>
-        <p style="margin:0;font-size:14px;line-height:1.65;color:#B7A987">No verb buttons, no end-turn. In and out of combat, you say what you do — the engine finds the attack, the movement, the spell inside your sentence.</p>
+      <div data-reveal="1" style="width:330px;background:var(--panel-low);border:1px solid var(--line-strong);border-radius:8px;padding:28px">
+        <div style="font-family:'Newsreader',serif;font-size:30px;font-style:italic;color:var(--ember);margin-bottom:16px">"I — "</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:10px">Your words are your turn</div>
+        <p style="margin:0;font-size:14px;line-height:1.65;color:var(--muted)">No verb buttons, no end-turn. In and out of combat, you say what you do — the engine finds the attack, the movement, the spell inside your sentence.</p>
       </div>
-      <div data-reveal="1" style="width:330px;background:#120D08;border:1px solid #33271A;border-radius:8px;padding:28px">
-        <div style="font-family:'Space Mono',monospace;font-size:13px;color:#9A8E5C;border:1px dotted #5A4E37;border-radius:3px;display:inline-block;padding:6px 12px;margin-bottom:18px">Bless · concentration</div>
-        <div style="font-size:18px;font-weight:600;color:#F3E8CD;margin-bottom:10px">Every rule, inspectable</div>
-        <p style="margin:0;font-size:14px;line-height:1.65;color:#B7A987">Every spell, condition, and item on screen opens its actual SRD 5.1 text. No hidden math, no house rules you didn't choose.</p>
+      <div data-reveal="1" style="width:330px;background:var(--panel-low);border:1px solid var(--line-strong);border-radius:8px;padding:28px">
+        <div style="font-family:'Space Mono',monospace;font-size:13px;color:var(--lichen);border:1px dotted var(--line-strong);border-radius:3px;display:inline-block;padding:6px 12px;margin-bottom:18px">Bless · concentration</div>
+        <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:10px">Every rule, inspectable</div>
+        <p style="margin:0;font-size:14px;line-height:1.65;color:var(--muted)">Every spell, condition, and item on screen opens its actual SRD 5.1 text. No hidden math, no house rules you didn't choose.</p>
       </div>
     </div>
   </div>
 
   <!-- ================= CTA — the spine ends in the button ================= -->
   <div id="cta" style="position:relative;padding:40px 24px 130px;display:flex;flex-direction:column;align-items:center">
-    <div style="width:1px;height:120px;background:linear-gradient(180deg,transparent,#3A2C18)"></div>
-    <span style="width:11px;height:11px;border-radius:50%;background:#9A8E5C;margin:18px 0"></span>
-    <span style="width:11px;height:11px;border-radius:50%;background:#9A8E5C;margin-bottom:18px"></span>
-    <span style="width:13px;height:13px;border-radius:50%;background:#D6A452;box-shadow:0 0 16px rgba(214,164,82,.8);margin-bottom:34px;animation:glowP 2.6s ease-in-out infinite"></span>
-    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:600;color:#F3E8CD;text-align:center;line-height:1.1;max-width:640px">That one was played for the spec.<br><em style="font-style:italic;color:#D6A452">Yours hasn't happened yet.</em></div>
-    <a data-reveal="1" href="#cta" style="margin-top:40px;background:#D6A452;color:#171106;font-weight:700;font-size:17px;padding:18px 44px;border-radius:4px;box-shadow:0 10px 40px rgba(214,164,82,.25)">Start your expedition</a>
-    <div data-reveal="1" style="margin-top:16px;font-family:'Space Mono',monospace;font-size:11px;color:#6E675A">free to cross the first ford · no card at the gate</div>
+    <div style="width:1px;height:120px;background:linear-gradient(180deg,transparent,var(--line-strong))"></div>
+    <span style="width:11px;height:11px;border-radius:50%;background:var(--lichen);margin:18px 0"></span>
+    <span style="width:11px;height:11px;border-radius:50%;background:var(--lichen);margin-bottom:18px"></span>
+    <span style="width:13px;height:13px;border-radius:50%;background:var(--ember);box-shadow:0 0 16px rgba(214,164,82,.8);margin-bottom:34px;animation:glowP 2.6s ease-in-out infinite"></span>
+    <div data-reveal="1" style="font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:600;color:var(--text);text-align:center;line-height:1.1;max-width:640px">That one was played for the spec.<br><em style="font-style:italic;color:var(--ember)">Yours hasn't happened yet.</em></div>
+    <a data-reveal="1" href="#cta" style="margin-top:40px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:17px;padding:18px 44px;border-radius:4px;box-shadow:0 10px 40px rgba(214,164,82,.25)">Start your expedition</a>
+    <div data-reveal="1" style="margin-top:16px;font-family:'Space Mono',monospace;font-size:11px;color:var(--faint)">free to cross the first ford · no card at the gate</div>
   </div>
 
   <!-- ================= FOOTER ================= -->
-  <div style="border-top:1px solid #241C10;background:#0C0907">
+  <div style="border-top:1px solid var(--line-faint);background:var(--table)">
     <div style="max-width:1120px;margin:0 auto;padding:64px 24px 40px;display:flex;gap:60px;flex-wrap:wrap">
       <div style="flex:2;min-width:260px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div style="width:8px;height:4px;border-radius:2px;background:#D6A452"></div>
-            <div style="width:15px;height:5px;border-radius:2px;background:#5C5342"></div>
-            <div style="width:21px;height:5px;border-radius:2px;background:#453E31"></div>
+            <div style="width:8px;height:4px;border-radius:2px;background:var(--ember)"></div>
+            <div style="width:15px;height:5px;border-radius:2px;background:var(--faint)"></div>
+            <div style="width:21px;height:5px;border-radius:2px;background:var(--line-strong)"></div>
           </div>
-          <span style="font-weight:600;letter-spacing:.4em;font-size:14px;color:#E8DCBE">CAIRN</span>
+          <span style="font-weight:600;letter-spacing:.4em;font-size:14px;color:var(--text-soft)">CAIRN</span>
         </div>
-        <p style="margin:0;font-family:'Newsreader',serif;font-size:15px;line-height:1.6;color:#8A7D63;max-width:300px">A persistent AI Dungeon Master for tabletop campaigns. The world remembers.</p>
+        <p style="margin:0;font-family:'Newsreader',serif;font-size:15px;line-height:1.6;color:var(--dim);max-width:300px">A persistent AI Dungeon Master for tabletop campaigns. The world remembers.</p>
       </div>
       <div style="flex:1;min-width:150px">
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#6E675A;margin-bottom:16px">THE TABLE</div>
-        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:#B7A987">Play</a><a href="#cta" style="color:#B7A987">Worlds</a><a href="#cta" style="color:#B7A987">Pricing</a></div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--faint);margin-bottom:16px">THE TABLE</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:var(--muted)">Play</a><a href="#cta" style="color:var(--muted)">Worlds</a><a href="#cta" style="color:var(--muted)">Pricing</a></div>
       </div>
       <div style="flex:1;min-width:150px">
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#6E675A;margin-bottom:16px">THE RULES</div>
-        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:#B7A987">SRD 5.1</a><a href="#cta" style="color:#B7A987">How checks work</a><a href="#cta" style="color:#B7A987">Content &amp; conduct</a></div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--faint);margin-bottom:16px">THE RULES</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:var(--muted)">SRD 5.1</a><a href="#cta" style="color:var(--muted)">How checks work</a><a href="#cta" style="color:var(--muted)">Content &amp; conduct</a></div>
       </div>
       <div style="flex:1;min-width:170px">
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#6E675A;margin-bottom:16px">THE FIRESIDE</div>
-        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:#B7A987">Community</a><a href="#cta" style="color:#B7A987">Roadmap</a><a href="#cta" style="color:#B7A987">Contact</a></div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--faint);margin-bottom:16px">THE FIRESIDE</div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:14px"><a href="#cta" style="color:var(--muted)">Community</a><a href="#cta" style="color:var(--muted)">Roadmap</a><a href="#cta" style="color:var(--muted)">Contact</a></div>
       </div>
     </div>
-    <div style="max-width:1120px;margin:0 auto;padding:0 24px 40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid #1B140C;padding-top:24px">
-      <span style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342">© 2026 CAIRN</span>
-      <span style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342">rules content: SRD 5.1 · CC-BY-4.0 · Wizards of the Coast</span>
+    <div style="max-width:1120px;margin:0 auto;padding:0 24px 40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid var(--line-faint);padding-top:24px">
+      <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">© 2026 CAIRN</span>
+      <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">rules content: SRD 5.1 · CC-BY-4.0 · Wizards of the Coast</span>
     </div>
   </div>
 

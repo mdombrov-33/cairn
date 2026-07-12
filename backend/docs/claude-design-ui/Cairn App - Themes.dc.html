@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<link rel="stylesheet" href="./reference.css">
+<script src="./reference-theme.js"></script>
 </head>
 <body>
 <x-dc>
@@ -21,8 +23,8 @@ a:hover{color:#EBC98A}
 
 <div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
 
-  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
-    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">THEME SYSTEM</span>
+  <div class="ref-devstrip" style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">EMBER CANON · FIVE LIGHTS</span>
     <sc-for list="{{ themeButtons }}" as="t" hint-placeholder-count="5">
       <button onClick="{{ t.go }}" style="{{ t.style }}"><span style="{{ t.swatch }}"></span>{{ t.label }}</button>
     </sc-for>
@@ -118,7 +120,7 @@ class Component extends DCLogic {
     return {
       ember: {
         name: 'Ember', tagline: 'the default — gold and candle-smoke on near-black',
-        bg: '#0C0906', bg2: '#0E0B07', panel: '#14100A', line: '#2C2214', line2: '#3A2C18',
+        bg: '#0A0806', bg2: '#0E0B07', panel: '#14100A', line: '#2C2214', line2: '#3A2C18',
         text: '#F3E8CD', text2: '#E6DABB', mut: '#B7A987', dim: '#8A7D63', faint: '#6E675A',
         accent: '#D6A452', accentInk: '#171106', danger: '#C84B2F', good: '#9A8E5C',
         serif: "'Cormorant Garamond',serif",
@@ -154,7 +156,11 @@ class Component extends DCLogic {
     };
   }
 
-  go(key) { this.setState({ theme: key }); try { localStorage.setItem('cairn-ref-theme', key); } catch (e) {} }
+  go(key) {
+    this.setState({ theme: key });
+    if (window.CairnReferenceTheme) window.CairnReferenceTheme.set(key);
+    try { localStorage.setItem('cairn-ref-theme', key); } catch (e) {}
+  }
 
   componentDidMount() { this.applyTheme(); }
   componentDidUpdate() { this.applyTheme(); }

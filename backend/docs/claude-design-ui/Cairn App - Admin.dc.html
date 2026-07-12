@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<link rel="stylesheet" href="./reference.css">
+<script src="./reference-theme.js"></script>
 </head>
 <body>
 <x-dc>
@@ -11,108 +13,101 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;padding:0;background:#0A0806;}
-a{color:#D6A452;text-decoration:none}
-a:hover{color:#EBC98A}
+html,body{margin:0;padding:0;background:var(--bg-deep);}
+a{color:var(--ember);text-decoration:none}
+a:hover{color:var(--text-soft)}
 @keyframes glowP{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes caretB{0%,49%{opacity:1}50%,100%{opacity:0}}
 </style>
 </helmet>
 
-<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
+<div style="font-family:'Space Grotesk',sans-serif;background:var(--bg-deep);color:var(--text);min-height:100vh;display:flex;flex-direction:column">
 
-  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
-    <span style="color:#5C5342;letter-spacing:.18em;margin-right:6px;flex:none">DRAFTING ROOM</span>
-    <span style="color:#C84B2F;border:1px solid rgba(200,75,47,.5);border-radius:3px;padding:2px 7px;font-size:9px;margin-right:10px;flex:none">ADMIN</span>
+  <div class="ref-devstrip" style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:var(--bg-black);border-bottom:1px solid var(--line-faint);overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:var(--faint);letter-spacing:.18em;margin-right:6px;flex:none">DRAFTING ROOM</span>
+    <span class="ref-status phase-b" style="margin-right:10px;flex:none">Visual only · Phase B</span>
     <sc-for list="{{ screens }}" as="s" hint-placeholder-count="3">
       <button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button>
     </sc-for>
     <span style="flex:1"></span>
-    <a href="Cairn App - Shell.dc.html" style="flex:none;color:#8A7D63">shell ↗</a>
+    <a href="Cairn App - Shell.dc.html" style="flex:none;color:var(--dim)">shell ↗</a>
   </div>
 
-  <div style="flex:1;display:flex;min-height:0;min-width:0;overflow:auto">
+  <div class="ref-frame" style="flex:1;display:flex;min-height:0;min-width:0;overflow:auto">
 
     <!-- ===== WORLDS DESK ===== -->
     <sc-if value="{{ isDesk }}" hint-placeholder-val="{{ true }}">
       <div style="flex:1;padding:44px 48px;max-width:1020px">
-        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#8A7D63">THE DRAFTING ROOM · WHERE WORLDS ARE WRITTEN</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:8px 0 8px">Worlds under the lamp</div>
-        <p style="margin:0 0 34px;font-size:14px;line-height:1.6;color:#8A7D63;max-width:560px">Players never see this room. Everything here is canon-side: worlds, their scenarios, and the validation that keeps a scenario honest before it's opened to the public.</p>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:var(--dim)">THE DRAFTING ROOM · WHERE WORLDS ARE WRITTEN</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);margin:8px 0 8px">Worlds under the lamp</div>
+        <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:var(--dim);max-width:620px">Players never see this room. It edits the existing World, World Lore Chunk, and Campaign Template representations; campaign memory remains owned by play.</p>
+        <p class="ref-note" style="margin:0 0 34px">No admin HTTP surface or `is_admin` account exists yet. Counts below are layout fixtures, not live operational data.</p>
         <div style="display:flex;gap:24px;flex-wrap:wrap">
-          <div style="width:440px;border:1px solid #3A2C18;border-radius:10px;background:#120D08;padding:26px 30px">
+          <div style="width:440px;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel-low);padding:26px 30px">
             <div style="display:flex;justify-content:space-between;align-items:baseline">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F3E8CD">The Riverlands</div>
-              <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#171106;background:#9A8E5C;border-radius:3px;padding:3px 8px;font-weight:700">PUBLISHED</span>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--text)">The Riverlands</div>
+              <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--ember-ink);background:var(--lichen);border-radius:3px;padding:3px 8px;font-weight:700">PUBLISHED</span>
             </div>
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63;margin:10px 0 18px">214 CANON ENTRIES · 3 SCENARIOS · LAST TOUCHED TUESDAY</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin:10px 0 18px">41 LORE CHUNKS · 39 EMBEDDED · 3 TEMPLATES</div>
             <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
-              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #241C10"><span style="color:#D9CCA9">The Silent Ford</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">LIVE · 41 TABLES</span></div>
-              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #241C10"><span style="color:#D9CCA9">The Weir at World's End</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C">LIVE · 17 TABLES</span></div>
-              <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#D9CCA9">A Wake for the Miller</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#D6A452">DRAFT · 2 CHECKS FAILING</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line-faint)"><span style="color:var(--text-warm)">The Silent Ford</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">PUBLISHED</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line-faint)"><span style="color:var(--text-warm)">The Weir at World's End</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen)">PUBLISHED</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-warm)">A Wake for the Miller</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--ember)">DRAFT</span></div>
             </div>
-            <button onClick="{{ goEditor }}" style="margin-top:20px;background:transparent;color:#D6A452;border:1px solid #5A4E37;border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Open at the desk →</button>
+            <button onClick="{{ goEditor }}" style="margin-top:20px;background:transparent;color:var(--ember);border:1px solid var(--line-strong);border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Open at the desk →</button>
           </div>
-          <div style="width:440px;border:1px solid #241C10;border-radius:10px;background:#0F0B07;padding:26px 30px">
+          <div style="width:440px;border:1px solid var(--line-faint);border-radius:10px;background:var(--panel-low);padding:26px 30px">
             <div style="display:flex;justify-content:space-between;align-items:baseline">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#CDBFA4">The Ashen Reach</div>
-              <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:#B7A987;border:1px solid #3A2C18;border-radius:3px;padding:3px 8px">DRAFT</span>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--muted)">The Ashen Reach</div>
+              <span style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line-strong);border-radius:3px;padding:3px 8px">DRAFT</span>
             </div>
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A;margin:10px 0 18px">178 CANON ENTRIES · 2 SCENARIOS · NOT YET PUBLIC</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin:10px 0 18px">28 LORE CHUNKS · 0 EMBEDDED · 2 DRAFT TEMPLATES</div>
             <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
-              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #241C10"><span style="color:#B7A987">The Beacon Road</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">DRAFT</span></div>
-              <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#B7A987">Salt in the Orchard</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63">OUTLINE</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line-faint)"><span style="color:var(--muted)">The Beacon Road</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">DRAFT</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--muted)">Salt in the Orchard</span><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">OUTLINE</span></div>
             </div>
           </div>
-          <div style="width:440px;min-height:120px;border:1px dashed #3A2C18;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:12px;color:#8A7D63"><span style="font-size:24px;color:#5C5342">+</span><span style="font-size:15px">Stretch a new canvas — new world</span></div>
+          <div style="width:440px;min-height:120px;border:1px dashed var(--line-strong);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--dim)"><span style="font-size:24px;color:var(--faint)">+</span><span style="font-size:15px">Stretch a new canvas — new world</span></div>
         </div>
       </div>
     </sc-if>
 
     <!-- ===== SCENARIO EDITOR ===== -->
     <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ false }}">
-      <div style="width:300px;flex:none;border-right:1px solid #2C2214;background:#0D0A06;padding:26px 20px;overflow:auto">
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:6px">THE RIVERLANDS</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#F3E8CD;margin-bottom:20px">A Wake for the Miller</div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#6E675A;margin-bottom:12px">STRUCTURE</div>
-        <div style="display:flex;flex-direction:column;border-left:1px solid #2C2214;margin-left:5px;padding-left:14px;margin-bottom:24px">
-          <div style="position:relative;padding:8px 0;font-size:13px;color:#D9CCA9"><span style="position:absolute;left:-20px;top:12px;width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span>Act I — The Wake <span style="font-family:'Space Mono',monospace;font-size:9px;color:#9A8E5C">✓</span></div>
-          <div style="position:relative;padding:8px 0;font-size:13px;color:#F3E8CD;font-weight:500"><span style="position:absolute;left:-21px;top:11px;width:11px;height:11px;border-radius:50%;background:#C84B2F;box-shadow:0 0 10px rgba(200,75,47,.8)"></span>Act II — Grain &amp; Grief</div>
-          <div style="position:relative;padding:8px 0;font-size:13px;color:#8A7D63"><span style="position:absolute;left:-20px;top:12px;width:9px;height:9px;border-radius:50%;border:1px dashed #5C5342"></span>Act III — outline only</div>
+      <div class="ref-rail" style="width:300px;flex:none;border-right:1px solid var(--line);background:var(--table);padding:26px 20px;overflow:auto">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:6px">THE RIVERLANDS</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text);margin-bottom:20px">A Wake for the Miller</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:12px">STRUCTURE</div>
+        <div style="display:flex;flex-direction:column;border-left:1px solid var(--line);margin-left:5px;padding-left:14px;margin-bottom:24px">
+          <div style="position:relative;padding:8px 0;font-size:13px;color:var(--text-warm)"><span style="position:absolute;left:-20px;top:12px;width:9px;height:9px;border-radius:50%;background:var(--lichen)"></span>Act I — The Wake <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--lichen)">✓</span></div>
+          <div style="position:relative;padding:8px 0;font-size:13px;color:var(--text);font-weight:500"><span style="position:absolute;left:-21px;top:11px;width:11px;height:11px;border-radius:50%;background:var(--hazard);box-shadow:0 0 10px rgba(200,75,47,.8)"></span>Act II — Grain &amp; Grief</div>
+          <div style="position:relative;padding:8px 0;font-size:13px;color:var(--dim)"><span style="position:absolute;left:-20px;top:12px;width:9px;height:9px;border-radius:50%;border:1px dashed var(--faint)"></span>Act III — outline only</div>
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#6E675A;margin-bottom:12px">CANON TOUCHED BY THIS SCENARIO</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:12px">ALWAYS-ON LORE KEYS</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;font-family:'Space Mono',monospace;font-size:10px">
-          <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:10px;padding:4px 10px">the miller</span>
-          <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:10px;padding:4px 10px">Ilse Marrow</span>
-          <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:10px;padding:4px 10px">river-law</span>
-          <span style="color:#C84B2F;border:1px dotted rgba(200,75,47,.5);border-radius:10px;padding:4px 10px">the wake field · new</span>
+          <span style="color:var(--muted);border:1px dotted var(--line-strong);border-radius:10px;padding:4px 10px">river-law-first-stone</span>
+          <span style="color:var(--muted);border:1px dotted var(--line-strong);border-radius:10px;padding:4px 10px">ferrying-the-dead</span>
         </div>
       </div>
       <div style="flex:1;min-width:0;padding:38px 44px;overflow:auto">
         <div style="max-width:680px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#F3E8CD">Act II — Grain &amp; Grief</div>
-            <span style="font-family:'Space Mono',monospace;font-size:10px;color:#B7A987;border:1px solid #3A2C18;border-radius:3px;padding:4px 10px">DRAFT</span>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--text)">Act II — Grain &amp; Grief</div>
+            <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);border:1px solid var(--line-strong);border-radius:3px;padding:4px 10px">DRAFT</span>
           </div>
-          <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">ACT PREMISE — WHAT THE NARRATOR IS TOLD</div>
-          <div style="margin-top:10px;background:#14100A;border:1px solid #3A2C18;border-radius:6px;padding:20px 24px;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:#D9CCA9">The wake lasts three days by river-law. Someone at the mill is grieving wrong — too neatly. The act turns when the party notices the grain tithe hasn't stopped moving at night.<span style="display:inline-block;width:8px;height:19px;background:#D6A452;margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
-          <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">BEATS — SEEDS, NOT SCRIPT</div>
+          <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">ACT PREMISE — WHAT THE NARRATOR IS TOLD</div>
+          <div style="margin-top:10px;background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:20px 24px;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:var(--text-warm)">The wake lasts three days by river-law. Someone at the mill is grieving wrong — too neatly. The act turns when the party notices the grain tithe hasn't stopped moving at night.<span style="display:inline-block;width:8px;height:19px;background:var(--ember);margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
+          <div style="margin-top:26px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">CORE EVENTS · STORED AS STRINGS</div>
           <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-            <div style="border:1px solid #33271A;border-radius:6px;background:#120D08;padding:16px 20px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C;flex:none">SEED</span><span style="font-size:14px;line-height:1.6;color:#B7A987">The widow's ledger appears at the wake — one entry longer than the toll house's copy.</span></div>
-            <div style="border:1px solid #33271A;border-radius:6px;background:#120D08;padding:16px 20px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:10px;color:#9A8E5C;flex:none">SEED</span><span style="font-size:14px;line-height:1.6;color:#B7A987">Night tithe: three sacks leave the mill after dark, toward the wake field. Nobody carries a lantern.</span></div>
-            <div style="border:1px solid rgba(200,75,47,.4);border-radius:6px;background:#120B0C;padding:16px 20px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F;flex:none">GATE</span><span style="font-size:14px;line-height:1.6;color:#B7A987">Act III opens only when the party knows <b style="color:#E6DABB">who</b> the third mourner is — however they learn it.</span></div>
-          </div>
-          <div style="margin-top:30px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">VALIDATION — WHAT BLOCKS PUBLISH</div>
-          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;font-family:'Space Mono',monospace;font-size:11px">
-            <div style="display:flex;gap:12px;align-items:center;color:#9A8E5C"><span>✓</span><span style="color:#B7A987">every act has a premise and at least one gate</span></div>
-            <div style="display:flex;gap:12px;align-items:center;color:#9A8E5C"><span>✓</span><span style="color:#B7A987">all referenced canon entries exist</span></div>
-            <div style="display:flex;gap:12px;align-items:center;color:#C84B2F"><span>✗</span><span style="color:#E6DABB">"the wake field" is referenced but has no canon entry yet</span></div>
-            <div style="display:flex;gap:12px;align-items:center;color:#C84B2F"><span>✗</span><span style="color:#E6DABB">Act III has no premise — outline only</span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:6px;background:var(--panel-low);padding:16px 20px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen);flex:none">EVENT</span><span style="font-size:14px;line-height:1.6;color:var(--muted)">The widow's ledger appears at the wake — one entry longer than the toll house's copy.</span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:6px;background:var(--panel-low);padding:16px 20px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--lichen);flex:none">EVENT</span><span style="font-size:14px;line-height:1.6;color:var(--muted)">Three sacks leave the mill after dark, toward the wake field. Nobody carries a lantern.</span></div>
+            <button style="border:1px dashed var(--line-strong);border-radius:6px;background:transparent;padding:13px 20px;text-align:left;color:var(--dim);font-family:'Space Grotesk',sans-serif">+ Add core event</button>
           </div>
           <div style="display:flex;gap:14px;margin-top:28px;align-items:center">
-            <button style="background:#241C10;color:#8A7D63;border:1px solid #33271A;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;cursor:not-allowed;font-family:'Space Grotesk',sans-serif">Publish — 2 checks failing</button>
-            <span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">the desk refuses dishonest scenarios, same as the sheet engine</span>
+            <button style="background:var(--ember);color:var(--ember-ink);border:0;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;font-family:'Space Grotesk',sans-serif">Save draft</button>
+            <button style="background:transparent;color:var(--muted);border:1px solid var(--line-strong);font-weight:600;font-size:14px;padding:12px 24px;border-radius:4px;font-family:'Space Grotesk',sans-serif">Publish template</button>
           </div>
+          <p class="ref-note" style="margin-top:12px">The current representation has only `draft | published`; no publish-validation rules or gate schema exist. Add validation only with a future authoring contract.</p>
         </div>
       </div>
     </sc-if>
@@ -120,37 +115,45 @@ a:hover{color:#EBC98A}
     <!-- ===== CANON ===== -->
     <sc-if value="{{ isCanon }}" hint-placeholder-val="{{ false }}">
       <div style="flex:1;padding:38px 44px;max-width:900px">
-        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#8A7D63">CANON — THE RIVERLANDS</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#F3E8CD;margin:8px 0 6px">What is true before anyone plays</div>
-        <p style="margin:0 0 30px;font-size:14px;line-height:1.6;color:#8A7D63;max-width:560px">Canon is authored here; campaign memory (the codex) is written by play and never touches these entries. The narrator reads both — canon as law, codex as history.</p>
+        <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:var(--dim)">CANON — THE RIVERLANDS</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:var(--text);margin:8px 0 6px">What is true before anyone plays</div>
+        <p style="margin:0 0 30px;font-size:14px;line-height:1.6;color:var(--dim);max-width:620px">World lore is authored as self-contained chunks. Campaign memory is written by play and never edits these rows. Slice 13 retrieves most chunks only when the table reaches for them.</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px;font-family:'Space Mono',monospace;font-size:10px">
-          <span style="color:#171106;background:#D6A452;border-radius:10px;padding:4px 12px;font-weight:700">PEOPLE 64</span>
-          <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 12px">PLACES 58</span>
-          <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 12px">FACTIONS 12</span>
-          <span style="color:#8A7D63;border:1px solid #241C10;border-radius:10px;padding:4px 12px">LAWS &amp; LORE 80</span>
+          <span style="color:var(--ember-ink);background:var(--ember);border-radius:10px;padding:4px 12px;font-weight:700">FIGURE 9</span>
+          <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:10px;padding:4px 12px">REGION 8</span>
+          <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:10px;padding:4px 12px">FACTION 7</span>
+          <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:10px;padding:4px 12px">DEITY 3</span>
+          <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:10px;padding:4px 12px">HISTORY 12</span>
+          <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:10px;padding:4px 12px">CUSTOM 2</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:20px 26px">
+          <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel);padding:20px 26px">
             <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:#F3E8CD">Ilse Marrow</span>
-              <span style="font-family:'Space Mono',monospace;font-size:9px;color:#8A7D63">PERSON · TOUCHED BY 2 SCENARIOS</span>
+              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--text)">Ilse Marrow</span>
+              <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--lichen)">FIGURE · EMBEDDED ✓</span>
             </div>
-            <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:#B7A987">Widow of the toll-keeper drowned in the flood of '31. Keeps a private ledger duplicating the toll house's — the extra entry is hers. <b style="color:#D9CCA9">Secret (narrator-only):</b> she has paid the ferryman's fare eleven times, for eleven crossings no one living took.</p>
+            <p style="margin:8px 0 10px;font-size:14px;line-height:1.65;color:var(--muted)">Widow of the toll-keeper drowned in the flood of '31. Keeps a private ledger duplicating the toll house's; the extra entry is hers.</p><div class="ref-note">key: ilse-marrow · tags: silent-ford, toll-house, ferryman · always_on: false</div>
           </div>
-          <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:20px 26px">
+          <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:20px 26px">
             <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:#F3E8CD">River-law, first stone</span>
-              <span style="font-family:'Space Mono',monospace;font-size:9px;color:#8A7D63">LAW · WORLD-WIDE</span>
+              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--text)">River-law, first stone</span>
+              <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--ember)">CUSTOM · ALWAYS ON · EMBEDDED ✓</span>
             </div>
-            <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:#B7A987">"The Weigher counts what crosses. Nothing crosses free." Every ford, ferry, and bridge in the Riverlands operates under it; breaking it is the world's one unforgivable act.</p>
+            <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:var(--muted)">"The Weigher counts what crosses. Nothing crosses free." Every ford, ferry, and bridge in the Riverlands operates under it; breaking it is the world's one unforgivable act.</p>
           </div>
-          <div style="border:1px dashed rgba(200,75,47,.4);border-radius:8px;background:#120B0C;padding:20px 26px">
+          <div style="border:1px dashed rgba(200,75,47,.4);border-radius:8px;background:var(--panel-low);padding:20px 26px">
             <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:#E8A08C">The wake field</span>
-              <span style="font-family:'Space Mono',monospace;font-size:9px;color:#C84B2F">REFERENCED, NOT WRITTEN — BLOCKS PUBLISH</span>
+              <span style="font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--hazard)">The wake field</span>
+              <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--hazard)">REGION · EMBEDDING MISSING</span>
             </div>
-            <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:#8A7D63;font-style:italic">A Wake for the Miller points here. Write the entry or unlink the beat.</p>
+            <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:var(--dim);font-style:italic">Saved without an embedding. Slice 13 must re-embed this chunk before retrieval can use its dense side.</p>
           </div>
+        </div>
+        <div style="margin-top:24px;border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:20px 24px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:var(--text)">Edit lore chunk</div><span class="ref-status planned">Save re-embeds · Slice 13</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px"><div><div class="ref-note">TITLE</div><div style="margin-top:5px;border:1px solid var(--line-strong);border-radius:4px;padding:9px 11px;color:var(--text-warm)">Ilse Marrow</div></div><div><div class="ref-note">STABLE KEY</div><div style="margin-top:5px;border:1px solid var(--line-strong);border-radius:4px;padding:9px 11px;color:var(--muted);font-family:'Space Mono',monospace;font-size:11px">ilse-marrow</div></div></div>
+          <div style="margin-top:12px"><div class="ref-note">CONTENT</div><div style="margin-top:5px;min-height:90px;border:1px solid var(--line-strong);border-radius:4px;padding:12px 14px;color:var(--text-warm);font-family:'Newsreader',serif;line-height:1.6">Widow of the toll-keeper drowned in the flood of '31. Keeps a private ledger duplicating the toll house's; the extra entry is hers.</div></div>
+          <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:14px"><span class="ref-note">CATEGORY · figure</span><span class="ref-note">TAGS · silent-ford, toll-house, ferryman</span><span style="margin-left:auto;color:var(--dim);font-size:12px">Always on <b style="color:var(--hazard)">OFF</b></span><button style="background:var(--ember);color:var(--ember-ink);border:0;border-radius:4px;padding:10px 18px;font-weight:700;font-family:'Space Grotesk',sans-serif">Save chunk</button></div>
         </div>
       </div>
     </sc-if>
@@ -173,8 +176,8 @@ class Component extends DCLogic {
       go: () => this.go(key),
       style: {
         fontFamily: "'Space Mono',monospace", fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
-        padding: '5px 10px', borderRadius: '3px', border: '1px solid ' + (sc === key ? '#D6A452' : 'transparent'),
-        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? '#F3E8CD' : '#8A7D63',
+        padding: '5px 10px', borderRadius: '3px', border: '1px solid ' + (sc === key ? 'var(--ember)' : 'transparent'),
+        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? 'var(--text)' : 'var(--dim)',
       },
     }));
     return {

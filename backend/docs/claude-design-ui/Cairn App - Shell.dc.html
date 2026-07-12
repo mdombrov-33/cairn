@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<link rel="stylesheet" href="./reference.css">
+<script src="./reference-theme.js"></script>
 </head>
 <body>
 <x-dc>
@@ -11,30 +13,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;padding:0;background:#0A0806;}
-a{color:#D6A452;text-decoration:none}
-a:hover{color:#EBC98A}
+html,body{margin:0;padding:0;background:var(--bg-deep);}
+a{color:var(--ember);text-decoration:none}
+a:hover{color:var(--text-soft)}
 @keyframes glowP{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes caretB{0%,49%{opacity:1}50%,100%{opacity:0}}
 @keyframes flick{0%,100%{opacity:.8}9%{opacity:1}23%{opacity:.72}38%{opacity:.94}54%{opacity:.78}71%{opacity:1}86%{opacity:.85}}
 </style>
 </helmet>
 
-<div style="font-family:'Space Grotesk',sans-serif;background:#0A0806;color:#EFE3C8;min-height:100vh;display:flex;flex-direction:column">
+<div style="font-family:'Space Grotesk',sans-serif;background:var(--bg-deep);color:var(--text);min-height:100vh;display:flex;flex-direction:column">
 
   <!-- switcher -->
-  <div style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:#070503;border-bottom:1px solid #241C10;overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
-    <span style="color:#5C5342;letter-spacing:.18em;margin-right:10px;flex:none">SHELL</span>
+  <div class="ref-devstrip" style="flex:none;display:flex;align-items:center;gap:4px;padding:10px 16px;background:var(--bg-black);border-bottom:1px solid var(--line-faint);overflow-x:auto;font-family:'Space Mono',monospace;font-size:11px">
+    <span style="color:var(--faint);letter-spacing:.18em;margin-right:10px;flex:none">SHELL</span>
     <sc-for list="{{ screens }}" as="s" hint-placeholder-count="7">
       <button onClick="{{ s.go }}" style="{{ s.style }}">{{ s.label }}</button>
     </sc-for>
     <span style="flex:1"></span>
-    <a href="Cairn App — Creation.dc.html" style="flex:none;color:#8A7D63;margin-right:12px">creation ↗</a>
-    <a href="Cairn App — Play.dc.html" style="flex:none;color:#8A7D63;margin-right:12px">play ↗</a>
-    <a href="Cairn Landing.dc.html" style="flex:none;color:#8A7D63">landing ↗</a>
+    <a href="Cairn App - Creation.dc.html" style="flex:none;color:var(--dim);margin-right:12px">creation ↗</a>
+    <a href="Cairn App - Play.dc.html" style="flex:none;color:var(--dim);margin-right:12px">play ↗</a>
+    <a href="Cairn Landing.dc.html" style="flex:none;color:var(--dim)">landing ↗</a>
   </div>
 
-  <div style="flex:1;display:flex;min-height:0;min-width:0">
+  <div class="ref-frame" style="flex:1;display:flex;min-height:0;min-width:0">
 
     <!-- ===== LOGIN (no rail) ===== -->
     <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
@@ -43,84 +45,84 @@ a:hover{color:#EBC98A}
           <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="S-login" shape="rect" placeholder="GPT: night crossing — lantern on the ferry, dark water. quiet variant of the hero art" hint-size="100%,100%"></x-import>
         </div>
         <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 90% at 50% 50%,rgba(7,5,3,.55),rgba(7,5,3,.95) 100%)"></div>
-        <div style="position:relative;width:380px;background:#14100Aee;border:1px solid #3A2C18;border-radius:10px;padding:38px;box-shadow:0 40px 120px rgba(0,0,0,.7)">
+        <div style="position:relative;width:380px;background:color-mix(in srgb,var(--panel) 93%,transparent);border:1px solid var(--line-strong);border-radius:10px;padding:38px;box-shadow:0 40px 120px rgba(0,0,0,.7)">
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:20px">
-            <div style="width:10px;height:5px;border-radius:2px;background:#D6A452"></div>
-            <div style="width:19px;height:6px;border-radius:2px;background:#5C5342"></div>
-            <div style="width:27px;height:6px;border-radius:2px;background:#453E31"></div>
+            <div style="width:10px;height:5px;border-radius:2px;background:var(--ember)"></div>
+            <div style="width:19px;height:6px;border-radius:2px;background:var(--faint)"></div>
+            <div style="width:27px;height:6px;border-radius:2px;background:var(--line-strong)"></div>
           </div>
-          <div style="text-align:center;font-weight:600;letter-spacing:.44em;text-indent:.44em;font-size:14px;color:#E8DCBE;margin-bottom:30px">CAIRN</div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63;margin-bottom:8px">EMAIL</div>
-          <div style="background:#0E0B07;border:1px solid #3A2C18;border-radius:5px;padding:13px 16px;font-size:15px;color:#B7A987;margin-bottom:16px">wanderer@ford.example</div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8A7D63;margin-bottom:8px">PASSWORD</div>
-          <div style="background:#0E0B07;border:1px solid #3A2C18;border-radius:5px;padding:13px 16px;font-size:15px;color:#B7A987;letter-spacing:.3em">••••••••••</div>
-          <button style="width:100%;margin-top:24px;background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Return to the table</button>
-          <div style="margin-top:16px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">phase-B visual-only · dep #8: no users table yet</div>
+          <div style="text-align:center;font-weight:600;letter-spacing:.44em;text-indent:.44em;font-size:14px;color:var(--text-soft);margin-bottom:30px">CAIRN</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim);margin-bottom:8px">EMAIL</div>
+          <div style="background:var(--table);border:1px solid var(--line-strong);border-radius:5px;padding:13px 16px;font-size:15px;color:var(--muted);margin-bottom:16px">wanderer@ford.example</div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--dim);margin-bottom:8px">PASSWORD</div>
+          <div style="background:var(--table);border:1px solid var(--line-strong);border-radius:5px;padding:13px 16px;font-size:15px;color:var(--muted);letter-spacing:.3em">••••••••••</div>
+          <button style="width:100%;margin-top:24px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Return to the table</button>
+          <div style="margin-top:16px;text-align:center"><span class="ref-status phase-b">Visual only · Phase B · Clerk auth</span></div>
         </div>
       </div>
     </sc-if>
 
     <!-- ===== PRE-CAMPAIGN RAIL (all except login) ===== -->
     <sc-if value="{{ hasRail }}" hint-placeholder-val="{{ true }}">
-      <div style="width:232px;flex:none;background:#0E0B07;border-right:1px solid #2C2214;padding:22px 18px;display:flex;flex-direction:column">
+      <div class="ref-rail" style="width:232px;flex:none;background:var(--table);border-right:1px solid var(--line);padding:22px 18px;display:flex;flex-direction:column">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:26px">
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div style="width:7px;height:4px;border-radius:2px;background:#D6A452"></div>
-            <div style="width:13px;height:4px;border-radius:2px;background:#5C5342"></div>
-            <div style="width:18px;height:5px;border-radius:2px;background:#453E31"></div>
+            <div style="width:7px;height:4px;border-radius:2px;background:var(--ember)"></div>
+            <div style="width:13px;height:4px;border-radius:2px;background:var(--faint)"></div>
+            <div style="width:18px;height:5px;border-radius:2px;background:var(--line-strong)"></div>
           </div>
-          <span style="font-weight:600;letter-spacing:.34em;font-size:13px;color:#E8DCBE">CAIRN</span>
+          <span style="font-weight:600;letter-spacing:.34em;font-size:13px;color:var(--text-soft)">CAIRN</span>
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:#6E675A;margin-bottom:22px">A WORLD THAT REMEMBERS</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--faint);margin-bottom:22px">A WORLD THAT REMEMBERS</div>
         <div style="display:flex;flex-direction:column;gap:2px">
           <button onClick="{{ goHome }}" style="{{ tabCampaigns }}">Campaigns</button>
           <button onClick="{{ goAccount }}" style="{{ tabAccount }}">Account</button>
-          <button onClick="{{ goAdminFile }}" style="{{ tabDrafting }}">Drafting Room<span style="font-family:'Space Mono',monospace;font-size:9px;color:#C84B2F;border:1px solid rgba(200,75,47,.5);border-radius:3px;padding:2px 6px;margin-left:8px">ADMIN</span></button>
+          <button onClick="{{ goAdminFile }}" style="{{ tabDrafting }}">Drafting Room<span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--hazard);border:1px solid rgba(200,75,47,.5);border-radius:3px;padding:2px 6px;margin-left:8px">PHASE B</span></button>
         </div>
-        <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#5C5342">the codex is campaign memory — it lives inside a campaign, never out here.</div>
+        <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">the codex is campaign memory — it lives inside a campaign, never out here.</div>
         <div style="flex:1"></div>
-        <div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342">painterly epic · reference</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">painterly epic · reference</div>
       </div>
 
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:auto">
+      <div class="ref-content" style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:auto">
 
         <!-- ===== HOME ===== -->
         <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
           <div style="padding:44px 48px;max-width:1000px">
-            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#8A7D63">CAMPAIGNS</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:8px 0 34px">Your expeditions</div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:var(--dim)">CAMPAIGNS</div>
+            <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:8px 0 34px"><div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text)">Your expeditions</div><span class="ref-status planned">Phase A · resume discovery endpoint needed</span></div>
             <div style="display:flex;gap:24px;flex-wrap:wrap">
-              <div style="width:440px;border:1px solid #3A2C18;border-radius:10px;overflow:hidden;background:#120D08">
+              <div style="width:440px;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;background:var(--panel-low)">
                 <div style="position:relative;height:150px">
                   <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="S-camp1" shape="rect" placeholder="scenario art — the Silent Ford, painted" hint-size="100%,100%"></x-import>
                   <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(18,13,8,.95))"></div>
-                  <div style="position:absolute;left:22px;bottom:12px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:#B7A987;pointer-events:none">THE SILENT FORD</div>
+                  <div style="position:absolute;left:22px;bottom:12px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--muted);pointer-events:none">THE SILENT FORD</div>
                 </div>
                 <div style="padding:20px 24px 24px">
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:#F3E8CD">Ser Aldric's road</div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:var(--text)">Ser Aldric's road</div>
                   <div style="display:flex;align-items:center;gap:6px;margin:14px 0 10px">
-                    <span style="width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span><span style="flex:1;border-top:1px solid #33271A"></span>
-                    <span style="width:11px;height:11px;border-radius:50%;background:#C84B2F;box-shadow:0 0 10px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span><span style="flex:1;border-top:1px dashed #33271A"></span>
-                    <span style="width:9px;height:9px;border-radius:50%;border:1px dashed #5C5342"></span>
+                    <span style="width:9px;height:9px;border-radius:50%;background:var(--lichen)"></span><span style="flex:1;border-top:1px solid var(--line-strong)"></span>
+                    <span style="width:11px;height:11px;border-radius:50%;background:var(--hazard);box-shadow:0 0 10px rgba(200,75,47,.8);animation:glowP 2.6s ease-in-out infinite"></span><span style="flex:1;border-top:1px dashed var(--line-strong)"></span>
+                    <span style="width:9px;height:9px;border-radius:50%;border:1px dashed var(--faint)"></span>
                   </div>
-                  <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63">ACT II · DAY 14 · THE DROWNED CHAPEL · last played 2 days ago</div>
-                  <button style="width:100%;margin-top:18px;background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Continue → recap first</button>
+                  <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">ACT II · DAY 14 · THE DROWNED CHAPEL · last played 2 days ago</div>
+                  <button style="width:100%;margin-top:18px;background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Continue → recap first</button>
                 </div>
               </div>
-              <div style="width:440px;border:1px solid #241C10;border-radius:10px;overflow:hidden;background:#0F0B07">
+              <div style="width:440px;border:1px solid var(--line-faint);border-radius:10px;overflow:hidden;background:var(--panel-low)">
                 <div style="position:relative;height:150px;filter:grayscale(.5) brightness(.7)">
                   <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="S-camp2" shape="rect" placeholder="scenario art — the Hollow Vigil" hint-size="100%,100%"></x-import>
                   <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(15,11,7,.95))"></div>
-                  <div style="position:absolute;left:22px;bottom:12px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:#8A7D63;pointer-events:none">THE HOLLOW VIGIL — COMPLETED <span style="color:#9A8E5C">✓</span></div>
+                  <div style="position:absolute;left:22px;bottom:12px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim);pointer-events:none">THE HOLLOW VIGIL — COMPLETED <span style="color:var(--lichen)">✓</span></div>
                 </div>
                 <div style="padding:20px 24px 24px">
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:#CDBFA4">Isolde's watch</div>
-                  <div style="font-family:'Space Mono',monospace;font-size:11px;color:#6E675A;margin-top:14px">3 ACTS · 41 DAYS · ENDED IN THE HIGH TOWER · finished in May</div>
-                  <button onClick="{{ goEpilogue }}" style="width:100%;margin-top:18px;background:transparent;color:#E8DCBE;font-weight:500;font-size:14px;padding:13px;border-radius:4px;border:1px solid #3A2C18;cursor:pointer;font-family:'Space Grotesk',sans-serif">Read the record</button>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:var(--muted)">Isolde's watch</div>
+                  <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--faint);margin-top:14px">3 ACTS · 41 DAYS · ENDED IN THE HIGH TOWER · finished in May</div>
+                  <button onClick="{{ goEpilogue }}" style="width:100%;margin-top:18px;background:transparent;color:var(--text-soft);font-weight:500;font-size:14px;padding:13px;border-radius:4px;border:1px solid var(--line-strong);cursor:pointer;font-family:'Space Grotesk',sans-serif">Read the record</button>
                 </div>
               </div>
-              <button onClick="{{ goWorlds }}" style="width:440px;min-height:180px;border:1px dashed #3A2C18;border-radius:10px;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#8A7D63;font-family:'Space Grotesk',sans-serif">
-                <span style="font-size:30px;color:#5C5342">+</span>
+              <button onClick="{{ goWorlds }}" style="width:440px;min-height:180px;border:1px dashed var(--line-strong);border-radius:10px;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--dim);font-family:'Space Grotesk',sans-serif">
+                <span style="font-size:30px;color:var(--faint)">+</span>
                 <span style="font-size:15px">Begin a new expedition</span>
               </button>
             </div>
@@ -130,56 +132,56 @@ a:hover{color:#EBC98A}
         <!-- ===== WORLDS ===== -->
         <sc-if value="{{ isWorlds }}" hint-placeholder-val="{{ false }}">
           <div style="padding:44px 48px;max-width:1060px">
-            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#8A7D63">NEW EXPEDITION · 1 OF 3</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:8px 0 30px">Where does the story live?</div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:var(--dim)">NEW EXPEDITION · 1 OF 3</div>
+            <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:8px 0 30px"><div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text)">Where does the story live?</div><span class="ref-status planned">Phase A · campaign templates route</span></div>
             <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:36px">
-              <div style="width:330px;border:1px solid #5A4E37;border-radius:10px;overflow:hidden;background:#14100A;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+              <div style="width:330px;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:0 20px 60px rgba(0,0,0,.4)">
                 <div style="position:relative;height:130px">
                   <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="S-world1" shape="rect" placeholder="world art — the Riverlands" hint-size="100%,100%"></x-import>
                   <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(20,16,10,.95))"></div>
                 </div>
                 <div style="padding:18px 22px 22px">
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:#F3E8CD">The Riverlands</div>
-                  <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:#B7A987">Toll towns and drowned parishes along a river that keeps its own ledger. Low magic, long memory, debts that outlive the debtors.</p>
-                  <div style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A;margin-top:12px">3 SCENARIOS · 214 CANON ENTRIES</div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:var(--text)">The Riverlands</div>
+                  <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:var(--muted)">Toll towns and drowned parishes along a river that keeps its own ledger. Low magic, long memory, debts that outlive the debtors.</p>
+                  <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-top:12px">3 SCENARIOS · 214 CANON ENTRIES</div>
                 </div>
               </div>
-              <div style="width:330px;border:1px solid #241C10;border-radius:10px;overflow:hidden;background:#0F0B07">
+              <div style="width:330px;border:1px solid var(--line-faint);border-radius:10px;overflow:hidden;background:var(--panel-low)">
                 <div style="position:relative;height:130px;filter:brightness(.65)">
                   <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="S-world2" shape="rect" placeholder="world art — the Ashen Reach" hint-size="100%,100%"></x-import>
                   <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(15,11,7,.95))"></div>
                 </div>
                 <div style="padding:18px 22px 22px">
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:#CDBFA4">The Ashen Reach</div>
-                  <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:#8A7D63">A frontier under a sky that burned once and might again. High sorcery, ruined roads, everything worth having is buried.</p>
-                  <div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342;margin-top:12px">2 SCENARIOS · 178 CANON ENTRIES</div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:var(--muted)">The Ashen Reach</div>
+                  <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:var(--dim)">A frontier under a sky that burned once and might again. High sorcery, ruined roads, everything worth having is buried.</p>
+                  <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-top:12px">2 SCENARIOS · 178 CANON ENTRIES</div>
                 </div>
               </div>
             </div>
-            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:16px">SCENARIOS IN THE RIVERLANDS</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:16px">SCENARIOS IN THE RIVERLANDS</div>
             <div style="display:flex;gap:26px;flex-wrap:wrap">
               <div style="width:250px;flex:none;display:flex;flex-direction:column;gap:10px">
-                <div style="border:1px solid #5A4E37;background:rgba(214,164,82,.07);border-radius:6px;padding:14px 16px"><div style="font-size:15px;font-weight:600;color:#F3E8CD">The Silent Ford</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#8A7D63;margin-top:4px">mystery · 3 acts · ~12 sessions</div></div>
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 16px"><div style="font-size:15px;color:#B7A987">The Weir at World's End</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342;margin-top:4px">journey · 4 acts</div></div>
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 16px"><div style="font-size:15px;color:#B7A987">A Wake for the Miller</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:#5C5342;margin-top:4px">intrigue · 2 acts</div></div>
+                <div style="border:1px solid var(--line-strong);background:rgba(214,164,82,.07);border-radius:6px;padding:14px 16px"><div style="font-size:15px;font-weight:600;color:var(--text)">The Silent Ford</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px">mystery · 3 acts · ~12 sessions</div></div>
+                <div style="border:1px solid var(--line-faint);border-radius:6px;padding:14px 16px"><div style="font-size:15px;color:var(--muted)">The Weir at World's End</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-top:4px">journey · 4 acts</div></div>
+                <div style="border:1px solid var(--line-faint);border-radius:6px;padding:14px 16px"><div style="font-size:15px;color:var(--muted)">A Wake for the Miller</div><div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-top:4px">intrigue · 2 acts</div></div>
               </div>
-              <div style="flex:1;min-width:340px;border:1px solid #33271A;border-radius:10px;background:#120D08;padding:28px 32px">
-                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:#8A7D63">THE RIVERLANDS · SCENARIO</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#F3E8CD;margin:6px 0 14px">The Silent Ford</div>
-                <p style="margin:0;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:#D9CCA9">A river-crossing town where the dead are ferried, not buried — and the ferryman has stopped answering the bell. Eleven days of unpaid tolls, one widow with a ledger of her own.</p>
-                <div style="margin:18px 0;border-left:2px solid #D6A452;padding-left:16px;font-family:'Newsreader',serif;font-size:15px;font-style:italic;color:#B7A987">"The Weigher counts what crosses. Nothing crosses free." — river-law, first stone</div>
+              <div style="flex:1;min-width:340px;border:1px solid var(--line-strong);border-radius:10px;background:var(--panel-low);padding:28px 32px">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--dim)">THE RIVERLANDS · SCENARIO</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--text);margin:6px 0 14px">The Silent Ford</div>
+                <p style="margin:0;font-family:'Newsreader',serif;font-size:16px;line-height:1.7;color:var(--text-warm)">A river-crossing town where the dead are ferried, not buried — and the ferryman has stopped answering the bell. Eleven days of unpaid tolls, one widow with a ledger of her own.</p>
+                <div style="margin:18px 0;border-left:2px solid var(--ember);padding-left:16px;font-family:'Newsreader',serif;font-size:15px;font-style:italic;color:var(--muted)">"The Weigher counts what crosses. Nothing crosses free." — river-law, first stone</div>
                 <div style="display:flex;align-items:center;gap:6px;margin:16px 0 8px">
-                  <span style="width:9px;height:9px;border-radius:50%;background:#9A8E5C"></span><span style="font-size:13px;color:#B7A987">Act I — The Crossing</span>
-                  <span style="flex:1;border-top:1px dashed #33271A"></span><span style="width:9px;height:9px;border-radius:50%;border:1px dashed #5C5342"></span><span style="font-size:13px;color:#6E675A">Act II — veiled</span>
-                  <span style="flex:1;border-top:1px dashed #33271A"></span><span style="width:9px;height:9px;border-radius:50%;border:1px dashed #5C5342"></span><span style="font-size:13px;color:#6E675A">Act III — veiled</span>
+                  <span style="width:9px;height:9px;border-radius:50%;background:var(--lichen)"></span><span style="font-size:13px;color:var(--muted)">Act I — The Crossing</span>
+                  <span style="flex:1;border-top:1px dashed var(--line-strong)"></span><span style="width:9px;height:9px;border-radius:50%;border:1px dashed var(--faint)"></span><span style="font-size:13px;color:var(--faint)">Act II — veiled</span>
+                  <span style="flex:1;border-top:1px dashed var(--line-strong)"></span><span style="width:9px;height:9px;border-radius:50%;border:1px dashed var(--faint)"></span><span style="font-size:13px;color:var(--faint)">Act III — veiled</span>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 22px;font-family:'Space Mono',monospace;font-size:11px">
-                  <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:12px;padding:4px 11px">Ilse Marrow</span>
-                  <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:12px;padding:4px 11px">The Weigher</span>
-                  <span style="color:#B7A987;border:1px dotted #5A4E37;border-radius:12px;padding:4px 11px">the ferryman</span>
-                  <span style="color:#8A7D63;border:1px solid #241C10;border-radius:12px;padding:4px 11px">4 premades</span>
+                  <span style="color:var(--muted);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 11px">Ilse Marrow</span>
+                  <span style="color:var(--muted);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 11px">The Weigher</span>
+                  <span style="color:var(--muted);border:1px dotted var(--line-strong);border-radius:12px;padding:4px 11px">the ferryman</span>
+                  <span style="color:var(--dim);border:1px solid var(--line-faint);border-radius:12px;padding:4px 11px">4 premades</span>
                 </div>
-                <button onClick="{{ goNew }}" style="background:#D6A452;color:#171106;font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Begin here →</button>
+                <button onClick="{{ goNew }}" style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:14px;padding:13px 28px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Begin here →</button>
               </div>
             </div>
           </div>
@@ -188,72 +190,73 @@ a:hover{color:#EBC98A}
         <!-- ===== NEW CAMPAIGN ===== -->
         <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
           <div style="padding:44px 48px;max-width:720px">
-            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:#8A7D63">NEW EXPEDITION · 2 OF 3 · THE SILENT FORD</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:8px 0 30px">Set the table</div>
-            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:8px">CAMPAIGN NAME</div>
-            <div style="background:#14100A;border:1px solid #3A2C18;border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:18px;color:#F3E8CD;margin-bottom:28px">Ser Aldric's road<span style="display:inline-block;width:8px;height:19px;background:#D6A452;margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
-              <div style="font-size:16px;font-weight:600;color:#F3E8CD">How much do you want to drive?</div>
-              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:#8A7D63">This sets who handles the busywork — you can loosen or tighten any single control later, in settings, mid-campaign.</p>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.28em;color:var(--dim)">NEW EXPEDITION · 2 OF 3 · THE SILENT FORD</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text);margin:8px 0 30px">Set the table</div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:8px">CAMPAIGN NAME</div>
+            <div style="background:var(--panel);border:1px solid var(--line-strong);border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:18px;color:var(--text);margin-bottom:28px">Ser Aldric's road<span style="display:inline-block;width:8px;height:19px;background:var(--ember);margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:24px 28px;margin-bottom:16px">
+              <div style="font-size:16px;font-weight:600;color:var(--text)">How much do you want to drive?</div>
+              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:var(--dim)">This sets who handles the busywork — you can loosen or tighten any single control later, in settings, mid-campaign.</p>
               <div style="display:flex;flex-direction:column;gap:10px">
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;flex:none;width:120px">Full control</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">Every roll, every reaction, every companion decision passes through you. Slowest, most tabletop.</span></div>
-                <div style="border:1px solid #5A4E37;background:rgba(214,164,82,.06);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#D6A452;flex:none;width:120px;font-weight:700">Tactical ✓</span><span style="font-size:13px;line-height:1.55;color:#B7A987">You fight your own fights and make your own rolls; companions run themselves and routine checks resolve quietly. Where most tables land.</span></div>
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;flex:none;width:120px">Narrator's table</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">You speak, the DM handles the mechanics off-screen. Closest to reading a story you're inside of.</span></div>
+                <div style="border:1px solid var(--line-faint);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);flex:none;width:120px">Narrative</span><span style="font-size:13px;line-height:1.55;color:var(--dim)">Companions act for themselves. Passive discoveries stay quiet. The table still hands you every active check.</span></div>
+                <div style="border:1px solid var(--line-strong);background:rgba(214,164,82,.06);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember);flex:none;width:120px;font-weight:700">Balanced ✓</span><span style="font-size:13px;line-height:1.55;color:var(--muted)">Companions propose combat plans; passive discoveries surface; reaction windows pause with a recommendation.</span></div>
+                <div style="border:1px solid var(--line-faint);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);flex:none;width:120px">Tactical</span><span style="font-size:13px;line-height:1.55;color:var(--dim)">You direct companion combat, equipment, leveling, and checks. Individual controls can still drift from the preset.</span></div>
               </div>
             </div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
-              <div style="font-size:16px;font-weight:600;color:#F3E8CD">What does dying mean here?</div>
-              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:#8A7D63">Locked once the campaign starts — the one setting you don't get to renegotiate at 0 HP.</p>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:24px 28px;margin-bottom:16px">
+              <div style="font-size:16px;font-weight:600;color:var(--text)">What does dying mean here?</div>
+              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:var(--dim)">Choose the campaign's default stakes. You can change this later in Table settings; the next turn uses the new rule.</p>
               <div style="display:flex;flex-direction:column;gap:10px">
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;flex:none;width:120px">Story spares</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">Going down always costs something — captured, scarred, robbed — but never the character. Death only happens if you write it.</span></div>
-                <div style="border:1px solid #5A4E37;background:rgba(214,164,82,.06);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#D6A452;flex:none;width:120px;font-weight:700">By the book ✓</span><span style="font-size:13px;line-height:1.55;color:#B7A987">Death saves, as written. Three fails and the river keeps you — but the dice have to say so.</span></div>
-                <div style="border:1px solid rgba(200,75,47,.35);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#C84B2F;flex:none;width:120px">Hardcore</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">One grave. No death saves, no return — the campaign ends where the character does, and the record stays.</span></div>
+                <div style="border:1px solid var(--line-faint);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);flex:none;width:120px">Pacifist</span><span style="font-size:13px;line-height:1.55;color:var(--dim)">At 0 HP the danger becomes capture, loss, or another consequence. The campaign does not end in death.</span></div>
+                <div style="border:1px solid var(--line-strong);background:rgba(214,164,82,.06);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ember);flex:none;width:120px;font-weight:700">Narrative ✓</span><span style="font-size:13px;line-height:1.55;color:var(--muted)">Death saves hold the moment open; failure returns the character through a lasting story consequence.</span></div>
+                <div style="border:1px solid rgba(200,75,47,.35);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--hazard);flex:none;width:120px">Hardcore</span><span style="font-size:13px;line-height:1.55;color:var(--dim)">One grave. No death saves, no return — the campaign ends where the character does, and the record stays.</span></div>
               </div>
             </div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:16px">
-              <div style="font-size:16px;font-weight:600;color:#F3E8CD">How dark should the telling get?</div>
-              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:#8A7D63">Same story either way — this shapes how the narrator describes what happens, not what can happen.</p>
-              <div style="display:flex;flex-direction:column;gap:10px">
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;flex:none;width:120px">Lantern-lit</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">Danger is real but the camera cuts away. Violence lands off-screen; dread over gore.</span></div>
-                <div style="border:1px solid #5A4E37;background:rgba(214,164,82,.06);border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#D6A452;flex:none;width:120px;font-weight:700">Grim ✓</span><span style="font-size:13px;line-height:1.55;color:#B7A987">Wounds bleed and losses are described honestly, without lingering. The Riverlands as written.</span></div>
-                <div style="border:1px solid #241C10;border-radius:6px;padding:14px 18px;display:flex;gap:16px;align-items:baseline"><span style="font-family:'Space Mono',monospace;font-size:11px;color:#B7A987;flex:none;width:120px">Graveyard</span><span style="font-size:13px;line-height:1.55;color:#8A7D63">Nothing softened. Folk horror at full strength — for tables that want to be unsettled.</span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:24px 28px;margin-bottom:16px">
+              <div style="font-size:16px;font-weight:600;color:var(--text)">What belongs on the page?</div>
+              <p style="margin:6px 0 16px;font-size:13px;line-height:1.6;color:var(--dim)">Set each category independently: off excludes it, fade keeps it off-screen, and on allows direct description.</p>
+              <div style="display:flex;flex-direction:column;font-family:'Space Mono',monospace;font-size:11px">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line-faint)"><span style="flex:1;color:var(--muted)">violence</span><span style="color:var(--faint)">off</span><span style="color:var(--faint)">fade</span><span style="color:var(--ember);border:1px solid var(--line-strong);border-radius:3px;padding:4px 9px">on</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line-faint)"><span style="flex:1;color:var(--muted)">gore</span><span style="color:var(--faint)">off</span><span style="color:var(--ember);border:1px solid var(--line-strong);border-radius:3px;padding:4px 9px">fade</span><span style="color:var(--faint)">on</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 0"><span style="flex:1;color:var(--muted)">horror</span><span style="color:var(--faint)">off</span><span style="color:var(--faint)">fade</span><span style="color:var(--ember);border:1px solid var(--line-strong);border-radius:3px;padding:4px 9px">on</span></div>
               </div>
+              <div style="margin-top:14px;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">The full six-category table lives in Settings. Creation asks only for an opening frame.</div>
             </div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:24px 28px;margin-bottom:26px">
-              <div style="font-size:16px;font-weight:600;color:#F3E8CD">Anything the story should never touch?</div>
-              <p style="margin:6px 0 14px;font-size:13px;line-height:1.6;color:#8A7D63">Written in your own words. These are hard lines — the narrator won't put them on screen at any tone setting, ever.</p>
-              <div style="background:#0E0B07;border:1px solid #241C10;border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:15px;font-style:italic;line-height:1.6;color:#B7A987">harm to children; anything with drowning described slowly<span style="display:inline-block;width:8px;height:18px;background:#D6A452;margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:24px 28px;margin-bottom:26px">
+              <div style="font-size:16px;font-weight:600;color:var(--text)">Anything the story should never touch?</div>
+              <p style="margin:6px 0 14px;font-size:13px;line-height:1.6;color:var(--dim)">Written in your own words. These are hard lines — the narrator won't put them on screen at any tone setting, ever.</p>
+              <div style="background:var(--table);border:1px solid var(--line-faint);border-radius:5px;padding:14px 18px;font-family:'Newsreader',serif;font-size:15px;font-style:italic;line-height:1.6;color:var(--muted)">harm to children; anything with drowning described slowly<span style="display:inline-block;width:8px;height:18px;background:var(--ember);margin-left:5px;vertical-align:-3px;animation:caretB 1s steps(1) infinite"></span></div>
             </div>
-            <button style="background:#D6A452;color:#171106;font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Create campaign → choose who you are</button>
+            <button style="background:var(--ember);color:var(--ember-ink);font-weight:700;font-size:15px;padding:15px 32px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif">Create campaign → choose who you are</button>
           </div>
         </sc-if>
 
         <!-- ===== ACCOUNT ===== -->
         <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
           <div style="padding:44px 48px;max-width:680px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD;margin:0 0 30px">Account</div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:22px 26px;margin-bottom:16px">
-              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63;margin-bottom:8px">NAME AT THE TABLE</div>
-              <div style="background:#0E0B07;border:1px solid #3A2C18;border-radius:5px;padding:12px 16px;font-size:15px;color:#F3E8CD;max-width:320px">Wanderer</div>
+            <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 30px"><div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text)">Account</div><span class="ref-status phase-b">Visual only · Phase B</span></div>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:22px 26px;margin-bottom:16px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim);margin-bottom:8px">NAME AT THE TABLE</div>
+              <div style="background:var(--table);border:1px solid var(--line-strong);border-radius:5px;padding:12px 16px;font-size:15px;color:var(--text);max-width:320px">Wanderer</div>
             </div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:22px 26px;margin-bottom:16px">
-              <div style="font-size:15px;font-weight:600;color:#F3E8CD;margin-bottom:14px">Appearance — the light on the table</div>
-              <div style="display:flex;gap:14px;align-items:center">
-                <span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0A0806 50%,#D6A452 50%);border:2px solid #F3E8CD" title="Ember (default)"></span>
-                <span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#191510 50%,#D6552B 50%);border:2px solid transparent" title="Lamplight"></span>
-                <span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0D1110 50%,#8C9B7E 50%);border:2px solid transparent" title="Coldwater"></span>
-                <span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#14100A 50%,#C9A04C 50%);border:2px solid transparent" title="Gilt"></span>
-                <span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#E8E3D2 50%,#BC4720 50%);border:2px solid transparent" title="Daylight"></span>
-                <span style="font-family:'Space Mono',monospace;font-size:10px;color:#6E675A;margin-left:8px">this device, not this table · themes swap the light, never the structure</span>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:22px 26px;margin-bottom:16px">
+              <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px">Appearance — the light on the table</div>
+              <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                <button data-settheme="ember" aria-label="Use Ember appearance" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0A0806 50%,#D6A452 50%);border:2px solid var(--text);cursor:pointer" title="Ember (default)"></button>
+                <button data-settheme="lamplight" aria-label="Use Lamplight appearance" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#191510 50%,#D6552B 50%);border:2px solid transparent;cursor:pointer" title="Lamplight"></button>
+                <button data-settheme="coldwater" aria-label="Use Coldwater appearance" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0D1110 50%,#8C9B7E 50%);border:2px solid transparent;cursor:pointer" title="Coldwater"></button>
+                <button data-settheme="gilt" aria-label="Use Gilt appearance" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#161005 50%,#E4B45C 50%);border:2px solid transparent;cursor:pointer" title="Gilt"></button>
+                <button data-settheme="daylight" aria-label="Use Daylight appearance" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#EDE7D6 50%,#BC4720 50%);border:2px solid transparent;cursor:pointer" title="Daylight"></button>
+                <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--faint);margin-left:8px">this device, not this table · themes swap the light, never the structure</span>
               </div>
             </div>
-            <div style="border:1px solid #33271A;border-radius:8px;background:#120D08;padding:22px 26px;margin-bottom:16px;display:flex;align-items:center;gap:18px">
-              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#F3E8CD">Plan — Plus</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63;margin-top:4px">TASK-ROUTED NARRATOR · 40 TURNS/DAY</div></div>
-              <button onClick="{{ goBilling }}" style="background:transparent;color:#D6A452;border:1px solid #5A4E37;border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Manage plan</button>
+            <div style="border:1px solid var(--line-strong);border-radius:8px;background:var(--panel-low);padding:22px 26px;margin-bottom:16px;display:flex;align-items:center;gap:18px">
+              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">Plan — Plus</div><div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-top:4px">LUNA + TERRA BUNDLE · ~150 HOSTED TURNS/DAY</div></div>
+              <button onClick="{{ goBilling }}" style="background:transparent;color:var(--ember);border:1px solid var(--line-strong);border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Manage plan</button>
             </div>
             <div style="display:flex;gap:14px;align-items:center">
-              <button style="background:transparent;color:#B7A987;border:1px solid #3A2C18;border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Sign out</button>
-              <button style="background:transparent;color:#C84B2F;border:1px solid rgba(200,75,47,.4);border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Burn the ledger — delete account</button>
+              <button style="background:transparent;color:var(--muted);border:1px solid var(--line-strong);border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Sign out</button>
+              <button style="background:transparent;color:var(--hazard);border:1px solid rgba(200,75,47,.4);border-radius:4px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif">Burn the ledger — delete account</button>
             </div>
           </div>
         </sc-if>
@@ -261,29 +264,29 @@ a:hover{color:#EBC98A}
         <!-- ===== BILLING ===== -->
         <sc-if value="{{ isBilling }}" hint-placeholder-val="{{ false }}">
           <div style="padding:44px 48px;max-width:1000px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:#F3E8CD">Plans</div>
-            <div style="font-family:'Space Mono',monospace;font-size:10px;color:#C84B2F;margin:8px 0 30px">SPECULATIVE — pricing/tier design is an open slice (todo #2); numbers here are layout, not policy</div>
+            <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--text)">Plans</div><span class="ref-status phase-b">Visual only · Phase B</span></div>
+            <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin:8px 0 30px">ENTITLEMENT LADDER IS LOCKED · CHECKOUT AND PRICES ARE NOT · MODEL CHOICE NEVER LIVES IN CAMPAIGN SETTINGS</div>
             <div style="display:flex;gap:20px;flex-wrap:wrap">
-              <div style="width:290px;border:1px solid #241C10;border-radius:10px;padding:28px;background:#0F0B07">
-                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">FREE</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#E8DCBE;margin:10px 0 4px">The Ford</div>
-                <div style="font-family:'Space Mono',monospace;font-size:11px;color:#6E675A;margin-bottom:18px">$0</div>
-                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#B7A987"><span>one campaign</span><span>compact narrator model</span><span>10 turns / day</span><span>full rules engine — nothing gated</span></div>
+              <div style="width:290px;border:1px solid var(--line-faint);border-radius:10px;padding:28px;background:var(--panel-low)">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">FREE</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--text-soft);margin:10px 0 4px">The Ford</div>
+                <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--faint);margin-bottom:18px">HOSTED ENTRY</div>
+                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--muted)"><span>one campaign</span><span>Luna default · Terra fallback</span><span>~20 hosted turns / day</span><span>all safety, agency, builders, and retrieval</span></div>
               </div>
-              <div style="width:290px;border:1px solid #5A4E37;border-radius:10px;padding:28px;background:#14100A;box-shadow:0 24px 70px rgba(0,0,0,.45)">
-                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#D6A452">PLUS · CURRENT</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#F3E8CD;margin:10px 0 4px">The Crossing</div>
-                <div style="font-family:'Space Mono',monospace;font-size:11px;color:#8A7D63;margin-bottom:18px">$10 / MO</div>
-                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#B7A987"><span>three campaigns</span><span>task-routed models — big where it matters</span><span>40 turns / day</span><span>scene &amp; portrait art generation</span></div>
+              <div style="width:290px;border:1px solid var(--line-strong);border-radius:10px;padding:28px;background:var(--panel);box-shadow:0 24px 70px rgba(0,0,0,.45)">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--ember)">PLUS · CURRENT</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--text);margin:10px 0 4px">The Crossing</div>
+                <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:18px">PRICE TO BE SET</div>
+                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--muted)"><span>three campaigns</span><span>Luna fast · Terra prose/builders</span><span>~150 hosted turns / day</span><span>image generation</span></div>
               </div>
-              <div style="width:290px;border:1px solid #241C10;border-radius:10px;padding:28px;background:#0F0B07">
-                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:#8A7D63">PRO</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#E8DCBE;margin:10px 0 4px">The Far Bank</div>
-                <div style="font-family:'Space Mono',monospace;font-size:11px;color:#6E675A;margin-bottom:18px">$25 / MO</div>
-                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#B7A987"><span>unlimited campaigns</span><span>frontier narrator on every turn</span><span>no daily cap</span><span>early worlds &amp; scenarios</span></div>
+              <div style="width:290px;border:1px solid var(--line-faint);border-radius:10px;padding:28px;background:var(--panel-low)">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.24em;color:var(--dim)">PRO</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:var(--text-soft);margin:10px 0 4px">The Far Bank</div>
+                <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--faint);margin-bottom:18px">PRICE TO BE SET</div>
+                <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--muted)"><span>effectively unlimited campaigns</span><span>Plus bundle · Sol narrator</span><span>high hosted-turn allowance</span><span>image generation</span></div>
               </div>
             </div>
-            <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:#5C5342">open questions parked in todo #2: what "balanced/premium" mean concretely, local-model setups (dev-only today), tier × model choice as separate axes.</div>
+            <div style="margin-top:22px;font-family:'Space Mono',monospace;font-size:10px;line-height:1.8;color:var(--faint)">BYOK is a separate account capability: it lifts hosted model/turn limits on the user's key, while campaign and image-generation caps still follow the plan. Local Qwen remains developer-only.</div>
           </div>
         </sc-if>
 
@@ -295,15 +298,15 @@ a:hover{color:#EBC98A}
             </div>
             <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(80% 100% at 50% 40%,rgba(10,8,6,.55),rgba(10,8,6,.97) 90%)"></div>
             <div style="position:relative;max-width:640px;margin:0 auto;padding:70px 24px">
-              <div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:#8A7D63">THE HOLLOW VIGIL · CONCLUDED</div>
-              <div style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;color:#F3E8CD;margin:16px 0 30px;line-height:1.1">Isolde kept the watch.<br><em style="font-style:italic;color:#D6A452">The tower keeps her name.</em></div>
-              <p style="margin:0;font-family:'Newsreader',serif;font-size:18px;line-height:1.8;color:#D9CCA9">Forty-one days after she first climbed the stair, the beacon burned again over the Reach. The garrison that returns in spring will find the ledger balanced, the door unbarred, and a cleric's neat hand in the last page of the log: <em style="font-style:italic">fare paid in full.</em></p>
+              <div style="text-align:center;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.3em;color:var(--dim)">THE HOLLOW VIGIL · CONCLUDED</div>
+              <div style="text-align:center;font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;color:var(--text);margin:16px 0 30px;line-height:1.1">Isolde kept the watch.<br><em style="font-style:italic;color:var(--ember)">The tower keeps her name.</em></div>
+              <p style="margin:0;font-family:'Newsreader',serif;font-size:18px;line-height:1.8;color:var(--text-warm)">Forty-one days after she first climbed the stair, the beacon burned again over the Reach. The garrison that returns in spring will find the ledger balanced, the door unbarred, and a cleric's neat hand in the last page of the log: <em style="font-style:italic">fare paid in full.</em></p>
               <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:30px;font-family:'Space Mono',monospace;font-size:11px">
-                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">codex — open, read-only</span>
-                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">map — every ??? resolved</span>
-                <span style="color:#B7A987;border:1px solid #33271A;border-radius:12px;padding:5px 12px">sheets — final</span>
+                <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">codex — open, read-only</span>
+                <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">map — every ??? resolved</span>
+                <span style="color:var(--muted);border:1px solid var(--line-strong);border-radius:12px;padding:5px 12px">sheets — final</span>
               </div>
-              <div style="margin-top:26px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:#6E675A">the record stays open forever · hardcore variant runs darker (ended_dead)</div>
+              <div style="margin-top:26px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:var(--faint)">the record stays open forever · hardcore variant runs darker (ended_dead)</div>
             </div>
           </div>
         </sc-if>
@@ -324,8 +327,8 @@ class Component extends DCLogic {
     return {
       display: 'flex', alignItems: 'center', padding: '10px 12px', borderRadius: '4px', width: '100%',
       background: active ? 'rgba(200,75,47,.13)' : 'transparent', textAlign: 'left', cursor: 'pointer',
-      border: 'none', borderLeft: '2px solid ' + (active ? '#C84B2F' : 'transparent'),
-      color: active ? '#F3E8CD' : admin ? '#8A7D63' : '#9A8F76',
+      border: 'none', borderLeft: '2px solid ' + (active ? 'var(--hazard)' : 'transparent'),
+      color: active ? 'var(--text)' : admin ? 'var(--dim)' : 'var(--dim)',
       fontSize: '14px', fontWeight: active ? 500 : 400, fontFamily: "'Space Grotesk',sans-serif",
     };
   }
@@ -338,8 +341,8 @@ class Component extends DCLogic {
       go: () => this.go(key),
       style: {
         fontFamily: "'Space Mono',monospace", fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap',
-        padding: '5px 10px', borderRadius: '3px', border: '1px solid ' + (sc === key ? '#D6A452' : 'transparent'),
-        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? '#F3E8CD' : '#8A7D63',
+        padding: '5px 10px', borderRadius: '3px', border: '1px solid ' + (sc === key ? 'var(--ember)' : 'transparent'),
+        background: sc === key ? 'rgba(214,164,82,.14)' : 'transparent', color: sc === key ? 'var(--text)' : 'var(--dim)',
       },
     }));
     const campaignsActive = ['home', 'worlds', 'new', 'epilogue'].includes(sc);

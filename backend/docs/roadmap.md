@@ -26,7 +26,7 @@ use today's package owners from `architecture.md` and `AGENTS.md`.
 | 3 | Planned | 13 | World-bible retrieval; depends on the Slice 12 baseline for tuning. | [World bible retrieval](archive/design-v5.md#slice-13--world-bible-retrieval-rag) |
 | 4 | Planned, Phase B | 14 | Authentication and cost controls. | [Auth + cost controls](archive/design-v5.md#slice-14--auth--cost-controls) |
 | 5 | Planned, Phase B | 14.5 | Plans and entitlements; depends on account identity from Slice 14. | [Plans & entitlements](archive/design-v5.md#slice-145--plans--entitlements) |
-| 6 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Frontend product spec](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) · [v4 build brief](ui-temp-reference/v4-build-brief.md) |
+| 6 | Planned, Phase A | 15 + 15.5 | Frontend product design and implementation. It starts after Slice 10.7 and uses the development header until Phase B auth lands. | [Ember UI reference](claude-design-ui/README.md) · [frontend product rationale](archive/design-v5.md#slice-15--frontend-ui-reference-rebuild) · [frontend build architecture](archive/design-v5.md#slice-155--frontend-architecture--build-phase-a) |
 
 Slice 15's Phase A does **not** wait for Slice 14: it uses the development
 `X-User-Id` header behind its swappable frontend auth seam. Login, billing, and
@@ -61,9 +61,10 @@ source for the exact persistence, enforcement, and deferred-payment decisions.
 
 ### Frontend — Slices 15 and 15.5
 
-The current frontend source of truth is the [v4 build brief](ui-temp-reference/v4-build-brief.md),
-not older HTML prototypes or v3 brief. Its product direction is “Cartographer's
-Table.” Slice 15.5 locks Vite + React 19, TanStack Router/Query, Zustand,
+The current frontend source of truth is the [Ember UI reference](claude-design-ui/README.md)
+and its linked HTML files. It supersedes the archived v4 reference while preserving the
+“Cartographer's Table” product structure: the waymarked rail, narrative-first play,
+and shared exploration/combat map language. Slice 15.5 locks Vite + React 19, TanStack Router/Query, Zustand,
 Tailwind v4, React Aria Components, React Flow, generated OpenAPI types,
 RHF/Zod, Motion, and the stated test stack. Build frontend contracts only after
 their engine dependencies are present; the visual mockups never authorize a new
