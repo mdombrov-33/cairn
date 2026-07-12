@@ -5,9 +5,10 @@ documents, not evidence that a backend route exists. Current engine behavior is 
 [`../architecture.md`](../architecture.md); sequencing and planned contracts live in
 [`../roadmap.md`](../roadmap.md).
 
-Before frontend planning, read the [Ember frontend contract gaps](gaps.md). It records every known
-place where the visual reference needs a product decision, a player-safe projection, or a backend
-capability before it can be implemented faithfully.
+Before any further development slice, read the canonical
+[product and engine gap register](../gaps.md). It records the unresolved decisions and verified
+defects exposed by the visual reference across the backend, transports, persistence, authored
+content, and future frontend. The register's open items are a pre-slice gate.
 
 The archived `Cairn App v4.html` remains design history. Its screen inventory and interaction
 research informed this reference, but its Slate Survey palette and exact component treatments are
@@ -74,7 +75,7 @@ administrative data. Mock content may demonstrate layout; annotations must state
 
 ## Files
 
-- `gaps.md` — verified UI/backend mismatches and the decision required for each before build.
+- `../gaps.md` — canonical pre-slice product and engine gap register.
 - `Cairn Landing.dc.html` — public thesis: one campaign performed down the page.
 - `Cairn App - Shell.dc.html` — login, campaign browser, world/template choice, campaign framing,
   account, plans, and epilogue.

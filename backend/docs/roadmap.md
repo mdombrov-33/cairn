@@ -9,13 +9,21 @@ acceptance criteria of a planned slice, read the linked section of the
 ## Status language
 
 - **Current** is verified in production source and tests.
-- **Next** is the one implementation slice to start after this document.
+- **Next** is the one implementation slice to start after the pre-slice decision gate is clear.
 - **Planned** is locked work that has not landed; it is not an interface or a
   recipe to copy into unrelated work.
 - **Deferred** has no implementation commitment in the current sequence.
 
 The architecture-improvement campaign and Slices 10.5 and 10.7 are complete. Archived file maps are historical;
 use today's package owners from `architecture.md` and `AGENTS.md`.
+
+## Pre-slice decision gate
+
+The repository-wide [product and engine gap register](gaps.md) must be resolved before Slice 11 or
+any other implementation slice begins. Resolution means fixing/implementing an item, removing the
+unsupported contract everywhere it appears, or deliberately assigning it to a named future slice
+with honest current behavior. A mock, client inference, or undocumented LLM assumption does not
+resolve a gap.
 
 ## Ordered work
 
@@ -62,7 +70,7 @@ source for the exact persistence, enforcement, and deferred-payment decisions.
 ### Frontend — Slices 15 and 15.5
 
 The current frontend source of truth is the [Ember UI reference](claude-design-ui/README.md)
-and its linked HTML files. Review the [Ember frontend contract gaps](claude-design-ui/gaps.md) before
+and its linked HTML files. Review the canonical [product and engine gap register](gaps.md) before
 starting or sequencing Slice 15/15.5. The register records unresolved product/backend seams; the
 mockups do not authorize the frontend to guess across them. Ember supersedes the archived v4
 reference while preserving the

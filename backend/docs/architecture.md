@@ -7,8 +7,10 @@ this document land together.
 ## System shape
 
 Cairn is a FastAPI application backed by Postgres. LangGraph routes non-combat turns, LiteLLM is the
-single provider gateway, and Server-Sent Events stream narration and mechanical events. Application
-workflows coordinate persistence and agents; pure domain modules own calculations and invariants.
+single provider gateway, and Server-Sent Events stream narration plus a small foreground control
+vocabulary. Mechanical event dictionaries are currently appended to `Turn.events`; they are not
+forwarded through the live SSE generator. Application workflows coordinate persistence and agents;
+pure domain modules own calculations and invariants.
 
 ```text
 HTTP / SSE
@@ -66,9 +68,10 @@ prepared casters choose spells after a long rest, while AI-controlled companions
 retain legal preparations and fill remaining slots from the typed SRD catalog.
 
 When combat is active, combat agents produce strict ordered plans without mutation tools. The combat
-executor derives mechanics from campaign, combat, actor, and SRD state and executes operations
-deterministically. It owns combat commits, engine attack rolls, reaction dispatch, persisted
-checkpoints, and resumption. Completed facts reach Scene Narrator only after execution finishes.
+executor derives supported mechanics from campaign, combat, actor, and SRD state. It owns combat
+commits, engine attack rolls, reaction dispatch, persisted checkpoints, and resumption. Completed
+facts reach Scene Narrator only after execution finishes. Its current action coverage, actor
+authority, state synchronization, and RNG limits are recorded in [gaps.md](gaps.md).
 
 The executor-private reaction registry covers opportunity attacks, Shield, Absorb Elements,
 Counterspell, readied actions, and Sentinel. Player reactions follow `reaction_control`; interactive
@@ -138,11 +141,12 @@ changes the contract.
 
 `llm/router.py` resolves an agent's prompt version, model, and fallbacks. Agents call completion,
 structured-output, tool-loop, or streaming interfaces in `llm/client.py`; only that module imports
-LiteLLM. Mechanical calculations remain deterministic code even when an agent chooses or narrates an
-action.
+LiteLLM. Mechanical calculations remain application/domain code rather than narrated prompt output
+even when an agent chooses or describes an action.
 
-Combat planners use structured output. Mechanical values, legality, resources, rolls, and mutation are
-owned by deterministic application code rather than prompts.
+Combat planners use structured output. Supported values, resources, rolls, and mutation are validated
+or performed by application code after planning; the incomplete legality surface is recorded in the
+gap register.
 
 ## Enforced architecture
 
@@ -165,8 +169,8 @@ The current roadmap locks several future shapes that must not be mistaken for pr
 
 - **Slice 13:** pgvector/FTS/tag hybrid retrieval with RRF and local reranking. There is no vector
   retrieval path today.
-- **Phase B:** operational hardening, eval gates, Clerk authentication, entitlements, and deployment
-  hardening.
+- **Slices 11/12:** operational hardening followed by prompt/agent evaluation gates.
+- **Phase B:** Clerk authentication, entitlements, and deployment hardening.
 - **Slices 15/15.5:** the Vite/React frontend. The repository remains backend-only today.
 
 Read the relevant roadmap section before touching one of these areas; its old file paths are
