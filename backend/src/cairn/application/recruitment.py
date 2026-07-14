@@ -170,5 +170,5 @@ async def dismiss(db: AsyncSession, *, character: Character, location_id: uuid.U
         inventory=character.inventory,
         currency=character.currency,
     )
-    await character_queries.delete_character(db, character.id)
+    await character_queries.delete_character(db, character)
     return npc

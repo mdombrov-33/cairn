@@ -107,7 +107,18 @@ async def scene_create(state: TurnState) -> dict[str, Any]:
 
     async with db_client.get_session() as db:
         session = await session_queries.get_session(db, session_id)
-        location = await location_queries.get_location(db, target_location_id) if target_location_id else None
+        if session.campaign_id != campaign_id:
+            log.warning(
+                "scene_transition_foreign_session",
+                session_id=str(session_id),
+                campaign_id=str(campaign_id),
+            )
+            return {"is_scene_entry": False}
+        location = (
+            await location_queries.get_location_for_campaign(db, target_location_id, campaign_id)
+            if target_location_id
+            else None
+        )
         if location is None:
             log.warning("scene_transition_invalid_location", to_location_id=transition["to_location_id"])
             session.pending_transition = None

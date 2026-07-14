@@ -29,6 +29,14 @@ async def get_npc(session: AsyncSession, npc_id: uuid.UUID) -> NPC:
     return npc
 
 
+async def get_npc_for_campaign(session: AsyncSession, npc_id: uuid.UUID, campaign_id: uuid.UUID) -> NPC:
+    result = await session.execute(select(NPC).where(NPC.id == npc_id, NPC.campaign_id == campaign_id))
+    npc = result.scalar_one_or_none()
+    if npc is None:
+        raise NotFoundError(f"npc {npc_id} not found", code="npc_not_found")
+    return npc
+
+
 def _name_score(npc_name: str, hint: str) -> int:
     """Rank a name against a hint: exact > whole-word > substring > token-overlap > miss."""
     name = npc_name.lower()

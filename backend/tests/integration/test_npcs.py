@@ -53,6 +53,40 @@ async def test_get_npc_by_id(client: AsyncClient) -> None:
     assert r.json()["id"] == npc_id
 
 
+async def test_get_npc_rejects_npc_from_another_owned_campaign(client: AsyncClient) -> None:
+    path_campaign = await make_campaign(client, name="Path Campaign")
+    npc_campaign = await make_campaign(client, name="NPC Campaign")
+    npcs = await client.get(
+        f"/v1/campaigns/{npc_campaign['id']}/npcs",
+        headers={"X-User-Id": "user_a"},
+    )
+    npc_id = npcs.json()[0]["id"]
+
+    r = await client.get(
+        f"/v1/campaigns/{path_campaign['id']}/npcs/{npc_id}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert r.status_code == 404
+
+
+async def test_get_npc_rejects_npc_from_another_owners_campaign(client: AsyncClient) -> None:
+    path_campaign = await make_campaign(client, name="Path Campaign")
+    npc_campaign = await make_campaign(client, owner="user_b", name="Foreign Campaign")
+    npcs = await client.get(
+        f"/v1/campaigns/{npc_campaign['id']}/npcs",
+        headers={"X-User-Id": "user_b"},
+    )
+    npc_id = npcs.json()[0]["id"]
+
+    r = await client.get(
+        f"/v1/campaigns/{path_campaign['id']}/npcs/{npc_id}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert r.status_code == 404
+
+
 async def test_npcs_requires_auth(client: AsyncClient) -> None:
     camp = await make_campaign(client)
 

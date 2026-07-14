@@ -186,3 +186,42 @@ async def test_scene_create_drops_unknown_location(client: AsyncClient) -> None:
     result = await _scene_create(_state(session_id, campaign_id, _pull(str(uuid.uuid4()))))
 
     assert result["is_scene_entry"] is False
+
+
+async def test_scene_create_drops_location_from_another_campaign(client: AsyncClient) -> None:
+    campaign_id, session_id = await _seed(client)
+    other_campaign = await make_campaign(client, name="Other Campaign")
+
+    async with db_client.get_session() as db:
+        opening = await scene_queries.get_current_scene(db, uuid.UUID(campaign_id))
+        assert opening is not None
+        other_locations = await location_queries.list_by_campaign(db, uuid.UUID(other_campaign["id"]))
+        target = other_locations[0]
+
+    result = await _scene_create(_state(session_id, campaign_id, _pull(str(target.id))))
+
+    assert result["is_scene_entry"] is False
+    async with db_client.get_session() as db:
+        current = await scene_queries.get_current_scene(db, uuid.UUID(campaign_id))
+        assert current is not None
+        assert current.id == opening.id
+
+
+async def test_scene_create_drops_session_from_another_campaign(client: AsyncClient) -> None:
+    _, session_id = await _seed(client)
+    target_campaign = await make_campaign(client, name="Target Campaign")
+    await make_session(client, target_campaign["id"])
+
+    async with db_client.get_session() as db:
+        opening = await scene_queries.get_current_scene(db, uuid.UUID(target_campaign["id"]))
+        assert opening is not None
+        locations = await location_queries.list_by_campaign(db, uuid.UUID(target_campaign["id"]))
+        target = locations[0]
+
+    result = await _scene_create(_state(session_id, target_campaign["id"], _pull(str(target.id))))
+
+    assert result["is_scene_entry"] is False
+    async with db_client.get_session() as db:
+        current = await scene_queries.get_current_scene(db, uuid.UUID(target_campaign["id"]))
+        assert current is not None
+        assert current.id == opening.id

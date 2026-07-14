@@ -113,6 +113,9 @@ Request routes receive one `AsyncSession` from `api/deps.py`. The dependency com
 request and rolls back an exception, so ordinary application workflows participate in one request
 transaction.
 
+Player-facing workflows resolve nested entity identifiers within their authorized Campaign or
+Session; a globally valid Character, NPC, Location, or Turn id cannot cross that ownership boundary.
+
 Code that runs outside that lifetime opens an explicit session:
 
 - graph and foreground workflows that must persist before streaming;

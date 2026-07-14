@@ -1268,19 +1268,7 @@ submits, reconnect during resolution, all ordinary mutations rejected while susp
 delayed combat level-up path. Expose the state through the player-safe projection from G36; the
 focused modal in Ember cannot be the only lock.
 
-### G37 — Several campaign-scoped operations authorize one id and act on another (**FIX**)
-
-**Current evidence.** Character deletion verifies ownership of the path campaign, then deletes by
-global `character_id` without verifying membership, allowing a known id from another campaign to be
-deleted. NPC get verifies the path campaign and then fetches a global `npc_id`, allowing a foreign
-NPC to be read. Scene transition fetches a global location id without checking it belongs to the
-campaign before opening a new scene. Death-save and several lower-level helpers also accept unrelated
-session/entity ids, though their current MCP exposure is explicitly local/trusted.
-
-**Resolve by.** Fix all player HTTP/workflow paths to fetch through campaign/session-scoped queries
-and add negative cross-owner and same-owner-cross-campaign tests. Audit paired identifiers
-systematically. Keep the unauthenticated MCP exception documented as local development only; do not
-use it to justify weak scoping in public services.
+### G37 — Done
 
 ## Settings and agency
 

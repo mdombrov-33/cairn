@@ -347,5 +347,5 @@ async def delete(
     character_id: uuid.UUID,
     owner_id: str,
 ) -> None:
-    await campaign_queries.get_campaign_owned_by(db, campaign_id, owner_id)
-    await character_queries.delete_character(db, character_id)
+    character = await character_queries.get_character_for_campaign_owned_by(db, character_id, campaign_id, owner_id)
+    await character_queries.delete_character(db, character)

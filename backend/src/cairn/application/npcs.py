@@ -41,7 +41,7 @@ async def get(
     owner_id: str,
 ) -> NPC:
     await campaign_queries.get_campaign_owned_by(db, campaign_id, owner_id)
-    return await npc_queries.get_npc(db, npc_id)
+    return await npc_queries.get_npc_for_campaign(db, npc_id, campaign_id)
 
 
 async def create_from_blueprint(db: AsyncSession, campaign_id: uuid.UUID, data: dict[str, Any]) -> NPC:

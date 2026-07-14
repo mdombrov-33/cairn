@@ -88,7 +88,6 @@ async def find_companion_by_name(session: AsyncSession, campaign_id: uuid.UUID, 
     return None
 
 
-async def delete_character(session: AsyncSession, character_id: uuid.UUID) -> None:
-    character = await get_character(session, character_id)
+async def delete_character(session: AsyncSession, character: Character) -> None:
     await session.delete(character)
     await session.flush()

@@ -412,6 +412,42 @@ async def test_delete_removes_character(client: AsyncClient) -> None:
     assert remaining.json() == []
 
 
+async def test_delete_rejects_character_from_another_owned_campaign(client: AsyncClient) -> None:
+    path_campaign = await make_campaign(client, name="Path Campaign")
+    character_campaign = await make_campaign(client, name="Character Campaign")
+    character = await make_character(client, character_campaign["id"])
+
+    r = await client.delete(
+        f"/v1/campaigns/{path_campaign['id']}/characters/{character['id']}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert r.status_code == 404
+    remaining = await client.get(
+        f"/v1/campaigns/{character_campaign['id']}/characters",
+        headers={"X-User-Id": "user_a"},
+    )
+    assert [item["id"] for item in remaining.json()] == [character["id"]]
+
+
+async def test_delete_rejects_character_from_another_owners_campaign(client: AsyncClient) -> None:
+    path_campaign = await make_campaign(client, name="Path Campaign")
+    character_campaign = await make_campaign(client, owner="user_b", name="Foreign Campaign")
+    character = await make_character(client, character_campaign["id"], owner="user_b")
+
+    r = await client.delete(
+        f"/v1/campaigns/{path_campaign['id']}/characters/{character['id']}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert r.status_code == 404
+    remaining = await client.get(
+        f"/v1/campaigns/{character_campaign['id']}/characters",
+        headers={"X-User-Id": "user_b"},
+    )
+    assert [item["id"] for item in remaining.json()] == [character["id"]]
+
+
 # AC derivation
 
 
