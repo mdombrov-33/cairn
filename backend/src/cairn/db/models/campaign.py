@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cairn.db.base import Base
+from cairn.domain.campaigns import is_campaign_mutable
 
 
 class Campaign(Base):
@@ -22,3 +23,8 @@ class Campaign(Base):
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     member_ids: Mapped[list[str]] = mapped_column(JSONB, default=list, server_default="[]")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def is_mutable(self) -> bool:
+        """Whether this campaign accepts player play-state mutations."""
+        return is_campaign_mutable(self.status)

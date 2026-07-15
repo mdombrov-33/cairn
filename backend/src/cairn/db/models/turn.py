@@ -15,7 +15,7 @@ class Turn(Base):
     __tablename__ = "turns"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sessions.id", ondelete="CASCADE"), index=True)
     # Every turn belongs to a scene. Scene Director creates Scene rows on transitions and
     # sessions.start() eagerly creates the first scene, so this is always populated.
     scene_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("scenes.id", ondelete="CASCADE"), index=True)

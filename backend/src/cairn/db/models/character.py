@@ -23,7 +23,7 @@ class Character(Base):
     __tablename__ = "characters"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id"), index=True)
+    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), index=True)
     owner_id: Mapped[str] = mapped_column(index=True)
 
     # identity

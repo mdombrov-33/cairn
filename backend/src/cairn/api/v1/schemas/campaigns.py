@@ -37,3 +37,4 @@ class CampaignResponse(BaseModel):
     settings: dict[str, Any]
     member_ids: list[str]
     created_at: datetime
+    is_mutable: bool

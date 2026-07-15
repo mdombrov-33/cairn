@@ -298,34 +298,7 @@ out-of-act proposals; multi-event acts; final-act completion; and every post-com
 guard. Either implement `combat_ended` through a similarly authoritative route or remove it from
 the Scene Director contract.
 
-### G33 — Campaign statuses do not define mutation or deletion policy (**FIX + DECIDE**)
-
-**Decision (2026-07-13).** `active` campaigns are readable and mutable. `completed` and
-`ended_dead` campaigns are readable, immutable records: no turns, rests, settings, roster, or other
-play mutations are allowed. The player may explicitly delete a campaign in any status.
-
-**Deletion consequence.** Deletion is a hard, transactionally cascaded removal of campaign-owned
-runtime state only (Sessions, Characters, Scenes, Turns, campaign memory, and related records). It
-never removes the authored World or Campaign Template. V1 has no distinct archive state; terminal
-campaigns remain visible until the player deletes them.
-
-**Implementation consequence.** Centralize the status/operation matrix in mutation guards,
-including DELETE as an allowed operation. Align foreign-key cascade policy and service deletion
-order with it, and make terminal campaign read models visibly immutable to the client.
-
-**Current evidence.** Middleware freezes mutations only for `ended_dead`; a `completed` campaign can
-still accept turns, rests, settings changes, characters, and sessions despite Ember calling it a
-read-only record. The same middleware blocks DELETE for `ended_dead`, so a dead campaign cannot be
-removed even if deletion should be allowed. Hard deletion simply deletes the Campaign row, while
-Session and Character foreign keys lack cascade behavior, so deleting a played campaign can fail on
-referential integrity.
-
-**Unknown.** Which operations are legal for `active`, `completed`, and `ended_dead`? Is deletion a
-hard cascade, soft archive, or unsupported once play starts? Does “the record stays” mean readable,
-undeletable, or only immutable?
-
-**Resolve by.** Implement the decision above and add integration coverage for each permitted and
-rejected operation on active, completed, and dead campaigns, including deletion after real play.
+### G33 — Done
 
 ### G39 — NPC presence has competing sources and the shipped cast is often nowhere (**FIX + DECIDE**)
 

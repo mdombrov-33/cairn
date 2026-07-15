@@ -116,6 +116,11 @@ transaction.
 Player-facing workflows resolve nested entity identifiers within their authorized Campaign or
 Session; a globally valid Character, NPC, Location, or Turn id cannot cross that ownership boundary.
 
+Campaign lifecycle policy permits reads and deletion for every status. Only `active` campaigns
+permit play-state mutations; `completed` and `ended_dead` Campaign responses set `is_mutable` to
+false. Deleting a Campaign cascades through its runtime state, including Characters, Sessions, and
+Turns, without affecting authored World or Campaign Template records.
+
 Code that runs outside that lifetime opens an explicit session:
 
 - graph and foreground workflows that must persist before streaming;

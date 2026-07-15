@@ -1,6 +1,14 @@
+import uuid
+
+import pytest
 from httpx import AsyncClient
 
-from tests._factories import make_campaign
+from cairn.db import client as db_client
+from cairn.db.queries import campaigns as campaign_queries
+from cairn.db.queries import characters as character_queries
+from cairn.db.queries import sessions as session_queries
+from cairn.domain.exceptions import NotFoundError
+from tests._factories import make_campaign, make_character, make_session
 
 
 async def test_create_requires_auth(client: AsyncClient) -> None:
@@ -16,6 +24,7 @@ async def test_create_returns_campaign(client: AsyncClient) -> None:
     assert body["owner_id"] == "user_a"
     assert body["world_bible_namespace"].startswith("campaign_")
     assert body["status"] == "active"
+    assert body["is_mutable"] is True
     assert body["current_act_index"] == 0
     assert "id" in body
     assert "created_at" in body
@@ -84,6 +93,128 @@ async def test_campaign_settings_reject_account_owned_model_fields(client: Async
     )
 
     assert r.status_code == 422
+
+
+async def test_completed_campaign_rejects_settings_changes(client: AsyncClient) -> None:
+    campaign = await make_campaign(client)
+
+    async with db_client.get_session() as db:
+        stored = await campaign_queries.get_campaign(db, uuid.UUID(campaign["id"]))
+        stored.status = "completed"
+        await db.commit()
+
+    response = await client.patch(
+        f"/v1/campaigns/{campaign['id']}/settings",
+        headers={"X-User-Id": "user_a"},
+        json={"preset": "balanced"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "campaign_completed"
+
+
+@pytest.mark.parametrize("terminal_status", ["completed", "ended_dead"])
+async def test_terminal_campaign_read_model_marks_it_immutable(client: AsyncClient, terminal_status: str) -> None:
+    campaign = await make_campaign(client)
+
+    async with db_client.get_session() as db:
+        stored = await campaign_queries.get_campaign(db, uuid.UUID(campaign["id"]))
+        stored.status = terminal_status
+        await db.commit()
+
+    response = await client.get(
+        f"/v1/campaigns/{campaign['id']}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["is_mutable"] is False
+
+
+@pytest.mark.parametrize(
+    ("terminal_status", "error_code"),
+    [("completed", "campaign_completed"), ("ended_dead", "campaign_ended_dead")],
+)
+async def test_terminal_campaign_rejects_player_mutations(
+    client: AsyncClient, terminal_status: str, error_code: str
+) -> None:
+    campaign = await make_campaign(client)
+    session = await make_session(client, campaign["id"])
+
+    async with db_client.get_session() as db:
+        stored = await campaign_queries.get_campaign(db, uuid.UUID(campaign["id"]))
+        stored.status = terminal_status
+        await db.commit()
+
+    responses = [
+        await client.patch(
+            f"/v1/campaigns/{campaign['id']}/settings",
+            headers={"X-User-Id": "user_a"},
+            json={"preset": "balanced"},
+        ),
+        await client.post(
+            f"/v1/campaigns/{campaign['id']}/characters",
+            headers={"X-User-Id": "user_a"},
+            json={
+                "name": "Ser Aldric",
+                "race": "human",
+                "character_class": "fighter",
+                "background": "soldier",
+                "ability_scores": {"str": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "cha": 8},
+                "skill_choices": ["Perception", "Athletics"],
+                "alignment": "Lawful Good",
+            },
+        ),
+        await client.post(
+            f"/v1/campaigns/{campaign['id']}/sessions",
+            headers={"X-User-Id": "user_a"},
+        ),
+        await client.post(
+            f"/v1/sessions/{session['id']}/short-rest",
+            headers={"X-User-Id": "user_a"},
+        ),
+        await client.post(
+            f"/v1/sessions/{session['id']}/turns",
+            headers={"X-User-Id": "user_a"},
+            json={"player_input": "I look around."},
+        ),
+    ]
+
+    for response in responses:
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == error_code
+
+
+@pytest.mark.parametrize("terminal_status", ["completed", "ended_dead"])
+async def test_terminal_campaign_deletion_cascades_runtime_state(client: AsyncClient, terminal_status: str) -> None:
+    campaign = await make_campaign(client)
+    character = await make_character(client, campaign["id"])
+    session = await make_session(client, campaign["id"])
+    turn_response = await client.post(
+        f"/v1/sessions/{session['id']}/turns",
+        headers={"X-User-Id": "user_a"},
+        json={"player_input": "I look around."},
+    )
+    assert turn_response.status_code == 201
+
+    async with db_client.get_session() as db:
+        stored = await campaign_queries.get_campaign(db, uuid.UUID(campaign["id"]))
+        stored.status = terminal_status
+        await db.commit()
+
+    response = await client.delete(
+        f"/v1/campaigns/{campaign['id']}",
+        headers={"X-User-Id": "user_a"},
+    )
+
+    assert response.status_code == 204
+    async with db_client.get_session() as db:
+        with pytest.raises(NotFoundError):
+            await campaign_queries.get_campaign(db, uuid.UUID(campaign["id"]))
+        with pytest.raises(NotFoundError):
+            await character_queries.get_character(db, uuid.UUID(character["id"]))
+        with pytest.raises(NotFoundError):
+            await session_queries.get_session(db, uuid.UUID(session["id"]))
 
 
 async def test_delete_own_campaign(client: AsyncClient) -> None:
